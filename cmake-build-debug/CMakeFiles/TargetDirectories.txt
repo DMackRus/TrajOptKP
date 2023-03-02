@@ -1,0 +1,3 @@
+/home/dave/projects/physicsSimSwithching/cmake-build-debug/CMakeFiles/physicsSimSwitching.dir
+/home/dave/projects/physicsSimSwithching/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/dave/projects/physicsSimSwithching/cmake-build-debug/CMakeFiles/rebuild_cache.dir
