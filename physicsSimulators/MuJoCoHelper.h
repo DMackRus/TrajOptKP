@@ -12,7 +12,22 @@
 class MuJoCoHelper : public physicsSimulator {
 public:
     // Constructor
-    MuJoCoHelper();
+    MuJoCoHelper(vector<robot> robots, vector<string> _bodies);
+
+    // Utility functions -- robots
+    bool isValidRobotName(string robotName, int &robotIndex, string &robotBaseJointName);
+    bool setRobotJointsPositions(string robotName, vector<double> jointPositions);
+    bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities);
+    bool setRobotJointsControls(string robotName, vector<double> jointControls);
+
+    bool getRobotJointsPositions(string robotName, vector<double> &jointPositions);
+    bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities);
+    bool getRobotJointsControls(string robotName, vector<double> &joinsControls);
+
+    // Utility functions -- bodies
+    bool isValidBodyName(string bodyName, int &bodyIndex);
+    bool setBodyPose(string bodyName, pose pose);
+    bool setBodyPosition(string bodyName, m_point position);
 
 
     // ------------------------------- Variables -----------------------------------------
@@ -23,8 +38,6 @@ public:
     double lastx = 0;
     double lasty = 0;
 
-    mjModel *model;                  // MuJoCo model
-    mjData *mdata;                   // MuJoCo data
     mjvCamera cam;                   // abstract camera
     mjvScene scn;                    // abstract scene
     mjvOption opt;			        // visualization options
@@ -53,6 +66,12 @@ public:
     void render();
 
     void setupMuJoCoWorld(double timestep, const char* fileName);
+
+private:
+    mjData *mdata;                   // MuJoCo data
+    mjModel *model;                  // MuJoCo model
+    vector<robot> robots;
+    vector<string> bodies;
 };
 
 #endif //PHYSICSSIMSWITCHING_MUJOCOHELPER_H
