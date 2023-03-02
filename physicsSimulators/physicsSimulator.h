@@ -13,9 +13,6 @@ struct robot{
     int numActuators;
 };
 
-typedef Eigen::Matrix<double, 3, 1> m_point;
-typedef Eigen::Matrix<double, 4, 1> m_quat;
-
 struct pose{
     m_point position;
     m_quat quat;

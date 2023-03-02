@@ -103,7 +103,6 @@ bool MuJoCoHelper::setRobotJointsVelocities(string robotName, vector<double> joi
     }
 
     for(int i = 0; i < jointVelocities.size(); i++){
-        cout << "setting joint " << i << " to " << jointVelocities[i] << endl;
         mdata->qvel[startIndex + i] = jointVelocities[i];
     }
 
@@ -141,7 +140,6 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
     }
 
     for(int i = 0; i < jointControls.size(); i++){
-        cout << "setting joint " << i << " to " << jointControls[i] << endl;
         mdata->ctrl[startIndex + i] = jointControls[i];
     }
 
@@ -273,9 +271,30 @@ bool MuJoCoHelper::setBodyPose(string bodyName, pose pose){
         mdata->qpos[qposIndex + 3 + i] = pose.quat(i);
     }
 
+    return true;
+
+}
+bool MuJoCoHelper::getBodyPose(string bodyName, pose &pose){
+    int bodyIndex;
+    if(!isValidBodyName(bodyName, bodyIndex)){
+        cout << "That body doesnt exist in the simulation\n";
+        return false;
+    }
+
+    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model->body_jntadr[bodyId];
+    const int qposIndex = model->jnt_qposadr[jointIndex];
+
+    for(int i = 0; i < 3; i++){
+        pose.position(i) = mdata->qpos[qposIndex + i];
+    }
+
+    for(int i = 0; i < 4; i++){
+        pose.quat(i) = mdata->qpos[qposIndex + 3 + i];
+    }
+
 }
 
-bool setBodyPosition(string bodyName, m_point position);
 
 
 // ------------------------------- Keyboard Callback -------------------------------------------------
@@ -286,10 +305,53 @@ void MuJoCoHelper::keyboardCallbackWrapper(GLFWwindow* window, int key, int scan
 
 void MuJoCoHelper::keyboard(GLFWwindow* window, int key, int scancode, int act, int mods){
     // backspace: reset simulation
+    pose cheezitPose;
+    getBodyPose("goal", cheezitPose);
+    m_point euler = quat2Eul(cheezitPose.quat);
+
     if (act == GLFW_PRESS && key == GLFW_KEY_BACKSPACE)
     {
-        cout << "reset MPC sim" << endl;
+
     }
+
+    else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
+        euler(0) += 0.2;
+    }
+    else if(act == GLFW_PRESS && key == GLFW_KEY_W){
+        euler(0) -= 0.2;
+    }
+        // left arrow key pressed
+    else if(act == GLFW_PRESS && key == GLFW_KEY_A){
+        euler(1) += 0.2;
+    }
+    else if(act == GLFW_PRESS && key == GLFW_KEY_S){
+        euler(1) -= 0.2;
+    }
+    else if(act == GLFW_PRESS && key == GLFW_KEY_Z){
+        euler(2) += 0.2;
+    }
+    else if(act == GLFW_PRESS && key == GLFW_KEY_X){
+        euler(2) -= 0.2;
+    }
+
+//     if up arrow key pressed
+    else if(act == GLFW_PRESS && key == GLFW_KEY_UP){
+        cheezitPose.position(0) += 0.2;
+    }
+    else if(act == GLFW_PRESS && key == GLFW_KEY_DOWN){
+        cheezitPose.position(0) -= 0.2;
+    }
+    // left arrow key pressed
+    else if(act == GLFW_PRESS && key == GLFW_KEY_LEFT){
+        cheezitPose.position(1) += 0.2;
+    }
+    else if(act == GLFW_PRESS && key == GLFW_KEY_RIGHT){
+        cheezitPose.position(1) -= 0.2;
+    }
+
+    cheezitPose.quat = eul2Quat(euler);
+
+    setBodyPose("goal", cheezitPose);
 }
 // -----------------------------------------------------------------------------------------------------
 
@@ -451,7 +513,6 @@ void MuJoCoHelper::render(){
             vector<double> pandaJoints;
 
             getRobotJointsPositions("panda", pandaJoints);
-            cout << pandaJoints[0] << endl;
             setRobotJointsControls("panda", {1,0.5,0,-1,0,0.6,1});
             setRobotJointsVelocities("panda", {0.1, 0, 0, 0, 0, 0, 0});
             mj_step(model, mdata);

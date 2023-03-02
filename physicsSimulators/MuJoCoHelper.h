@@ -29,6 +29,8 @@ public:
     bool setBodyPose(string bodyName, pose pose);
     bool setBodyPosition(string bodyName, m_point position);
 
+    bool getBodyPose(string bodyName, pose &pose);
+
 
     // ------------------------------- Variables -----------------------------------------
     // Screen variables

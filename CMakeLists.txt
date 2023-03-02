@@ -36,7 +36,7 @@ message(STATUS "Mujoco include directory: " ${Mujoco_INCLUDE_DIRS})
 add_executable(${PROJECT_NAME} main.cpp
                 physicsSimulators/physicsSimulator.cpp physicsSimulators/physicsSimulator.h
                 stdInclude/stdInclude.h
-        physicsSimulators/MuJoCoHelper.cpp physicsSimulators/MuJoCoHelper.h)
+        physicsSimulators/MuJoCoHelper.cpp physicsSimulators/MuJoCoHelper.h stdInclude/stdInclude.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS})
 
