@@ -4,21 +4,21 @@
 
 #include "modelTranslator.h"
 
-modelTranslator::modelTranslator(physicsSimulator _physicsSimulator, stateVectorList _stateVector): myPhysicsSimulator(_physicsSimulator){
+modelTranslator::modelTranslator(physicsSimulator *_physicsSimulator, stateVectorList _stateVector): myPhysicsSimulator(_physicsSimulator){
     mystateVector = _stateVector;
 
     stateVectorSize = 0;
     for(int i = 0; i < mystateVector.robots.size(); i++){
-        stateVectorSize += mystateVector.robots[i].jointNames.size();
+        stateVectorSize += (2 * mystateVector.robots[i].jointNames.size());
     }
 
     for(int i = 0; i < mystateVector.bodiesStates.size(); i++){
         for(int j = 0; j < 3; j++){
             if(mystateVector.bodiesStates[i].activeLinearDOF[j]){
-                stateVectorSize++;
+                stateVectorSize += 2;
             }
             if(mystateVector.bodiesStates[i].activeAngularDOF[j]){
-                stateVectorSize++;
+                stateVectorSize += 2;
             }
         }
     }
@@ -36,8 +36,8 @@ MatrixXd modelTranslator::returnStateVector(){
     for(int i = 0; i < mystateVector.robots.size(); i++){
         vector<double> jointPositions;
         vector<double> jointVelocities;
-        myPhysicsSimulator.getRobotJointsPositions(mystateVector.robots[i].name, jointPositions);
-        myPhysicsSimulator.getRobotJointsVelocities(mystateVector.robots[i].name, jointVelocities);
+        myPhysicsSimulator->getRobotJointsPositions(mystateVector.robots[i].name, jointPositions);
+        myPhysicsSimulator->getRobotJointsVelocities(mystateVector.robots[i].name, jointVelocities);
         for(int j = 0; j < mystateVector.robots[i].jointNames.size(); j++){
             stateVector(i, 0) = jointPositions[j];
             stateVector(i + mystateVector.robots[i].jointNames.size(), 0) = jointVelocities[j];
@@ -52,8 +52,8 @@ MatrixXd modelTranslator::returnStateVector(){
         // Get the body's position and orientation
         pose_6 bodyPose;
         pose_6 bodyVelocity;
-        myPhysicsSimulator.getBodyPose_angle(mystateVector.bodiesStates[i].name, bodyPose);
-        myPhysicsSimulator.getBodyVelocity(mystateVector.bodiesStates[i].name, bodyVelocity);
+        myPhysicsSimulator->getBodyPose_angle(mystateVector.bodiesStates[i].name, bodyPose);
+        myPhysicsSimulator->getBodyVelocity(mystateVector.bodiesStates[i].name, bodyVelocity);
 
         for(int i = 0; i < 3; i++) {
             if (mystateVector.bodiesStates[i].activeLinearDOF[i]) {
@@ -80,6 +80,8 @@ MatrixXd modelTranslator::returnStateVector(){
             }
         }
     }
+
+    std::cout << "stateVector: " << stateVector << std::endl;
 
     return stateVector;
 }

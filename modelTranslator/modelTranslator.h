@@ -22,7 +22,7 @@ struct stateVectorList{
 
 class modelTranslator {
 public:
-    modelTranslator(physicsSimulator &_physicsSimulator, stateVectorList _stateVector);
+    modelTranslator(physicsSimulator *_physicsSimulator, stateVectorList _stateVector);
 
     MatrixXd returnStateVector();
 
@@ -30,7 +30,7 @@ public:
     struct stateVectorList mystateVector;
 
 private:
-    physicsSimulator &myPhysicsSimulator;
+    physicsSimulator *myPhysicsSimulator;
 
 };
 
