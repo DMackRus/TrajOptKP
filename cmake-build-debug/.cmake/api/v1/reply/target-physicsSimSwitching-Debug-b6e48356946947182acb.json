@@ -81,7 +81,8 @@
 				0,
 				1,
 				4,
-				6
+				6,
+				7
 			]
 		}
 	],
@@ -141,7 +142,8 @@
 				0,
 				1,
 				4,
-				6
+				6,
+				7
 			]
 		},
 		{
@@ -150,7 +152,8 @@
 			[
 				2,
 				3,
-				5
+				5,
+				8
 			]
 		}
 	],
@@ -194,6 +197,17 @@
 			"compileGroupIndex" : 0,
 			"path" : "stdInclude/stdInclude.cpp",
 			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "modelTranslator/modelTranslator.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "modelTranslator/modelTranslator.h",
+			"sourceGroupIndex" : 1
 		}
 	],
 	"type" : "EXECUTABLE"

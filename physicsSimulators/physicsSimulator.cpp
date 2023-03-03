@@ -52,6 +52,43 @@ bool physicsSimulator::getRobotJointsControls(string robotName, vector<double> &
     return false;
 }
 
+bool physicsSimulator::isValidBodyName(string bodyName, int &bodyIndex) {
+    std::cout << "called is valid body name in base class" << std::endl;
+    return false;
+}
+
+bool physicsSimulator::setBodyPose_quat(string bodyName, pose_7 pose) {
+    std::cout << "called set body pose in base class" << std::endl;
+    return false;
+}
+
+bool physicsSimulator::setBodyPose_angle(string bodyName, pose_6 pose) {
+    std::cout << "called set body pose in base class" << std::endl;
+    return false;
+}
+
+bool physicsSimulator::setBodyVelocity(string bodyName, pose_6 velocity) {
+    std::cout << "called set body velocity in base class" << std::endl;
+    return false;
+}
+
+bool physicsSimulator::getBodyPose_quat(string bodyName, pose_7 &pose) {
+    std::cout << "called get body pose in base class" << std::endl;
+    return false;
+}
+
+bool physicsSimulator::getBodyPose_angle(string bodyName, pose_6 &pose) {
+    std::cout << "called get body pose in base class" << std::endl;
+    return false;
+}
+
+bool physicsSimulator::getBodyVelocity(string bodyName, pose_6 &velocity) {
+    std::cout << "called get body velocity in base class" << std::endl;
+    return false;
+}
+
+
+
 
 void physicsSimulator::initSimulator() {
     std::cout << "Hello, World!" << std::endl;

@@ -15,21 +15,26 @@ public:
     MuJoCoHelper(vector<robot> robots, vector<string> _bodies);
 
     // Utility functions -- robots
-    bool isValidRobotName(string robotName, int &robotIndex, string &robotBaseJointName);
-    bool setRobotJointsPositions(string robotName, vector<double> jointPositions);
-    bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities);
-    bool setRobotJointsControls(string robotName, vector<double> jointControls);
+    bool isValidRobotName(string robotName, int &robotIndex, string &robotBaseJointName) override;
+    bool setRobotJointsPositions(string robotName, vector<double> jointPositions) override;
+    bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities) override;
+    bool setRobotJointsControls(string robotName, vector<double> jointControls) override;
 
-    bool getRobotJointsPositions(string robotName, vector<double> &jointPositions);
-    bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities);
-    bool getRobotJointsControls(string robotName, vector<double> &joinsControls);
+    bool getRobotJointsPositions(string robotName, vector<double> &jointPositions) override;
+    bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities) override;
+    bool getRobotJointsControls(string robotName, vector<double> &joinsControls) override;
 
     // Utility functions -- bodies
-    bool isValidBodyName(string bodyName, int &bodyIndex);
-    bool setBodyPose(string bodyName, pose pose);
-    bool setBodyPosition(string bodyName, m_point position);
+    bool isValidBodyName(string bodyName, int &bodyIndex) override;
+    bool setBodyPose_quat(string bodyName, pose_7 pose) override;
+    bool setBodyPose_angle(string bodyName, pose_6 pose) override;
+    bool setBodyVelocity(string bodyName, pose_6 velocity) override;
 
-    bool getBodyPose(string bodyName, pose &pose);
+    bool getBodyPose_quat(string bodyName, pose_7 &pose) override;
+    bool getBodyPose_angle(string bodyName, pose_6 &pose) override;
+    bool getBodyVelocity(string bodyName, pose_6 &velocity) override;
+
+    bool setBodyPosition(string bodyName, m_point position);
 
 
     // ------------------------------- Variables -----------------------------------------
@@ -72,8 +77,6 @@ public:
 private:
     mjData *mdata;                   // MuJoCo data
     mjModel *model;                  // MuJoCo model
-    vector<robot> robots;
-    vector<string> bodies;
 };
 
 #endif //PHYSICSSIMSWITCHING_MUJOCOHELPER_H

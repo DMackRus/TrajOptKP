@@ -13,9 +13,14 @@ struct robot{
     int numActuators;
 };
 
-struct pose{
+struct pose_7{
     m_point position;
     m_quat quat;
+};
+
+struct pose_6{
+    m_point position;
+    m_point orientation;
 };
 
 
@@ -25,21 +30,31 @@ public:
     // Constructor
     physicsSimulator(vector<robot> _robots, vector<string> _bodies);
 
-    // Utility functions
-    bool isValidRobotName(string robotName, int &robotIndex, string &robotBaseJointName);
-    bool setRobotJointsPositions(string robotName, vector<double> jointPositions);
-    bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities);
-    bool setRobotJointsControls(string robotName, vector<double> jointControls);
+    // ----- Robot functions -----
+    virtual bool isValidRobotName(string robotName, int &robotIndex, string &robotBaseJointName);
+    virtual bool setRobotJointsPositions(string robotName, vector<double> jointPositions);
+    virtual bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities);
+    virtual bool setRobotJointsControls(string robotName, vector<double> jointControls);
 
-    bool getRobotJointsPositions(string robotName, vector<double> &jointPositions);
-    bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities);
-    bool getRobotJointsControls(string robotName, vector<double> &joinsControls);
+    virtual bool getRobotJointsPositions(string robotName, vector<double> &jointPositions);
+    virtual bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities);
+    virtual bool getRobotJointsControls(string robotName, vector<double> &joinsControls);
+
+    // ----- Body functions -----
+    virtual bool isValidBodyName(string bodyName, int &bodyIndex);
+    virtual bool setBodyPose_quat(string bodyName, pose_7 pose);
+    virtual bool setBodyPose_angle(string bodyName, pose_6 pose);
+    virtual bool setBodyVelocity(string bodyName, pose_6 velocity);
+
+    virtual bool getBodyPose_quat(string bodyName, pose_7 &pose);
+    virtual bool getBodyPose_angle(string bodyName, pose_6 &pose);
+    virtual bool getBodyVelocity(string bodyName, pose_6 &velocity);
 
     virtual void initSimulator();
-
-private:
+protected:
     vector<robot> robots;
     vector<string> bodies;
+
 };
 
 #endif //PHYSICSSIMSWITCHING_PHYSICSSIMULATOR_H

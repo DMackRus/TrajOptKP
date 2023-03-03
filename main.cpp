@@ -1,5 +1,6 @@
 #include "stdInclude/stdInclude.h"
 #include "physicsSimulators/MuJoCoHelper.h"
+#include "modelTranslator/modelTranslator.h"
 
 int main() {
 
@@ -16,13 +17,29 @@ int main() {
     MuJoCoHelper myHelper(robots, bodies);
     myHelper.setupMuJoCoWorld(0.004, "Franka-emika-panda-arm/V1/cheezit_pushing.xml");
 
+    stateVectorList myStateVector;
+    myStateVector.robots = robots;
+    bodyStateVec goalState;
+    goalState.name = "goal";
+    for(int i = 0; i < 3; i++){
+        goalState.activeLinearDOF[i] = true;
+        goalState.activeAngularDOF[i] = true;
+    }
+    myStateVector.bodiesStates.push_back(goalState);
+
+
+
     bool success = myHelper.setRobotJointsPositions("panda", {1,0.5,0,-1,0,0.6,1});
 
-    pose cheezitPose;
-    cheezitPose.position = {0.5,0.5,0};
+    pose_7 cheezitPose;
+    cheezitPose.position = {0.5,0.5,0.4};
     cheezitPose.quat = {0,0,0,1};
 
-    myHelper.setBodyPose("goal", cheezitPose);
+    myHelper.setBodyPose_quat("goal", cheezitPose);
+
+    modelTranslator myModelTranslator(myHelper, myStateVector);
+    MatrixXd stateVector = myModelTranslator.returnStateVector();
+    std::cout << stateVector << std::endl;
 
     myHelper.render();
 

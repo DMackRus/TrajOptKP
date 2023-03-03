@@ -11,6 +11,8 @@
 #include <vector>
 #include <Eigen/Dense>
 
+#define POSE_DOFS 6
+
 using namespace std;
 using namespace Eigen;
 

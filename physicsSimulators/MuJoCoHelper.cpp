@@ -7,15 +7,9 @@
 // Empty constructor
 MuJoCoHelper::MuJoCoHelper(vector<robot> _robots, vector<string> _bodies): physicsSimulator(_robots, _bodies) {
     std::cout << "created mujoco helper" << std::endl;
-    for(int i = 0; i < _robots.size(); i++){
-        robots.push_back(_robots[i]);
-    }
-    for(int i = 0; i < _bodies.size(); i++){
-        bodies.push_back(_bodies[i]);
-    }
 }
 
-// ------------------------------------    ROBOT UTILITY --------------------------------------------
+// ------------------------------------    ROBOT UTILITY   --------------------------------------------
 // Checks whether a robot of this name exists in the simulation
 bool MuJoCoHelper::isValidRobotName(string robotName, int &robotIndex, string &robotBaseJointName){
     bool validRobot = false;
@@ -251,7 +245,7 @@ bool MuJoCoHelper::isValidBodyName(string bodyName, int &bodyIndex){
     return false;
 }
 
-bool MuJoCoHelper::setBodyPose(string bodyName, pose pose){
+bool MuJoCoHelper::setBodyPose_quat(string bodyName, pose_7 pose){
 
     int bodyIndex;
     if(!isValidBodyName(bodyName, bodyIndex)){
@@ -274,7 +268,57 @@ bool MuJoCoHelper::setBodyPose(string bodyName, pose pose){
     return true;
 
 }
-bool MuJoCoHelper::getBodyPose(string bodyName, pose &pose){
+
+bool MuJoCoHelper::setBodyPose_angle(string bodyName, pose_6 pose){
+
+    int bodyIndex;
+    if(!isValidBodyName(bodyName, bodyIndex)){
+        cout << "That body doesnt exist in the simulation\n";
+        return false;
+    }
+
+    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model->body_jntadr[bodyId];
+    const int qposIndex = model->jnt_qposadr[jointIndex];
+
+    m_quat q = eul2Quat(pose.orientation);
+
+    for(int i = 0; i < 3; i++){
+        mdata->qpos[qposIndex + i] = pose.position(i);
+    }
+
+    for(int i = 0; i < 4; i++){
+        mdata->qpos[qposIndex + 3 + i] = q(i);
+    }
+
+    return true;
+}
+
+bool MuJoCoHelper::setBodyVelocity(string bodyName, pose_6 velocity){
+
+        int bodyIndex;
+        if(!isValidBodyName(bodyName, bodyIndex)){
+            cout << "That body doesnt exist in the simulation\n";
+            return false;
+        }
+
+        int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+        const int jointIndex = model->body_jntadr[bodyId];
+        const int qvelIndex = model->jnt_dofadr[jointIndex];
+
+        for(int i = 0; i < 3; i++){
+            mdata->qvel[qvelIndex + i] = velocity.position(i);
+        }
+
+        for(int i = 0; i < 3; i++){
+            mdata->qvel[qvelIndex + 3 + i] = velocity.orientation(i);
+        }
+
+        return true;
+
+}
+
+bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose){
     int bodyIndex;
     if(!isValidBodyName(bodyName, bodyIndex)){
         cout << "That body doesnt exist in the simulation\n";
@@ -293,6 +337,59 @@ bool MuJoCoHelper::getBodyPose(string bodyName, pose &pose){
         pose.quat(i) = mdata->qpos[qposIndex + 3 + i];
     }
 
+    return true;
+}
+
+bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose){
+    int bodyIndex;
+    if(!isValidBodyName(bodyName, bodyIndex)){
+        cout << "That body doesnt exist in the simulation\n";
+        return false;
+    }
+
+    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model->body_jntadr[bodyId];
+    const int qposIndex = model->jnt_qposadr[jointIndex];
+
+    for(int i = 0; i < 3; i++){
+        pose.position(i) = mdata->qpos[qposIndex + i];
+    }
+
+    m_quat tempQuat;
+
+    for(int i = 0; i < 4; i++){
+        tempQuat(i) = mdata->qpos[qposIndex + 3 + i];
+    }
+
+    m_point euler = quat2Eul(tempQuat);
+
+    for(int i = 0; i < 3; i++){
+        pose.orientation(i) = euler(i);
+    }
+
+    return true;
+}
+
+bool MuJoCoHelper::getBodyVelocity(string bodyName, pose_6 &velocity){
+    int bodyIndex;
+    if(!isValidBodyName(bodyName, bodyIndex)){
+        cout << "That body doesnt exist in the simulation\n";
+        return false;
+    }
+
+    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model->body_jntadr[bodyId];
+    const int qvelIndex = model->jnt_dofadr[jointIndex];
+
+    for(int i = 0; i < 3; i++){
+        velocity.position(i) = mdata->qvel[qvelIndex + i];
+    }
+
+    for(int i = 0; i < 3; i++){
+        velocity.orientation(i) = mdata->qvel[qvelIndex + 3 + i];
+    }
+
+    return true;
 }
 
 
@@ -305,8 +402,8 @@ void MuJoCoHelper::keyboardCallbackWrapper(GLFWwindow* window, int key, int scan
 
 void MuJoCoHelper::keyboard(GLFWwindow* window, int key, int scancode, int act, int mods){
     // backspace: reset simulation
-    pose cheezitPose;
-    getBodyPose("goal", cheezitPose);
+    pose_7 cheezitPose;
+    getBodyPose_quat("goal", cheezitPose);
     m_point euler = quat2Eul(cheezitPose.quat);
 
     if (act == GLFW_PRESS && key == GLFW_KEY_BACKSPACE)
@@ -351,7 +448,7 @@ void MuJoCoHelper::keyboard(GLFWwindow* window, int key, int scancode, int act, 
 
     cheezitPose.quat = eul2Quat(euler);
 
-    setBodyPose("goal", cheezitPose);
+    setBodyPose_quat("goal", cheezitPose);
 }
 // -----------------------------------------------------------------------------------------------------
 
@@ -480,7 +577,7 @@ void MuJoCoHelper::setupMuJoCoWorld(double timestep, const char* fileName){
     cam.lookat[1] = -0.0629;
     cam.lookat[2] = 0.1622;
 
-    //model->opt.gravity[2] = 0;
+    model->opt.gravity[2] = 0;
     //model->opt.integrator = mjINT_EULER;
 
     // create scene and context
