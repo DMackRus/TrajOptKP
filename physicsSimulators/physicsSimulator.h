@@ -6,6 +6,7 @@
 #define PHYSICSSIMSWITCHING_PHYSICSSIMULATOR_H
 
 #include "../stdInclude/stdInclude.h"
+#include "glfw3.h"
 
 struct robot{
     string name;
@@ -50,7 +51,17 @@ public:
     virtual bool getBodyPose_angle(string bodyName, pose_6 &pose);
     virtual bool getBodyVelocity(string bodyName, pose_6 &velocity);
 
+    virtual bool stepSimulator(int steps);
+
     virtual void initSimulator();
+
+    // ------------------------------- Visualisation -----------------------------------------
+    virtual void initVisualisation();
+    virtual void updateScene(GLFWwindow *window);
+    virtual void mouseMove(double dx, double dy, bool button_left, bool button_right,  GLFWwindow *window);
+    virtual void scroll(double yoffset);
+
+
 protected:
     vector<robot> robots;
     vector<string> bodies;

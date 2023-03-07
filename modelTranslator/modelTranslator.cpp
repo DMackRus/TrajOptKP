@@ -38,14 +38,17 @@ MatrixXd modelTranslator::returnStateVector(){
         vector<double> jointVelocities;
         myPhysicsSimulator->getRobotJointsPositions(mystateVector.robots[i].name, jointPositions);
         myPhysicsSimulator->getRobotJointsVelocities(mystateVector.robots[i].name, jointVelocities);
+
         for(int j = 0; j < mystateVector.robots[i].jointNames.size(); j++){
-            stateVector(i, 0) = jointPositions[j];
-            stateVector(i + mystateVector.robots[i].jointNames.size(), 0) = jointVelocities[j];
+            stateVector(j, 0) = jointPositions[j];
+            stateVector(j + (stateVectorSize/2), 0) = jointVelocities[j];
         }
 
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
-        currentStateIndex += (2 * mystateVector.robots[i].jointNames.size());
+        currentStateIndex += mystateVector.robots[i].jointNames.size();
     }
+
+    cout << "currentStateIndex: " << currentStateIndex << endl;
 
     // Loop through all bodies in the state vector
     for(int i = 0; i < mystateVector.bodiesStates.size(); i++){
@@ -54,34 +57,30 @@ MatrixXd modelTranslator::returnStateVector(){
         pose_6 bodyVelocity;
         myPhysicsSimulator->getBodyPose_angle(mystateVector.bodiesStates[i].name, bodyPose);
         myPhysicsSimulator->getBodyVelocity(mystateVector.bodiesStates[i].name, bodyVelocity);
+//        cout << "bodyPose: " << bodyPose.position[0] << ", " << bodyPose.position[1] << ", " << bodyPose.position[2] << endl;
+//        cout << "bodyVelocity: " << bodyVelocity.position[0] << ", " << bodyVelocity.position[1] << ", " << bodyVelocity.position[2] << endl;
+//        cout << "bodyPose: " << bodyPose.orientation[0] << ", " << bodyPose.orientation[1] << ", " << bodyPose.orientation[2] << endl;
+//        cout << "bodyVelocity: " << bodyVelocity.orientation[0] << ", " << bodyVelocity.orientation[1] << ", " << bodyVelocity.orientation[2] << endl;
 
-        for(int i = 0; i < 3; i++) {
-            if (mystateVector.bodiesStates[i].activeLinearDOF[i]) {
-                stateVector(currentStateIndex, 0) = bodyPose.position[i];
+        for(int j = 0; j < 3; j++) {
+            // Linear positions
+            if (mystateVector.bodiesStates[i].activeLinearDOF[j]) {
+                stateVector(currentStateIndex, 0) = bodyPose.position[j];
+                stateVector(currentStateIndex + (stateVectorSize/2), 0) = bodyVelocity.position[j];
+                cout << "bodyPose.position[j]: " << bodyPose.position[j] << endl;
+                cout << "bodyVelocity.position[j]: " << bodyVelocity.position[j] << endl;
                 currentStateIndex++;
             }
         }
-        for(int i = 0; i < 3; i++) {
-            if(mystateVector.bodiesStates[i].activeAngularDOF[i]){
-                stateVector(currentStateIndex, 0) = bodyPose.orientation[i];
-                currentStateIndex++;
-            }
-        }
-        for(int i = 0; i < 3; i++) {
-            if (mystateVector.bodiesStates[i].activeLinearDOF[i]) {
-                stateVector(currentStateIndex, 0) = bodyVelocity.position[i];
-                currentStateIndex++;
-            }
-        }
-        for(int i = 0; i < 3; i++) {
-            if(mystateVector.bodiesStates[i].activeAngularDOF[i]){
-                stateVector(currentStateIndex, 0) = bodyVelocity.orientation[i];
+        for(int j = 0; j < 3; j++) {
+            // angular positions
+            if(mystateVector.bodiesStates[i].activeAngularDOF[j]){
+                stateVector(currentStateIndex, 0) = bodyPose.orientation[j];
+                stateVector(currentStateIndex + (stateVectorSize/2), 0) = bodyVelocity.orientation[j];
                 currentStateIndex++;
             }
         }
     }
-
-    std::cout << "stateVector: " << stateVector << std::endl;
 
     return stateVector;
 }

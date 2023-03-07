@@ -4,6 +4,7 @@
 
 #include "physicsSimulator.h"
 
+
 physicsSimulator::physicsSimulator(vector<robot> _robots, vector<string> _bodies){
     // populate robots
     for(int i = 0; i < _robots.size(); i++){
@@ -87,9 +88,27 @@ bool physicsSimulator::getBodyVelocity(string bodyName, pose_6 &velocity) {
     return false;
 }
 
-
-
+bool physicsSimulator::stepSimulator(int steps){
+    std::cout << "called step simulator in base class" << std::endl;
+    return false;
+}
 
 void physicsSimulator::initSimulator() {
     std::cout << "Hello, World!" << std::endl;
+}
+
+void physicsSimulator::initVisualisation(){
+    std::cout << "called init visualisation in base class" << std::endl;
+}
+
+void physicsSimulator::updateScene(GLFWwindow *window){
+    std::cout << "called update scene in base class" << std::endl;
+}
+
+void physicsSimulator::mouseMove(double dx, double dy, bool button_left, bool button_right,  GLFWwindow *window){
+    std::cout << "called mouse move in base class" << std::endl;
+}
+
+void physicsSimulator::scroll(double yoffset){
+    std::cout << "called scroll in base class" << std::endl;
 }

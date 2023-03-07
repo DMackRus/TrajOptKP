@@ -24,6 +24,16 @@ else()
 endif (TARGET Eigen3::Eigen)
 
 
+if (DEFINED Bullet_DIR)
+    message("Finding local Bullet")
+    Find_Package(Bullet CONFIG)
+    SET(BULLET_INCLUDE_DIR ${Bullet_DIR}/${BULLET_ROOT_DIR}/${BULLET_INCLUDE_DIR})
+    SET(BLA ${Bullet_DIR}/${BULLET_ROOT_DIR}/${BULLET_LIBRARY_DIRS})
+else()
+    message("Finding system installed Bullet")
+    Find_Package(Bullet)
+endif()
+
 set(Mujoco_INCLUDE_DIRS /home/dave/Libraries/mujoco/include)
 find_library(GLFW libglfw.so.3 HINTS /home/dave/Libraries/mujoco/include)
 message(STATUS "GLFW lib found at: " ${GLFW})
@@ -36,8 +46,12 @@ message(STATUS "Mujoco include directory: " ${Mujoco_INCLUDE_DIRS})
 add_executable(${PROJECT_NAME} main.cpp
                 physicsSimulators/physicsSimulator.cpp physicsSimulators/physicsSimulator.h
                 stdInclude/stdInclude.h
-        physicsSimulators/MuJoCoHelper.cpp physicsSimulators/MuJoCoHelper.h stdInclude/stdInclude.cpp modelTranslator/modelTranslator.cpp modelTranslator/modelTranslator.h)
+        physicsSimulators/MuJoCoHelper.cpp physicsSimulators/MuJoCoHelper.h stdInclude/stdInclude.cpp modelTranslator/modelTranslator.cpp modelTranslator/modelTranslator.h visualizer/visualizer.cpp visualizer/visualizer.h)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR})
 
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} ${GLFW} libGL.so GL)
+target_compile_definitions(${PROJECT_NAME} PUBLIC ${BULLET_DEFINITIONS})
+
+target_link_directories(${PROJECT_NAME} PUBLIC ${Bullet_DIR}/${BULLET_ROOT_DIR}/${BULLET_LIBRARY_DIRS})
+
+target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} ${GLFW} libGL.so GL BulletDynamics BulletCollision LinearMath)

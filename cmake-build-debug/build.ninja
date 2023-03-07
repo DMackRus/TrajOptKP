@@ -52,37 +52,44 @@ build cmake_object_order_depends_target_physicsSimSwitching: phony || CMakeFiles
 build CMakeFiles/physicsSimSwitching.dir/main.cpp.o: CXX_COMPILER__physicsSimSwitching_Debug /home/dave/projects/physicsSimSwithching/main.cpp || cmake_object_order_depends_target_physicsSimSwitching
   DEP_FILE = CMakeFiles/physicsSimSwitching.dir/main.cpp.o.d
   FLAGS = -fopenmp -g -O0 -fdiagnostics-color=always -std=gnu++20
-  INCLUDES = -I/home/dave/Libraries/mujoco/include -isystem /usr/include/eigen3
+  INCLUDES = -I/home/dave/Libraries/mujoco/include -I/usr/include/bullet -isystem /usr/include/eigen3
   OBJECT_DIR = CMakeFiles/physicsSimSwitching.dir
   OBJECT_FILE_DIR = CMakeFiles/physicsSimSwitching.dir
 
 build CMakeFiles/physicsSimSwitching.dir/physicsSimulators/physicsSimulator.cpp.o: CXX_COMPILER__physicsSimSwitching_Debug /home/dave/projects/physicsSimSwithching/physicsSimulators/physicsSimulator.cpp || cmake_object_order_depends_target_physicsSimSwitching
   DEP_FILE = CMakeFiles/physicsSimSwitching.dir/physicsSimulators/physicsSimulator.cpp.o.d
   FLAGS = -fopenmp -g -O0 -fdiagnostics-color=always -std=gnu++20
-  INCLUDES = -I/home/dave/Libraries/mujoco/include -isystem /usr/include/eigen3
+  INCLUDES = -I/home/dave/Libraries/mujoco/include -I/usr/include/bullet -isystem /usr/include/eigen3
   OBJECT_DIR = CMakeFiles/physicsSimSwitching.dir
   OBJECT_FILE_DIR = CMakeFiles/physicsSimSwitching.dir/physicsSimulators
 
 build CMakeFiles/physicsSimSwitching.dir/physicsSimulators/MuJoCoHelper.cpp.o: CXX_COMPILER__physicsSimSwitching_Debug /home/dave/projects/physicsSimSwithching/physicsSimulators/MuJoCoHelper.cpp || cmake_object_order_depends_target_physicsSimSwitching
   DEP_FILE = CMakeFiles/physicsSimSwitching.dir/physicsSimulators/MuJoCoHelper.cpp.o.d
   FLAGS = -fopenmp -g -O0 -fdiagnostics-color=always -std=gnu++20
-  INCLUDES = -I/home/dave/Libraries/mujoco/include -isystem /usr/include/eigen3
+  INCLUDES = -I/home/dave/Libraries/mujoco/include -I/usr/include/bullet -isystem /usr/include/eigen3
   OBJECT_DIR = CMakeFiles/physicsSimSwitching.dir
   OBJECT_FILE_DIR = CMakeFiles/physicsSimSwitching.dir/physicsSimulators
 
 build CMakeFiles/physicsSimSwitching.dir/stdInclude/stdInclude.cpp.o: CXX_COMPILER__physicsSimSwitching_Debug /home/dave/projects/physicsSimSwithching/stdInclude/stdInclude.cpp || cmake_object_order_depends_target_physicsSimSwitching
   DEP_FILE = CMakeFiles/physicsSimSwitching.dir/stdInclude/stdInclude.cpp.o.d
   FLAGS = -fopenmp -g -O0 -fdiagnostics-color=always -std=gnu++20
-  INCLUDES = -I/home/dave/Libraries/mujoco/include -isystem /usr/include/eigen3
+  INCLUDES = -I/home/dave/Libraries/mujoco/include -I/usr/include/bullet -isystem /usr/include/eigen3
   OBJECT_DIR = CMakeFiles/physicsSimSwitching.dir
   OBJECT_FILE_DIR = CMakeFiles/physicsSimSwitching.dir/stdInclude
 
 build CMakeFiles/physicsSimSwitching.dir/modelTranslator/modelTranslator.cpp.o: CXX_COMPILER__physicsSimSwitching_Debug /home/dave/projects/physicsSimSwithching/modelTranslator/modelTranslator.cpp || cmake_object_order_depends_target_physicsSimSwitching
   DEP_FILE = CMakeFiles/physicsSimSwitching.dir/modelTranslator/modelTranslator.cpp.o.d
   FLAGS = -fopenmp -g -O0 -fdiagnostics-color=always -std=gnu++20
-  INCLUDES = -I/home/dave/Libraries/mujoco/include -isystem /usr/include/eigen3
+  INCLUDES = -I/home/dave/Libraries/mujoco/include -I/usr/include/bullet -isystem /usr/include/eigen3
   OBJECT_DIR = CMakeFiles/physicsSimSwitching.dir
   OBJECT_FILE_DIR = CMakeFiles/physicsSimSwitching.dir/modelTranslator
+
+build CMakeFiles/physicsSimSwitching.dir/visualizer/visualizer.cpp.o: CXX_COMPILER__physicsSimSwitching_Debug /home/dave/projects/physicsSimSwithching/visualizer/visualizer.cpp || cmake_object_order_depends_target_physicsSimSwitching
+  DEP_FILE = CMakeFiles/physicsSimSwitching.dir/visualizer/visualizer.cpp.o.d
+  FLAGS = -fopenmp -g -O0 -fdiagnostics-color=always -std=gnu++20
+  INCLUDES = -I/home/dave/Libraries/mujoco/include -I/usr/include/bullet -isystem /usr/include/eigen3
+  OBJECT_DIR = CMakeFiles/physicsSimSwitching.dir
+  OBJECT_FILE_DIR = CMakeFiles/physicsSimSwitching.dir/visualizer
 
 
 # =============================================================================
@@ -92,9 +99,10 @@ build CMakeFiles/physicsSimSwitching.dir/modelTranslator/modelTranslator.cpp.o: 
 #############################################
 # Link the executable /home/dave/projects/physicsSimSwithching/physicsSimSwitching
 
-build /home/dave/projects/physicsSimSwithching/physicsSimSwitching: CXX_EXECUTABLE_LINKER__physicsSimSwitching_Debug CMakeFiles/physicsSimSwitching.dir/main.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/physicsSimulator.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/MuJoCoHelper.cpp.o CMakeFiles/physicsSimSwitching.dir/stdInclude/stdInclude.cpp.o CMakeFiles/physicsSimSwitching.dir/modelTranslator/modelTranslator.cpp.o | /home/dave/Libraries/mujoco/include/libmujoco.so /home/dave/Libraries/mujoco/include/libglfw.so.3
+build /home/dave/projects/physicsSimSwithching/physicsSimSwitching: CXX_EXECUTABLE_LINKER__physicsSimSwitching_Debug CMakeFiles/physicsSimSwitching.dir/main.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/physicsSimulator.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/MuJoCoHelper.cpp.o CMakeFiles/physicsSimSwitching.dir/stdInclude/stdInclude.cpp.o CMakeFiles/physicsSimSwitching.dir/modelTranslator/modelTranslator.cpp.o CMakeFiles/physicsSimSwitching.dir/visualizer/visualizer.cpp.o | /home/dave/Libraries/mujoco/include/libmujoco.so /home/dave/Libraries/mujoco/include/libglfw.so.3
   FLAGS = -fopenmp -g -O0
-  LINK_LIBRARIES = -Wl,-rpath,/home/dave/Libraries/mujoco/include  /home/dave/Libraries/mujoco/include/libmujoco.so  /home/dave/Libraries/mujoco/include/libglfw.so.3  -lGL  -lGL
+  LINK_LIBRARIES = -Wl,-rpath,/:/home/dave/Libraries/mujoco/include  /home/dave/Libraries/mujoco/include/libmujoco.so  /home/dave/Libraries/mujoco/include/libglfw.so.3  -lGL  -lGL  -lBulletDynamics  -lBulletCollision  -lLinearMath
+  LINK_PATH = -L/
   OBJECT_DIR = CMakeFiles/physicsSimSwitching.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -146,14 +154,14 @@ build all: phony /home/dave/projects/physicsSimSwithching/physicsSimSwitching
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /home/dave/projects/physicsSimSwithching/CMakeLists.txt /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCXXInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeGenericSystem.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeInitializeConfigs.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeParseImplicitLinkInfo.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/CMakeCommonCompilerMacros.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-C.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-CXX.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindOpenMP.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindPackageHandleStandardArgs.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindPackageMessage.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU-C.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU-CXX.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/UnixPaths.cmake /usr/share/eigen3/cmake/Eigen3Config.cmake /usr/share/eigen3/cmake/Eigen3ConfigVersion.cmake /usr/share/eigen3/cmake/Eigen3Targets.cmake CMakeCache.txt CMakeFiles/3.24.2/CMakeCCompiler.cmake CMakeFiles/3.24.2/CMakeCXXCompiler.cmake CMakeFiles/3.24.2/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /home/dave/projects/physicsSimSwithching/CMakeLists.txt /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCXXInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeGenericSystem.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeInitializeConfigs.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeParseImplicitLinkInfo.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/CMakeCommonCompilerMacros.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-C.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-CXX.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindBullet.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindOpenMP.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindPackageHandleStandardArgs.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindPackageMessage.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU-C.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU-CXX.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/UnixPaths.cmake /usr/share/eigen3/cmake/Eigen3Config.cmake /usr/share/eigen3/cmake/Eigen3ConfigVersion.cmake /usr/share/eigen3/cmake/Eigen3Targets.cmake CMakeCache.txt CMakeFiles/3.24.2/CMakeCCompiler.cmake CMakeFiles/3.24.2/CMakeCXXCompiler.cmake CMakeFiles/3.24.2/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /home/dave/projects/physicsSimSwithching/CMakeLists.txt /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCXXInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeGenericSystem.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeInitializeConfigs.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeParseImplicitLinkInfo.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/CMakeCommonCompilerMacros.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-C.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-CXX.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindOpenMP.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindPackageHandleStandardArgs.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindPackageMessage.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU-C.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU-CXX.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/UnixPaths.cmake /usr/share/eigen3/cmake/Eigen3Config.cmake /usr/share/eigen3/cmake/Eigen3ConfigVersion.cmake /usr/share/eigen3/cmake/Eigen3Targets.cmake CMakeCache.txt CMakeFiles/3.24.2/CMakeCCompiler.cmake CMakeFiles/3.24.2/CMakeCXXCompiler.cmake CMakeFiles/3.24.2/CMakeSystem.cmake: phony
+build /home/dave/projects/physicsSimSwithching/CMakeLists.txt /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCXXInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeCommonLanguageInclude.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeGenericSystem.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeInitializeConfigs.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeLanguageInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeParseImplicitLinkInfo.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInformation.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/CMakeSystemSpecificInitialize.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/CMakeCommonCompilerMacros.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-C.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU-CXX.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Compiler/GNU.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindBullet.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindOpenMP.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindPackageHandleStandardArgs.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/FindPackageMessage.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU-C.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU-CXX.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux-GNU.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/Linux.cmake /snap/clion/222/bin/cmake/linux/x64/share/cmake-3.24/Modules/Platform/UnixPaths.cmake /usr/share/eigen3/cmake/Eigen3Config.cmake /usr/share/eigen3/cmake/Eigen3ConfigVersion.cmake /usr/share/eigen3/cmake/Eigen3Targets.cmake CMakeCache.txt CMakeFiles/3.24.2/CMakeCCompiler.cmake CMakeFiles/3.24.2/CMakeCXXCompiler.cmake CMakeFiles/3.24.2/CMakeSystem.cmake: phony
 
 
 #############################################

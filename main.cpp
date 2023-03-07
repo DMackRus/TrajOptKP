@@ -1,10 +1,11 @@
 #include "stdInclude/stdInclude.h"
 #include "physicsSimulators/MuJoCoHelper.h"
 #include "modelTranslator/modelTranslator.h"
+#include "visualizer/visualizer.h"
 
 int main() {
 
-    // initialise robot
+    //initialise robot
     vector<robot> robots;
     robot panda;
     panda.name = "panda";
@@ -28,8 +29,6 @@ int main() {
     }
     myStateVector.bodiesStates.push_back(goalState);
 
-
-
     bool success = myHelper->setRobotJointsPositions("panda", {1,0.5,0,-1,0,0.6,1});
 
     pose_7 cheezitPose;
@@ -37,12 +36,14 @@ int main() {
     cheezitPose.quat = {0,0,0,1};
 
     myHelper->setBodyPose_quat("goal", cheezitPose);
+    myHelper->stepSimulator(1);
 
     modelTranslator myModelTranslator(myHelper, myStateVector);
     MatrixXd stateVector = myModelTranslator.returnStateVector();
-    std::cout << stateVector << std::endl;
 
-    myHelper->render();
+
+    visualizer myVisualizer(myHelper);
+    myVisualizer.render();
 
 
     return 0;
