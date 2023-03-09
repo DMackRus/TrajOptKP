@@ -34,6 +34,15 @@ public:
     bool getBodyPose_angle(string bodyName, pose_6 &pose) override;
     bool getBodyVelocity(string bodyName, pose_6 &velocity) override;
 
+    // ----- Loading and saving system states -----
+    bool appendCurrentSystemStateToEnd() override;
+    bool saveSystemStateToIndex(int listIndex) override;
+    bool loadSystemStateFromIndex(int listIndex) override;
+    bool deleteSystemStateFromIndex(int listIndex) override;
+    bool clearSystemStateList() override;
+
+    void cpMjData(const mjModel* m, mjData* d_dest, const mjData* d_src);
+
     // ------------------------------- Visualisation -----------------------------------------
     void initVisualisation() override;
     void updateScene(GLFWwindow *window) override;
@@ -52,6 +61,8 @@ public:
 private:
     mjData *mdata;                   // MuJoCo data
     mjModel *model;                  // MuJoCo model
+
+    vector<mjData*> savedSystemStatesList;
 };
 
 #endif //PHYSICSSIMSWITCHING_MUJOCOHELPER_H

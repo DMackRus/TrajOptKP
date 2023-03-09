@@ -15,7 +15,6 @@ int main() {
     vector<string> bodies;
     bodies.push_back("goal");
 
-
     MuJoCoHelper *myHelper = new MuJoCoHelper(robots, bodies);
     myHelper->setupMuJoCoWorld(0.004, "Franka-emika-panda-arm/V1/cheezit_pushing.xml");
 
@@ -40,7 +39,6 @@ int main() {
 
     modelTranslator myModelTranslator(myHelper, myStateVector);
     MatrixXd stateVector = myModelTranslator.returnStateVector();
-
 
     visualizer myVisualizer(myHelper);
     myVisualizer.render();

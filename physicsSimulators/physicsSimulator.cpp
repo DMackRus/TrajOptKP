@@ -112,3 +112,23 @@ void physicsSimulator::mouseMove(double dx, double dy, bool button_left, bool bu
 void physicsSimulator::scroll(double yoffset){
     std::cout << "called scroll in base class" << std::endl;
 }
+
+bool physicsSimulator::appendCurrentSystemStateToEnd(){
+    std::cout << "called append state in base class" << std::endl;
+}
+
+bool physicsSimulator::saveSystemStateToIndex(int listIndex){
+    std::cout << "called save state in base class" << std::endl;
+}
+
+bool physicsSimulator::loadSystemStateFromIndex(int listIndex){
+    std::cout << "called load state in base class" << std::endl;
+}
+
+bool physicsSimulator::deleteSystemStateFromIndex(int listIndex){
+    std::cout << "called delete state in base class" << std::endl;
+}
+
+bool physicsSimulator::clearSystemStateList(){
+    std::cout << "called clear state list in base class" << std::endl;
+}

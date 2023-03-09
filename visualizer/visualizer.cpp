@@ -31,6 +31,7 @@ void visualizer::keyboardCallbackWrapper(GLFWwindow* window, int key, int scanco
 
 void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, int mods){
     // backspace: reset simulation
+    bool changePose = true;
     pose_7 cheezitPose;
     activePhysicsSimulator->getBodyPose_quat("goal", cheezitPose);
     m_point euler = quat2Eul(cheezitPose.quat);
@@ -39,7 +40,14 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     {
 
     }
-
+    else if(act == GLFW_PRESS && key == GLFW_KEY_P){
+        changePose = false;
+        activePhysicsSimulator->appendCurrentSystemStateToEnd();
+    }
+    else if(act == GLFW_PRESS && key == GLFW_KEY_O){
+        changePose = false;
+        activePhysicsSimulator->loadSystemStateFromIndex(0);
+    }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
         euler(0) += 0.2;
     }
@@ -75,8 +83,11 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         cheezitPose.position(1) -= 0.2;
     }
 
-    cheezitPose.quat = eul2Quat(euler);
-    activePhysicsSimulator->setBodyPose_quat("goal", cheezitPose);
+    if(changePose){
+        cheezitPose.quat = eul2Quat(euler);
+        activePhysicsSimulator->setBodyPose_quat("goal", cheezitPose);
+    }
+
 }
 // -----------------------------------------------------------------------------------------------------
 

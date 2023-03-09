@@ -51,15 +51,23 @@ public:
     virtual bool getBodyPose_angle(string bodyName, pose_6 &pose);
     virtual bool getBodyVelocity(string bodyName, pose_6 &velocity);
 
-    virtual bool stepSimulator(int steps);
+    // ----- Loading and saving system states -----
+    virtual bool appendCurrentSystemStateToEnd();
+    virtual bool saveSystemStateToIndex(int listIndex);
+    virtual bool loadSystemStateFromIndex(int listIndex);
+    virtual bool deleteSystemStateFromIndex(int listIndex);
+    virtual bool clearSystemStateList();
 
-    virtual void initSimulator();
+
 
     // ------------------------------- Visualisation -----------------------------------------
     virtual void initVisualisation();
     virtual void updateScene(GLFWwindow *window);
     virtual void mouseMove(double dx, double dy, bool button_left, bool button_right,  GLFWwindow *window);
     virtual void scroll(double yoffset);
+
+    virtual void initSimulator();
+    virtual bool stepSimulator(int steps);
 
 
 protected:

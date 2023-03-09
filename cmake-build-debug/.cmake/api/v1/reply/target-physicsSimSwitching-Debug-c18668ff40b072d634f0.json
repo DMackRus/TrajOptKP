@@ -94,7 +94,8 @@
 				4,
 				6,
 				7,
-				9
+				9,
+				11
 			]
 		}
 	],
@@ -176,7 +177,8 @@
 				4,
 				6,
 				7,
-				9
+				9,
+				11
 			]
 		},
 		{
@@ -187,7 +189,8 @@
 				3,
 				5,
 				8,
-				10
+				10,
+				12
 			]
 		}
 	],
@@ -252,6 +255,17 @@
 		{
 			"backtrace" : 1,
 			"path" : "visualizer/visualizer.h",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "physicsSimulators/bulletHelper.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"path" : "physicsSimulators/bulletHelper.h",
 			"sourceGroupIndex" : 1
 		}
 	],
