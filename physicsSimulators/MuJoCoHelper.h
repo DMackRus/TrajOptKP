@@ -53,6 +53,8 @@ public:
     mjvOption opt;			        // visualization options
     mjrContext con;				    // custom GPU context
 
+
+    void initSimulator(double timestep, const char* fileName) override;
     bool stepSimulator(int steps) override;
     void setupMuJoCoWorld(double timestep, const char* fileName);
 

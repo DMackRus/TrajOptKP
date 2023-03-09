@@ -60,8 +60,6 @@ bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> join
         mdata->qpos[startIndex + i] = jointPositions[i];
     }
 
-    mj_forward(model, mdata);
-
     return true;
 }
 
@@ -507,7 +505,7 @@ void MuJoCoHelper::scroll(double yoffset){
 
 // --------------------------------- END OF VISUALIZATION FUNCTIONS ---------------------------------------
 
-void MuJoCoHelper::setupMuJoCoWorld(double timestep, const char* fileName){
+void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
 
     model = mj_loadXML(fileName, NULL, error, 1000);
@@ -523,5 +521,4 @@ void MuJoCoHelper::setupMuJoCoWorld(double timestep, const char* fileName){
     mdata = mj_makeData(model);
 
     model->opt.gravity[2] = 0;
-
 }

@@ -6,7 +6,6 @@
 #define PHYSICSSIMSWITCHING_MODELTRANSLATOR_H
 
 #include "../stdInclude/stdInclude.h"
-
 #include "../physicsSimulators/MuJoCoHelper.h"
 
 struct bodyStateVec{
@@ -22,15 +21,17 @@ struct stateVectorList{
 
 class modelTranslator {
 public:
-    modelTranslator(physicsSimulator *_physicsSimulator, stateVectorList _stateVector);
+    modelTranslator(int taskNumber);
 
     MatrixXd returnStateVector();
+    bool setStateVector(MatrixXd _stateVector);
 
     int stateVectorSize;
-    struct stateVectorList mystateVector;
+    struct stateVectorList myStateVector;
+
+    physicsSimulator *activePhysicsSimulator;
 
 private:
-    physicsSimulator *myPhysicsSimulator;
 
 };
 

@@ -93,8 +93,8 @@ bool physicsSimulator::stepSimulator(int steps){
     return false;
 }
 
-void physicsSimulator::initSimulator() {
-    std::cout << "Hello, World!" << std::endl;
+void physicsSimulator::initSimulator(double timeStep, const char* fileName) {
+    std::cout << "Called init simulator in base class" << std::endl;
 }
 
 void physicsSimulator::initVisualisation(){

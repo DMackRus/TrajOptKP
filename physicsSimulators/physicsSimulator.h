@@ -66,7 +66,7 @@ public:
     virtual void mouseMove(double dx, double dy, bool button_left, bool button_right,  GLFWwindow *window);
     virtual void scroll(double yoffset);
 
-    virtual void initSimulator();
+    virtual void initSimulator(double timeStep, const char* fileName);
     virtual bool stepSimulator(int steps);
 
 

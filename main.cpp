@@ -5,44 +5,22 @@
 
 int main() {
 
-    //initialise robot
-    vector<robot> robots;
-    robot panda;
-    panda.name = "panda";
-    panda.jointNames = {"panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"};
-    panda.numActuators = 7;
-    robots.push_back(panda);
-    vector<string> bodies;
-    bodies.push_back("goal");
+    int taskNumber = 1;
+    modelTranslator *myModelTranslator = new modelTranslator(taskNumber);
 
-    MuJoCoHelper *myHelper = new MuJoCoHelper(robots, bodies);
-    myHelper->setupMuJoCoWorld(0.004, "Franka-emika-panda-arm/V1/cheezit_pushing.xml");
+    MatrixXd startStateVector(myModelTranslator->stateVectorSize, 1);
+    startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
+            0.5, 0.5, 0.4, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0;
+    myModelTranslator->setStateVector(startStateVector);
+    MatrixXd stateVector = myModelTranslator->returnStateVector();
+    cout << "stateVector: " << stateVector << endl;
 
-    stateVectorList myStateVector;
-    myStateVector.robots = robots;
-    bodyStateVec goalState;
-    goalState.name = "goal";
-    for(int i = 0; i < 3; i++){
-        goalState.activeLinearDOF[i] = true;
-        goalState.activeAngularDOF[i] = true;
-    }
-    myStateVector.bodiesStates.push_back(goalState);
+    myModelTranslator->activePhysicsSimulator->stepSimulator(1);
 
-    bool success = myHelper->setRobotJointsPositions("panda", {1,0.5,0,-1,0,0.6,1});
-
-    pose_7 cheezitPose;
-    cheezitPose.position = {0.5,0.5,0.4};
-    cheezitPose.quat = {0,0,0,1};
-
-    myHelper->setBodyPose_quat("goal", cheezitPose);
-    myHelper->stepSimulator(1);
-
-    modelTranslator myModelTranslator(myHelper, myStateVector);
-    MatrixXd stateVector = myModelTranslator.returnStateVector();
-
-    visualizer myVisualizer(myHelper);
+    visualizer myVisualizer(myModelTranslator);
     myVisualizer.render();
-
 
     return 0;
 }

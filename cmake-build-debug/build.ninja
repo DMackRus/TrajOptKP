@@ -98,6 +98,13 @@ build CMakeFiles/physicsSimSwitching.dir/physicsSimulators/bulletHelper.cpp.o: C
   OBJECT_DIR = CMakeFiles/physicsSimSwitching.dir
   OBJECT_FILE_DIR = CMakeFiles/physicsSimSwitching.dir/physicsSimulators
 
+build CMakeFiles/physicsSimSwitching.dir/modelTranslator/doublePendulum.cpp.o: CXX_COMPILER__physicsSimSwitching_Debug /home/dave/projects/physicsSimSwithching/modelTranslator/doublePendulum.cpp || cmake_object_order_depends_target_physicsSimSwitching
+  DEP_FILE = CMakeFiles/physicsSimSwitching.dir/modelTranslator/doublePendulum.cpp.o.d
+  FLAGS = -fopenmp -g -O0 -fdiagnostics-color=always -std=gnu++20
+  INCLUDES = -I/home/dave/Libraries/mujoco/include -I/usr/include/bullet -isystem /usr/include/eigen3
+  OBJECT_DIR = CMakeFiles/physicsSimSwitching.dir
+  OBJECT_FILE_DIR = CMakeFiles/physicsSimSwitching.dir/modelTranslator
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target physicsSimSwitching
@@ -106,7 +113,7 @@ build CMakeFiles/physicsSimSwitching.dir/physicsSimulators/bulletHelper.cpp.o: C
 #############################################
 # Link the executable /home/dave/projects/physicsSimSwithching/physicsSimSwitching
 
-build /home/dave/projects/physicsSimSwithching/physicsSimSwitching: CXX_EXECUTABLE_LINKER__physicsSimSwitching_Debug CMakeFiles/physicsSimSwitching.dir/main.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/physicsSimulator.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/MuJoCoHelper.cpp.o CMakeFiles/physicsSimSwitching.dir/stdInclude/stdInclude.cpp.o CMakeFiles/physicsSimSwitching.dir/modelTranslator/modelTranslator.cpp.o CMakeFiles/physicsSimSwitching.dir/visualizer/visualizer.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/bulletHelper.cpp.o | /home/dave/Libraries/mujoco/include/libmujoco.so /home/dave/Libraries/mujoco/include/libglfw.so.3
+build /home/dave/projects/physicsSimSwithching/physicsSimSwitching: CXX_EXECUTABLE_LINKER__physicsSimSwitching_Debug CMakeFiles/physicsSimSwitching.dir/main.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/physicsSimulator.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/MuJoCoHelper.cpp.o CMakeFiles/physicsSimSwitching.dir/stdInclude/stdInclude.cpp.o CMakeFiles/physicsSimSwitching.dir/modelTranslator/modelTranslator.cpp.o CMakeFiles/physicsSimSwitching.dir/visualizer/visualizer.cpp.o CMakeFiles/physicsSimSwitching.dir/physicsSimulators/bulletHelper.cpp.o CMakeFiles/physicsSimSwitching.dir/modelTranslator/doublePendulum.cpp.o | /home/dave/Libraries/mujoco/include/libmujoco.so /home/dave/Libraries/mujoco/include/libglfw.so.3
   FLAGS = -fopenmp -g -O0
   LINK_LIBRARIES = -Wl,-rpath,/:/home/dave/Libraries/mujoco/include  /home/dave/Libraries/mujoco/include/libmujoco.so  /home/dave/Libraries/mujoco/include/libglfw.so.3  -lGL  -lGL  -lBulletDynamics  -lBulletCollision  -lLinearMath
   LINK_PATH = -L/

@@ -9,10 +9,11 @@
 #include "../physicsSimulators/MuJoCoHelper.h"
 #include "glfw3.h"
 #include "../stdInclude/stdInclude.h"
+#include "../modelTranslator/modelTranslator.h"
 
 class visualizer {
 public:
-    visualizer(physicsSimulator *_physicsSimulator);
+    visualizer(modelTranslator *_modelTranslator);
     void init();
     void update();
     void draw();

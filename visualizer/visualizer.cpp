@@ -4,7 +4,9 @@
 
 #include "visualizer.h"
 
-visualizer::visualizer(physicsSimulator *_physicsSimulator): activePhysicsSimulator(_physicsSimulator){
+visualizer::visualizer(modelTranslator *_modelTranslator){
+
+    activePhysicsSimulator = _modelTranslator->activePhysicsSimulator;
     if (!glfwInit())
         mju_error("Could not initialize GLFW");
     window = glfwCreateWindow(1200, 900, "MuJoCo", NULL, NULL);
@@ -87,7 +89,6 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         cheezitPose.quat = eul2Quat(euler);
         activePhysicsSimulator->setBodyPose_quat("goal", cheezitPose);
     }
-
 }
 // -----------------------------------------------------------------------------------------------------
 
