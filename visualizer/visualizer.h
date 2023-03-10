@@ -7,7 +7,7 @@
 
 #include "../physicsSimulators/physicsSimulator.h"
 #include "../physicsSimulators/MuJoCoHelper.h"
-#include "glfw3.h"
+#include <GLFW/glfw3.h>
 #include "../stdInclude/stdInclude.h"
 #include "../modelTranslator/modelTranslator.h"
 

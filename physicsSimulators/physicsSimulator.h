@@ -6,7 +6,7 @@
 #define PHYSICSSIMSWITCHING_PHYSICSSIMULATOR_H
 
 #include "../stdInclude/stdInclude.h"
-#include "glfw3.h"
+#include <GLFW/glfw3.h>
 
 struct robot{
     string name;

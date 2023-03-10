@@ -20,10 +20,10 @@ modelTranslator::modelTranslator(int taskNumber){
     activePhysicsSimulator = myHelper;
 
     if(taskNumber == 0){
-        activePhysicsSimulator->initSimulator(0.004, "Franka-emika-panda-arm/Acrobot.xml");
+        activePhysicsSimulator->initSimulator(0.004, "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Acrobot.xml");
     }
     else if(taskNumber == 1){
-        activePhysicsSimulator->initSimulator(0.004, "Franka-emika-panda-arm/V1/cheezit_pushing.xml");
+        activePhysicsSimulator->initSimulator(0.004, "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/V1/cheezit_pushing.xml");
     }
 
     myStateVector.robots = robots;

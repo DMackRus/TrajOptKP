@@ -7,7 +7,7 @@
 
 #include "physicsSimulator.h"
 #include "mujoco.h"
-#include "glfw3.h"
+#include <GLFW/glfw3.h>
 
 class MuJoCoHelper : public physicsSimulator {
 public:

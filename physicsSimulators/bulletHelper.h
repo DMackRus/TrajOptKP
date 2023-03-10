@@ -6,8 +6,7 @@
 #define PHYSICSSIMSWITCHING_BULLETHELPER_H
 
 #include "physicsSimulator.h"
-#include "btBulletDynamicsCommon.h"
-#include "glfw3.h"
+// #include "btBulletDynamicsCommon.h"
 
 //class bulletHelper : public physicsSimulator {
 //public:
