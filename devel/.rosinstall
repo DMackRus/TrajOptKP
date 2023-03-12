@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/davidrussell/catkin_ws/src/physicsSimSwitching/devel/setup.sh

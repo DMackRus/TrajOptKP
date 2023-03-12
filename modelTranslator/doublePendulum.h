@@ -9,10 +9,18 @@
 
 class doublePendulum : public modelTranslator {
 public:
-    doublePendulum(int taskNumber);
+    doublePendulum();
+    ~doublePendulum(){
 
-    MatrixXd returnStateVector();
-    bool setStateVector(MatrixXd _stateVector);
+    }
+
+    double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last) override;
+
+    char* filePath; 
+    int pendulumDOF;
+    int pendulumNumCtrl;
+
+
 
 };
 

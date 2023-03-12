@@ -206,8 +206,6 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
-message(STATUS "cmkae prefix path " ${CMAKE_MODULE_PATH})
-
 set(Eigen3_FOUND True)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 if (TARGET Eigen3::Eigen)
@@ -243,7 +241,8 @@ add_executable(${PROJECT_NAME} main.cpp
                 modelTranslator/modelTranslator.cpp modelTranslator/modelTranslator.h 
                 visualizer/visualizer.cpp visualizer/visualizer.h 
                 physicsSimulators/bulletHelper.cpp physicsSimulators/bulletHelper.h 
-                modelTranslator/doublePendulum.cpp modelTranslator/doublePendulum.h)
+                modelTranslator/doublePendulum.cpp modelTranslator/doublePendulum.h
+                modelTranslator/reaching.cpp modelTranslator/reaching.h)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR})
 

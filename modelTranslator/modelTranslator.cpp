@@ -4,36 +4,26 @@
 
 #include "modelTranslator.h"
 
-modelTranslator::modelTranslator(int taskNumber){
+modelTranslator::modelTranslator(){
 
+}
+
+void modelTranslator::initModelTranslator(const char* filePath, int _dof, int _num_ctrl, vector<robot> _robots, vector<string> _bodies){
     //initialise robot
-    vector<robot> robots;
-    robot panda;
-    panda.name = "panda";
-    panda.jointNames = {"panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"};
-    panda.numActuators = 7;
-    robots.push_back(panda);
-    vector<string> bodies;
-    bodies.push_back("goal");
 
-    MuJoCoHelper *myHelper = new MuJoCoHelper(robots, bodies);
+    MuJoCoHelper *myHelper = new MuJoCoHelper(_robots, _bodies);
     activePhysicsSimulator = myHelper;
 
-    if(taskNumber == 0){
-        activePhysicsSimulator->initSimulator(0.004, "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Acrobot.xml");
-    }
-    else if(taskNumber == 1){
-        activePhysicsSimulator->initSimulator(0.004, "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/V1/cheezit_pushing.xml");
-    }
+    activePhysicsSimulator->initSimulator(0.004, filePath);
 
-    myStateVector.robots = robots;
-    bodyStateVec goalState;
-    goalState.name = "goal";
-    for(int i = 0; i < 3; i++){
-        goalState.activeLinearDOF[i] = true;
-        goalState.activeAngularDOF[i] = true;
-    }
-    myStateVector.bodiesStates.push_back(goalState);
+    myStateVector.robots = _robots;
+    // bodyStateVec goalState;
+    // goalState.name = "goal";
+    // for(int i = 0; i < 3; i++){
+    //     goalState.activeLinearDOF[i] = true;
+    //     goalState.activeAngularDOF[i] = true;
+    // }
+    // myStateVector.bodiesStates.push_back(goalState);
 
     stateVectorSize = 0;
     for(int i = 0; i < myStateVector.robots.size(); i++){
@@ -169,4 +159,9 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector){
 
     return true;
 }
+
+// double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last){
+//     std::cout << "called cost function in base model translator class" << std::endl;
+//     return 0.0f;
+// }
 

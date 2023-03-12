@@ -520,5 +520,5 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     // make data corresponding to model
     mdata = mj_makeData(model);
 
-    model->opt.gravity[2] = 0;
+    //model->opt.gravity[2] = 0;
 }

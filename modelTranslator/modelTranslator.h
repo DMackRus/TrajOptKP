@@ -21,11 +21,22 @@ struct stateVectorList{
 
 class modelTranslator {
 public:
-    modelTranslator(int taskNumber);
+    modelTranslator();
+    ~modelTranslator(){
+
+    }
 
     MatrixXd returnStateVector();
     bool setStateVector(MatrixXd _stateVector);
+    void initModelTranslator(const char* filePath, int _dof, int _num_ctrl, vector<robot> _robots, vector<string> bodies);
 
+    virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last) = 0;
+
+    MatrixXd Q;
+    MatrixXd R;
+    MatrixXd J;
+    int dof;
+    int num_ctrl;
     int stateVectorSize;
     struct stateVectorList myStateVector;
 
