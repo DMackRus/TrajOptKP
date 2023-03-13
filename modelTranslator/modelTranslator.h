@@ -37,6 +37,7 @@ public:
     
     
     virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last) = 0;
+    virtual void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu) = 0;
     virtual MatrixXd returnRandomStartState() = 0;
     virtual MatrixXd returnRandomGoalState() = 0;
 
@@ -53,6 +54,7 @@ public:
 
 protected:
     MatrixXd X_desired;
+    bool analyticalCostDerivatives;
 
 private:
 

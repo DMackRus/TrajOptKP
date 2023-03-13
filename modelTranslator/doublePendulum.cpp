@@ -20,6 +20,7 @@ doublePendulum::doublePendulum(): modelTranslator(){
     vector<bodyStateVec> bodies;
 
     initModelTranslator(filePath, pendulumNumCtrl, robots, bodies);
+    analyticalCostDerivatives = true;
 
     X_desired << 0, 3.14, 0, 0;
 
@@ -37,4 +38,48 @@ double doublePendulum::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, M
     cost = temp(0);
 
     return cost;
+}
+
+void doublePendulum::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu){
+    MatrixXd X_diff = Xt - X_desired;
+
+    // Size cost derivatives appropriately
+    l_x.resize(stateVectorSize, 1);
+    l_xx.resize(stateVectorSize, stateVectorSize);
+
+    l_u.resize(num_ctrl, 1);
+    l_uu.resize(num_ctrl, num_ctrl);
+
+    l_x = 2 * Q * X_diff;
+    l_xx = 2 * Q;
+
+    l_u = 2 * R * Ut;
+    l_uu = 2 * R;
+}
+
+MatrixXd doublePendulum::returnRandomStartState(){
+    MatrixXd randomStartState(stateVectorSize, 1);
+
+    float arm1Pos = randFloat(-2, 2);
+    float arm2Pos = randFloat(-2, 2);
+
+    randomStartState << arm1Pos, arm2Pos, 0, 0;
+
+    return randomStartState;
+}
+
+MatrixXd doublePendulum::returnRandomGoalState(){
+    MatrixXd randomGoalState(stateVectorSize, 1);
+
+    float randomNum = randFloat(0, 1);
+    // stable down position
+    if(randomNum > 0.5){
+        randomGoalState << 3.1415, 0, 0, 0;
+    }
+    // Unstable up position
+    else{
+        randomGoalState << 0, 0, 0, 0;
+    }
+
+    return randomGoalState;
 }

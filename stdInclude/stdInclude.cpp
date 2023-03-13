@@ -4,6 +4,13 @@
 
 #include "stdInclude.h"
 
+float randFloat(float floor, float ceiling){
+    float random = (float)(rand()) / ((float) RAND_MAX);
+    float diff = ceiling - floor;
+    float r = random * diff;
+    return floor + r;
+}
+
 m_quat eul2Quat(m_point eulerAngles){
     m_quat quat;
 

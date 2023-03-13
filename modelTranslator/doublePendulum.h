@@ -15,6 +15,9 @@ public:
     }
 
     double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last) override;
+    void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu) override;
+    MatrixXd returnRandomStartState() override;
+    MatrixXd returnRandomGoalState() override;
 
     
     char* filePath; 

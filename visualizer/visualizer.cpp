@@ -58,13 +58,16 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         Ut << 0, 0;
         U_last << 0, 0;
 
-        std::cout << "after ut " << std::endl;
-
         Xt = activeModelTranslator->returnStateVector();
-        std::cout << "after state vector " << std::endl;
         X_last = Xt.replicate(1, 1);
         double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
         std::cout << "cost: " << cost << std::endl;
+
+
+        MatrixXd l_x, l_xx, l_u, l_uu;
+        activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu);
+        cout << "l_x: " << l_x << endl;
+        
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
         MatrixXd controlVec;

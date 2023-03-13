@@ -10,6 +10,9 @@ modelTranslator::modelTranslator(){
 
 void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<bodyStateVec> _bodies){
     //initialise robot
+    // Seed random number generator
+    srand(time(0));
+
 
     // initialise physics simulator
     vector<string> bodyNames;
