@@ -8,7 +8,7 @@ modelTranslator::modelTranslator(){
 
 }
 
-void modelTranslator::initModelTranslator(const char* filePath, int _dof, int _num_ctrl, vector<robot> _robots, vector<string> _bodies){
+void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<string> _bodies){
     //initialise robot
 
     MuJoCoHelper *myHelper = new MuJoCoHelper(_robots, _bodies);
@@ -40,6 +40,14 @@ void modelTranslator::initModelTranslator(const char* filePath, int _dof, int _n
             }
         }
     }
+
+    num_ctrl = _num_ctrl;
+    Q.resize(stateVectorSize, stateVectorSize);
+    R.resize(_num_ctrl, _num_ctrl);
+    X_desired.resize(stateVectorSize, 1);
+
+    cout << "Q rows: " << Q.rows() << " cols: " << Q.cols() << std::endl;
+    cout << "R rows: " << R.rows() << " cols: " << R.cols() << std::endl;
 
     cout << "state vector size: " << stateVectorSize << endl;
 }
@@ -115,7 +123,6 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector){
         vector<double> jointVelocities;
 
         for(int j = 0; j < myStateVector.robots[i].jointNames.size(); j++){
-            cout << _stateVector(j, 0) << endl;
             jointPositions.push_back(_stateVector(j, 0));
             jointVelocities.push_back(_stateVector(j + (stateVectorSize/2), 0));
         }
@@ -127,7 +134,6 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector){
         currentStateIndex += myStateVector.robots[i].jointNames.size();
     }
 
-    cout << "currentStateIndex: " << currentStateIndex << endl;
 
     // Loop through all bodies in the state vector
     for(int i = 0; i < myStateVector.bodiesStates.size(); i++){
@@ -140,7 +146,6 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector){
             if (myStateVector.bodiesStates[i].activeLinearDOF[j]) {
                 bodyPose.position[j] = _stateVector(currentStateIndex, 0);
                 bodyVelocity.position[j] = _stateVector(currentStateIndex + (stateVectorSize/2), 0);
-                cout << "bodyPose.position[j]: " << bodyPose.position[j] << endl;
                 currentStateIndex++;
             }
         }
@@ -160,8 +165,47 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector){
     return true;
 }
 
-// double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last){
-//     std::cout << "called cost function in base model translator class" << std::endl;
-//     return 0.0f;
-// }
+MatrixXd modelTranslator::returnControlVector(){
+    MatrixXd controlVector(num_ctrl, 1);
+    int currentStateIndex = 0;
 
+    // loop through all the present robots
+    for(int i = 0; i < myStateVector.robots.size(); i++){
+        vector<double> jointControls;
+        activePhysicsSimulator->getRobotJointsControls(myStateVector.robots[i].name, jointControls);
+        for(int j = 0; j < myStateVector.robots[i].numActuators; j++){
+
+            controlVector(currentStateIndex + j, 0) = jointControls[j];
+        }
+
+        currentStateIndex += myStateVector.robots[i].numActuators;
+
+    }
+
+    return controlVector;
+}
+
+bool modelTranslator::setControlVector(MatrixXd _controlVector){
+    if(_controlVector.rows() != num_ctrl){
+        cout << "ERROR: control vector size does not match the size of the control vector in the model translator" << endl;
+        return false;
+    }
+
+    int currentStateIndex = 0;
+
+    // loop through all the present robots
+    for(int i = 0; i < myStateVector.robots.size(); i++){
+        vector<double> jointControls;
+        for(int j = 0; j < myStateVector.robots[i].numActuators; j++){
+
+            jointControls.push_back(_controlVector(currentStateIndex + j));
+        }
+
+        activePhysicsSimulator->setRobotJointsControls(myStateVector.robots[i].name, jointControls);
+
+        currentStateIndex += myStateVector.robots[i].numActuators;
+
+    }
+
+    return true;
+}

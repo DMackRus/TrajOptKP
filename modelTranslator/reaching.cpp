@@ -2,8 +2,7 @@
 
 pandaReaching::pandaReaching(): modelTranslator(){
     filePath = "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/V1/reaching_scene.xml";
-    reachingDOF = 2;
-    reachingNumCtrl = 2;
+    reachingNumCtrl = 7;
 
     vector<robot> robots;
     robot panda;
@@ -13,7 +12,7 @@ pandaReaching::pandaReaching(): modelTranslator(){
     robots.push_back(panda);
     vector<string> bodies;
 
-    initModelTranslator(filePath, reachingDOF, reachingNumCtrl, robots, bodies);
+    initModelTranslator(filePath, reachingNumCtrl, robots, bodies);
     std::cout << "initialise reaching model translator" << std::endl;
 }
 

@@ -52,6 +52,7 @@ public:
 
 private:
     physicsSimulator *activePhysicsSimulator;
+    modelTranslator *activeModelTranslator;
 };
 
 #endif //PHYSICSSIMSWITCHING_VISUALIZER_H

@@ -7,6 +7,7 @@
 visualizer::visualizer(modelTranslator *_modelTranslator){
 
     activePhysicsSimulator = _modelTranslator->activePhysicsSimulator;
+    activeModelTranslator = _modelTranslator;
     if (!glfwInit())
         mju_error("Could not initialize GLFW");
     window = glfwCreateWindow(1200, 900, "MuJoCo", NULL, NULL);
@@ -33,62 +34,70 @@ void visualizer::keyboardCallbackWrapper(GLFWwindow* window, int key, int scanco
 
 void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, int mods){
     // backspace: reset simulation
-    bool changePose = true;
-    pose_7 cheezitPose;
-    activePhysicsSimulator->getBodyPose_quat("goal", cheezitPose);
-    m_point euler = quat2Eul(cheezitPose.quat);
+
 
     if (act == GLFW_PRESS && key == GLFW_KEY_BACKSPACE)
     {
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_P){
-        changePose = false;
+
         activePhysicsSimulator->appendCurrentSystemStateToEnd();
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_O){
-        changePose = false;
+
         activePhysicsSimulator->loadSystemStateFromIndex(0);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
-        euler(0) += 0.2;
+
+        std::cout << "before ut " << std::endl;
+        MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
+        MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
+        MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
+        MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
+        Ut << 0, 0;
+        U_last << 0, 0;
+
+        std::cout << "after ut " << std::endl;
+
+        Xt = activeModelTranslator->returnStateVector();
+        std::cout << "after state vector " << std::endl;
+        X_last = Xt.replicate(1, 1);
+        double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
+        std::cout << "cost: " << cost << std::endl;
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
-        euler(0) -= 0.2;
+
     }
         // left arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_A){
-        euler(1) += 0.2;
+
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_S){
-        euler(1) -= 0.2;
+
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Z){
-        euler(2) += 0.2;
+
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_X){
-        euler(2) -= 0.2;
+
     }
 
 //     if up arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_UP){
-        cheezitPose.position(0) += 0.2;
+
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_DOWN){
-        cheezitPose.position(0) -= 0.2;
+
     }
         // left arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_LEFT){
-        cheezitPose.position(1) += 0.2;
+
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_RIGHT){
-        cheezitPose.position(1) -= 0.2;
+
     }
 
-    if(changePose){
-        cheezitPose.quat = eul2Quat(euler);
-        activePhysicsSimulator->setBodyPose_quat("goal", cheezitPose);
-    }
 }
 // -----------------------------------------------------------------------------------------------------
 

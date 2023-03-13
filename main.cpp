@@ -29,19 +29,31 @@ enum scenes{
 
 int main() {
 
-    scenes myScene = reaching;
+    scenes myScene = pendulum;
     modelTranslator *activeModelTranslator;
+    MatrixXd startStateVector(1, 1);
 
     std::cout << "before scene check" << std::endl;
     if(myScene == pendulum){
         std::cout << "before creating double pendulum" << std::endl;
         doublePendulum *myDoublePendulum = new doublePendulum();
         activeModelTranslator = myDoublePendulum;
+        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+
+        startStateVector << 0.1, 0.1, 0, 0;
+        MatrixXd controlVec(2,1);
+        controlVec << 10, 10;
+        activeModelTranslator->setControlVector(controlVec);
     }
     else if(myScene == reaching){
         std::cout << "before creating reaching problem" << std::endl;
         pandaReaching *myReaching = new pandaReaching();
         activeModelTranslator = myReaching;
+        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+
+        startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
+            0, 0, 0, 0, 0, 0, 0;
+        
 
     }
     else if(myScene == twoReaching){
@@ -60,17 +72,13 @@ int main() {
         std::cout << "invalid scene selected, exiting" << std::endl;
     }
 
-    MatrixXd startStateVector(activeModelTranslator->stateVectorSize, 1);
-
-    startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
-            0, 0, 0, 0, 0, 0, 0;
 
     // startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
     //         0.5, 0.5, 0.4, 0, 0, 0,
     //         0, 0, 0, 0, 0, 0, 0,
     //         0, 0, 0, 0, 0, 0;
-
-    //startStateVector << 0.1, 0.1, 0, 0;
+    std::cout << "before set start vector" << std::endl;
+    
     activeModelTranslator->setStateVector(startStateVector);
 
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1);

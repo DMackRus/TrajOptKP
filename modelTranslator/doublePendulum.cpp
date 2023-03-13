@@ -6,7 +6,6 @@
 
 doublePendulum::doublePendulum(): modelTranslator(){
     filePath = "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/Acrobot.xml";
-    pendulumDOF = 2;
     pendulumNumCtrl = 2;
     vector<robot> robots;
     robot doublePendulum;
@@ -15,17 +14,24 @@ doublePendulum::doublePendulum(): modelTranslator(){
     doublePendulum.numActuators = 2;
     robots.push_back(doublePendulum);
 
-
     vector<string> bodies;
 
-    initModelTranslator(filePath, pendulumDOF, pendulumNumCtrl, robots, bodies);
+    initModelTranslator(filePath, pendulumNumCtrl, robots, bodies);
+
+    X_desired << 0, 3.14, 0, 0;
+
     std::cout << "initialise double pendulum model translator" << std::endl;
 }
 
 double doublePendulum::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last){
     double cost = 0.0f;
 
+    MatrixXd X_diff = Xt - X_desired;
+    MatrixXd temp;
 
+    temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
+
+    cost = temp(0);
 
     return cost;
 }
