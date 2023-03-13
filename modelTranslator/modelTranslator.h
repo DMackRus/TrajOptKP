@@ -12,6 +12,8 @@ struct bodyStateVec{
     string name;
     bool activeLinearDOF[3];
     bool activeAngularDOF[3];
+    double linearCost[3];
+    double angularCost[3];
 };
 
 struct stateVectorList{
@@ -26,7 +28,7 @@ public:
 
     }
 
-    void initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<string> bodies);
+    void initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<bodyStateVec> bodies);
 
     MatrixXd returnStateVector();
     bool setStateVector(MatrixXd _stateVector);
@@ -35,6 +37,8 @@ public:
     
     
     virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last) = 0;
+    virtual MatrixXd returnRandomStartState() = 0;
+    virtual MatrixXd returnRandomGoalState() = 0;
 
     MatrixXd Q;
     MatrixXd R;

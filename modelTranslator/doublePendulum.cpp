@@ -12,9 +12,12 @@ doublePendulum::doublePendulum(): modelTranslator(){
     doublePendulum.name = "doublePendulum";
     doublePendulum.jointNames = {"shoulder", "elbow"};
     doublePendulum.numActuators = 2;
+    doublePendulum.jointPosCosts = {1, 1};
+    doublePendulum.jointVelCosts = {0.1, 0.1};
+    doublePendulum.jointControlCosts = {0.01, 0.01};
     robots.push_back(doublePendulum);
 
-    vector<string> bodies;
+    vector<bodyStateVec> bodies;
 
     initModelTranslator(filePath, pendulumNumCtrl, robots, bodies);
 

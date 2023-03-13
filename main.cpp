@@ -43,7 +43,7 @@ int main() {
         startStateVector << 0.1, 0.1, 0, 0;
         MatrixXd controlVec(2,1);
         controlVec << 10, 10;
-        activeModelTranslator->setControlVector(controlVec);
+        //activeModelTranslator->setControlVector(controlVec);
     }
     else if(myScene == reaching){
         std::cout << "before creating reaching problem" << std::endl;

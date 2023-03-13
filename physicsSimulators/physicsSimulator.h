@@ -12,6 +12,9 @@ struct robot{
     string name;
     vector<string> jointNames;
     int numActuators;
+    vector<double> jointPosCosts;
+    vector<double> jointVelCosts;
+    vector<double> jointControlCosts;
 };
 
 struct pose_7{

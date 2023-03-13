@@ -8,22 +8,20 @@ modelTranslator::modelTranslator(){
 
 }
 
-void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<string> _bodies){
+void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<bodyStateVec> _bodies){
     //initialise robot
 
-    MuJoCoHelper *myHelper = new MuJoCoHelper(_robots, _bodies);
+    // initialise physics simulator
+    vector<string> bodyNames;
+    for(int i = 0; i < _bodies.size(); i++){
+        bodyNames.push_back(_bodies[i].name);
+    }
+    MuJoCoHelper *myHelper = new MuJoCoHelper(_robots, bodyNames);
     activePhysicsSimulator = myHelper;
-
     activePhysicsSimulator->initSimulator(0.004, filePath);
 
     myStateVector.robots = _robots;
-    // bodyStateVec goalState;
-    // goalState.name = "goal";
-    // for(int i = 0; i < 3; i++){
-    //     goalState.activeLinearDOF[i] = true;
-    //     goalState.activeAngularDOF[i] = true;
-    // }
-    // myStateVector.bodiesStates.push_back(goalState);
+    myStateVector.bodiesStates = _bodies;
 
     stateVectorSize = 0;
     for(int i = 0; i < myStateVector.robots.size(); i++){
@@ -41,13 +39,47 @@ void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, v
         }
     }
 
+    // --------- Set size of cost matrices correctly ------------
     num_ctrl = _num_ctrl;
     Q.resize(stateVectorSize, stateVectorSize);
+    Q.setZero();
     R.resize(_num_ctrl, _num_ctrl);
+    R.setZero();
     X_desired.resize(stateVectorSize, 1);
 
-    cout << "Q rows: " << Q.rows() << " cols: " << Q.cols() << std::endl;
-    cout << "R rows: " << R.rows() << " cols: " << R.cols() << std::endl;
+    // -----------------------------------------------------------------------------------------
+    //                      Assign cost matrices
+    // ------------------------------------------------------------------------------------------
+    // Loop through robots and starting assinging state specific costs
+    int Q_index = 0;
+    for(int i = 0; i < myStateVector.robots.size(); i++){
+        int robotNumJoints = myStateVector.robots[i].jointNames.size();
+
+        // Loop through the robot joints
+        for(int j = 0; j < robotNumJoints; j++){
+            Q(Q_index + j, Q_index + j) = myStateVector.robots[i].jointPosCosts[j];
+
+            Q(Q_index + j + robotNumJoints, Q_index + j + robotNumJoints) = myStateVector.robots[i].jointVelCosts[j];
+        }
+        Q_index +=(2*robotNumJoints);
+        
+    }
+
+    // Loop through robots and starting assinging control specific costs
+    int R_index = 0;
+    for(int i = 0; i < myStateVector.robots.size(); i++){
+        int robotNumJoints = myStateVector.robots[i].jointNames.size();
+
+        // Loop through the robot joints
+        for(int j = 0; j < robotNumJoints; j++){
+            R(R_index + j, R_index + j) = myStateVector.robots[i].jointControlCosts[j];
+        }
+        
+    }
+    // ----------------------------------------------------------------------------------------------
+
+    cout << "Q: " << Q << std::endl;
+    cout << "R: " << R << std::endl;
 
     cout << "state vector size: " << stateVectorSize << endl;
 }

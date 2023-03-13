@@ -10,10 +10,11 @@ pandaReaching::pandaReaching(): modelTranslator(){
     panda.jointNames = {"panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"};
     panda.numActuators = 7;
     robots.push_back(panda);
-    vector<string> bodies;
+
+    vector<bodyStateVec> bodies;
 
     initModelTranslator(filePath, reachingNumCtrl, robots, bodies);
-    std::cout << "initialise reaching model translator" << std::endl;
+    std::cout << "initialised reaching model translator" << std::endl;
 }
 
 double pandaReaching::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last){
