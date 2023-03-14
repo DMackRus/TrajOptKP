@@ -34,18 +34,21 @@ public:
     bool setStateVector(MatrixXd _stateVector);
     MatrixXd returnControlVector();
     bool setControlVector(MatrixXd _controlVector);
+    MatrixXd returnPositionVector();
+    MatrixXd returnVelocityVector();
+    MatrixXd returnAccelerationVector();
     
     
     virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last) = 0;
     virtual void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu) = 0;
+    
+
     virtual MatrixXd returnRandomStartState() = 0;
     virtual MatrixXd returnRandomGoalState() = 0;
 
-    MatrixXd Q;
-    MatrixXd R;
-    MatrixXd J;
+    
 
-    // int dof;
+    int dof;
     int num_ctrl;
     int stateVectorSize;
     struct stateVectorList myStateVector;
@@ -53,6 +56,10 @@ public:
     physicsSimulator *activePhysicsSimulator;
 
 protected:
+    MatrixXd Q;
+    MatrixXd R;
+    MatrixXd J;
+
     MatrixXd X_desired;
     bool analyticalCostDerivatives;
 

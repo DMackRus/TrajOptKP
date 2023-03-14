@@ -68,6 +68,14 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu);
         cout << "l_x: " << l_x << endl;
         cout << "l_xx:" << l_xx << endl;
+
+        MatrixXd posVector, velVector, stateVector;
+        posVector = activeModelTranslator->returnPositionVector();
+        velVector = activeModelTranslator->returnVelocityVector();
+        stateVector = activeModelTranslator->returnStateVector();
+        cout << "pos Vector: " << posVector << endl;
+        cout << "vel vector: " << velVector << endl;
+        cout << "stateVector: " << stateVector << endl;
         
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
