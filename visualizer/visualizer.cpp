@@ -67,6 +67,7 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         MatrixXd l_x, l_xx, l_u, l_uu;
         activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu);
         cout << "l_x: " << l_x << endl;
+        cout << "l_xx:" << l_xx << endl;
         
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
