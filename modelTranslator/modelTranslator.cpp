@@ -336,5 +336,45 @@ MatrixXd modelTranslator::returnVelocityVector(){
 }
 
 MatrixXd modelTranslator::returnAccelerationVector(){
+    MatrixXd accelVector(dof, 1);
 
+    int currentStateIndex = 0;
+
+    // Loop through all robots in the state vector
+    for(int i = 0; i < myStateVector.robots.size(); i++){
+        vector<double> jointAccelerations;
+        activePhysicsSimulator->getRobotJointsVelocities(myStateVector.robots[i].name, jointAccelerations);
+
+        for(int j = 0; j < myStateVector.robots[i].jointNames.size(); j++){
+            accelVector(j, 0) = jointAccelerations[j];
+        }
+
+        // Increment the current state index by the number of joints in the robot
+        currentStateIndex += myStateVector.robots[i].jointNames.size();
+    }
+
+    // Loop through all bodies in the state vector
+    for(int i = 0; i < myStateVector.bodiesStates.size(); i++){
+        // Get the body's position and orientation
+        pose_6 bodyAccelerations;
+        activePhysicsSimulator->getBodyAcceleration(myStateVector.bodiesStates[i].name, bodyAccelerations);
+
+        for(int j = 0; j < 3; j++) {
+            // Linear positions
+            if (myStateVector.bodiesStates[i].activeLinearDOF[j]) {
+                accelVector(currentStateIndex, 0) = bodyAccelerations.position[j];
+                currentStateIndex++;
+            }
+        }
+        for(int j = 0; j < 3; j++) {
+            // angular positions
+            if(myStateVector.bodiesStates[i].activeAngularDOF[j]){
+                accelVector(currentStateIndex, 0) = bodyAccelerations.orientation[j];
+                currentStateIndex++;
+            }
+        }
+    }
+
+
+    return accelVector;
 }

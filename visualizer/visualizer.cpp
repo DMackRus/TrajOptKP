@@ -69,13 +69,15 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         cout << "l_x: " << l_x << endl;
         cout << "l_xx:" << l_xx << endl;
 
-        MatrixXd posVector, velVector, stateVector;
-        posVector = activeModelTranslator->returnPositionVector();
-        velVector = activeModelTranslator->returnVelocityVector();
-        stateVector = activeModelTranslator->returnStateVector();
-        cout << "pos Vector: " << posVector << endl;
-        cout << "vel vector: " << velVector << endl;
-        cout << "stateVector: " << stateVector << endl;
+        MatrixXd posVector, velVector, accelVec, stateVector;
+        // posVector = activeModelTranslator->returnPositionVector();
+        // velVector = activeModelTranslator->returnVelocityVector();
+        // stateVector = activeModelTranslator->returnStateVector();
+        accelVec = activeModelTranslator->returnAccelerationVector();
+        // cout << "pos Vector: " << posVector << endl;
+        // cout << "vel vector: " << velVector << endl;
+        // cout << "stateVector: " << stateVector << endl;
+        cout << "accel vector: " << accelVec << endl;
         
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){

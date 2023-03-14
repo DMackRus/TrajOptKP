@@ -200,7 +200,36 @@ bool MuJoCoHelper::getRobotJointsVelocities(string robotName, vector<double> &jo
     return true;
 }
 
-bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &jointVelocities) {
+bool MuJoCoHelper::getRobotJointsAccelerations(string robotName, vector<double> &jointAccelerations){
+    int robotIndex;
+    string robotBaseJointName;
+    if(!isValidRobotName(robotName, robotIndex, robotBaseJointName)){
+        cout << "That robot doesnt exist in the simulation\n";
+        return false;
+    }
+
+    // Get the body id of the base link of the robot
+    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
+
+    if(jointId == -1){
+        cout << "Base link of robot not found\n";
+        return false;
+    }
+    int startIndex = model->jnt_dofadr[jointId];
+
+    if(startIndex == -1){
+        cout << "Invalid bodyId for robot\n";
+        return false;
+    }
+
+    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
+        jointAccelerations.push_back(mdata->qacc[startIndex + i]);
+    }
+
+    return true;
+}
+
+bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &jointControls) {
 
     // Check if the robot exists in the simulation
     int robotIndex;
@@ -225,7 +254,7 @@ bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &join
     }
 
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        jointVelocities.push_back(mdata->ctrl[startIndex + i]);
+        jointControls.push_back(mdata->ctrl[startIndex + i]);
     }
 
     return true;
@@ -385,6 +414,28 @@ bool MuJoCoHelper::getBodyVelocity(string bodyName, pose_6 &velocity){
 
     for(int i = 0; i < 3; i++){
         velocity.orientation(i) = mdata->qvel[qvelIndex + 3 + i];
+    }
+
+    return true;
+}
+
+bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration){
+    int bodyIndex;
+    if(!isValidBodyName(bodyName, bodyIndex)){
+        cout << "That body doesnt exist in the simulation\n";
+        return false;
+    }
+
+    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model->body_jntadr[bodyId];
+    const int qvelIndex = model->jnt_dofadr[jointIndex];
+
+    for(int i = 0; i < 3; i++){
+        acceleration.position(i) = mdata->qacc[qvelIndex + i];
+    }
+
+    for(int i = 0; i < 3; i++){
+        acceleration.orientation(i) = mdata->qacc[qvelIndex + 3 + i];
     }
 
     return true;

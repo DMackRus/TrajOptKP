@@ -22,7 +22,8 @@ public:
 
     bool getRobotJointsPositions(string robotName, vector<double> &jointPositions) override;
     bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities) override;
-    bool getRobotJointsControls(string robotName, vector<double> &joinsControls) override;
+    bool getRobotJointsAccelerations(string robotName, vector<double> &jointsAccelerations) override;
+    bool getRobotJointsControls(string robotName, vector<double> &jointsControls) override;
 
     // Utility functions -- bodies
     bool isValidBodyName(string bodyName, int &bodyIndex) override;
@@ -33,6 +34,7 @@ public:
     bool getBodyPose_quat(string bodyName, pose_7 &pose) override;
     bool getBodyPose_angle(string bodyName, pose_6 &pose) override;
     bool getBodyVelocity(string bodyName, pose_6 &velocity) override;
+    bool getBodyAcceleration(string bodyName, pose_6 &acceleration) override;
 
     // ----- Loading and saving system states -----
     bool appendCurrentSystemStateToEnd() override;
