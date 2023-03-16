@@ -62,12 +62,14 @@ public:
 
     bool setBodyPosition(string bodyName, m_point position);
 
+    void getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, int dataIndex);
 
     vector<mjData*> savedSystemStatesList;
+    mjModel *model;                  // MuJoCo model
 
 private:
     mjData *mdata;                   // MuJoCo data
-    mjModel *model;                  // MuJoCo model
+    
 
 };
 

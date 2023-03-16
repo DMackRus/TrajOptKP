@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 #include "../stdInclude/stdInclude.h"
 #include "../modelTranslator/modelTranslator.h"
+#include "../differentiator/differentiator.h"
 
 class visualizer {
 public:
@@ -53,6 +54,7 @@ public:
 private:
     physicsSimulator *activePhysicsSimulator;
     modelTranslator *activeModelTranslator;
+    differentiator *activeDifferentiator;
 };
 
 #endif //PHYSICSSIMSWITCHING_VISUALIZER_H

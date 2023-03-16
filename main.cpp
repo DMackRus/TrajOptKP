@@ -72,6 +72,11 @@ int main() {
         std::cout << "invalid scene selected, exiting" << std::endl;
     }
 
+    vector<robot> nullRobots;
+    vector<string> nullBodies
+    MuJoCoHelper gah(nullRobots, nullBodies);
+    differentiator *myDifferentiator = new differentiator(activeModelTranslator, gah);
+
 
     // startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
     //         0.5, 0.5, 0.4, 0, 0, 0,
@@ -85,7 +90,7 @@ int main() {
 
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-    visualizer myVisualizer(activeModelTranslator);
+    visualizer myVisualizer(activeModelTranslator, myDifferentiator);
     myVisualizer.render();
 
     return 0;

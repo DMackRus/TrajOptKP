@@ -8,6 +8,8 @@ visualizer::visualizer(modelTranslator *_modelTranslator){
 
     activePhysicsSimulator = _modelTranslator->activePhysicsSimulator;
     activeModelTranslator = _modelTranslator;
+    activeDifferentiator = _differentiator;
+
     if (!glfwInit())
         mju_error("Could not initialize GLFW");
     window = glfwCreateWindow(1200, 900, "MuJoCo", NULL, NULL);
@@ -126,9 +128,17 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         cout << "------------------------------------------------- \n";
 
 
-
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_S){
+        cout << "finite differencing test \n";
+        MatrixXd A, B;
+        int dataIndex = 0;
+        getDerivatives(A, B, false, dataIndex);
+
+        cout << "----------------B ------------------ \n";
+        cout << B << endl;
+
+
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Z){

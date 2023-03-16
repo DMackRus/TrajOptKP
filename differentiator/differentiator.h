@@ -2,15 +2,20 @@
 #include "../physicsSimulators/MuJoCoHelper.h"
 #include "mujoco.h"
 
+#ifndef PHYSICSSIMSWITCHING_DIFFERENTIATOR_H
+#define PHYSICSSIMSWITCHING_DIFFERENTIATOR_H
 
 class differentiator{
 public:
-    differentiator(modelTranslator *_modelTranslator, MuJoCoHelper *_physicsSimulator);
+    differentiator(modelTranslator *_modelTranslator);
 
-    getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, mjData *d, mjModel *m);
+    void getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, int dataIndex);
 
 private:
     modelTranslator *activeModelTranslator;
     MuJoCoHelper *activePhysicsSimulator;
+    mjModel *m;
 
 };
+
+#endif

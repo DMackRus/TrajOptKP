@@ -76,6 +76,7 @@ public:
     virtual void initSimulator(double timeStep, const char* fileName) = 0;
 
 
+    virtual void getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, int dataIndex) = 0;
     virtual bool stepSimulator(int steps, int dataIndex) = 0;
 
 

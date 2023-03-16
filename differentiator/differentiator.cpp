@@ -1,11 +1,12 @@
 #include "differentiator.h"
 
-differentiator::differentiator(modelTranslator *_modelTranslator, MuJoCoHelper *_physicsSimulator){
+differentiator::differentiator(modelTranslator *_modelTranslator){
     activeModelTranslator = _modelTranslator;
     activePhysicsSimulator = _physicsSimulator;
+    m = _physicsSimulator->model;
 }
 
-differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, mjModel *m, int dataIndex){
+void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, int dataIndex){
     double epsControls = 1e-6;
     double epsVelocities = 1e-6;
     double epsPositions = 1e-6;
