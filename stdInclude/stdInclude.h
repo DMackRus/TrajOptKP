@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <Eigen/Dense>
+#include <memory>
 
 #define POSE_DOFS 6
 

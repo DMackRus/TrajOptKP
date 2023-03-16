@@ -30,13 +30,13 @@ public:
 
     void initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<bodyStateVec> bodies);
 
-    MatrixXd returnStateVector();
-    bool setStateVector(MatrixXd _stateVector);
-    MatrixXd returnControlVector();
-    bool setControlVector(MatrixXd _controlVector);
-    MatrixXd returnPositionVector();
-    MatrixXd returnVelocityVector();
-    MatrixXd returnAccelerationVector();
+    MatrixXd returnStateVector(int dataIndex);
+    bool setStateVector(MatrixXd _stateVector, int dataIndex);
+    MatrixXd returnControlVector(int dataIndex);
+    bool setControlVector(MatrixXd _controlVector, int dataIndex);
+    MatrixXd returnPositionVector(int dataIndex);
+    MatrixXd returnVelocityVector(int dataIndex);
+    MatrixXd returnAccelerationVector(int dataIndex);
     
     
     virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last) = 0;

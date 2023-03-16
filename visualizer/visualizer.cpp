@@ -58,7 +58,7 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         Ut << 0, 0;
         U_last << 0, 0;
 
-        Xt = activeModelTranslator->returnStateVector();
+        Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
         X_last = Xt.replicate(1, 1);
         double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
         std::cout << "cost: " << cost << std::endl;
@@ -73,7 +73,7 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         // posVector = activeModelTranslator->returnPositionVector();
         // velVector = activeModelTranslator->returnVelocityVector();
         // stateVector = activeModelTranslator->returnStateVector();
-        accelVec = activeModelTranslator->returnAccelerationVector();
+        accelVec = activeModelTranslator->returnAccelerationVector(MAIN_DATA_STATE);
         // cout << "pos Vector: " << posVector << endl;
         // cout << "vel vector: " << velVector << endl;
         // cout << "stateVector: " << stateVector << endl;
@@ -82,12 +82,44 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
         MatrixXd controlVec;
-        controlVec = activeModelTranslator->returnControlVector();
+        controlVec = activeModelTranslator->returnControlVector(0);
         cout << "control vec: " << controlVec << endl;
 
     }
         // left arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_A){
+        // Analyse a specific stored system state
+        MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
+        MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
+        MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
+        MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
+        Ut << 0, 0;
+        U_last << 0, 0;
+
+        Xt = activeModelTranslator->returnStateVector(1);
+        X_last = Xt.replicate(1, 1);
+        double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
+        cout << "------------------------------------------------- \n";
+        std::cout << "cost: " << cost << std::endl;
+
+
+        MatrixXd l_x, l_xx, l_u, l_uu;
+        activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu);
+        cout << "l_x: " << l_x << endl;
+        cout << "l_xx:" << l_xx << endl;
+
+        MatrixXd posVector, velVector, accelVec, stateVector;
+        // posVector = activeModelTranslator->returnPositionVector();
+        // velVector = activeModelTranslator->returnVelocityVector();
+        // stateVector = activeModelTranslator->returnStateVector();
+        accelVec = activeModelTranslator->returnAccelerationVector(1);
+        // cout << "pos Vector: " << posVector << endl;
+        // cout << "vel vector: " << velVector << endl;
+        // cout << "stateVector: " << stateVector << endl;
+        cout << "accel vector: " << accelVec << endl;
+        cout << "------------------------------------------------- \n";
+
+
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_S){
@@ -196,7 +228,7 @@ void visualizer::render() {
 
     while (!glfwWindowShouldClose(window)) {
 
-        activePhysicsSimulator->stepSimulator(1);
+        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         //glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
         activePhysicsSimulator->updateScene(window);

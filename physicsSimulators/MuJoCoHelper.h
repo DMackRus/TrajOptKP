@@ -16,25 +16,25 @@ public:
 
     // Utility functions -- robots
     bool isValidRobotName(string robotName, int &robotIndex, string &robotBaseJointName) override;
-    bool setRobotJointsPositions(string robotName, vector<double> jointPositions) override;
-    bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities) override;
-    bool setRobotJointsControls(string robotName, vector<double> jointControls) override;
+    bool setRobotJointsPositions(string robotName, vector<double> jointPositions, int dataIndex) override;
+    bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities, int dataIndex) override;
+    bool setRobotJointsControls(string robotName, vector<double> jointControls, int dataIndex) override;
 
-    bool getRobotJointsPositions(string robotName, vector<double> &jointPositions) override;
-    bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities) override;
-    bool getRobotJointsAccelerations(string robotName, vector<double> &jointsAccelerations) override;
-    bool getRobotJointsControls(string robotName, vector<double> &jointsControls) override;
+    bool getRobotJointsPositions(string robotName, vector<double> &jointPositions, int dataIndex) override;
+    bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities, int dataIndex) override;
+    bool getRobotJointsAccelerations(string robotName, vector<double> &jointsAccelerations, int dataIndex) override;
+    bool getRobotJointsControls(string robotName, vector<double> &jointsControls, int dataIndex) override;
 
     // Utility functions -- bodies
     bool isValidBodyName(string bodyName, int &bodyIndex) override;
-    bool setBodyPose_quat(string bodyName, pose_7 pose) override;
-    bool setBodyPose_angle(string bodyName, pose_6 pose) override;
-    bool setBodyVelocity(string bodyName, pose_6 velocity) override;
+    bool setBodyPose_quat(string bodyName, pose_7 pose, int dataIndex) override;
+    bool setBodyPose_angle(string bodyName, pose_6 pose, int dataIndex) override;
+    bool setBodyVelocity(string bodyName, pose_6 velocity, int dataIndex) override;
 
-    bool getBodyPose_quat(string bodyName, pose_7 &pose) override;
-    bool getBodyPose_angle(string bodyName, pose_6 &pose) override;
-    bool getBodyVelocity(string bodyName, pose_6 &velocity) override;
-    bool getBodyAcceleration(string bodyName, pose_6 &acceleration) override;
+    bool getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex) override;
+    bool getBodyPose_angle(string bodyName, pose_6 &pose, int dataIndex) override;
+    bool getBodyVelocity(string bodyName, pose_6 &velocity, int dataIndex) override;
+    bool getBodyAcceleration(string bodyName, pose_6 &acceleration, int dataIndex) override;
 
     // ----- Loading and saving system states -----
     bool appendCurrentSystemStateToEnd() override;
@@ -57,7 +57,7 @@ public:
 
 
     void initSimulator(double timestep, const char* fileName) override;
-    bool stepSimulator(int steps) override;
+    bool stepSimulator(int steps, int dataIndex) override;
     void setupMuJoCoWorld(double timestep, const char* fileName);
 
     bool setBodyPosition(string bodyName, m_point position);

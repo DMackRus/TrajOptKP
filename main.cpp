@@ -79,9 +79,11 @@ int main() {
     //         0, 0, 0, 0, 0, 0;
     std::cout << "before set start vector" << std::endl;
     
-    activeModelTranslator->setStateVector(startStateVector);
+    activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
 
-    activeModelTranslator->activePhysicsSimulator->stepSimulator(1);
+    cout << " -------------- Set State vector -------------------- \n";;
+
+    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
     visualizer myVisualizer(activeModelTranslator);
     myVisualizer.render();

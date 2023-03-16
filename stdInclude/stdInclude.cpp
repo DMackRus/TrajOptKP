@@ -4,7 +4,15 @@
 
 #include "stdInclude.h"
 
+bool randInitialised = false;
+
 float randFloat(float floor, float ceiling){
+
+    if(!randInitialised){
+        srand(time(0));
+        randInitialised = true;
+
+    }
     float random = (float)(rand()) / ((float) RAND_MAX);
     float diff = ceiling - floor;
     float r = random * diff;

@@ -25,7 +25,7 @@ bool MuJoCoHelper::isValidRobotName(string robotName, int &robotIndex, string &r
 }
 
 // Sets a robot joint positions the given values
-bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> jointPositions){
+bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> jointPositions, int dataIndex){
 
     // Check if the robot exists in the simulation
     int robotIndex;
@@ -49,22 +49,38 @@ bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> join
         cout << "Base link of robot not found\n";
         return false;
     }
+
+    
     int startIndex = model->jnt_qposadr[jointId];
 
-    if(startIndex == -1){
+    if(startIndex == MAIN_DATA_STATE){
         cout << "Invalid bodyId for robot\n";
         return false;
     }
 
+    mjData *d;
+    // use mdata
+    if(dataIndex = MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
     for(int i = 0; i < jointPositions.size(); i++){
-        mdata->qpos[startIndex + i] = jointPositions[i];
+        d->qpos[startIndex + i] = jointPositions[i];
     }
 
     return true;
 }
 
 // Sets a robot joint velocities the given values
-bool MuJoCoHelper::setRobotJointsVelocities(string robotName, vector<double> jointVelocities){
+bool MuJoCoHelper::setRobotJointsVelocities(string robotName, vector<double> jointVelocities, int dataIndex){
 
     // Check if the robot exists in the simulation
     int robotIndex;
@@ -94,14 +110,27 @@ bool MuJoCoHelper::setRobotJointsVelocities(string robotName, vector<double> joi
         return false;
     }
 
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
     for(int i = 0; i < jointVelocities.size(); i++){
-        mdata->qvel[startIndex + i] = jointVelocities[i];
+        d->qvel[startIndex + i] = jointVelocities[i];
     }
 
     return true;
 }
 
-bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> jointControls){
+bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> jointControls, int dataIndex){
 
     // Check if the robot exists in the simulation
     int robotIndex;
@@ -131,14 +160,28 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
         return false;
     }
 
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
     for(int i = 0; i < jointControls.size(); i++){
-        mdata->ctrl[startIndex + i] = jointControls[i];
+        d->ctrl[startIndex + i] = jointControls[i];
     }
 
     return true;
 }
 
-bool MuJoCoHelper::getRobotJointsPositions(string robotName, vector<double> &jointPositions){
+bool MuJoCoHelper::getRobotJointsPositions(string robotName, vector<double> &jointPositions, int dataIndex){
 
     // Check if the robot exists in the simulation
     int robotIndex;
@@ -162,14 +205,30 @@ bool MuJoCoHelper::getRobotJointsPositions(string robotName, vector<double> &joi
         return false;
     }
 
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+        cout << "GOTTEN DATA FROM SAVED SSYTEM STATES \n";
+    }
+
+
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        jointPositions.push_back(mdata->qpos[startIndex + i]);
+        jointPositions.push_back(d->qpos[startIndex + i]);
     }
 
     return true;
 }
 
-bool MuJoCoHelper::getRobotJointsVelocities(string robotName, vector<double> &jointVelocities) {
+bool MuJoCoHelper::getRobotJointsVelocities(string robotName, vector<double> &jointVelocities, int dataIndex) {
 
     // Check if the robot exists in the simulation
     int robotIndex;
@@ -193,14 +252,28 @@ bool MuJoCoHelper::getRobotJointsVelocities(string robotName, vector<double> &jo
         return false;
     }
 
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        jointVelocities.push_back(mdata->qvel[startIndex + i]);
+        jointVelocities.push_back(d->qvel[startIndex + i]);
     }
 
     return true;
 }
 
-bool MuJoCoHelper::getRobotJointsAccelerations(string robotName, vector<double> &jointAccelerations){
+bool MuJoCoHelper::getRobotJointsAccelerations(string robotName, vector<double> &jointAccelerations, int dataIndex){
     int robotIndex;
     string robotBaseJointName;
     if(!isValidRobotName(robotName, robotIndex, robotBaseJointName)){
@@ -222,14 +295,28 @@ bool MuJoCoHelper::getRobotJointsAccelerations(string robotName, vector<double> 
         return false;
     }
 
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        jointAccelerations.push_back(mdata->qacc[startIndex + i]);
+        jointAccelerations.push_back(d->qacc[startIndex + i]);
     }
 
     return true;
 }
 
-bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &jointControls) {
+bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &jointControls, int dataIndex) {
 
     // Check if the robot exists in the simulation
     int robotIndex;
@@ -253,8 +340,22 @@ bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &join
         return false;
     }
 
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        jointControls.push_back(mdata->ctrl[startIndex + i]);
+        jointControls.push_back(d->ctrl[startIndex + i]);
     }
 
     return true;
@@ -272,7 +373,7 @@ bool MuJoCoHelper::isValidBodyName(string bodyName, int &bodyIndex){
     return false;
 }
 
-bool MuJoCoHelper::setBodyPose_quat(string bodyName, pose_7 pose){
+bool MuJoCoHelper::setBodyPose_quat(string bodyName, pose_7 pose, int dataIndex){
 
     int bodyIndex;
     if(!isValidBodyName(bodyName, bodyIndex)){
@@ -284,20 +385,32 @@ bool MuJoCoHelper::setBodyPose_quat(string bodyName, pose_7 pose){
     const int jointIndex = model->body_jntadr[bodyId];
     const int qposIndex = model->jnt_qposadr[jointIndex];
 
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
     for(int i = 0; i < 3; i++){
-        mdata->qpos[qposIndex + i] = pose.position(i);
+        d->qpos[qposIndex + i] = pose.position(i);
     }
 
     for(int i = 0; i < 4; i++){
-        mdata->qpos[qposIndex + 3 + i] = pose.quat(i);
+        d->qpos[qposIndex + 3 + i] = pose.quat(i);
     }
-
-    mj_step(model, mdata);
 
     return true;
 }
 
-bool MuJoCoHelper::setBodyPose_angle(string bodyName, pose_6 pose){
+bool MuJoCoHelper::setBodyPose_angle(string bodyName, pose_6 pose, int dataIndex){
 
     int bodyIndex;
     if(!isValidBodyName(bodyName, bodyIndex)){
@@ -311,63 +424,69 @@ bool MuJoCoHelper::setBodyPose_angle(string bodyName, pose_6 pose){
 
     m_quat q = eul2Quat(pose.orientation);
 
-    for(int i = 0; i < 3; i++){
-        mdata->qpos[qposIndex + i] = pose.position(i);
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
     }
-
-    for(int i = 0; i < 4; i++){
-        mdata->qpos[qposIndex + 3 + i] = q(i);
-    }
-
-    return true;
-}
-
-bool MuJoCoHelper::setBodyVelocity(string bodyName, pose_6 velocity){
-
-        int bodyIndex;
-        if(!isValidBodyName(bodyName, bodyIndex)){
-            cout << "That body doesnt exist in the simulation\n";
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
             return false;
         }
-
-        int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
-        const int jointIndex = model->body_jntadr[bodyId];
-        const int qvelIndex = model->jnt_dofadr[jointIndex];
-
-        for(int i = 0; i < 3; i++){
-            mdata->qvel[qvelIndex + i] = velocity.position(i);
-        }
-
-        for(int i = 0; i < 3; i++){
-            mdata->qvel[qvelIndex + 3 + i] = velocity.orientation(i);
-        }
-
-        return true;
-}
-
-bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose){
-    int bodyIndex;
-    if(!isValidBodyName(bodyName, bodyIndex)){
-        cout << "That body doesnt exist in the simulation\n";
-        return false;
+        d = savedSystemStatesList[dataIndex];
     }
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
-    const int jointIndex = model->body_jntadr[bodyId];
-    const int qposIndex = model->jnt_qposadr[jointIndex];
-
     for(int i = 0; i < 3; i++){
-        pose.position(i) = mdata->qpos[qposIndex + i];
+        d->qpos[qposIndex + i] = pose.position(i);
     }
 
     for(int i = 0; i < 4; i++){
-        pose.quat(i) = mdata->qpos[qposIndex + 3 + i];
+        d->qpos[qposIndex + 3 + i] = q(i);
     }
 
     return true;
 }
 
-bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose){
+bool MuJoCoHelper::setBodyVelocity(string bodyName, pose_6 velocity, int dataIndex){
+
+    int bodyIndex;
+    if(!isValidBodyName(bodyName, bodyIndex)){
+        cout << "That body doesnt exist in the simulation\n";
+        return false;
+    }
+
+    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model->body_jntadr[bodyId];
+    const int qvelIndex = model->jnt_dofadr[jointIndex];
+
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
+    for(int i = 0; i < 3; i++){
+        d->qvel[qvelIndex + i] = velocity.position(i);
+    }
+
+    for(int i = 0; i < 3; i++){
+        d->qvel[qvelIndex + 3 + i] = velocity.orientation(i);
+    }
+
+    return true;
+}
+
+bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex){
     int bodyIndex;
     if(!isValidBodyName(bodyName, bodyIndex)){
         cout << "That body doesnt exist in the simulation\n";
@@ -378,14 +497,64 @@ bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose){
     const int jointIndex = model->body_jntadr[bodyId];
     const int qposIndex = model->jnt_qposadr[jointIndex];
 
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
     for(int i = 0; i < 3; i++){
-        pose.position(i) = mdata->qpos[qposIndex + i];
+        pose.position(i) = d->qpos[qposIndex + i];
+    }
+
+    for(int i = 0; i < 4; i++){
+        pose.quat(i) = d->qpos[qposIndex + 3 + i];
+    }
+
+    return true;
+}
+
+bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose, int dataIndex){
+    int bodyIndex;
+    if(!isValidBodyName(bodyName, bodyIndex)){
+        cout << "That body doesnt exist in the simulation\n";
+        return false;
+    }
+
+    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model->body_jntadr[bodyId];
+    const int qposIndex = model->jnt_qposadr[jointIndex];
+
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
+    for(int i = 0; i < 3; i++){
+        pose.position(i) = d->qpos[qposIndex + i];
     }
 
     m_quat tempQuat;
 
     for(int i = 0; i < 4; i++){
-        tempQuat(i) = mdata->qpos[qposIndex + 3 + i];
+        tempQuat(i) = d->qpos[qposIndex + 3 + i];
     }
 
     m_point euler = quat2Eul(tempQuat);
@@ -397,7 +566,7 @@ bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose){
     return true;
 }
 
-bool MuJoCoHelper::getBodyVelocity(string bodyName, pose_6 &velocity){
+bool MuJoCoHelper::getBodyVelocity(string bodyName, pose_6 &velocity, int dataIndex){
     int bodyIndex;
     if(!isValidBodyName(bodyName, bodyIndex)){
         cout << "That body doesnt exist in the simulation\n";
@@ -408,18 +577,32 @@ bool MuJoCoHelper::getBodyVelocity(string bodyName, pose_6 &velocity){
     const int jointIndex = model->body_jntadr[bodyId];
     const int qvelIndex = model->jnt_dofadr[jointIndex];
 
-    for(int i = 0; i < 3; i++){
-        velocity.position(i) = mdata->qvel[qvelIndex + i];
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
     }
 
     for(int i = 0; i < 3; i++){
-        velocity.orientation(i) = mdata->qvel[qvelIndex + 3 + i];
+        velocity.position(i) = d->qvel[qvelIndex + i];
+    }
+
+    for(int i = 0; i < 3; i++){
+        velocity.orientation(i) = d->qvel[qvelIndex + 3 + i];
     }
 
     return true;
 }
 
-bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration){
+bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration, int dataIndex){
     int bodyIndex;
     if(!isValidBodyName(bodyName, bodyIndex)){
         cout << "That body doesnt exist in the simulation\n";
@@ -430,12 +613,26 @@ bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration){
     const int jointIndex = model->body_jntadr[bodyId];
     const int qvelIndex = model->jnt_dofadr[jointIndex];
 
-    for(int i = 0; i < 3; i++){
-        acceleration.position(i) = mdata->qacc[qvelIndex + i];
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
     }
 
     for(int i = 0; i < 3; i++){
-        acceleration.orientation(i) = mdata->qacc[qvelIndex + 3 + i];
+        acceleration.position(i) = d->qacc[qvelIndex + i];
+    }
+
+    for(int i = 0; i < 3; i++){
+        acceleration.orientation(i) = d->qacc[qvelIndex + 3 + i];
     }
 
     return true;
@@ -447,30 +644,30 @@ bool MuJoCoHelper::appendCurrentSystemStateToEnd(){
 
     mjData *d = mj_makeData(model);
     cpMjData(model, d, mdata);
-    string goalObj = "goal";
-    pose_6 goalObjPose;
-    getBodyPose_angle(goalObj, goalObjPose);
-    cout << "goalObjPose: " << goalObjPose.position(0) << ", " << goalObjPose.position(1) << ", " << goalObjPose.position(2) << endl;
 
     savedSystemStatesList.push_back(d);
+
+    return true;
 }
 
 bool MuJoCoHelper::saveSystemStateToIndex(int listIndex){
     mjData *d = mj_makeData(model);
     savedSystemStatesList[listIndex] = d;
+
+    return true;
 }
 
 bool MuJoCoHelper::loadSystemStateFromIndex(int listIndex){
     cpMjData(model, mdata, savedSystemStatesList[listIndex]);
-    string goalObj = "goal";
-    pose_6 goalObjPose;
-    getBodyPose_angle(goalObj, goalObjPose);
-    cout << "goalObjPose: " << goalObjPose.position(0) << ", " << goalObjPose.position(1) << ", " << goalObjPose.position(2) << endl;
+    
+    return true;
 }
 
 bool MuJoCoHelper::deleteSystemStateFromIndex(int listIndex){
     mj_deleteData(savedSystemStatesList[listIndex]);
     savedSystemStatesList.erase(savedSystemStatesList.begin() + listIndex);
+
+    return true;
 }
 
 bool MuJoCoHelper::clearSystemStateList(){
@@ -478,6 +675,8 @@ bool MuJoCoHelper::clearSystemStateList(){
         mj_deleteData(savedSystemStatesList[i]);
     }
     savedSystemStatesList.clear();
+
+    return true;
 }
 
 void MuJoCoHelper::cpMjData(const mjModel* m, mjData* d_dest, const mjData* d_src){
@@ -492,9 +691,23 @@ void MuJoCoHelper::cpMjData(const mjModel* m, mjData* d_dest, const mjData* d_sr
 }
 // ------------------------------- END OF SYSTEM STATE FUNCTIONS ----------------------------------------
 
-bool MuJoCoHelper::stepSimulator(int steps){
+bool MuJoCoHelper::stepSimulator(int steps, int dataIndex){
+
+    mjData *d;
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "data index out of size in step simulator function \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
+
     for(int i = 0; i < steps; i++){
-        mj_step(model, mdata);
+        mj_step(model, d);
     }
     return true;
 }
