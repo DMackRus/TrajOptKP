@@ -14,7 +14,7 @@
 
 class visualizer {
 public:
-    visualizer(modelTranslator *_modelTranslator);
+    visualizer(modelTranslator *_modelTranslator, differentiator *_differentiator);
     void init();
     void update();
     void draw();

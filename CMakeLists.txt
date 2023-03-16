@@ -215,8 +215,8 @@ else()
     message(STATUS "could not find eigen library")
 endif (TARGET Eigen3::Eigen)
 
-set(Mujoco_INCLUDE_DIRS /home/davidrussell/catkin_ws/src/mujocoLib/include)
-file(GLOB LIB_MUJOCO /home/davidrussell/catkin_ws/src/mujocoLib/lib/libmujoco.so.2.3.2)
+set(Mujoco_INCLUDE_DIRS /home/dave/catkin_ws/src/mujocoLib/include)
+file(GLOB LIB_MUJOCO /home/dave/catkin_ws/src/mujocoLib/lib/libmujoco.so.2.3.2)
 message(STATUS "MuJoCo lib found at: " ${LIB_MUJOCO})
 message(STATUS "Mujoco include directory: " ${Mujoco_INCLUDE_DIRS})
 
@@ -242,7 +242,8 @@ add_executable(${PROJECT_NAME} main.cpp
                 visualizer/visualizer.cpp visualizer/visualizer.h 
                 physicsSimulators/bulletHelper.cpp physicsSimulators/bulletHelper.h 
                 modelTranslator/doublePendulum.cpp modelTranslator/doublePendulum.h
-                modelTranslator/reaching.cpp modelTranslator/reaching.h)
+                modelTranslator/reaching.cpp modelTranslator/reaching.h
+                differentiator/differentiator.cpp differentiator/differentiator.h)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR})
 

@@ -1,10 +1,4 @@
-/snap/clion/222/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/snap/clion/222/bin/ninja/linux/x64/ninja -G Ninja -S /home/dave/projects/physicsSimSwithching -B /home/dave/projects/physicsSimSwithching/cmake-build-debug
--- OPENMP has been found
--- Eigen library found
-Finding system installed Bullet
--- GLFW lib found at: /home/dave/Libraries/mujoco/include/libglfw.so.3
--- MuJoCo lib found at: /home/dave/Libraries/mujoco/include/libmujoco.so
--- Mujoco include directory: /home/dave/Libraries/mujoco/include
--- Configuring done
--- Generating done
--- Build files have been written to: /home/dave/projects/physicsSimSwithching/cmake-build-debug
+Cannot generate into /home/dave/Singularities/PandaPlanning/home/catkin_ws/src/physicsSimSwitching
+It is already used for project /home/davidrussell/catkin_ws/src/physicsSimSwitching
+
+Please either delete it manually or select another generation directory

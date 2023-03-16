@@ -55,14 +55,11 @@ public:
     mjvOption opt;			        // visualization options
     mjrContext con;				    // custom GPU context
 
-
     void initSimulator(double timestep, const char* fileName) override;
     bool stepSimulator(int steps, int dataIndex) override;
     void setupMuJoCoWorld(double timestep, const char* fileName);
 
     bool setBodyPosition(string bodyName, m_point position);
-
-    void getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, int dataIndex);
 
     vector<mjData*> savedSystemStatesList;
     mjModel *model;                  // MuJoCo model

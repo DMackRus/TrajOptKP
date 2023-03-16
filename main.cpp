@@ -1,5 +1,4 @@
 #include "stdInclude/stdInclude.h"
-#include "physicsSimulators/MuJoCoHelper.h"
 
 
 // --------------------- different scenes -----------------------
@@ -8,6 +7,7 @@
 
 
 #include "visualizer/visualizer.h"
+#include "physicsSimulators/MuJoCoHelper.h"
 
 
 #define PENDULUM_SCENE              0
@@ -73,10 +73,13 @@ int main() {
     }
 
     vector<robot> nullRobots;
-    vector<string> nullBodies
-    MuJoCoHelper gah(nullRobots, nullBodies);
-    differentiator *myDifferentiator = new differentiator(activeModelTranslator, gah);
+    vector<string> nullBodies;
+    // why isnt this working?
 
+    MuJoCoHelper *gah = new MuJoCoHelper(nullRobots, nullBodies);
+
+    differentiator *myDifferentiator = new differentiator(activeModelTranslator, gah);
+    //differentiator *myDifferentiator = new differentiator();
 
     // startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
     //         0.5, 0.5, 0.4, 0, 0, 0,
@@ -86,7 +89,7 @@ int main() {
     
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
 
-    cout << " -------------- Set State vector -------------------- \n";;
+    cout << " -------------- Set State vector -------------------- \n";
 
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
