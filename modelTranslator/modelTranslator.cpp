@@ -91,6 +91,36 @@ void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, v
     
 }
 
+double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last){
+    double cost = 0.0f;
+
+    MatrixXd X_diff = Xt - X_desired;
+    MatrixXd temp;
+
+    temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
+
+    cost = temp(0);
+
+    return cost;
+}
+
+void modelTranslator::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu){
+    MatrixXd X_diff = Xt - X_desired;
+
+    // Size cost derivatives appropriately
+    l_x.resize(stateVectorSize, 1);
+    l_xx.resize(stateVectorSize, stateVectorSize);
+
+    l_u.resize(num_ctrl, 1);
+    l_uu.resize(num_ctrl, num_ctrl);
+
+    l_x = 2 * Q * X_diff;
+    l_xx = 2 * Q;
+
+    l_u = 2 * R * Ut;
+    l_uu = 2 * R;
+}
+
 MatrixXd modelTranslator::returnStateVector(int dataIndex){
     MatrixXd stateVector(stateVectorSize, 1);
 

@@ -27,35 +27,35 @@ doublePendulum::doublePendulum(): modelTranslator(){
     std::cout << "initialise double pendulum model translator" << std::endl;
 }
 
-double doublePendulum::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last){
-    double cost = 0.0f;
+// double doublePendulum::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last){
+//     double cost = 0.0f;
 
-    MatrixXd X_diff = Xt - X_desired;
-    MatrixXd temp;
+//     MatrixXd X_diff = Xt - X_desired;
+//     MatrixXd temp;
 
-    temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
+//     temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
 
-    cost = temp(0);
+//     cost = temp(0);
 
-    return cost;
-}
+//     return cost;
+// }
 
-void doublePendulum::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu){
-    MatrixXd X_diff = Xt - X_desired;
+// void doublePendulum::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu){
+//     MatrixXd X_diff = Xt - X_desired;
 
-    // Size cost derivatives appropriately
-    l_x.resize(stateVectorSize, 1);
-    l_xx.resize(stateVectorSize, stateVectorSize);
+//     // Size cost derivatives appropriately
+//     l_x.resize(stateVectorSize, 1);
+//     l_xx.resize(stateVectorSize, stateVectorSize);
 
-    l_u.resize(num_ctrl, 1);
-    l_uu.resize(num_ctrl, num_ctrl);
+//     l_u.resize(num_ctrl, 1);
+//     l_uu.resize(num_ctrl, num_ctrl);
 
-    l_x = 2 * Q * X_diff;
-    l_xx = 2 * Q;
+//     l_x = 2 * Q * X_diff;
+//     l_xx = 2 * Q;
 
-    l_u = 2 * R * Ut;
-    l_uu = 2 * R;
-}
+//     l_u = 2 * R * Ut;
+//     l_uu = 2 * R;
+// }
 
 MatrixXd doublePendulum::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);

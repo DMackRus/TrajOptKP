@@ -112,9 +112,9 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     cout << "after dqveldctrl \n";
 
     // Calculate dqveldqvel
-    
 
-    // Calculate dqaccdqpos
+
+    // Calculate dqaccdq
 
 
     // Delete temporary data object to prevent memory leak
@@ -133,7 +133,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     A.block(0, dof, dof, dof) *= 0.004;
 
     A.block(dof, dof, dof, dof) = dqveldqvel;
-    A.block(dof, 0, dof, dof) = (dqaccdqpos * 0.004);
+    A.block(dof, 0, dof, dof) = (dqaccdq * 0.004);
 
 
     // ------------- B -------------------
