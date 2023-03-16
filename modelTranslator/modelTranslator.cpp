@@ -19,7 +19,8 @@ void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, v
     for(int i = 0; i < _bodies.size(); i++){
         bodyNames.push_back(_bodies[i].name);
     }
-    MuJoCoHelper *myHelper = new MuJoCoHelper(_robots, bodyNames);
+    
+    myHelper = new MuJoCoHelper(_robots, bodyNames);
     activePhysicsSimulator = myHelper;
     activePhysicsSimulator->initSimulator(0.004, filePath);
 

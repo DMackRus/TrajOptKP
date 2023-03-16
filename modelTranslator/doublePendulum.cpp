@@ -5,7 +5,7 @@
 #include "doublePendulum.h"
 
 doublePendulum::doublePendulum(): modelTranslator(){
-    filePath = "/home/dave/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/Acrobot.xml";
+    filePath = "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/Acrobot.xml";
     pendulumNumCtrl = 2;
     vector<robot> robots;
     robot doublePendulum;

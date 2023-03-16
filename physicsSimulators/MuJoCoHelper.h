@@ -62,10 +62,11 @@ public:
     bool setBodyPosition(string bodyName, m_point position);
 
     vector<mjData*> savedSystemStatesList;
+    mjData *mdata;                   // MuJoCo data
     mjModel *model;                  // MuJoCo model
 
 private:
-    mjData *mdata;                   // MuJoCo data
+   
     
 
 };

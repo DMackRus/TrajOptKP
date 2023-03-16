@@ -72,13 +72,7 @@ int main() {
         std::cout << "invalid scene selected, exiting" << std::endl;
     }
 
-    vector<robot> nullRobots;
-    vector<string> nullBodies;
-    // why isnt this working?
-
-    MuJoCoHelper *gah = new MuJoCoHelper(nullRobots, nullBodies);
-
-    differentiator *myDifferentiator = new differentiator(activeModelTranslator, gah);
+    differentiator *myDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     //differentiator *myDifferentiator = new differentiator();
 
     // startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,

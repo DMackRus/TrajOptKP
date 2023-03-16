@@ -133,7 +133,7 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         cout << "finite differencing test \n";
         MatrixXd A, B;
         int dataIndex = 0;
-        //activeDifferentiator->getDerivatives(A, B, false, dataIndex);
+        activeDifferentiator->getDerivatives(A, B, false, dataIndex);
 
         cout << "----------------B ------------------ \n";
         cout << B << endl;

@@ -54,6 +54,7 @@ public:
     struct stateVectorList myStateVector;
 
     physicsSimulator *activePhysicsSimulator;
+    MuJoCoHelper *myHelper;
 
 protected:
     MatrixXd Q;
