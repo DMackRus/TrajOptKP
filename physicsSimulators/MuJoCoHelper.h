@@ -37,9 +37,9 @@ public:
     bool getBodyAcceleration(string bodyName, pose_6 &acceleration, int dataIndex) override;
 
     // ----- Loading and saving system states -----
-    bool appendCurrentSystemStateToEnd() override;
-    bool saveSystemStateToIndex(int listIndex) override;
-    bool loadSystemStateFromIndex(int listIndex) override;
+    bool appendSystemStateToEnd(int dataIndex) override;
+    bool saveSystemStateToIndex(int saveDataIndex, int listIndex) override;
+    bool loadSystemStateFromIndex(int loadDataIndex, int listIndex) override;
     bool deleteSystemStateFromIndex(int listIndex) override;
     bool clearSystemStateList() override;
 
@@ -62,11 +62,13 @@ public:
 
     bool setBodyPosition(string bodyName, m_point position);
 
+
+    vector<mjData*> savedSystemStatesList;
+
 private:
     mjData *mdata;                   // MuJoCo data
     mjModel *model;                  // MuJoCo model
 
-    vector<mjData*> savedSystemStatesList;
 };
 
 #endif //PHYSICSSIMSWITCHING_MUJOCOHELPER_H

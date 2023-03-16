@@ -640,24 +640,51 @@ bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration, in
 // --------------------------------- END OF BODY UTILITY ---------------------------------------
 
 // ------------------------------- System State Functions -----------------------------------------------
-bool MuJoCoHelper::appendCurrentSystemStateToEnd(){
+bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
+
+    mjData *saveData;
+    if(dataIndex == MAIN_DATA_STATE){
+        saveData = mdata;
+    }
+    else{
+        saveData = savedSystemStatesList[dataIndex];
+    }
 
     mjData *d = mj_makeData(model);
-    cpMjData(model, d, mdata);
+    cpMjData(model, d, saveData);
 
     savedSystemStatesList.push_back(d);
 
     return true;
 }
 
-bool MuJoCoHelper::saveSystemStateToIndex(int listIndex){
+bool MuJoCoHelper::saveSystemStateToIndex(int saveDataIndex, int listIndex){
+
+    mjData *saveData;
+    if(saveDataIndex == MAIN_DATA_STATE){
+        saveData = mdata;
+    }
+    else{
+        saveData = savedSystemStatesList[saveDataIndex];
+    }
+
     mjData *d = mj_makeData(model);
-    savedSystemStatesList[listIndex] = d;
+    // TODO - THIS MIGHT NOT WORK CORRECTLY
+    savedSystemStatesList[listIndex] = saveData;
 
     return true;
 }
 
-bool MuJoCoHelper::loadSystemStateFromIndex(int listIndex){
+bool MuJoCoHelper::loadSystemStateFromIndex(int loadDataIndex, int listIndex){
+
+    mjData *loadData;
+    if(loadDataIndex == MAIN_DATA_STATE){
+        loadData = mdata;
+    }
+    else{
+        loadData = savedSystemStatesList[loadDataIndex];
+    }
+
     cpMjData(model, mdata, savedSystemStatesList[listIndex]);
     
     return true;

@@ -61,9 +61,9 @@ public:
     virtual bool getBodyAcceleration(string bodyName, pose_6 &acceleration, int dataIndex) = 0;
 
     // ----- Loading and saving system states -----
-    virtual bool appendCurrentSystemStateToEnd() = 0;
-    virtual bool saveSystemStateToIndex(int listIndex) = 0;
-    virtual bool loadSystemStateFromIndex(int listIndex) = 0;
+    virtual bool appendSystemStateToEnd(int dataIndex) = 0;
+    virtual bool saveSystemStateToIndex(int saveDataIndex, int listIndex) = 0;
+    virtual bool loadSystemStateFromIndex(int loadDataIndex, int listIndex) = 0;
     virtual bool deleteSystemStateFromIndex(int listIndex) = 0;
     virtual bool clearSystemStateList() = 0;
 

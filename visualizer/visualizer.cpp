@@ -42,11 +42,11 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_P){
 
-        activePhysicsSimulator->appendCurrentSystemStateToEnd();
+        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_O){
 
-        activePhysicsSimulator->loadSystemStateFromIndex(0);
+        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
 
@@ -89,14 +89,20 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         // left arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_A){
         // Analyse a specific stored system state
+
+
+        int dataIndex = 1;
+
         MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
         MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
         MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
         MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
-        Ut << 0, 0;
-        U_last << 0, 0;
 
-        Xt = activeModelTranslator->returnStateVector(1);
+
+        Ut = activeModelTranslator->returnControlVector(dataIndex);
+        U_last = activeModelTranslator->returnControlVector(dataIndex);
+
+        Xt = activeModelTranslator->returnStateVector(dataIndex);
         X_last = Xt.replicate(1, 1);
         double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
         cout << "------------------------------------------------- \n";
@@ -109,13 +115,13 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         cout << "l_xx:" << l_xx << endl;
 
         MatrixXd posVector, velVector, accelVec, stateVector;
-        // posVector = activeModelTranslator->returnPositionVector();
-        // velVector = activeModelTranslator->returnVelocityVector();
-        // stateVector = activeModelTranslator->returnStateVector();
-        accelVec = activeModelTranslator->returnAccelerationVector(1);
-        // cout << "pos Vector: " << posVector << endl;
-        // cout << "vel vector: " << velVector << endl;
-        // cout << "stateVector: " << stateVector << endl;
+        posVector = activeModelTranslator->returnPositionVector(dataIndex);
+        velVector = activeModelTranslator->returnVelocityVector(dataIndex);
+        stateVector = activeModelTranslator->returnStateVector(dataIndex);
+        accelVec = activeModelTranslator->returnAccelerationVector(dataIndex);
+        cout << "pos Vector: " << posVector << endl;
+        cout << "vel vector: " << velVector << endl;
+        cout << "stateVector: " << stateVector << endl;
         cout << "accel vector: " << accelVec << endl;
         cout << "------------------------------------------------- \n";
 
