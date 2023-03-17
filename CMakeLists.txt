@@ -243,7 +243,9 @@ add_executable(${PROJECT_NAME} main.cpp
                 physicsSimulators/bulletHelper.cpp physicsSimulators/bulletHelper.h 
                 modelTranslator/doublePendulum.cpp modelTranslator/doublePendulum.h
                 modelTranslator/reaching.cpp modelTranslator/reaching.h
-                differentiator/differentiator.cpp differentiator/differentiator.h)
+                differentiator/differentiator.cpp differentiator/differentiator.h
+                optimiser/optimiser.cpp optimiser/optimiser.h
+                optimiser/interpolated_iLQR.cpp optimiser/interpolated_iLQR.h)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR})
 

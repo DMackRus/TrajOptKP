@@ -9,6 +9,8 @@
 #include "visualizer/visualizer.h"
 #include "physicsSimulators/MuJoCoHelper.h"
 
+#include "optimiser/interpolated_iLQR.h"
+
 
 #define PENDULUM_SCENE              0
 #define REACHING_SCENE              0
@@ -73,6 +75,11 @@ int main() {
     }
 
     differentiator *myDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
+
+    //Instantiate my optimiser
+    interpolatediLQR *myOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator);
+
+
     //differentiator *myDifferentiator = new differentiator();
 
     // startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
