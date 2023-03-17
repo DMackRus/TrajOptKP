@@ -24,9 +24,6 @@ struct stateVectorList{
 class modelTranslator {
 public:
     modelTranslator();
-    ~modelTranslator(){
-
-    }
 
     void initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<bodyStateVec> bodies);
 
@@ -40,9 +37,6 @@ public:
     MatrixXd returnAccelerationVector(int dataIndex);
     bool setPositionVector(MatrixXd _positionVector, int dataIndex);
     bool setVelocityVector(MatrixXd _velocityVector, int dataIndex);
-
-    
-    
     
     virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last);
     virtual void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu);
@@ -50,8 +44,6 @@ public:
 
     virtual MatrixXd returnRandomStartState() = 0;
     virtual MatrixXd returnRandomGoalState() = 0;
-
-    
 
     int dof;
     int num_ctrl;

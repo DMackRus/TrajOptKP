@@ -12,7 +12,8 @@
 #include <Eigen/Dense>
 #include <memory>
 
-#define POSE_DOFS 6
+#define POSE_DOFS       6
+#define MUJOCO_DT   0.004
 
 using namespace std;
 using namespace Eigen;

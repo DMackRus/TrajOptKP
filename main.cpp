@@ -94,7 +94,7 @@ int main() {
     //Instantiate my optimiser
     interpolatediLQR *myOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator);
     vector<MatrixXd> initControls;
-    for(int i = 0; i < 100; i++){
+    for(int i = 0; i < 2000; i++){
         MatrixXd controlVec(activeModelTranslator->num_ctrl, 1);
         controlVec << 0, 0;
         initControls.push_back(controlVec);
