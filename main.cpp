@@ -76,18 +76,7 @@ int main() {
 
     differentiator *myDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
-    //Instantiate my optimiser
-    interpolatediLQR *myOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator);
-    vector<MatrixXd> initControls;
-    for(int i = 0; i < 100; i++){
-        MatrixXd controlVec(activeModelTranslator->num_ctrl, 1);
-        controlVec << 0, 0;
-        initControls.push_back(controlVec);
-
-    }
-    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-    double initCost = myOptimiser->rolloutTrajectory(0, false, initControls);
-    cout << "init cost: " << initCost << endl;
+    
 
 
     //differentiator *myDifferentiator = new differentiator();
@@ -102,6 +91,22 @@ int main() {
 
     cout << " -------------- Set State vector -------------------- \n";
 
+    //Instantiate my optimiser
+    interpolatediLQR *myOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator);
+    vector<MatrixXd> initControls;
+    for(int i = 0; i < 100; i++){
+        MatrixXd controlVec(activeModelTranslator->num_ctrl, 1);
+        controlVec << 0, 0;
+        initControls.push_back(controlVec);
+    }
+    cout << "made init controls " << endl;
+    //activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+    double initCost = myOptimiser->rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
+    cout << "init cost: " << initCost << endl;
+
+    
+
+    activeModelTranslator->activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
     visualizer myVisualizer(activeModelTranslator, myDifferentiator);

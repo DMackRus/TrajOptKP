@@ -30,8 +30,17 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 
         // If required to save states to trajectoy tracking, then save state
         if(saveStates){
-            activePhysicsSimulator->saveSystemStateToIndex(i, MAIN_DATA_STATE);
+            if(activePhysicsSimulator->checkIfDataIndexExists(i)){
+                cout << "data " << i << "exists \n";
+                activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, i);
+            }
+            else{
+                activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+            }
+            
         }
+
+        cout << "xt: " << Xt << endl;
 
         cost += (stateCost * 0.004);
 

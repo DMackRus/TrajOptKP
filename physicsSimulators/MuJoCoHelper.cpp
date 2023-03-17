@@ -655,10 +655,11 @@ bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 
     savedSystemStatesList.push_back(d);
 
-    cout << "address of main data:" << (void *)mdata << endl;
-    cout << "address of data to be linearised:" << (void *)savedSystemStatesList[0] << endl;
-
     return true;
+}
+
+bool MuJoCoHelper::checkIfDataIndexExists(int dataIndex){
+    return (savedSystemStatesList.size() > dataIndex);
 }
 
 bool MuJoCoHelper::saveSystemStateToIndex(int saveDataIndex, int listIndex){

@@ -14,6 +14,9 @@ public:
 
     void getDerivatvies();
 
+    void backwardsPass_Quu_reg();
+    void forwardsPass();
+
 
 
 private:

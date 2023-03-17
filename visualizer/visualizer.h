@@ -51,6 +51,8 @@ public:
     // UI rendering
     void render();
 
+    int currentShownDataIndex = 0;
+
 private:
     physicsSimulator *activePhysicsSimulator;
     modelTranslator *activeModelTranslator;

@@ -157,9 +157,17 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
 //     if up arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_UP){
+        currentShownDataIndex++;
+        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, currentShownDataIndex);
+        MatrixXd Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+        cout << "----------------------------- \n" << Xt << endl;
+        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_DOWN){
+        currentShownDataIndex--;
+        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, currentShownDataIndex);
+        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
     }
         // left arrow key pressed
@@ -251,7 +259,7 @@ void visualizer::render() {
 
     while (!glfwWindowShouldClose(window)) {
 
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        //activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         //glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
         activePhysicsSimulator->updateScene(window);
