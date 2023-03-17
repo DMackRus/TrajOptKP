@@ -53,29 +53,32 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     mjData *saveData;
     saveData = mj_makeData(m);
 
-    mjData *data_to_be_linearised;
-    if(dataIndex == MAIN_DATA_STATE){
-        data_to_be_linearised = activePhysicsSimulator->mdata;
-    }
-    else{
-        if(dataIndex >= activePhysicsSimulator->savedSystemStatesList.size()){
-            cout << "data index outside of saved systems state idnex get derivs \n";
-        }
+    // mjData *data_to_be_linearised;
+    // if(dataIndex == MAIN_DATA_STATE){
+    //     data_to_be_linearised = activePhysicsSimulator->mdata;
+    // }
+    // else{
+    //     if(dataIndex >= activePhysicsSimulator->savedSystemStatesList.size()){
+    //         cout << "data index outside of saved systems state idnex get derivs \n";
+    //     }
         
-        cout << "saved system state size: " << activePhysicsSimulator->savedSystemStatesList.size() << endl;
-        data_to_be_linearised = activePhysicsSimulator->savedSystemStatesList[dataIndex];
-    }
+    //     cout << "saved system state size: " << activePhysicsSimulator->savedSystemStatesList.size() << endl;
+    //     data_to_be_linearised = activePhysicsSimulator->savedSystemStatesList[dataIndex];
+    // }
     
     cout << "after assigning data to be linearised \n";
 
-    activePhysicsSimulator->cpMjData(m, saveData, data_to_be_linearised);
+    activePhysicsSimulator->cpMjData(m, saveData, activePhysicsSimulator->savedSystemStatesList[dataIndex]);
+
+    cout << "address of data to be linearised:" << (void *)activePhysicsSimulator->savedSystemStatesList[dataIndex] << endl;
+    cout << "address of save data object:" << (void *)saveData << endl;
+    cout << "address of main data:" << (void *)activePhysicsSimulator->mdata << endl;
 
     MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(dataIndex);
 
     // Calculate dqveldctrl
     for(int i = 0; i < numCtrl; i++){
         // perturb control vector positively
-
         MatrixXd perturbedControls = unperturbedControls.replicate(1,1);
         perturbedControls(i) += epsControls;
         activeModelTranslator->setControlVector(perturbedControls, dataIndex);
@@ -110,12 +113,88 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     }
 
     cout << "after dqveldctrl \n";
+    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(dataIndex);
 
     // Calculate dqveldqvel
+    for(int i = 0; i < dof; i++){
+        // Perturb velocity vector positively
+        MatrixXd perturbedVelocities = unperturbedVelocities.replicate(1, 1);
+        perturbedVelocities(i) += epsVelocities;
+        activeModelTranslator->setVelocityVector(perturbedVelocities, dataIndex);
 
+        // Integrate the simulator
+        activePhysicsSimulator->stepSimulator(1, dataIndex);
+
+        // return the new velocity vector
+        velocityInc = activeModelTranslator->returnVelocityVector(dataIndex);
+
+        // reset the data state back to initial data state
+        activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
+
+        // perturb velocity vector negatively
+        perturbedVelocities = unperturbedVelocities.replicate(1, 1);
+        perturbedVelocities(i) -= epsVelocities;
+        activeModelTranslator->setVelocityVector(perturbedVelocities, dataIndex);
+
+        // Integrate the simulator
+        activePhysicsSimulator->stepSimulator(1, dataIndex);
+
+        // Return the new velocity vector
+        velocityDec = activeModelTranslator->returnVelocityVector(dataIndex);
+
+        // Calculate one column of the dqveldqvel matrix
+        for(int j = 0; j < dof; j++){
+            dqveldqvel(j, i) = (velocityInc(j) - velocityDec(j))/(2*epsVelocities);
+        }
+
+        // Undo perturbation
+        activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
+
+    }
+
+    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(dataIndex);
 
     // Calculate dqaccdq
+    for(int i = 0; i < dof; i++){
+        // Perturb position vector positively
+        MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
+        perturbedPositions(i) += epsPositions;
+        activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
 
+        // Integrate the simulator
+        //activePhysicsSimulator->stepSimulator(1, dataIndex);
+        mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], mjSTAGE_NONE, 1);
+
+        // return the new velocity vector
+        accellInc = activeModelTranslator->returnAccelerationVector(dataIndex);
+        cout << "accellInc: " << accellInc << endl;
+
+        // reset the data state back to initial data state
+        activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
+
+        // perturb position vector negatively
+        perturbedPositions = unperturbedPositions.replicate(1, 1);
+        perturbedPositions(i) -= epsPositions;
+        activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
+
+        // Integrate the simulator
+        //activePhysicsSimulator->stepSimulator(1, dataIndex);
+        mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], mjSTAGE_NONE, 1);
+
+        // Return the new velocity vector
+        accellDec = activeModelTranslator->returnAccelerationVector(dataIndex);
+        cout << "accelldec: " << accellDec << endl;
+
+        // Calculate one column of the dqaccdq matrix
+        for(int j = 0; j < dof; j++){
+            dqaccdq(j, i) = (accellInc(j) - accellDec(j))/(2*epsPositions);
+        }
+
+        // Undo perturbation
+        activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
+    }
+
+    cout << "accell: " << dqaccdq << endl;
 
     // Delete temporary data object to prevent memory leak
     mj_deleteData(saveData);
@@ -143,7 +222,4 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
 
     B.block(0, 0, dof, numCtrl).setZero();
     B.block(dof, 0, dof, numCtrl) = dqveldctrl;
-
-
-
 }

@@ -137,11 +137,18 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
         cout << "----------------B ------------------ \n";
         cout << B << endl;
-
-
+        cout << "--------------- A ---------------------- \n";
+        cout << A << endl;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Z){
+        cout << "----------------- step random data state and compare things -------------------------- \n";
+        MatrixXd accell = activeModelTranslator->returnAccelerationVector(0);
+        cout << "accell before: " << accell << endl;
+        activePhysicsSimulator->stepSimulator(1, 0);
+        accell = activeModelTranslator->returnAccelerationVector(0);
+        cout << "accell after: " << accell << endl;
+
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_X){

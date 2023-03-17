@@ -34,9 +34,14 @@ public:
     bool setStateVector(MatrixXd _stateVector, int dataIndex);
     MatrixXd returnControlVector(int dataIndex);
     bool setControlVector(MatrixXd _controlVector, int dataIndex);
+
     MatrixXd returnPositionVector(int dataIndex);
     MatrixXd returnVelocityVector(int dataIndex);
     MatrixXd returnAccelerationVector(int dataIndex);
+    bool setPositionVector(MatrixXd _positionVector, int dataIndex);
+    bool setVelocityVector(MatrixXd _velocityVector, int dataIndex);
+
+    
     
     
     virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last);

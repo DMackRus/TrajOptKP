@@ -60,7 +60,7 @@ bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> join
 
     mjData *d;
     // use mdata
-    if(dataIndex = MAIN_DATA_STATE){
+    if(dataIndex == MAIN_DATA_STATE){
         d = mdata;
     }
     // use a saved data state
@@ -655,6 +655,9 @@ bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 
     savedSystemStatesList.push_back(d);
 
+    cout << "address of main data:" << (void *)mdata << endl;
+    cout << "address of data to be linearised:" << (void *)savedSystemStatesList[0] << endl;
+
     return true;
 }
 
@@ -685,7 +688,7 @@ bool MuJoCoHelper::loadSystemStateFromIndex(int loadDataIndex, int listIndex){
         loadData = savedSystemStatesList[loadDataIndex];
     }
 
-    cpMjData(model, mdata, savedSystemStatesList[listIndex]);
+    cpMjData(model, loadData, savedSystemStatesList[listIndex]);
     
     return true;
 }
@@ -798,7 +801,6 @@ void MuJoCoHelper::scroll(double yoffset){
 
 void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
-
     model = mj_loadXML(fileName, NULL, error, 1000);
 
     model->opt.timestep = timestep;
