@@ -78,6 +78,16 @@ int main() {
 
     //Instantiate my optimiser
     interpolatediLQR *myOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator);
+    vector<MatrixXd> initControls;
+    for(int i = 0; i < 100; i++){
+        MatrixXd controlVec(activeModelTranslator->num_ctrl, 1);
+        controlVec << 0, 0;
+        initControls.push_back(controlVec);
+
+    }
+    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+    double initCost = myOptimiser->rolloutTrajectory(0, false, initControls);
+    cout << "init cost: " << initCost << endl;
 
 
     //differentiator *myDifferentiator = new differentiator();

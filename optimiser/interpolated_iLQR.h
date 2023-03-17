@@ -7,8 +7,13 @@ class interpolatediLQR: public optimiser{
 public:
     interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator);
 
-    double rolloutTrajectory(int initialDataIndex) override;
+    double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIterations, int horizonLength) override;
+
+    void generateEvalWaypoints();
+
+    void getDerivatvies();
+
 
 
 private:
