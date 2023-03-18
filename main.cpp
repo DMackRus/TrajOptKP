@@ -92,17 +92,21 @@ int main() {
     cout << " -------------- Set State vector -------------------- \n";
 
     //Instantiate my optimiser
-    interpolatediLQR *myOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator);
+    interpolatediLQR *myOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, myDifferentiator, 2000);
     vector<MatrixXd> initControls;
-    for(int i = 0; i < 2000; i++){
+    int horizon = 1500;
+    for(int i = 0; i < horizon; i++){
         MatrixXd controlVec(activeModelTranslator->num_ctrl, 1);
         controlVec << 0, 0;
         initControls.push_back(controlVec);
     }
     cout << "made init controls " << endl;
     //activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-    double initCost = myOptimiser->rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
-    cout << "init cost: " << initCost << endl;
+    //double initCost = myOptimiser->rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
+    //cout << "init cost: " << initCost << endl;
+
+    vector<MatrixXd> optimisedControls;
+    optimisedControls = myOptimiser->optimise(0, initControls, 5, horizon);
 
     
 

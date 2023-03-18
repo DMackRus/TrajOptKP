@@ -66,13 +66,13 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     //     data_to_be_linearised = activePhysicsSimulator->savedSystemStatesList[dataIndex];
     // }
     
-    cout << "after assigning data to be linearised \n";
+    //cout << "after assigning data to be linearised \n";
 
     activePhysicsSimulator->cpMjData(m, saveData, activePhysicsSimulator->savedSystemStatesList[dataIndex]);
 
-    cout << "address of data to be linearised:" << (void *)activePhysicsSimulator->savedSystemStatesList[dataIndex] << endl;
-    cout << "address of save data object:" << (void *)saveData << endl;
-    cout << "address of main data:" << (void *)activePhysicsSimulator->mdata << endl;
+    // cout << "address of data to be linearised:" << (void *)activePhysicsSimulator->savedSystemStatesList[dataIndex] << endl;
+    // cout << "address of save data object:" << (void *)saveData << endl;
+    // cout << "address of main data:" << (void *)activePhysicsSimulator->mdata << endl;
 
     MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(dataIndex);
 
@@ -112,7 +112,6 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
 
     }
 
-    cout << "after dqveldctrl \n";
     MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(dataIndex);
 
     // Calculate dqveldqvel
@@ -167,7 +166,6 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
 
         // return the new velocity vector
         accellInc = activeModelTranslator->returnAccelerationVector(dataIndex);
-        cout << "accellInc: " << accellInc << endl;
 
         // reset the data state back to initial data state
         activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
@@ -183,7 +181,6 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
 
         // Return the new velocity vector
         accellDec = activeModelTranslator->returnAccelerationVector(dataIndex);
-        cout << "accelldec: " << accellDec << endl;
 
         // Calculate one column of the dqaccdq matrix
         for(int j = 0; j < dof; j++){
@@ -193,8 +190,6 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         // Undo perturbation
         activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
     }
-
-    cout << "accell: " << dqaccdq << endl;
 
     // Delete temporary data object to prevent memory leak
     mj_deleteData(saveData);

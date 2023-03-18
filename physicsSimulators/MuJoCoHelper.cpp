@@ -43,7 +43,6 @@ bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> join
 
     // Get the body id of the base link of the robot
     int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
-    cout << "body id: " << jointId << endl;
 
     if(jointId == -1){
         cout << "Base link of robot not found\n";
@@ -217,7 +216,6 @@ bool MuJoCoHelper::getRobotJointsPositions(string robotName, vector<double> &joi
             return false;
         }
         d = savedSystemStatesList[dataIndex];
-        cout << "GOTTEN DATA FROM SAVED SSYTEM STATES \n";
     }
 
 

@@ -1,6 +1,47 @@
 #include "interpolated_iLQR.h"
 
-interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator) : optimiser(_modelTranslator, _physicsSimulator){
+interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon) : optimiser(_modelTranslator, _physicsSimulator){
+
+    activeDifferentiator = _differentiator;
+    maxHorizon = _maxHorizon;
+
+    // initialise all vectors of matrices
+    cout << "dof: " << dof << endl;
+    cout << "num ctrl" << num_ctrl << endl;
+
+    for(int i = 0; i < maxHorizon; i++){
+        // Cost matrices
+        l_x.push_back(MatrixXd(2*dof, 1));
+        l_xx.push_back(MatrixXd(2*dof, 2*dof));
+        l_u.push_back(MatrixXd(num_ctrl, 1));
+        l_uu.push_back(MatrixXd(num_ctrl, num_ctrl));
+
+        // Dynamics derivatives matrices
+        A.push_back(MatrixXd(2*dof, 2*dof));
+        B.push_back(MatrixXd(2*dof, num_ctrl));
+
+        A[i].block(0, 0, dof, dof).setIdentity();
+        A[i].block(0, dof, dof, dof).setIdentity();
+        A[i].block(0, dof, dof, dof) *= MUJOCO_DT;
+        B[i].setZero();
+
+        f_x.push_back(MatrixXd(2*dof, 2*dof));
+        f_u.push_back(MatrixXd(2*dof, num_ctrl));
+
+        K.push_back(MatrixXd(num_ctrl, 2*dof));
+        k.push_back(MatrixXd(num_ctrl, 1));
+
+        U_old.push_back(MatrixXd(num_ctrl, 1));
+        U_new.push_back(MatrixXd(num_ctrl, 1));
+        X_old.push_back(MatrixXd(2*dof, 1));
+        X_new.push_back(MatrixXd(2*dof, 1));
+
+    }
+
+    // One more state than control
+    X_old.push_back(MatrixXd(2*dof, 1));
+    X_new.push_back(MatrixXd(2*dof, 1));
+
 
 }
 
@@ -16,6 +57,14 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
+    X_old[0] = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    if(activePhysicsSimulator->checkIfDataIndexExists(0)){
+        activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, 0);
+    }
+    else{
+        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+    }
+
     for(int i = 0; i < initControls.size(); i++){
         // set controls
         activeModelTranslator->setControlVector(initControls[i], MAIN_DATA_STATE);
@@ -30,9 +79,10 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 
         // If required to save states to trajectoy tracking, then save state
         if(saveStates){
-            if(activePhysicsSimulator->checkIfDataIndexExists(i)){
-                cout << "data " << i << "exists \n";
-                activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, i);
+            X_old[i + 1] = Xt.replicate(1, 1);
+            U_old[i] = Ut.replicate(1, 1);
+            if(activePhysicsSimulator->checkIfDataIndexExists(i + 1)){
+                activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, i + 1);
             }
             else{
                 activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
@@ -40,11 +90,15 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
             
         }
 
-        cout << "xt: " << Xt << endl;
+        cost += (stateCost * MUJOCO_DT);
 
-        cost += (stateCost * 0.004);
+    }
 
-
+    cout << "cost of trajectory was: " << cost << endl;
+    cout << "size of x_old " << X_old.size() << endl;
+    cout << "size of U_old " << U_old.size() << endl;
+    if(activePhysicsSimulator->checkIfDataIndexExists(1500)){
+        cout << "data index: 1500 exists \n";
     }
 
 
@@ -69,17 +123,30 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls;
     horizonLength = _horizonLength;
+    lambda = 0.1;
+    double oldCost = 0.0f;
+    double newCost = 0.0f;
+
+    oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
 
     // Optimise for a set number of iterations
     for(int i = 0; i < maxIterations; i++){
 
         // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
-
         // generate the dynamics evaluation waypoints
+        std::vector<int> evaluationPoints = generateEvalWaypoints(X_old, U_old);
+        // for(int j = 0; j < evaluationPoints.size(); j++){
+        //     cout << "eval: " << j << ": " << evaluationPoints[j] << endl;
+        // }
         
         // Calculate derivatives via finite differnecing / analytically for cost functions if available
+        getDerivativesAtSpecifiedIndices(evaluationPoints);
 
         // Interpolate derivatvies as required for a full set of derivatives
+        interpolateDerivatives(evaluationPoints);
+
+        cout << "STEP 1 COMPLETE \n";
+        
 
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
         bool validBackwardsPass = false;
@@ -105,12 +172,28 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             }
         }
 
-        // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
+        cout << "STEP 2 complete \n";
 
-        // STEP 4 - Check for convergence
+        if(!lambdaExit){
+            bool costReduced;
+            // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
+            newCost = forwardsPass(oldCost, costReduced);
+
+            // STEP 4 - Check for convergence
+            bool converged = checkForConvergence(oldCost, newCost);
+            if(converged){
+                break;
+            }
+        }
+        else{
+            cout << "exting optimisation due to lambda > lambdaMax \n";
+            break;
+        }
     }
 
-
+    for(int i = 0; i < horizonLength; i++){
+        optimisedControls.push_back(U_old[i]);
+    }
 
     return optimisedControls;
 }
@@ -118,23 +201,107 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
 std::vector<int> interpolatediLQR::generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
+    std::vector<int> evaluationWaypoints;
+    int counter = 0;
+    int numEvals = horizonLength / 5;
+
+    evaluationWaypoints.push_back(counter);
 
     // set-interval method
-
+    if(SET_INTERVAL){
+        for(int i = 0; i < numEvals; i++){
+            evaluationWaypoints.push_back(i * 5);
+        }
+    }
     // adaptive-interval method
+    else{
+
+    }
+    evaluationWaypoints.push_back(horizonLength);
+
+    return evaluationWaypoints;
+
+    
 }
 
-void interpolatediLQR::getDerivativesAtSpecifiedIndices(){
+void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
 
-    // Calculate dynamics derivatives at specified indices
+    // int save_iterations = model->opt.iterations;
+    // mjtNum save_tolerance = model->opt.tolerance;
+    // model->opt.iterations = 30;
+    // model->opt.tolerance = 0;
 
-    // calculate all cost derivatives if analytical or only specified ones if by finite differencing
+    //#pragma omp parallel for default(none)
+    for(int i = 0; i < indices.size(); i++){
+
+        int index = indices[i];
+        activeDifferentiator->getDerivatives(A[i], B[i], false,index);
+
+    }
+
+    //model->opt.iterations = save_iterations;
+    //model->opt.tolerance = save_tolerance;
+
+    //#pragma omp parallel for default(none)
+    for(int i = 0; i < horizonLength; i++){
+        if(i == 0){
+//            lastControl.setZero();
+            activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx[i], l_u[i], l_uu[i]);
+        }
+        else{
+//            lastControl = modelTranslator->returnControls(dArray[i - 1]);
+            activeModelTranslator->costDerivatives(X_old[i], U_old[i], X_old[i-1], U_old[i-1], l_x[i], l_xx[i], l_u[i], l_uu[i]);
+        }
+
+    }
+
+    activeModelTranslator->costDerivatives(X_old[horizonLength], U_old[horizonLength - 1], X_old[horizonLength - 1], U_old[horizonLength - 1],
+                                             l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength]);
 
 }
 
 void interpolatediLQR::interpolateDerivatives(std::vector<int> calculatedIndices){
 
     // Interpolate all the derivatvies that were not calculated via finite differencing
+    for(int t = 0; t < calculatedIndices.size()-1; t++){
+
+        MatrixXd addA(2*dof, 2*dof);
+        MatrixXd addB(2*dof, num_ctrl);
+        int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
+        int startIndex = calculatedIndices[t];
+
+        MatrixXd startA = A[t].replicate(1, 1);
+        MatrixXd endA = A[t + 1].replicate(1, 1);
+        MatrixXd diffA = endA - startA;
+        addA = diffA / nextInterpolationSize;
+
+        MatrixXd startB = B[t].replicate(1, 1);
+        MatrixXd endB = B[t + 1].replicate(1, 1);
+        MatrixXd diffB = endB - startB;
+        addB = diffB / nextInterpolationSize;
+
+
+        // Interpolate A and B matrices
+        for(int i = 0; i < nextInterpolationSize; i++){
+            f_x[startIndex + i] = A[t].replicate(1,1) + (addA * i);
+            f_u[startIndex + i] = B[t].replicate(1,1) + (addB * i);
+
+
+            //cout << "index: " << startIndex + i << endl;
+            //cout << f_x[startIndex + i] << endl;
+
+        }
+//            cout << "start A " << endl << startA << endl;
+//            cout << "endA A " << endl << endA << endl;
+//            cout << "diff A " << endl << diff << endl;
+//            cout << "add A " << endl << add << endl;
+    }
+
+    f_x[horizonLength - 1] = f_x[horizonLength - 2].replicate(1,1);
+    f_u[horizonLength - 1] = f_u[horizonLength - 2].replicate(1,1);
+
+    f_x[horizonLength] = f_x[horizonLength - 1].replicate(1,1);
+    f_u[horizonLength] = f_u[horizonLength - 1].replicate(1,1);
 
 }
 
@@ -284,6 +451,8 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
 //            cout << "new control: " << endl << U_new[t] << endl;
 
             activeModelTranslator->setControlVector(U_new[t], MAIN_DATA_STATE);
+            Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            Ut = U_new[t].replicate(1, 1);
 
             double newStateCost;
             newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
@@ -291,9 +460,11 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             newCost += (newStateCost * MUJOCO_DT);
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            X_last = Xt.replicate(1, 1);
+            U_last = Ut.replicate(1, 1);
         }
 
-        //cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
+        cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
 
         if(newCost < oldCost){
             costReduction = true;
@@ -305,6 +476,23 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             if(alphaCount >= alphaMax){
                 break;
             }
+        }
+    }
+
+    // If the cost was reduced
+    if(newCost < oldCost){
+        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+
+        for(int i = 0; i < horizonLength; i++){
+
+            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+            // Log the old state
+             X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+
+             activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, i+1);
+
+
         }
     }
 

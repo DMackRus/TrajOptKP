@@ -2,16 +2,19 @@
 #define INTERPOLATED_ILQR_H
 
 #include "optimiser.h"
+#include "../differentiator/differentiator.h"
+
+#define SET_INTERVAL        1
 
 class interpolatediLQR: public optimiser{
 public:
-    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator);
+    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIterations, int _horizonLength) override;
 
     std::vector<int> generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
-    void getDerivativesAtSpecifiedIndices();
+    void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
     void interpolateDerivatives(std::vector<int> calculatedIndices);
 
     bool backwardsPass_Quu_reg();
@@ -24,11 +27,14 @@ private:
     double maxLambda = 10000;
     double minLambda = 0.00001;
     double lambdaFactor = 10;
+    int maxHorizon = 0;
 
     // -------------- Vectors of matrices for gradient information about the trajectory -------------
     // First order dynamics
     vector<MatrixXd> f_x;
     vector<MatrixXd> f_u;
+    vector<MatrixXd> A;
+    vector<MatrixXd> B;
 
     // First and second order cost derivatives
     vector<MatrixXd> l_x;
@@ -43,8 +49,10 @@ private:
     // Saved states and controls
     vector<MatrixXd> U_new;
     vector<MatrixXd> U_old;
-    vector<MatrixXd> X_final;
+    vector<MatrixXd> X_new;
     vector<MatrixXd> X_old;
+
+    differentiator *activeDifferentiator;
 
 
 
