@@ -35,17 +35,13 @@ int main() {
     modelTranslator *activeModelTranslator;
     MatrixXd startStateVector(1, 1);
     
-    std::cout << "before scene check" << std::endl;
     if(myScene == pendulum){
-        std::cout << "before creating double pendulum" << std::endl;
         doublePendulum *myDoublePendulum = new doublePendulum();
         activeModelTranslator = myDoublePendulum;
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
         startStateVector = activeModelTranslator->returnRandomStartState();
-        MatrixXd controlVec(2,1);
-        controlVec << 10, 10;
-        //activeModelTranslator->setControlVector(controlVec);
+        //startStateVector << 3.14, 0, 0, 0;
     }
     else if(myScene == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
@@ -85,35 +81,16 @@ int main() {
     //         0.5, 0.5, 0.4, 0, 0, 0,
     //         0, 0, 0, 0, 0, 0, 0,
     //         0, 0, 0, 0, 0, 0;
-    std::cout << "before set start vector" << std::endl;
     
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
 
-    cout << " -------------- Set State vector -------------------- \n";
-
     //Instantiate my optimiser
     interpolatediLQR *myOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, myDifferentiator, 2000);
-    vector<MatrixXd> initControls;
-    int horizon = 1500;
-    for(int i = 0; i < horizon; i++){
-        MatrixXd controlVec(activeModelTranslator->num_ctrl, 1);
-        controlVec << 0, 0;
-        initControls.push_back(controlVec);
-    }
-    cout << "made init controls " << endl;
-    //activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-    //double initCost = myOptimiser->rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
-    //cout << "init cost: " << initCost << endl;
 
-    vector<MatrixXd> optimisedControls;
-    optimisedControls = myOptimiser->optimise(0, initControls, 5, horizon);
+    // activeModelTranslator->activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+    // activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-    
-
-    activeModelTranslator->activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
-    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-
-    visualizer myVisualizer(activeModelTranslator, myDifferentiator);
+    visualizer myVisualizer(activeModelTranslator, myOptimiser);
     myVisualizer.render();
 
     return 0;

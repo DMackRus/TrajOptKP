@@ -672,7 +672,7 @@ bool MuJoCoHelper::saveSystemStateToIndex(int saveDataIndex, int listIndex){
 
     mjData *d = mj_makeData(model);
     // TODO - THIS MIGHT NOT WORK CORRECTLY
-    savedSystemStatesList[listIndex] = saveData;
+    cpMjData(model, savedSystemStatesList[listIndex], saveData);
 
     return true;
 }

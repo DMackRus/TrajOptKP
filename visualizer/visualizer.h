@@ -11,10 +11,11 @@
 #include "../stdInclude/stdInclude.h"
 #include "../modelTranslator/modelTranslator.h"
 #include "../differentiator/differentiator.h"
+#include "../optimiser/optimiser.h"
 
 class visualizer {
 public:
-    visualizer(modelTranslator *_modelTranslator, differentiator *_differentiator);
+    visualizer(modelTranslator *_modelTranslator, optimiser *_optimiser);
     void init();
     void update();
     void draw();
@@ -56,7 +57,7 @@ public:
 private:
     physicsSimulator *activePhysicsSimulator;
     modelTranslator *activeModelTranslator;
-    differentiator *activeDifferentiator;
+    optimiser *activeOptimiser;
 };
 
 #endif //PHYSICSSIMSWITCHING_VISUALIZER_H

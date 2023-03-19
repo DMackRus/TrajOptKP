@@ -12,9 +12,9 @@ doublePendulum::doublePendulum(): modelTranslator(){
     doublePendulum.name = "doublePendulum";
     doublePendulum.jointNames = {"shoulder", "elbow"};
     doublePendulum.numActuators = 2;
-    doublePendulum.jointPosCosts = {1, 1};
+    doublePendulum.jointPosCosts = {10, 10};
     doublePendulum.jointVelCosts = {0.1, 0.1};
-    doublePendulum.jointControlCosts = {0.01, 0.01};
+    doublePendulum.jointControlCosts = {0.001, 0.001};
     robots.push_back(doublePendulum);
 
     vector<bodyStateVec> bodies;
@@ -22,7 +22,7 @@ doublePendulum::doublePendulum(): modelTranslator(){
     initModelTranslator(filePath, pendulumNumCtrl, robots, bodies);
     analyticalCostDerivatives = true;
 
-    X_desired << 0, 3.14, 0, 0;
+    X_desired << 3.1415, 0, 0, 0;
 
     std::cout << "initialise double pendulum model translator" << std::endl;
 }

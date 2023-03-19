@@ -128,6 +128,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     double newCost = 0.0f;
 
     oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
+    activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
 
     // Optimise for a set number of iterations
     for(int i = 0; i < maxIterations; i++){
@@ -181,6 +182,11 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
             // STEP 4 - Check for convergence
             bool converged = checkForConvergence(oldCost, newCost);
+
+            if(newCost < oldCost){
+                oldCost = newCost;
+            }
+
             if(converged){
                 break;
             }
@@ -235,7 +241,7 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
     for(int i = 0; i < indices.size(); i++){
 
         int index = indices[i];
-        activeDifferentiator->getDerivatives(A[i], B[i], false,index);
+        activeDifferentiator->getDerivatives(A[i], B[i], false, index);
 
     }
 
@@ -245,11 +251,9 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
     //#pragma omp parallel for default(none)
     for(int i = 0; i < horizonLength; i++){
         if(i == 0){
-//            lastControl.setZero();
             activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx[i], l_u[i], l_uu[i]);
         }
         else{
-//            lastControl = modelTranslator->returnControls(dArray[i - 1]);
             activeModelTranslator->costDerivatives(X_old[i], U_old[i], X_old[i-1], U_old[i-1], l_x[i], l_xx[i], l_u[i], l_uu[i]);
         }
 
@@ -426,7 +430,8 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
         for(int t = 0; t < horizonLength; t++) {
             // Step 1 - get old state and old control that were linearised around
             _X = activeModelTranslator->returnStateVector(t);
-            _U = activeModelTranslator->returnControlVector(t);
+            //_U = activeModelTranslator->returnControlVector(t);
+            _U = U_old[t].replicate(1, 1);
 
             X_new = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 
@@ -447,11 +452,14 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             // }
 
 //            cout << "old control: " << endl << U_old[t] << endl;
-////            cout << "state feedback" << endl << stateFeedback << endl;
+//            cout << "state feedback" << endl << stateFeedback << endl;
 //            cout << "new control: " << endl << U_new[t] << endl;
 
             activeModelTranslator->setControlVector(U_new[t], MAIN_DATA_STATE);
             Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+
+            
+
             Ut = U_new[t].replicate(1, 1);
 
             double newStateCost;
@@ -460,8 +468,10 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             newCost += (newStateCost * MUJOCO_DT);
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
             X_last = Xt.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
+
         }
 
         cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
@@ -485,6 +495,7 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
 
         for(int i = 0; i < horizonLength; i++){
 
+            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
             // Log the old state
@@ -492,8 +503,11 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
 
              activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, i+1);
 
+             U_old[i] = U_new[i].replicate(1, 1);
 
         }
+
+        return newCost;
     }
 
     // If the cost was reduced

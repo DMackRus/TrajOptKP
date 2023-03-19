@@ -4,11 +4,11 @@
 
 #include "visualizer.h"
 
-visualizer::visualizer(modelTranslator *_modelTranslator, differentiator *_differentiator){
+visualizer::visualizer(modelTranslator *_modelTranslator, optimiser *_optimiser){
 
     activePhysicsSimulator = _modelTranslator->activePhysicsSimulator;
     activeModelTranslator = _modelTranslator;
-    activeDifferentiator = _differentiator;
+    activeOptimiser = _optimiser;
 
     if (!glfwInit())
         mju_error("Could not initialize GLFW");
@@ -130,24 +130,18 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_S){
-        cout << "finite differencing test \n";
-        MatrixXd A, B;
-        int dataIndex = 0;
-        activeDifferentiator->getDerivatives(A, B, false, dataIndex);
+        // cout << "finite differencing test \n";
+        // MatrixXd A, B;
+        // int dataIndex = 0;
+        // activeDifferentiator->getDerivatives(A, B, false, dataIndex);
 
-        cout << "----------------B ------------------ \n";
-        cout << B << endl;
-        cout << "--------------- A ---------------------- \n";
-        cout << A << endl;
+        // cout << "----------------B ------------------ \n";
+        // cout << B << endl;
+        // cout << "--------------- A ---------------------- \n";
+        // cout << A << endl;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Z){
-        cout << "----------------- step random data state and compare things -------------------------- \n";
-        MatrixXd accell = activeModelTranslator->returnAccelerationVector(0);
-        cout << "accell before: " << accell << endl;
-        activePhysicsSimulator->stepSimulator(1, 0);
-        accell = activeModelTranslator->returnAccelerationVector(0);
-        cout << "accell after: " << accell << endl;
 
 
     }
@@ -257,9 +251,27 @@ void visualizer::windowCloseCallback(GLFWwindow * /*window*/) {
 void visualizer::render() {
     // run main loop, target real-time simulation and 60 fps rendering
 
+    vector<MatrixXd> initControls;
+    int horizon = 1500;
+    for(int i = 0; i < horizon; i++){
+        MatrixXd controlVec(activeModelTranslator->num_ctrl, 1);
+        controlVec << 0, 0;
+        initControls.push_back(controlVec);
+    }
+    //activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+    //double initCost = myOptimiser->rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
+    //cout << "init cost: " << initCost << endl;
+
+    vector<MatrixXd> optimisedControls;
+    optimisedControls = activeOptimiser->optimise(0, initControls, 10, horizon);
+    int counter = 0;
+    activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+
     while (!glfwWindowShouldClose(window)) {
 
-        //activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        activeModelTranslator->setControlVector(optimisedControls[counter] ,MAIN_DATA_STATE);
+        counter ++;
+        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         //glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
         activePhysicsSimulator->updateScene(window);
