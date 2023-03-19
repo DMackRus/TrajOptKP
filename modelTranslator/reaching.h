@@ -11,8 +11,6 @@ class pandaReaching : public modelTranslator {
 public:
     pandaReaching();
 
-    double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last) override;
-
     char* filePath; 
     int reachingDOF;
     int reachingNumCtrl;

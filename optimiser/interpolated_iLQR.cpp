@@ -58,6 +58,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
     X_old[0] = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    cout << "X_start:" << X_old[0] << endl;
     if(activePhysicsSimulator->checkIfDataIndexExists(0)){
         activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, 0);
     }
@@ -75,7 +76,14 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         // return cost for this state
         Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
         Ut = activeModelTranslator->returnControlVector(MAIN_DATA_STATE);
-        double stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
+        double stateCost;
+        
+        if(i == initControls.size() - 1){
+            stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, true);
+        }
+        else{
+            stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+        }
 
         // If required to save states to trajectoy tracking, then save state
         if(saveStates){
@@ -145,8 +153,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
         // Interpolate derivatvies as required for a full set of derivatives
         interpolateDerivatives(evaluationPoints);
-
-        cout << "STEP 1 COMPLETE \n";
         
 
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
@@ -173,8 +179,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             }
         }
 
-        cout << "STEP 2 complete \n";
-
         if(!lambdaExit){
             bool costReduced;
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
@@ -196,6 +200,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             break;
         }
     }
+
+    // Load the initial data back into main data
+    activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_old[i]);
@@ -251,16 +258,16 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
     //#pragma omp parallel for default(none)
     for(int i = 0; i < horizonLength; i++){
         if(i == 0){
-            activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx[i], l_u[i], l_uu[i]);
+            activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
         }
         else{
-            activeModelTranslator->costDerivatives(X_old[i], U_old[i], X_old[i-1], U_old[i-1], l_x[i], l_xx[i], l_u[i], l_uu[i]);
+            activeModelTranslator->costDerivatives(X_old[i], U_old[i], X_old[i-1], U_old[i-1], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
         }
 
     }
 
     activeModelTranslator->costDerivatives(X_old[horizonLength], U_old[horizonLength - 1], X_old[horizonLength - 1], U_old[horizonLength - 1],
-                                             l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength]);
+                                             l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength], true);
 
 }
 
@@ -463,7 +470,13 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             Ut = U_new[t].replicate(1, 1);
 
             double newStateCost;
-            newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
+            // Terminal state
+            if(t == horizonLength - 1){
+                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, true);
+            }
+            else{
+                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+            }
 
             newCost += (newStateCost * MUJOCO_DT);
 

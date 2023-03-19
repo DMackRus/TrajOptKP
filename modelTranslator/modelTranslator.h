@@ -38,10 +38,10 @@ public:
     bool setPositionVector(MatrixXd _positionVector, int dataIndex);
     bool setVelocityVector(MatrixXd _velocityVector, int dataIndex);
     
-    virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last);
-    virtual void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu);
+    virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal);
+    virtual void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
     
-
+    virtual std::vector<MatrixXd> createInitControls(int horizonLength);
     virtual MatrixXd returnRandomStartState() = 0;
     virtual MatrixXd returnRandomGoalState() = 0;
 
@@ -55,6 +55,7 @@ public:
 
 protected:
     MatrixXd Q;
+    MatrixXd Q_terminal;
     MatrixXd R;
     MatrixXd J;
 

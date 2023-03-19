@@ -16,7 +16,3 @@ pandaReaching::pandaReaching(): modelTranslator(){
     initModelTranslator(filePath, reachingNumCtrl, robots, bodies);
     std::cout << "initialised reaching model translator" << std::endl;
 }
-
-double pandaReaching::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last){
-    return 0.0f;
-}

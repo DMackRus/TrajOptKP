@@ -12,9 +12,6 @@ optimiser::optimiser(modelTranslator *_modelTranslator, physicsSimulator *_physi
 
 bool optimiser::checkForConvergence(double oldCost, double newCost){
     double costGrad = (oldCost - newCost)/newCost;
-    cout << "old cost: " << oldCost << endl;
-    cout << "new cost: " << newCost << endl;
-    cout << "cost grad: " << costGrad << endl;
 
     if(costGrad < epsConverge){
         return true;

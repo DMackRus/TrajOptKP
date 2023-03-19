@@ -62,12 +62,12 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
         Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
         X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
+        double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
         std::cout << "cost: " << cost << std::endl;
 
 
         MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu);
+        activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu, false);
         cout << "l_x: " << l_x << endl;
         cout << "l_xx:" << l_xx << endl;
 
@@ -106,13 +106,13 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
         Xt = activeModelTranslator->returnStateVector(dataIndex);
         X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last);
+        double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
         cout << "------------------------------------------------- \n";
         std::cout << "cost: " << cost << std::endl;
 
 
         MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu);
+        activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu, false);
         cout << "l_x: " << l_x << endl;
         cout << "l_xx:" << l_xx << endl;
 
@@ -248,39 +248,49 @@ void visualizer::windowCloseCallback(GLFWwindow * /*window*/) {
 //    mj_deactivate();
 }
 // ----------------------------------------------------------------------------------------------------
+
 void visualizer::render() {
     // run main loop, target real-time simulation and 60 fps rendering
 
-    vector<MatrixXd> initControls;
-    int horizon = 1500;
-    for(int i = 0; i < horizon; i++){
-        MatrixXd controlVec(activeModelTranslator->num_ctrl, 1);
-        controlVec << 0, 0;
-        initControls.push_back(controlVec);
-    }
-    //activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-    //double initCost = myOptimiser->rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
-    //cout << "init cost: " << initCost << endl;
+    // vector<MatrixXd> initControls;
+    // int horizon = 1500;
+    // initControls = activeModelTranslator->createInitControls(horizon);
 
-    vector<MatrixXd> optimisedControls;
-    optimisedControls = activeOptimiser->optimise(0, initControls, 10, horizon);
-    int counter = 0;
-    activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+    // vector<MatrixXd> optimisedControls;
+    // optimisedControls = activeOptimiser->optimise(0, initControls, 10, horizon);
+    // activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+    // int visualiseCounter = 0;
+    // int counter = 0;
 
-    while (!glfwWindowShouldClose(window)) {
+    // while (!glfwWindowShouldClose(window)) {
 
-        activeModelTranslator->setControlVector(optimisedControls[counter] ,MAIN_DATA_STATE);
-        counter ++;
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+    //     activeModelTranslator->setControlVector(optimisedControls[counter], MAIN_DATA_STATE);
+    //     activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-        //glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
-        activePhysicsSimulator->updateScene(window);
+    //     counter++;
+    //     visualiseCounter++;
+    //     if(visualiseCounter == 5){
+    //         visualiseCounter = 0;
+    //         activePhysicsSimulator->updateScene(window);
 
-        // swap OpenGL buffers (blocking call due to v-sync)
-        glfwSwapBuffers(window);
+    //         // swap OpenGL buffers (blocking call due to v-sync)
+    //         glfwSwapBuffers(window);
 
-        // process pending GUI events, call GLFW callbacks
-        glfwPollEvents();
+    //         // process pending GUI events, call GLFW callbacks
+    //         glfwPollEvents();
 
-    }
+    //     }
+
+    //     if(counter >= horizon){
+    //         counter = 0;
+    //         activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+
+    //     }
+    // }
+
+
+
+    activePhysicsSimulator->updateScene(window);
+    glfwSwapBuffers(window);
+    glfwPollEvents();
 }
