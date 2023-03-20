@@ -90,7 +90,7 @@ void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, v
 
     Q_terminal = Q.replicate(1, 1);
     for(int i = 0; i < dof; i++){
-        Q_terminal(i, i) *= 1000;
+        Q_terminal(i, i) *= 100;
     }
 
     cout << "Q_terminal: " << Q_terminal << endl;

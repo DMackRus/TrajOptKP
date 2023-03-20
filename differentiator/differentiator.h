@@ -14,11 +14,16 @@ public:
     differentiator(modelTranslator *_modelTranslator, MuJoCoHelper *_physicsSimulator);
 
     void getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, int dataIndex);
+    void initModelForFiniteDifferencing();
+    void resetModelAfterFiniteDifferencing();
 
 private:
     modelTranslator *activeModelTranslator;
     MuJoCoHelper *activePhysicsSimulator;
     mjModel *m;
+
+    int save_iterations;
+    mjtNum save_tolerance;
 
 };
 

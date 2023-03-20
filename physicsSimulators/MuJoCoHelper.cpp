@@ -762,12 +762,20 @@ void MuJoCoHelper::initVisualisation() {
     mjr_makeContext(model, &con, mjFONTSCALE_150);
 }
 
-void MuJoCoHelper::updateScene(GLFWwindow *window){
+void MuJoCoHelper::updateScene(GLFWwindow *window, const char* label){
     // update scene and render
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
     mjv_updateScene(model, mdata, &opt, NULL, &cam, mjCAT_ALL, &scn);
+
+    
+
     mjr_render(viewport, &scn, &con);
+
+    mjrRect rect{0, 0, 100, 100};
+    mjr_rectangle(rect, 0, 0, 0, 0);
+
+    mjr_overlay(0, mjGRID_TOPLEFT, rect, label, 0, &con);
 }
 
 void MuJoCoHelper::mouseMove(double dx, double dy, bool button_left, bool button_right,  GLFWwindow *window){

@@ -48,7 +48,7 @@ public:
 
     // ------------------------------- Visualisation -----------------------------------------
     void initVisualisation() override;
-    void updateScene(GLFWwindow *window) override;
+    void updateScene(GLFWwindow *window, const char* label) override;
     void mouseMove(double dx, double dy, bool button_left, bool button_right,  GLFWwindow *window) override;
     void scroll(double yoffset) override;
     mjvCamera cam;                   // abstract camera

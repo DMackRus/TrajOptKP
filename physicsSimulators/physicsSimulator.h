@@ -70,7 +70,7 @@ public:
 
     // ------------------------------- Visualisation -----------------------------------------
     virtual void initVisualisation() = 0;
-    virtual void updateScene(GLFWwindow *window) = 0;
+    virtual void updateScene(GLFWwindow *window, const char* label) = 0;
     virtual void mouseMove(double dx, double dy, bool button_left, bool button_right,  GLFWwindow *window) = 0;
     virtual void scroll(double yoffset) = 0;
 

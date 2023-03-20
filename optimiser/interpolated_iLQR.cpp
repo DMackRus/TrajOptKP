@@ -153,6 +153,13 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
         // Interpolate derivatvies as required for a full set of derivatives
         interpolateDerivatives(evaluationPoints);
+
+        cout << "f_x[1000] \n" << f_x[1000] << endl;
+        // cout << "f_u[1000] \n" << f_u[1000] << endl;
+        // cout << "l_x[1000] \n" << l_x[1000] << endl;
+        // cout << "l_xx[1000] \n" << l_xx[1000] << endl;
+        // cout << "l_u[1000] \n" << l_u[1000] << endl;
+        // cout << "l_uu[1000] \n" << l_uu[1000] << endl;
         
 
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
@@ -196,7 +203,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             }
         }
         else{
-            cout << "exting optimisation due to lambda > lambdaMax \n";
+            cout << "exiting optimisation due to lambda > lambdaMax \n";
             break;
         }
     }
@@ -239,10 +246,7 @@ std::vector<int> interpolatediLQR::generateEvalWaypoints(std::vector<MatrixXd> t
 
 void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
 
-    // int save_iterations = model->opt.iterations;
-    // mjtNum save_tolerance = model->opt.tolerance;
-    // model->opt.iterations = 30;
-    // model->opt.tolerance = 0;
+    activeDifferentiator->initModelForFiniteDifferencing();
 
     //#pragma omp parallel for default(none)
     for(int i = 0; i < indices.size(); i++){
@@ -252,8 +256,7 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
 
     }
 
-    //model->opt.iterations = save_iterations;
-    //model->opt.tolerance = save_tolerance;
+    activeDifferentiator->resetModelAfterFiniteDifferencing();
 
     //#pragma omp parallel for default(none)
     for(int i = 0; i < horizonLength; i++){
@@ -377,20 +380,23 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
 
         V_xx = (V_xx + V_xx.transpose()) / 2;
 
-//        cout << "------------------ iteration " << t << " ------------------" << endl;
-//        cout << "l_x " << l_x[t] << endl;
-//        cout << "l_xx " << l_xx[t] << endl;
-//        cout << "l_u " << l_u[t] << endl;
-//        cout << "l_uu " << l_uu[t] << endl;
-//        cout << "Q_ux " << Q_ux << endl;
-//        cout << "f_u[t] " << f_u[t] << endl;
-//        cout << "Q_uu " << Q_uu << endl;
-//        cout << "Q_uu_inv " << Q_uu_inv << endl;
-//        cout << "Q_x " << Q_x << endl;
-//        cout << "Q_xx " << Q_xx << endl;
-//        cout << "V_xx " << V_xx << endl;
-//        cout << "V_x " << V_x << endl;
-//        cout << "K[t] " << K[t] << endl;
+        // if(t > horizonLength - 5){
+        //     cout << "------------------ iteration " << t << " ------------------" << endl;
+        //     cout << "l_x " << l_x[t] << endl;
+        //     cout << "l_xx " << l_xx[t] << endl;
+        //     cout << "l_u " << l_u[t] << endl;
+        //     cout << "l_uu " << l_uu[t] << endl;
+        //     cout << "Q_ux " << Q_ux << endl;
+        //     cout << "f_u[t] " << f_u[t] << endl;
+        //     cout << "Q_uu " << Q_uu << endl;
+        //     cout << "Q_uu_inv " << Q_uu_inv << endl;
+        //     cout << "Q_x " << Q_x << endl;
+        //     cout << "Q_xx " << Q_xx << endl;
+        //     cout << "V_xx " << V_xx << endl;
+        //     cout << "V_x " << V_x << endl;
+        //     cout << "K[t] " << K[t] << endl;
+        // }
+       
     }
 
     return true;

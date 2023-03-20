@@ -6,20 +6,19 @@
 
 doublePendulum::doublePendulum(): modelTranslator(){
     filePath = "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/Acrobot.xml";
-    pendulumNumCtrl = 2;
     vector<robot> robots;
     robot doublePendulum;
     doublePendulum.name = "doublePendulum";
     doublePendulum.jointNames = {"shoulder", "elbow"};
     doublePendulum.numActuators = 2;
     doublePendulum.jointPosCosts = {1, 1};
-    doublePendulum.jointVelCosts = {0.1, 0.1};
-    doublePendulum.jointControlCosts = {0.01, 0.01};
+    doublePendulum.jointVelCosts = {0, 0};
+    doublePendulum.jointControlCosts = {0.1, 0.1};
     robots.push_back(doublePendulum);
 
     vector<bodyStateVec> bodies;
 
-    initModelTranslator(filePath, pendulumNumCtrl, robots, bodies);
+    initModelTranslator(filePath, 2, robots, bodies);
     analyticalCostDerivatives = true;
 
     // Pendulum down stable position

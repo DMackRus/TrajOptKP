@@ -50,7 +50,8 @@ public:
 
 
     // UI rendering
-    void render();
+    bool windowOpen();
+    void render(const char* label);
 
     int currentShownDataIndex = 0;
 

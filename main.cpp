@@ -12,12 +12,10 @@
 #include "optimiser/interpolated_iLQR.h"
 
 
-#define PENDULUM_SCENE              0
-#define REACHING_SCENE              0
-#define TWOD_PUSHING_SCENE          0
-#define THREED_PUSHING_SCENE        0
-#define TWOD_PUSHING_CLUTTER_SCENE  0
-#define BOX_FLICK_SCENE             0
+#define SHOW_INIT_CONTROLS      0
+#define ILQR_ONCE               1
+#define MPC_CONTINOUS           0
+#define MPC_UNTIL_COMPLETE      0
 
 enum scenes{
     pendulum = 0,
@@ -33,12 +31,14 @@ differentiator *activeDifferentiator;
 interpolatediLQR *activeOptimiser;
 visualizer *activeVisualiser;
 
-
-void MPCControl();
+void showInitControls();
+void iLQROnce();
+void MPCUntilComplete();
+void MPCContinous();
 
 int main() {
 
-    scenes myScene = pendulum;
+    scenes myScene = reaching;
     MatrixXd startStateVector(1, 1);
     
     if(myScene == pendulum){
@@ -46,14 +46,15 @@ int main() {
         activeModelTranslator = myDoublePendulum;
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
-        startStateVector = activeModelTranslator->returnRandomStartState();
-        //startStateVector << 3.14, 0, 0, 0;
+        //startStateVector = activeModelTranslator->returnRandomStartState();
+        startStateVector << 3.14, 0, 0, 0;
     }
     else if(myScene == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
-        // pandaReaching *myReaching = new pandaReaching();
-        // activeModelTranslator = myReaching;
-        // startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+        pandaReaching *myReaching = new pandaReaching();
+        activeModelTranslator = myReaching;
+        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+        startStateVector = activeModelTranslator->returnRandomStartState();
 
         // startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
         //     0, 0, 0, 0, 0, 0, 0;
@@ -85,17 +86,114 @@ int main() {
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
 
     //Instantiate my optimiser
-    activeOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, 2000);
+    activeOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, 3000);
 
     activeVisualiser = new visualizer(activeModelTranslator, activeOptimiser);
 
-    MPCControl();
+    if(SHOW_INIT_CONTROLS){
+        showInitControls();
+    }
+    else if(ILQR_ONCE){
+        iLQROnce();
+    }
+    else if(MPC_CONTINOUS){
+        MPCContinous();
+    }
+    else if(MPC_UNTIL_COMPLETE){
+        MPCUntilComplete();
+    }
+    else{
+        cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
+    }
+
     //activeVisualiser->render();
 
     return 0;
 }
 
-void MPCControl(){
+void showInitControls(){
+    int horizon = 2000;
+    int controlCounter = 0;
+    int visualCounter = 0;
+
+    std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
+
+    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+    cout << "init controls created \n";
+
+    while(activeVisualiser->windowOpen()){
+
+        activeModelTranslator->setControlVector(initControls[controlCounter], MAIN_DATA_STATE);
+
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+        controlCounter++;
+        visualCounter++;
+
+        if(controlCounter >= horizon){
+            controlCounter = 0;
+            activeModelTranslator->activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+        }
+
+        if(visualCounter > 5){
+            visualCounter = 0;
+            activeVisualiser->render("show init controls");
+        }
+
+    }
+
+}
+
+void iLQROnce(){
+    int horizon = 3000;
+    int controlCounter = 0;
+    int visualCounter = 0;
+    bool showFinalControls = true;
+    char* label = "Final controls";
+
+    std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 10, horizon);
+
+    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+
+    while(activeVisualiser->windowOpen()){
+
+        if(showFinalControls){
+            activeModelTranslator->setControlVector(optimisedControls[controlCounter], MAIN_DATA_STATE);
+        }
+        else{
+            activeModelTranslator->setControlVector(initControls[controlCounter], MAIN_DATA_STATE);
+        }
+        
+
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+
+        controlCounter++;
+        visualCounter++;
+
+        if(controlCounter >= horizon){
+            controlCounter = 0;
+            activeModelTranslator->activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+            showFinalControls = !showFinalControls;
+            if(showFinalControls){
+                label = "Final controls";
+            }
+            else{
+                label = "Init Controls";
+            }
+        }
+
+        if(visualCounter > 5){
+            visualCounter = 0;
+            activeVisualiser->render(label);
+        }
+
+    }
+
+}
+
+void MPCContinous(){
 
 
     int horizon = 2000;
@@ -104,7 +202,7 @@ void MPCControl(){
     int visualCounter = 0;
     int overallTaskCounter = 0;
     int reInitialiseCounter = 0;
-    cout << "before init dhfdkjsdhkdfshkd \n";
+    char* label = "MPC Continous";
 
     // Instantiate init controls
     std::vector<MatrixXd> initControls;
@@ -132,7 +230,7 @@ void MPCControl(){
         }
 
         if(visualCounter > 5){
-            activeVisualiser->render();
+            activeVisualiser->render(label);
             visualCounter = 0;
         }
 
@@ -229,4 +327,8 @@ void MPCControl(){
     // cout << "duration of MPC was: " << MPCDuration.count()/1000 << " ms. Trajec length of " << trajecTime << " s" << endl;
 
     // renderMPCAfter();
+}
+
+void MPCUntilComplete(){
+
 }

@@ -21,11 +21,6 @@ public:
 
     
     char* filePath; 
-    int pendulumDOF;
-    int pendulumNumCtrl;
-
-
-
 };
 
 #endif //PHYSICSSIMSWITCHING_DOUBLEPENDULUM_H

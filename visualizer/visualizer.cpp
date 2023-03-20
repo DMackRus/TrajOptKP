@@ -249,7 +249,11 @@ void visualizer::windowCloseCallback(GLFWwindow * /*window*/) {
 }
 // ----------------------------------------------------------------------------------------------------
 
-void visualizer::render() {
+bool visualizer::windowOpen(){
+    return !glfwWindowShouldClose(window);
+}
+
+void visualizer::render(const char* label) {
     // run main loop, target real-time simulation and 60 fps rendering
 
     // vector<MatrixXd> initControls;
@@ -290,7 +294,7 @@ void visualizer::render() {
 
 
 
-    activePhysicsSimulator->updateScene(window);
+    activePhysicsSimulator->updateScene(window, label);
     glfwSwapBuffers(window);
     glfwPollEvents();
 }

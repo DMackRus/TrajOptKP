@@ -17,10 +17,23 @@ differentiator::differentiator(modelTranslator *_modelTranslator, MuJoCoHelper *
     }
 }
 
+void differentiator::initModelForFiniteDifferencing(){
+    save_iterations = m->opt.iterations;
+    save_tolerance = m->opt.tolerance;
+    m->opt.iterations = 30;
+    m->opt.tolerance = 0;
+}
+
+void differentiator::resetModelAfterFiniteDifferencing(){
+    m->opt.iterations = save_iterations;
+    m->opt.tolerance = save_tolerance;
+
+}
+
 void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, int dataIndex){
-    double epsControls = 1e-6;
-    double epsVelocities = 1e-6;
-    double epsPositions = 1e-6;
+    double epsControls = 1e-5;
+    double epsVelocities = 1e-5;
+    double epsPositions = 1e-5;
 
 
     int dof = activeModelTranslator->dof;
@@ -52,23 +65,25 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     // create a copy of the data ------  TO DO - FIX MUJOCO SPECIFNESS
     mjData *saveData;
     saveData = mj_makeData(m);
-
-    // mjData *data_to_be_linearised;
-    // if(dataIndex == MAIN_DATA_STATE){
-    //     data_to_be_linearised = activePhysicsSimulator->mdata;
-    // }
-    // else{
-    //     if(dataIndex >= activePhysicsSimulator->savedSystemStatesList.size()){
-    //         cout << "data index outside of saved systems state idnex get derivs \n";
-    //     }
-        
-    //     cout << "saved system state size: " << activePhysicsSimulator->savedSystemStatesList.size() << endl;
-    //     data_to_be_linearised = activePhysicsSimulator->savedSystemStatesList[dataIndex];
-    // }
-    
-    //cout << "after assigning data to be linearised \n";
-
     activePhysicsSimulator->cpMjData(m, saveData, activePhysicsSimulator->savedSystemStatesList[dataIndex]);
+
+    // Allocate memory for variables
+    mjtNum* warmstart = mj_stackAlloc(saveData, dof);
+
+//    cout << "accel before: " << saveData->qacc[0] << endl;
+//    // Compute mj_forward once with no skips
+    mj_forward(m, saveData);
+//    cout << "accel before: " << saveData->qacc[0] << endl;
+
+    // Compute mj_forward a few times to allow optimiser to get a more accurate value for qacc
+    // skips position and velocity stages (TODO LOOK INTO IF THIS IS NEEDED FOR MY METHOD)
+    for( int rep=1; rep<5; rep++ )
+        mj_forwardSkip(m, saveData, mjSTAGE_VEL, 1);
+
+    // save output for center point and warmstart (needed in forward only)
+    mju_copy(warmstart, saveData->qacc_warmstart, dof);
+
+    
 
     // cout << "address of data to be linearised:" << (void *)activePhysicsSimulator->savedSystemStatesList[dataIndex] << endl;
     // cout << "address of save data object:" << (void *)saveData << endl;
@@ -84,6 +99,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         activeModelTranslator->setControlVector(perturbedControls, dataIndex);
 
         // Integrate the simulator
+        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         activePhysicsSimulator->stepSimulator(1, dataIndex);
 
         // return the  new velcoity vector
@@ -97,6 +113,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         perturbedControls(i) -= epsControls;
 
         // integrate simulator
+        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         activePhysicsSimulator->stepSimulator(1, dataIndex);
 
         // return the new velocity vector
@@ -122,6 +139,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         activeModelTranslator->setVelocityVector(perturbedVelocities, dataIndex);
 
         // Integrate the simulator
+        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         activePhysicsSimulator->stepSimulator(1, dataIndex);
 
         // return the new velocity vector
@@ -135,7 +153,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         perturbedVelocities(i) -= epsVelocities;
         activeModelTranslator->setVelocityVector(perturbedVelocities, dataIndex);
 
-        // Integrate the simulator
+        // Integrate the simulatormodel
+        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         activePhysicsSimulator->stepSimulator(1, dataIndex);
 
         // Return the new velocity vector
@@ -161,7 +180,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
 
         // Integrate the simulator
-        //activePhysicsSimulator->stepSimulator(1, dataIndex);
+        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], mjSTAGE_NONE, 1);
 
         // return the new velocity vector
@@ -176,7 +195,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
 
         // Integrate the simulator
-        //activePhysicsSimulator->stepSimulator(1, dataIndex);
+        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], mjSTAGE_NONE, 1);
 
         // Return the new velocity vector

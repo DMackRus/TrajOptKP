@@ -11,9 +11,11 @@ class pandaReaching : public modelTranslator {
 public:
     pandaReaching();
 
+    MatrixXd returnRandomStartState() override;
+    MatrixXd returnRandomGoalState() override;
+    std::vector<MatrixXd> createInitControls(int horizonLength) override;
+
     char* filePath; 
-    int reachingDOF;
-    int reachingNumCtrl;
 
 };
 
