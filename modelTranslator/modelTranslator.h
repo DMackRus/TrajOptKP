@@ -7,6 +7,7 @@
 
 #include "../stdInclude/stdInclude.h"
 #include "../physicsSimulators/MuJoCoHelper.h"
+#include <yaml-cpp/yaml.h>
 
 struct bodyStateVec{
     string name;
@@ -25,6 +26,7 @@ class modelTranslator {
 public:
     modelTranslator();
 
+    void loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies);
     void initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<bodyStateVec> bodies);
 
     MatrixXd returnStateVector(int dataIndex);

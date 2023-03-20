@@ -220,18 +220,13 @@ file(GLOB LIB_MUJOCO /home/davidrussell/catkin_ws/src/mujocoLib/lib/libmujoco.so
 message(STATUS "MuJoCo lib found at: " ${LIB_MUJOCO})
 message(STATUS "Mujoco include directory: " ${Mujoco_INCLUDE_DIRS})
 
-# set(glfw3_DIR /home/davidrussell/catkin_ws/src/glfw-3.3.8/src)
-# find_package(glfw3 3.3 REQUIRED CONFIG)
-# #find_library(GLFW libglfw.so.3 HINTS /home/davidrussell/mujoco/include)
-# #message(STATUS "GLFW lib found at: " ${GLFW})
-
-
-# if (TARGET glfw3::glfw3)
-#     # Use the imported target
-#     message(STATUS "GLFW library found")
-# else()
-#     message(STATUS "could not find GLFW library")
-# endif (TARGET glfw3::glfw3)
+find_package(yaml-cpp REQUIRED)
+if (TARGET yaml-cpp::yaml-cpp)
+    # Use the imported target
+    message(STATUS "yaml library found")
+else()
+    message(STATUS "could not find yaml library")
+endif (TARGET yaml-cpp::yaml-cpp)
 
 
 add_executable(${PROJECT_NAME} main.cpp
@@ -247,10 +242,10 @@ add_executable(${PROJECT_NAME} main.cpp
                 optimiser/optimiser.cpp optimiser/optimiser.h
                 optimiser/interpolated_iLQR.cpp optimiser/interpolated_iLQR.h)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${BULLET_INCLUDE_DIR})
+target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${BULLET_DEFINITIONS})
 
 #target_link_directories(${PROJECT_NAME} PUBLIC ${Bullet_DIR}/${BULLET_ROOT_DIR}/${BULLET_LIBRARY_DIRS})
 
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL)
+target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})

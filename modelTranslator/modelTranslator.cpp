@@ -8,6 +8,63 @@ modelTranslator::modelTranslator(){
 
 }
 
+void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies){
+    // YAML::Node node = YAML::Load("start: [1, 3, 0]");
+    YAML::Node node = YAML::LoadFile(yamlFilePath);
+
+    int counter = 0;
+
+    robot tempRobot;
+    vector<string> jointNames;
+    vector<double> jointPosCosts;
+    vector<double> jointVelCosts;
+    vector<double> jointControlCosts;
+    int numActuators;
+
+
+    for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
+        if(counter != 0){
+            // Loop through robots list
+            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
+
+                for(int i = 0; i < robot_it->second["jointNames"].size(); i++){
+                    jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
+                }
+
+                // for(int i = 0; i < robot_it->second["numActuators"].size(); i++){
+                //     jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
+                // }
+                numActuators = robot_it->second["numActuators"].as<int>();
+
+                for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
+                    jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
+                }
+
+                for(int i = 0; i < robot_it->second["jointVelCosts"].size(); i++){
+                    jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
+                }
+
+                for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
+                    jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
+                }
+                
+
+            }
+
+            tempRobot.jointNames = jointNames;
+            tempRobot.numActuators = numActuators;
+            tempRobot.jointPosCosts = jointPosCosts;
+            tempRobot.jointVelCosts = jointVelCosts;
+            tempRobot.jointControlCosts = jointControlCosts;
+            cout << "test robot joints: " << tempRobot.jointNames[0] << endl;
+        }
+        counter ++;
+        // std::cout << "Playing at " << it->first.as<std::string>() << " is " << it->second.as<std::string>() << "\n";
+    }
+
+    _robots.push_back(tempRobot);
+}
+
 void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<bodyStateVec> _bodies){
     //initialise robot
     // Seed random number generator

@@ -151,24 +151,34 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
 //     if up arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_UP){
-        currentShownDataIndex += 10;
-        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, currentShownDataIndex);
-        MatrixXd Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-        cout << "----------------------------- \n" << Xt << endl;
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-
+        for(int i = 0; i < 10; i++){
+            MatrixXd vel = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
+            vel(0) = testVel;
+            cout << "vel: " << vel << endl;
+            activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
+            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        }
+        
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_DOWN){
-        currentShownDataIndex -= 10;
-        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, currentShownDataIndex);
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
     }
         // left arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_LEFT){
+        MatrixXd vel = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
+        vel(0) -= 0.1;
+        testVel = vel(0);
+        cout << testVel << endl;
+        activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_RIGHT){
+        MatrixXd vel = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
+        vel(0) += 0.1;
+        testVel = vel(0);
+        cout << "vel(0) " << vel(0) << endl;
+        cout << "testVel " << testVel << endl;
+        activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
 
     }
 

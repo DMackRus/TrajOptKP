@@ -5,18 +5,29 @@
 #include "doublePendulum.h"
 
 doublePendulum::doublePendulum(): modelTranslator(){
+    std::string yamlFilePath = "/home/davidrussell/catkin_ws/src/physicsSimSwitching/pendulumConfig.yaml";
+
     filePath = "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/Acrobot.xml";
     vector<robot> robots;
-    robot doublePendulum;
-    doublePendulum.name = "doublePendulum";
-    doublePendulum.jointNames = {"shoulder", "elbow"};
-    doublePendulum.numActuators = 2;
-    doublePendulum.jointPosCosts = {1, 1};
-    doublePendulum.jointVelCosts = {0, 0};
-    doublePendulum.jointControlCosts = {0.1, 0.1};
-    robots.push_back(doublePendulum);
-
     vector<bodyStateVec> bodies;
+
+    loadRobotsandBodiesFromYAML(yamlFilePath, robots, bodies);
+
+
+
+
+    // robot doublePendulum;
+    // doublePendulum.name = "doublePendulum";
+    // doublePendulum.jointNames = {"shoulder", "elbow"};
+    // doublePendulum.numActuators = 2;
+    // doublePendulum.jointPosCosts = {1, 1};
+    // doublePendulum.jointVelCosts = {0, 0};
+    // doublePendulum.jointControlCosts = {0.1, 0.1};
+    // robots.push_back(doublePendulum);
+
+
+
+    
 
     initModelTranslator(filePath, 2, robots, bodies);
     analyticalCostDerivatives = true;

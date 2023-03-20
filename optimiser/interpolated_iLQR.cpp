@@ -154,7 +154,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         // Interpolate derivatvies as required for a full set of derivatives
         interpolateDerivatives(evaluationPoints);
 
-        cout << "f_x[1000] \n" << f_x[1000] << endl;
+        //cout << "f_x[1000] \n" << f_x[1000] << endl;
         // cout << "f_u[1000] \n" << f_u[1000] << endl;
         // cout << "l_x[1000] \n" << l_x[1000] << endl;
         // cout << "l_xx[1000] \n" << l_xx[1000] << endl;

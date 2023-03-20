@@ -1,4 +1,5 @@
 #include "stdInclude/stdInclude.h"
+#include <yaml-cpp/yaml.h>
 
 
 // --------------------- different scenes -----------------------
@@ -12,10 +13,11 @@
 #include "optimiser/interpolated_iLQR.h"
 
 
-#define SHOW_INIT_CONTROLS      0
-#define ILQR_ONCE               1
-#define MPC_CONTINOUS           0
-#define MPC_UNTIL_COMPLETE      0
+#define SHOW_INIT_CONTROLS          0
+#define ILQR_ONCE                   1
+#define MPC_CONTINOUS               0
+#define MPC_UNTIL_COMPLETE          0
+#define DEFAULT_KEYBOARD_CONTROL    0
 
 enum scenes{
     pendulum = 0,
@@ -35,19 +37,24 @@ void showInitControls();
 void iLQROnce();
 void MPCUntilComplete();
 void MPCContinous();
+void keyboardControl();
+void yamlTesting();
 
 int main() {
 
-    scenes myScene = reaching;
+    scenes myScene = pendulum;
     MatrixXd startStateVector(1, 1);
-    
+
+    //yamlTesting();
+
     if(myScene == pendulum){
         doublePendulum *myDoublePendulum = new doublePendulum();
         activeModelTranslator = myDoublePendulum;
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
-        //startStateVector = activeModelTranslator->returnRandomStartState();
-        startStateVector << 3.14, 0, 0, 0;
+        startStateVector = activeModelTranslator->returnRandomStartState();
+        //startStateVector << 3.14, 0, 0, 0;
+        startStateVector << 0.2, 1.9, 0, 0;
     }
     else if(myScene == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
@@ -102,6 +109,9 @@ int main() {
     else if(MPC_UNTIL_COMPLETE){
         MPCUntilComplete();
     }
+    else if(DEFAULT_KEYBOARD_CONTROL){
+        keyboardControl();
+    }
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
     }
@@ -109,6 +119,62 @@ int main() {
     //activeVisualiser->render();
 
     return 0;
+}
+
+void yamlTesting(){
+    // YAML::Node node = YAML::Load("start: [1, 3, 0]");
+    YAML::Node node = YAML::LoadFile("/home/davidrussell/catkin_ws/src/physicsSimSwitching/pendulumConfig.yaml");
+
+    int counter = 0;
+
+    robot testRobot;
+    vector<string> jointNames;
+    vector<double> jointPosCosts;
+    vector<double> jointVelCosts;
+    vector<double> jointControlCosts;
+    int numActuators;
+
+
+    for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
+        if(counter != 0){
+            // Loop through robots list
+            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
+
+                for(int i = 0; i < robot_it->second["jointNames"].size(); i++){
+                    jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
+                }
+
+                // for(int i = 0; i < robot_it->second["numActuators"].size(); i++){
+                //     jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
+                // }
+                numActuators = robot_it->second["numActuators"].as<int>();
+
+                for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
+                    jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
+                }
+
+                for(int i = 0; i < robot_it->second["jointVelCosts"].size(); i++){
+                    jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
+                }
+
+                for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
+                    jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
+                }
+                
+
+            }
+
+            testRobot.jointNames = jointNames;
+            testRobot.numActuators = numActuators;
+            testRobot.jointPosCosts = jointPosCosts;
+            testRobot.jointVelCosts = jointVelCosts;
+            testRobot.jointControlCosts = jointControlCosts;
+            cout << "test robot joints: " << testRobot.jointNames[0] << endl;
+        }
+        counter ++;
+        // std::cout << "Playing at " << it->first.as<std::string>() << " is " << it->second.as<std::string>() << "\n";
+    }
+
 }
 
 void showInitControls(){
@@ -331,4 +397,11 @@ void MPCContinous(){
 
 void MPCUntilComplete(){
 
+}
+
+void keyboardControl(){
+    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+    while(activeVisualiser->windowOpen()){
+        activeVisualiser->render("keyboard control");
+    }
 }

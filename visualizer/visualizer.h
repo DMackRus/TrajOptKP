@@ -54,6 +54,7 @@ public:
     void render(const char* label);
 
     int currentShownDataIndex = 0;
+    float testVel = 0;
 
 private:
     physicsSimulator *activePhysicsSimulator;

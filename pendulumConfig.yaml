@@ -1,0 +1,8 @@
+modelFile: "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/Acrobot.xml"
+robots:
+  doublePendulum:
+    jointNames: [shoulder, elbow]
+    numActuators: 2
+    jointPosCosts: [10, 10]
+    jointVelCosts: [0.1, 0.1]
+    jointControlCosts: [0.01, 0.01]
