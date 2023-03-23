@@ -750,7 +750,7 @@ void MuJoCoHelper::initVisualisation() {
     mjv_defaultOption(&opt);
     mjr_defaultContext(&con);
 
-    cam.distance = 5;
+    cam.distance = 10;
     cam.azimuth = 110.9;
     cam.elevation = -19.9;
     cam.lookat[0] = 0.396;

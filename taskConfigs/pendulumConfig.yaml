@@ -3,6 +3,6 @@ robots:
   doublePendulum:
     jointNames: [shoulder, elbow]
     numActuators: 2
-    jointPosCosts: [10, 10]
-    jointVelCosts: [0.1, 0.1]
-    jointControlCosts: [0.01, 0.01]
+    jointPosCosts: [1, 1]
+    jointVelCosts: [0, 0]
+    jointControlCosts: [0.5, 0.5]

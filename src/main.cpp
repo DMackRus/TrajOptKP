@@ -14,8 +14,8 @@
 
 
 #define SHOW_INIT_CONTROLS          0
-#define ILQR_ONCE                   1
-#define MPC_CONTINOUS               0
+#define ILQR_ONCE                   0
+#define MPC_CONTINOUS               1
 #define MPC_UNTIL_COMPLETE          0
 #define DEFAULT_KEYBOARD_CONTROL    0
 
@@ -50,8 +50,8 @@ int main() {
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
         startStateVector = activeModelTranslator->returnRandomStartState();
-        //startStateVector << 3.14, 0, 0, 0;
-        startStateVector << 0.2, 1.9, 0, 0;
+        startStateVector << 3.14, 0, 0, 0;
+        //startStateVector << 0.2, 1.9, 0, 0;
     }
     else if(myScene == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
@@ -198,7 +198,7 @@ void iLQROnce(){
 void MPCContinous(){
 
 
-    int horizon = 2000;
+    int horizon = 1000;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -226,9 +226,9 @@ void MPCContinous(){
         reInitialiseCounter++;
         visualCounter++;
 
-        if(reInitialiseCounter > 500){
+        if(reInitialiseCounter > 100){
             reInitialiseCounter = 0;
-            optimisedControls = activeOptimiser->optimise(reInitialiseCounter, optimisedControls, 5, horizon);
+            optimisedControls = activeOptimiser->optimise(reInitialiseCounter, optimisedControls, 8, horizon);
         }
 
         if(visualCounter > 5){
