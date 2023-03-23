@@ -1,4 +1,4 @@
-modelFile: "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/Acrobot.xml"
+modelFile: "/home/davidrussell/catkin_ws/src/autoTOTask/Franka-emika-panda-arm/Acrobot.xml"
 robots:
   doublePendulum:
     jointNames: [shoulder, elbow]

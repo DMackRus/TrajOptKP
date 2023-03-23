@@ -27,7 +27,7 @@ public:
     modelTranslator();
 
     void loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies);
-    void initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<bodyStateVec> bodies);
+    void initModelTranslator(std::string filePath);
 
     MatrixXd returnStateVector(int dataIndex);
     bool setStateVector(MatrixXd _stateVector, int dataIndex);

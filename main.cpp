@@ -38,14 +38,11 @@ void iLQROnce();
 void MPCUntilComplete();
 void MPCContinous();
 void keyboardControl();
-void yamlTesting();
 
 int main() {
 
-    scenes myScene = pendulum;
+    scenes myScene = reaching;
     MatrixXd startStateVector(1, 1);
-
-    //yamlTesting();
 
     if(myScene == pendulum){
         doublePendulum *myDoublePendulum = new doublePendulum();
@@ -121,62 +118,6 @@ int main() {
     return 0;
 }
 
-void yamlTesting(){
-    // YAML::Node node = YAML::Load("start: [1, 3, 0]");
-    YAML::Node node = YAML::LoadFile("/home/davidrussell/catkin_ws/src/physicsSimSwitching/pendulumConfig.yaml");
-
-    int counter = 0;
-
-    robot testRobot;
-    vector<string> jointNames;
-    vector<double> jointPosCosts;
-    vector<double> jointVelCosts;
-    vector<double> jointControlCosts;
-    int numActuators;
-
-
-    for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
-        if(counter != 0){
-            // Loop through robots list
-            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
-
-                for(int i = 0; i < robot_it->second["jointNames"].size(); i++){
-                    jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
-                }
-
-                // for(int i = 0; i < robot_it->second["numActuators"].size(); i++){
-                //     jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
-                // }
-                numActuators = robot_it->second["numActuators"].as<int>();
-
-                for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
-                    jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
-                }
-
-                for(int i = 0; i < robot_it->second["jointVelCosts"].size(); i++){
-                    jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
-                }
-
-                for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
-                    jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
-                }
-                
-
-            }
-
-            testRobot.jointNames = jointNames;
-            testRobot.numActuators = numActuators;
-            testRobot.jointPosCosts = jointPosCosts;
-            testRobot.jointVelCosts = jointVelCosts;
-            testRobot.jointControlCosts = jointControlCosts;
-            cout << "test robot joints: " << testRobot.jointNames[0] << endl;
-        }
-        counter ++;
-        // std::cout << "Playing at " << it->first.as<std::string>() << " is " << it->second.as<std::string>() << "\n";
-    }
-
-}
-
 void showInitControls(){
     int horizon = 2000;
     int controlCounter = 0;
@@ -205,9 +146,7 @@ void showInitControls(){
             visualCounter = 0;
             activeVisualiser->render("show init controls");
         }
-
     }
-
 }
 
 void iLQROnce(){
@@ -234,7 +173,6 @@ void iLQROnce(){
 
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-
         controlCounter++;
         visualCounter++;
 
@@ -254,9 +192,7 @@ void iLQROnce(){
             visualCounter = 0;
             activeVisualiser->render(label);
         }
-
     }
-
 }
 
 void MPCContinous(){

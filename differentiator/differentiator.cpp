@@ -8,7 +8,9 @@ differentiator::differentiator(modelTranslator *_modelTranslator, MuJoCoHelper *
     char error[1000];
 
     
-    const char* fileName = "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/Acrobot.xml";
+    // const char* fileName = "/home/davidrussell/catkin_ws/src/autoTOTask/Franka-emika-panda-arm/Acrobot.xml";
+    const char* fileName = "/home/davidrussell/catkin_ws/src/autoTOTask/Franka-emika-panda-arm/V1/reaching_scene.xml";
+
     m = mj_loadXML(fileName, NULL, NULL, 1000);
 
     if( !m ) {
@@ -212,6 +214,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
 
     // Delete temporary data object to prevent memory leak
     mj_deleteData(saveData);
+
+    dqaccdq.setZero();
 
 
 

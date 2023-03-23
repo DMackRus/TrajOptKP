@@ -1,21 +1,9 @@
 #include "reaching.h"
 
 pandaReaching::pandaReaching(): modelTranslator(){
-    filePath = "/home/davidrussell/catkin_ws/src/physicsSimSwitching/Franka-emika-panda-arm/V1/reaching_scene.xml";
+    std::string yamlFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/reachingConfig.yaml";
 
-    vector<robot> robots;
-    robot panda;
-    panda.name = "panda";
-    panda.jointNames = {"panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"};
-    panda.numActuators = 7;
-    panda.jointPosCosts = {10, 10, 10, 10, 10, 10, 10};
-    panda.jointVelCosts = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-    panda.jointControlCosts = {0, 0, 0, 0, 0, 0, 0};
-    robots.push_back(panda);
-
-    vector<bodyStateVec> bodies;
-
-    initModelTranslator(filePath, 7, robots, bodies);
+    initModelTranslator(yamlFilePath);
     analyticalCostDerivatives = true;
 
     X_desired << 0, 0, 0, -1, 0, 0, 0, 

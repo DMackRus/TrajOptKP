@@ -1,0 +1,8 @@
+modelFile: "/home/davidrussell/catkin_ws/src/autoTOTask/Franka-emika-panda-arm/V2/reaching_scene.xml"
+robots:
+  doublePendulum:
+    jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
+    numActuators: 7
+    jointPosCosts: [1, 1]
+    jointVelCosts: [0.1, 0.1]
+    jointControlCosts: [0, 0, 0, 0, 0, 0, 0]

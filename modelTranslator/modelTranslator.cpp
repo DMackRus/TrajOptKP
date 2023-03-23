@@ -65,24 +65,28 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
     _robots.push_back(tempRobot);
 }
 
-void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, vector<robot> _robots, vector<bodyStateVec> _bodies){
+void modelTranslator::initModelTranslator(std::string yamlFilePath){
     //initialise robot
-    // Seed random number generator
-    srand(time(0));
 
+    const char* modelFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/Franka-emika-panda-arm/V1/reaching_scene.xml";;
+
+    vector<robot> robots;
+    vector<bodyStateVec> bodies;
+
+    loadRobotsandBodiesFromYAML(yamlFilePath, robots, bodies);
 
     // initialise physics simulator
     vector<string> bodyNames;
-    for(int i = 0; i < _bodies.size(); i++){
-        bodyNames.push_back(_bodies[i].name);
+    for(int i = 0; i < bodies.size(); i++){
+        bodyNames.push_back(bodies[i].name);
     }
     
-    myHelper = new MuJoCoHelper(_robots, bodyNames);
+    myHelper = new MuJoCoHelper(robots, bodyNames);
     activePhysicsSimulator = myHelper;
-    activePhysicsSimulator->initSimulator(0.004, filePath);
+    activePhysicsSimulator->initSimulator(0.004, modelFilePath);
 
-    myStateVector.robots = _robots;
-    myStateVector.bodiesStates = _bodies;
+    myStateVector.robots = robots;
+    myStateVector.bodiesStates = bodies;
 
     stateVectorSize = 0;
     for(int i = 0; i < myStateVector.robots.size(); i++){
@@ -104,10 +108,10 @@ void modelTranslator::initModelTranslator(const char* filePath, int _num_ctrl, v
     dof = stateVectorSize / 2;
 
     // --------- Set size of cost matrices correctly ------------
-    num_ctrl = _num_ctrl;
+    num_ctrl = myStateVector.robots[0].numActuators;
     Q.resize(stateVectorSize, stateVectorSize);
     Q.setZero();
-    R.resize(_num_ctrl, _num_ctrl);
+    R.resize(num_ctrl, num_ctrl);
     R.setZero();
     X_desired.resize(stateVectorSize, 1);
 
