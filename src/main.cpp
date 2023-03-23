@@ -14,8 +14,8 @@
 
 
 #define SHOW_INIT_CONTROLS          0
-#define ILQR_ONCE                   0
-#define MPC_CONTINOUS               1
+#define ILQR_ONCE                   1
+#define MPC_CONTINOUS               0
 #define MPC_UNTIL_COMPLETE          0
 #define DEFAULT_KEYBOARD_CONTROL    0
 
@@ -157,7 +157,11 @@ void iLQROnce(){
     char* label = "Final controls";
 
     std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
+    auto start = high_resolution_clock::now();
     std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 10, horizon);
+    auto stop = high_resolution_clock::now();
+    auto linDuration = duration_cast<microseconds>(stop - start);
+    cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";
 
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 

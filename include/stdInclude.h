@@ -11,12 +11,14 @@
 #include <vector>
 #include <Eigen/Dense>
 #include <memory>
+#include <chrono>
 
 #define POSE_DOFS       6
 #define MUJOCO_DT   0.004
 
 using namespace std;
 using namespace Eigen;
+using namespace chrono;
 
 typedef Eigen::Matrix<double, 3, 1> m_point;
 typedef Eigen::Matrix<double, 4, 1> m_quat;

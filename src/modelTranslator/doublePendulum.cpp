@@ -18,8 +18,6 @@ doublePendulum::doublePendulum(): modelTranslator(){
 
     // Pendulum half untable position
     X_desired << 3.1415, 3.1415, 0, 0;
-
-    std::cout << "initialise double pendulum model translator" << std::endl;
 }
 
 MatrixXd doublePendulum::returnRandomStartState(){

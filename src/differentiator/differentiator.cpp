@@ -59,8 +59,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     MatrixXd accellInc(dof, 1);
     MatrixXd accellDec(dof, 1);
 
-    A.resize(2*dof, 2*dof);
-    B.resize(2*dof, numCtrl);
+    // A.resize(2*dof, 2*dof);
+    // B.resize(2*dof, numCtrl);
 
     // create a copy of the data ------  TO DO - FIX MUJOCO SPECIFNESS
     mjData *saveData;

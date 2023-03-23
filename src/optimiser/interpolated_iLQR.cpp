@@ -141,6 +141,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     // Optimise for a set number of iterations
     for(int i = 0; i < maxIterations; i++){
 
+
+        auto start = high_resolution_clock::now();
         // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
         // generate the dynamics evaluation waypoints
         std::vector<int> evaluationPoints = generateEvalWaypoints(X_old, U_old);
@@ -153,6 +155,11 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
         // Interpolate derivatvies as required for a full set of derivatives
         interpolateDerivatives(evaluationPoints);
+
+        
+        auto stop = high_resolution_clock::now();
+        auto linDuration = duration_cast<microseconds>(stop - start);
+        cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
 
         //cout << "f_x[1000] \n" << f_x[1000] << endl;
         // cout << "f_u[1000] \n" << f_u[1000] << endl;
@@ -225,14 +232,14 @@ std::vector<int> interpolatediLQR::generateEvalWaypoints(std::vector<MatrixXd> t
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
     std::vector<int> evaluationWaypoints;
     int counter = 0;
-    int numEvals = horizonLength / 5;
+    int numEvals = horizonLength / 2;
 
     evaluationWaypoints.push_back(counter);
 
     // set-interval method
     if(SET_INTERVAL){
         for(int i = 0; i < numEvals; i++){
-            evaluationWaypoints.push_back(i * 5);
+            evaluationWaypoints.push_back(i * 2);
         }
     }
     // adaptive-interval method
@@ -251,6 +258,7 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
     activeDifferentiator->initModelForFiniteDifferencing();
 
     //#pragma omp parallel for default(none)
+    #pragma omp parallel for
     for(int i = 0; i < indices.size(); i++){
 
         int index = indices[i];
@@ -260,7 +268,7 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
 
     activeDifferentiator->resetModelAfterFiniteDifferencing();
 
-    //#pragma omp parallel for default(none)
+    #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
         if(i == 0){
             activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
