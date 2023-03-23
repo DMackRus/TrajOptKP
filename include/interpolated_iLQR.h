@@ -2,7 +2,7 @@
 #define INTERPOLATED_ILQR_H
 
 #include "optimiser.h"
-#include "../differentiator/differentiator.h"
+#include "differentiator.h"
 
 #define SET_INTERVAL        1
 

@@ -4,8 +4,8 @@
 #ifndef DIFFERENTIATOR_H
 #define DIFFERENTIATOR_H
 
-#include "../modelTranslator/modelTranslator.h"
-#include "../physicsSimulators/MuJoCoHelper.h"
+#include "modelTranslator.h"
+#include "MuJoCoHelper.h"
 #include "mujoco.h"
 
 

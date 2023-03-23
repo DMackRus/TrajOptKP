@@ -228,21 +228,22 @@ else()
     message(STATUS "could not find yaml library")
 endif (TARGET yaml-cpp::yaml-cpp)
 
+set(PROJECT_INCLUDE_DIR /home/davidrussell/catkin_ws/src/autoTOTask/include)
 
-add_executable(${PROJECT_NAME} main.cpp
-                physicsSimulators/physicsSimulator.cpp physicsSimulators/physicsSimulator.h
-                stdInclude/stdInclude.h stdInclude/stdInclude.cpp
-                physicsSimulators/MuJoCoHelper.cpp physicsSimulators/MuJoCoHelper.h  
-                modelTranslator/modelTranslator.cpp modelTranslator/modelTranslator.h 
-                visualizer/visualizer.cpp visualizer/visualizer.h 
-                physicsSimulators/bulletHelper.cpp physicsSimulators/bulletHelper.h 
-                modelTranslator/doublePendulum.cpp modelTranslator/doublePendulum.h
-                modelTranslator/reaching.cpp modelTranslator/reaching.h
-                differentiator/differentiator.cpp differentiator/differentiator.h
-                optimiser/optimiser.cpp optimiser/optimiser.h
-                optimiser/interpolated_iLQR.cpp optimiser/interpolated_iLQR.h)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS})
+add_executable(${PROJECT_NAME} src/main.cpp
+                src/physicsSimulators/physicsSimulator.cpp
+                src/stdInclude/stdInclude.cpp
+                src/physicsSimulators/MuJoCoHelper.cpp 
+                src/modelTranslator/modelTranslator.cpp 
+                src/visualizer/visualizer.cpp
+                src/modelTranslator/doublePendulum.cpp
+                src/modelTranslator/reaching.cpp
+                src/differentiator/differentiator.cpp
+                src/optimiser/optimiser.cpp
+                src/optimiser/interpolated_iLQR.cpp)
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${BULLET_DEFINITIONS})
 

@@ -1,7 +1,7 @@
 #include "reaching.h"
 
 pandaReaching::pandaReaching(): modelTranslator(){
-    std::string yamlFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/reachingConfig.yaml";
+    std::string yamlFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/taskConfigs/reachingConfig.yaml";
 
     initModelTranslator(yamlFilePath);
     analyticalCostDerivatives = true;

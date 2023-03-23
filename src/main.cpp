@@ -1,16 +1,16 @@
-#include "stdInclude/stdInclude.h"
+#include "stdInclude.h"
 #include <yaml-cpp/yaml.h>
 
 
 // --------------------- different scenes -----------------------
-#include "modelTranslator/doublePendulum.h"
-#include "modelTranslator/reaching.h"
+#include "doublePendulum.h"
+#include "reaching.h"
 
 
-#include "visualizer/visualizer.h"
-#include "physicsSimulators/MuJoCoHelper.h"
+#include "visualizer.h"
+#include "MuJoCoHelper.h"
 
-#include "optimiser/interpolated_iLQR.h"
+#include "interpolated_iLQR.h"
 
 
 #define SHOW_INIT_CONTROLS          0

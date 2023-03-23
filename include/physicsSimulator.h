@@ -5,7 +5,7 @@
 #ifndef PHYSICSSIMSWITCHING_PHYSICSSIMULATOR_H
 #define PHYSICSSIMSWITCHING_PHYSICSSIMULATOR_H
 
-#include "../stdInclude/stdInclude.h"
+#include "stdInclude.h"
 #include <GLFW/glfw3.h>
 #include "mujoco.h"
 

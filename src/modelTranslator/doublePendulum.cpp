@@ -5,7 +5,7 @@
 #include "doublePendulum.h"
 
 doublePendulum::doublePendulum(): modelTranslator(){
-    std::string yamlFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/pendulumConfig.yaml";
+    std::string yamlFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/taskConfigs/pendulumConfig.yaml";
 
     initModelTranslator(yamlFilePath);
     analyticalCostDerivatives = true;

@@ -5,8 +5,8 @@
 #ifndef PHYSICSSIMSWITCHING_MODELTRANSLATOR_H
 #define PHYSICSSIMSWITCHING_MODELTRANSLATOR_H
 
-#include "../stdInclude/stdInclude.h"
-#include "../physicsSimulators/MuJoCoHelper.h"
+#include "stdInclude.h"
+#include "MuJoCoHelper.h"
 #include <yaml-cpp/yaml.h>
 
 struct bodyStateVec{

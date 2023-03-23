@@ -5,13 +5,13 @@
 #ifndef PHYSICSSIMSWITCHING_VISUALIZER_H
 #define PHYSICSSIMSWITCHING_VISUALIZER_H
 
-#include "../physicsSimulators/physicsSimulator.h"
-#include "../physicsSimulators/MuJoCoHelper.h"
+#include "physicsSimulator.h"
+#include "MuJoCoHelper.h"
 #include <GLFW/glfw3.h>
-#include "../stdInclude/stdInclude.h"
-#include "../modelTranslator/modelTranslator.h"
-#include "../differentiator/differentiator.h"
-#include "../optimiser/optimiser.h"
+#include "stdInclude.h"
+#include "modelTranslator.h"
+#include "differentiator.h"
+#include "optimiser.h"
 
 class visualizer {
 public:

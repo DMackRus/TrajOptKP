@@ -2,9 +2,9 @@
 #define OPTIMISER_H
 
 
-#include "../stdInclude/stdInclude.h"
-#include "../modelTranslator/modelTranslator.h"
-#include "../physicsSimulators/physicsSimulator.h"
+#include "stdInclude.h"
+#include "modelTranslator.h"
+#include "physicsSimulator.h"
 
 class optimiser{
 public:
