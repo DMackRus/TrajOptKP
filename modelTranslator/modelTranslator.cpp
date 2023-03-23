@@ -21,6 +21,8 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
     vector<double> jointControlCosts;
     int numActuators;
 
+    modelFilePath = node["modelFile"].as<std::string>();
+
 
     for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
         if(counter != 0){
@@ -59,7 +61,6 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
             cout << "test robot joints: " << tempRobot.jointNames[0] << endl;
         }
         counter ++;
-        // std::cout << "Playing at " << it->first.as<std::string>() << " is " << it->second.as<std::string>() << "\n";
     }
 
     _robots.push_back(tempRobot);
@@ -68,12 +69,14 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
 void modelTranslator::initModelTranslator(std::string yamlFilePath){
     //initialise robot
 
-    const char* modelFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/Franka-emika-panda-arm/V1/reaching_scene.xml";;
+    //modelFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/Franka-emika-panda-arm/V1/reaching_scene.xml";
 
     vector<robot> robots;
     vector<bodyStateVec> bodies;
 
     loadRobotsandBodiesFromYAML(yamlFilePath, robots, bodies);
+    const char* _modelPath = modelFilePath.c_str();
+    cout << "modelFilePath: " << _modelPath << endl;
 
     // initialise physics simulator
     vector<string> bodyNames;
@@ -83,7 +86,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     
     myHelper = new MuJoCoHelper(robots, bodyNames);
     activePhysicsSimulator = myHelper;
-    activePhysicsSimulator->initSimulator(0.004, modelFilePath);
+    activePhysicsSimulator->initSimulator(0.004, _modelPath);
 
     myStateVector.robots = robots;
     myStateVector.bodiesStates = bodies;

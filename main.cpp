@@ -41,7 +41,7 @@ void keyboardControl();
 
 int main() {
 
-    scenes myScene = reaching;
+    scenes myScene = pendulum;
     MatrixXd startStateVector(1, 1);
 
     if(myScene == pendulum){

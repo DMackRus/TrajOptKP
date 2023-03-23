@@ -808,6 +808,7 @@ void MuJoCoHelper::scroll(double yoffset){
 
 void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
+    cout << "fileName in init: " << fileName << endl;
     model = mj_loadXML(fileName, NULL, error, 1000);
 
     model->opt.timestep = timestep;
