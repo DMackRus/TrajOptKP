@@ -6,7 +6,7 @@ pandaReaching::pandaReaching(): modelTranslator(){
     initModelTranslator(yamlFilePath);
     analyticalCostDerivatives = true;
 
-    X_desired << 0, 0, 0, -1, 0, 0, 0, 
+    X_desired << 1, 1.5, 2, -2, 0, 0.6, 1, 
                  0, 0, 0, 0, 0, 0, 0;
     std::cout << "initialised reaching model translator" << std::endl;
 }
@@ -41,29 +41,48 @@ MatrixXd pandaReaching::returnRandomGoalState(){
 std::vector<MatrixXd> pandaReaching::createInitControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
-    MatrixXd startState = returnStateVector(MAIN_DATA_STATE);
-    MatrixXd goalState = X_desired.replicate(1, 1);
-    MatrixXd difference = goalState - startState;
+    if(1){
 
-    cout << "start state: " << startState << endl;
-    cout << "goal state: " << goalState << endl;
+        MatrixXd control(num_ctrl, 1);
+        vector<double> gravCompensation;
+        for(int i = 0; i < horizonLength; i++){
 
-    MatrixXd controlDiff(num_ctrl, 1);
+            activePhysicsSimulator->getRobotJointsGravityCompensaionControls("panda", gravCompensation, MAIN_DATA_STATE);
+            cout << "grav compensation: " << gravCompensation[1] << endl;
+            for(int i = 0; i < num_ctrl; i++){
+                control(i) = gravCompensation[i];
+            }
+            cout << "create init controls: " << control << endl;
+            initControls.push_back(control);
+        }
+    }
+    else{
+        MatrixXd startState = returnStateVector(MAIN_DATA_STATE);
+        MatrixXd goalState = X_desired.replicate(1, 1);
+        MatrixXd difference = goalState - startState;
 
-    MatrixXd control(num_ctrl, 1);
-    for(int i = 0; i < num_ctrl; i++){
-        control(i) = startState(i);
-        controlDiff(i) = difference(i);
+        cout << "start state: " << startState << endl;
+        cout << "goal state: " << goalState << endl;
+
+        MatrixXd controlDiff(num_ctrl, 1);
+
+        MatrixXd control(num_ctrl, 1);
+        for(int i = 0; i < num_ctrl; i++){
+            control(i) = startState(i);
+            controlDiff(i) = difference(i);
+        }
+
+        for(int i = 0; i < horizonLength; i++){
+            initControls.push_back(control);
+
+            control += (controlDiff / horizonLength);
+            //cout << "control: " << control << endl;
+        }
+
+        cout << "final control: " << initControls[initControls.size() - 1];
     }
 
-    for(int i = 0; i < horizonLength; i++){
-        initControls.push_back(control);
-
-        control += (controlDiff / horizonLength);
-        //cout << "control: " << control << endl;
-    }
-
-    cout << "final control: " << initControls[initControls.size() - 1];
+    
 
     return initControls;
 }

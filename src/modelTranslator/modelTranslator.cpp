@@ -15,6 +15,7 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
     int counter = 0;
 
     robot tempRobot;
+    string robotName;
     vector<string> jointNames;
     vector<double> jointPosCosts;
     vector<double> jointVelCosts;
@@ -23,11 +24,12 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
 
     modelFilePath = node["modelFile"].as<std::string>();
 
-
     for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
         if(counter != 0){
             // Loop through robots list
             for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
+
+                robotName = robot_it->first.as<string>();
 
                 for(int i = 0; i < robot_it->second["jointNames"].size(); i++){
                     jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
@@ -49,10 +51,9 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
                 for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
                     jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
                 }
-                
-
             }
 
+            tempRobot.name = robotName;
             tempRobot.jointNames = jointNames;
             tempRobot.numActuators = numActuators;
             tempRobot.jointPosCosts = jointPosCosts;
@@ -76,7 +77,8 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
     loadRobotsandBodiesFromYAML(yamlFilePath, robots, bodies);
     const char* _modelPath = modelFilePath.c_str();
-    cout << "modelFilePath: " << _modelPath << endl;
+
+    cout << "robots name: " << robots[0].name << endl;
 
     // initialise physics simulator
     vector<string> bodyNames;

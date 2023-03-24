@@ -15,7 +15,7 @@
 
 class visualizer {
 public:
-    visualizer(modelTranslator *_modelTranslator, optimiser *_optimiser);
+    visualizer(modelTranslator *_modelTranslator);
     void init();
     void update();
     void draw();
@@ -48,7 +48,6 @@ public:
     void keyboard(GLFWwindow* window, int key, int scancode, int act, int mods);
     void windowCloseCallback(GLFWwindow * /*window*/);
 
-
     // UI rendering
     bool windowOpen();
     void render(const char* label);
@@ -59,7 +58,6 @@ public:
 private:
     physicsSimulator *activePhysicsSimulator;
     modelTranslator *activeModelTranslator;
-    optimiser *activeOptimiser;
 };
 
 #endif //PHYSICSSIMSWITCHING_VISUALIZER_H

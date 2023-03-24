@@ -1,9 +1,10 @@
 #include "interpolated_iLQR.h"
 
-interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon) : optimiser(_modelTranslator, _physicsSimulator){
+interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer) : optimiser(_modelTranslator, _physicsSimulator){
 
     activeDifferentiator = _differentiator;
     maxHorizon = _maxHorizon;
+    activeVisualizer = _visualizer;
 
     // initialise all vectors of matrices
     cout << "dof: " << dof << endl;
@@ -108,7 +109,6 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     if(activePhysicsSimulator->checkIfDataIndexExists(1500)){
         cout << "data index: 1500 exists \n";
     }
-
 
     return cost;
 }
@@ -497,6 +497,11 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             newCost += (newStateCost * MUJOCO_DT);
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+            // if(t % 5 == 0){
+            //     const char* fplabel = "fp";
+            //     activeVisualizer->render(fplabel);
+            // }
 
             X_last = Xt.replicate(1, 1);
             U_last = Ut.replicate(1, 1);

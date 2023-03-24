@@ -5,4 +5,4 @@ robots:
     numActuators: 2
     jointPosCosts: [1, 1]
     jointVelCosts: [0, 0]
-    jointControlCosts: [0.5, 0.5]
+    jointControlCosts: [0.8, 0.8]

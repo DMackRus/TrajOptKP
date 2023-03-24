@@ -24,6 +24,7 @@ public:
     bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities, int dataIndex) override;
     bool getRobotJointsAccelerations(string robotName, vector<double> &jointsAccelerations, int dataIndex) override;
     bool getRobotJointsControls(string robotName, vector<double> &jointsControls, int dataIndex) override;
+    bool getRobotJointsGravityCompensaionControls(string robotName, vector<double> &jointsControls, int dataIndex) override;
 
     // Utility functions -- bodies
     bool isValidBodyName(string bodyName, int &bodyIndex) override;

@@ -3,12 +3,13 @@
 
 #include "optimiser.h"
 #include "differentiator.h"
+#include "visualizer.h"
 
 #define SET_INTERVAL        1
 
 class interpolatediLQR: public optimiser{
 public:
-    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon);
+    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIterations, int _horizonLength) override;
@@ -53,6 +54,7 @@ private:
     vector<MatrixXd> X_old;
 
     differentiator *activeDifferentiator;
+    visualizer *activeVisualizer;
 
 
 

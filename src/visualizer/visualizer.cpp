@@ -4,11 +4,10 @@
 
 #include "visualizer.h"
 
-visualizer::visualizer(modelTranslator *_modelTranslator, optimiser *_optimiser){
+visualizer::visualizer(modelTranslator *_modelTranslator){
 
     activePhysicsSimulator = _modelTranslator->activePhysicsSimulator;
     activeModelTranslator = _modelTranslator;
-    activeOptimiser = _optimiser;
 
     if (!glfwInit())
         mju_error("Could not initialize GLFW");

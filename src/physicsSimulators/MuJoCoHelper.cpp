@@ -358,6 +358,52 @@ bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &join
 
     return true;
 }
+
+bool MuJoCoHelper::getRobotJointsGravityCompensaionControls(string robotName, vector<double> &jointsControls, int dataIndex){
+
+    // Check if the robot exists in the simulation
+    int robotIndex;
+    string robotBaseJointName;
+    if(!isValidRobotName(robotName, robotIndex, robotBaseJointName)){
+        cout << "That robot doesnt exist in the simulation\n";
+        return false;
+    }
+
+    // Get the body id of the base link of the robot
+    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
+
+    if(jointId == -1){
+        cout << "Base link of robot not found\n";
+        return false;
+    }
+    int startIndex = model->jnt_dofadr[jointId];
+
+    if(startIndex == -1){
+        cout << "Invalid bodyId for robot\n";
+        return false;
+    }
+
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+            return false;
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
+    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
+        jointsControls.push_back(d->qfrc_bias[startIndex + i]);
+    }
+
+    return true;
+}
+
 // --------------------------------- END OF ROBOT UTILITY ---------------------------------------
 
 // ------------------------------------- BODY UTILITY -------------------------------------------

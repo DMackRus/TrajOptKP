@@ -48,6 +48,7 @@ public:
     virtual bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities, int dataIndex) = 0;
     virtual bool getRobotJointsAccelerations(string robotName, vector<double> &jointsAccelerations, int dataIndex) = 0;
     virtual bool getRobotJointsControls(string robotName, vector<double> &jointsControls, int dataIndex) = 0;
+    virtual bool getRobotJointsGravityCompensaionControls(string robotName, vector<double> &jointsControls, int dataIndex) = 0;
 
     // ----- Body functions -----
     virtual bool isValidBodyName(string bodyName, int &bodyIndex) = 0;

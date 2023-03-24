@@ -249,7 +249,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
                 src/modelTranslator/reaching.cpp
                 src/differentiator/differentiator.cpp
                 src/optimiser/optimiser.cpp
-                src/optimiser/interpolated_iLQR.cpp)
+                src/optimiser/interpolated_iLQR.cpp
+                src/optimiser/stomp.cpp)
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 

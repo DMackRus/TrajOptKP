@@ -6,16 +6,15 @@
 #include "doublePendulum.h"
 #include "reaching.h"
 
-
 #include "visualizer.h"
 #include "MuJoCoHelper.h"
 
 #include "interpolated_iLQR.h"
 
-
+// ------------ MODES OF OEPRATION -------------------------------
 #define SHOW_INIT_CONTROLS          0
-#define ILQR_ONCE                   1
-#define MPC_CONTINOUS               0
+#define ILQR_ONCE                   0
+#define MPC_CONTINOUS               1
 #define MPC_UNTIL_COMPLETE          0
 #define DEFAULT_KEYBOARD_CONTROL    0
 
@@ -41,7 +40,7 @@ void keyboardControl();
 
 int main() {
 
-    scenes myScene = pendulum;
+    scenes myScene = reaching;
     MatrixXd startStateVector(1, 1);
 
     if(myScene == pendulum){
@@ -90,9 +89,12 @@ int main() {
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
 
     //Instantiate my optimiser
-    activeOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, 3000);
+    activeVisualiser = new visualizer(activeModelTranslator);
+    activeOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, 3000, activeVisualiser);
 
-    activeVisualiser = new visualizer(activeModelTranslator, activeOptimiser);
+    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+    
 
     if(SHOW_INIT_CONTROLS){
         showInitControls();
@@ -126,11 +128,11 @@ void showInitControls(){
     std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
 
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-    cout << "init controls created \n";
 
     while(activeVisualiser->windowOpen()){
 
         activeModelTranslator->setControlVector(initControls[controlCounter], MAIN_DATA_STATE);
+        //cout << "init controls: " << initControls[controlCounter] << endl;
 
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
@@ -202,13 +204,13 @@ void iLQROnce(){
 void MPCContinous(){
 
 
-    int horizon = 1000;
+    int horizon = 500;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
     int overallTaskCounter = 0;
     int reInitialiseCounter = 0;
-    char* label = "MPC Continous";
+    const char* label = "MPC Continous";
 
     // Instantiate init controls
     std::vector<MatrixXd> initControls;
@@ -230,9 +232,9 @@ void MPCContinous(){
         reInitialiseCounter++;
         visualCounter++;
 
-        if(reInitialiseCounter > 100){
+        if(reInitialiseCounter > 50){
+            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, 8, horizon);
             reInitialiseCounter = 0;
-            optimisedControls = activeOptimiser->optimise(reInitialiseCounter, optimisedControls, 8, horizon);
         }
 
         if(visualCounter > 5){
@@ -340,8 +342,18 @@ void MPCUntilComplete(){
 }
 
 void keyboardControl(){
-    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+    
     while(activeVisualiser->windowOpen()){
+        vector<double> gravCompensation;
+    activeModelTranslator->activePhysicsSimulator->getRobotJointsGravityCompensaionControls("panda", gravCompensation, MAIN_DATA_STATE);
+    MatrixXd control(activeModelTranslator->num_ctrl, 1);
+    for(int i = 0; i < activeModelTranslator->num_ctrl; i++){
+        control(i) = gravCompensation[i];
+    }
+    cout << "control: " << control << endl;
+    activeModelTranslator->setControlVector(control, MAIN_DATA_STATE);
+    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
         activeVisualiser->render("keyboard control");
     }
 }
