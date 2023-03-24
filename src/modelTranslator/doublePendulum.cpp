@@ -23,8 +23,8 @@ doublePendulum::doublePendulum(): modelTranslator(){
 MatrixXd doublePendulum::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
-    float arm1Pos = randFloat(-2, 2);
-    float arm2Pos = randFloat(-2, 2);
+    float arm1Pos = randFloat(0, 3);
+    float arm2Pos = randFloat(0, 3);
 
     randomStartState << arm1Pos, arm2Pos, 0, 0;
 

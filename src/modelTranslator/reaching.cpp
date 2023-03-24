@@ -48,11 +48,9 @@ std::vector<MatrixXd> pandaReaching::createInitControls(int horizonLength){
         for(int i = 0; i < horizonLength; i++){
 
             activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
-            cout << "grav compensation: " << gravCompensation[1] << endl;
             for(int i = 0; i < num_ctrl; i++){
                 control(i) = gravCompensation[i];
             }
-            cout << "create init controls: " << control << endl;
             initControls.push_back(control);
         }
     }

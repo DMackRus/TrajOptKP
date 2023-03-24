@@ -5,6 +5,6 @@ robots:
     numActuators: 2
     torqueControl: true 
     torqueLimits: [100, 100]
-    jointPosCosts: [1, 1]
+    jointPosCosts: [2, 1]
     jointVelCosts: [0, 0]
     jointControlCosts: [0.8, 0.8]

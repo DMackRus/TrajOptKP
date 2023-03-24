@@ -10,11 +10,12 @@
 #include "MuJoCoHelper.h"
 
 #include "interpolated_iLQR.h"
+#include "stomp.h"
 
 // ------------ MODES OF OEPRATION -------------------------------
 #define SHOW_INIT_CONTROLS          0
-#define ILQR_ONCE                   1
-#define MPC_CONTINOUS               0
+#define ILQR_ONCE                   0
+#define MPC_CONTINOUS               1
 #define MPC_UNTIL_COMPLETE          0
 #define DEFAULT_KEYBOARD_CONTROL    0
 
@@ -29,7 +30,9 @@ enum scenes{
 
 modelTranslator *activeModelTranslator;
 differentiator *activeDifferentiator;
-interpolatediLQR *activeOptimiser;
+optimiser *activeOptimiser;
+interpolatediLQR *iLQROptimiser;
+stomp *stompOptimiser;
 visualizer *activeVisualiser;
 
 void showInitControls();
@@ -40,7 +43,7 @@ void keyboardControl();
 
 int main() {
 
-    scenes myScene = reaching;
+    scenes myScene = pendulum;
     MatrixXd startStateVector(1, 1);
 
     if(myScene == pendulum){
@@ -49,7 +52,7 @@ int main() {
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
         startStateVector = activeModelTranslator->returnRandomStartState();
-        startStateVector << 3.14, 0, 0, 0;
+        //startStateVector << 3.14, 0, 0, 0;
     }
     else if(myScene == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
@@ -85,8 +88,16 @@ int main() {
 
     //Instantiate my optimiser
     activeVisualiser = new visualizer(activeModelTranslator);
-    activeOptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, 3000, activeVisualiser);
 
+    if(1){
+        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, 3000, activeVisualiser);
+        activeOptimiser = iLQROptimiser;
+    }
+    else{
+        stompOptimiser = new stomp(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, 3000, 8);
+        activeOptimiser = stompOptimiser;
+    }
+    
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
     
@@ -155,7 +166,7 @@ void iLQROnce(){
 
     std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 10, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, horizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";

@@ -12,6 +12,7 @@
 #include <Eigen/Dense>
 #include <memory>
 #include <chrono>
+#include <random>
 
 #define POSE_DOFS       6
 #define MUJOCO_DT   0.004

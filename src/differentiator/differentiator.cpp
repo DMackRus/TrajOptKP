@@ -213,7 +213,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     // Delete temporary data object to prevent memory leak
     mj_deleteData(saveData);
 
-    dqaccdq.setZero();
+    // need to set this as zero when reaching but not when pendulum????
+    //dqaccdq.setZero();
 
 
 

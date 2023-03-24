@@ -723,18 +723,27 @@ bool MuJoCoHelper::saveSystemStateToIndex(int saveDataIndex, int listIndex){
     return true;
 }
 
-bool MuJoCoHelper::loadSystemStateFromIndex(int loadDataIndex, int listIndex){
+bool MuJoCoHelper::loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex){
 
-    mjData *loadData;
-    if(loadDataIndex == MAIN_DATA_STATE){
-        loadData = mdata;
+    mjData *dataDestination;
+    if(dataDestinationIndex == MAIN_DATA_STATE){
+        dataDestination = mdata;
     }
     else{
-        loadData = savedSystemStatesList[loadDataIndex];
+        dataDestination = savedSystemStatesList[dataDestinationIndex];
     }
 
-    cpMjData(model, loadData, savedSystemStatesList[listIndex]);
-    
+    mjData *dataSource;
+    if(dataSourceIndex == MAIN_DATA_STATE){
+        dataSource = mdata;
+    }
+    else{
+        dataSource = savedSystemStatesList[dataSourceIndex];
+    }
+
+
+    cpMjData(model, dataDestination, dataSource);
+
     return true;
 }
 
