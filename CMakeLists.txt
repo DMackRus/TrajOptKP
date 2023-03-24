@@ -12,7 +12,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -107,6 +107,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES physicsSimSwitching
 #  CATKIN_DEPENDS other_catkin_pkg
+   CATKIN_DEPENDS roscpp rospy
 #  DEPENDS system_lib
 )
 
@@ -252,7 +253,16 @@ add_executable(${PROJECT_NAME} src/main.cpp
                 src/optimiser/interpolated_iLQR.cpp
                 src/optimiser/stomp.cpp)
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+add_dependencies(${PROJECT_NAME}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+target_link_libraries(${PROJECT_NAME}
+  ${Franka_LIBRARIES}
+  ${catkin_LIBRARIES}
+)
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${BULLET_DEFINITIONS})
 

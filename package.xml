@@ -2,7 +2,7 @@
 <package format="2">
   <name>autoTOTask</name>
   <version>0.0.0</version>
-  <description>The physicsSimSwitching package</description>
+  <description>The trajectory opimisation task specification package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->
@@ -48,6 +48,10 @@
   <!--   <test_depend>gtest</test_depend> -->
   <!-- Use doc_depend for packages you need only for building documentation: -->
   <!--   <doc_depend>doxygen</doc_depend> -->
+  <build_depend>rospy</build_depend>
+  <exec_depend>rospy</exec_depend>
+  <build_depend>roscpp</build_depend>
+  <exec_depend>roscpp</exec_depend>
   <buildtool_depend>catkin</buildtool_depend>
 
 

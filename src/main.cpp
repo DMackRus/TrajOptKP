@@ -1,5 +1,6 @@
 #include "stdInclude.h"
 #include <yaml-cpp/yaml.h>
+#include "ros/ros.h"
 
 
 // --------------------- different scenes -----------------------
@@ -14,8 +15,8 @@
 
 // ------------ MODES OF OEPRATION -------------------------------
 #define SHOW_INIT_CONTROLS          0
-#define ILQR_ONCE                   0
-#define MPC_CONTINOUS               1
+#define ILQR_ONCE                   1
+#define MPC_CONTINOUS               0
 #define MPC_UNTIL_COMPLETE          0
 #define DEFAULT_KEYBOARD_CONTROL    0
 
@@ -41,9 +42,29 @@ void MPCUntilComplete();
 void MPCContinous();
 void keyboardControl();
 
-int main() {
+int main(int argc, char **argv) {
+    //ros::init(argc, argv, "MuJoCo_node");
 
-    scenes myScene = pendulum;
+    //ros::NodeHandle nh;
+
+    // Get ros parameters
+    std::string optimiser;
+    int mode;
+    int task;
+
+    //ros::param::get("/optimiser", optimiser);
+    ros::param::get("/taskNumber", task);
+    ros::param::get("/mode", mode);
+
+    cout << "optimiser: " << optimiser << endl;
+    cout << "task number: " << task << endl;
+    cout << "mode: " << mode << endl;
+
+
+
+
+
+    scenes myScene = reaching;
     MatrixXd startStateVector(1, 1);
 
     if(myScene == pendulum){
