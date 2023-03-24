@@ -17,10 +17,13 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
     robot tempRobot;
     string robotName;
     vector<string> jointNames;
+    int numActuators;
+    bool torqueControlled;
+    vector<double> torqueLimits;
     vector<double> jointPosCosts;
     vector<double> jointVelCosts;
     vector<double> jointControlCosts;
-    int numActuators;
+    
 
     modelFilePath = node["modelFile"].as<std::string>();
 
@@ -35,10 +38,12 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
                     jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
                 }
 
-                // for(int i = 0; i < robot_it->second["numActuators"].size(); i++){
-                //     jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
-                // }
                 numActuators = robot_it->second["numActuators"].as<int>();
+                torqueControlled = robot_it->second["torqueControl"].as<bool>();
+
+                for(int i = 0; i < robot_it->second["torqueLimits"].size(); i++){
+                    torqueLimits.push_back(robot_it->second["torqueLimits"][i].as<double>());
+                }
 
                 for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
                     jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
@@ -56,10 +61,13 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
             tempRobot.name = robotName;
             tempRobot.jointNames = jointNames;
             tempRobot.numActuators = numActuators;
+            tempRobot.torqueControlled = torqueControlled;
+            tempRobot.torqueLimits = torqueLimits;
             tempRobot.jointPosCosts = jointPosCosts;
             tempRobot.jointVelCosts = jointVelCosts;
             tempRobot.jointControlCosts = jointControlCosts;
             cout << "test robot joints: " << tempRobot.jointNames[0] << endl;
+            cout << "toqrue limits: " << tempRobot.torqueLimits[0] << endl;
         }
         counter ++;
     }

@@ -466,13 +466,14 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             // Calculate new optimal controls
             U_new[t] = _U + (alpha * k[t]) + feedBackGain;
 
-            // Clamp torques within torque limits
-            // if (TORQUE_CONTROL) {
-            //     for (int k = 0; k < NUM_CTRL; k++) {
-            //         if (U_new[t](k) > modelTranslator->torqueLims[k]) U_new[t](k) = modelTranslator->torqueLims[k];
-            //         if (U_new[t](k) < -modelTranslator->torqueLims[k]) U_new[t](k) = -modelTranslator->torqueLims[k];
-            //     }
-            // }
+            // Clamp torque within limits
+            if(activeModelTranslator->myStateVector.robots[0].torqueControlled){
+                for(int i = 0; i < num_ctrl; i++){
+                    if (U_new[t](i) > activeModelTranslator->myStateVector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->myStateVector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) < -activeModelTranslator->myStateVector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->myStateVector.robots[0].torqueLimits[i];
+                }
+
+            }
 
 //            cout << "old control: " << endl << U_old[t] << endl;
 //            cout << "state feedback" << endl << stateFeedback << endl;
@@ -480,8 +481,6 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
 
             activeModelTranslator->setControlVector(U_new[t], MAIN_DATA_STATE);
             Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-
-            
 
             Ut = U_new[t].replicate(1, 1);
 

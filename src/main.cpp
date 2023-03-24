@@ -13,8 +13,8 @@
 
 // ------------ MODES OF OEPRATION -------------------------------
 #define SHOW_INIT_CONTROLS          0
-#define ILQR_ONCE                   0
-#define MPC_CONTINOUS               1
+#define ILQR_ONCE                   1
+#define MPC_CONTINOUS               0
 #define MPC_UNTIL_COMPLETE          0
 #define DEFAULT_KEYBOARD_CONTROL    0
 
@@ -50,7 +50,6 @@ int main() {
 
         startStateVector = activeModelTranslator->returnRandomStartState();
         startStateVector << 3.14, 0, 0, 0;
-        //startStateVector << 0.2, 1.9, 0, 0;
     }
     else if(myScene == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
@@ -58,10 +57,6 @@ int main() {
         activeModelTranslator = myReaching;
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
         startStateVector = activeModelTranslator->returnRandomStartState();
-
-        // startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
-        //     0, 0, 0, 0, 0, 0, 0;
-        
 
     }
     else if(myScene == twoReaching){

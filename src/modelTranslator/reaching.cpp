@@ -41,13 +41,13 @@ MatrixXd pandaReaching::returnRandomGoalState(){
 std::vector<MatrixXd> pandaReaching::createInitControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
-    if(1){
+    if(myStateVector.robots[0].torqueControlled){
 
         MatrixXd control(num_ctrl, 1);
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
-            activePhysicsSimulator->getRobotJointsGravityCompensaionControls("panda", gravCompensation, MAIN_DATA_STATE);
+            activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
             cout << "grav compensation: " << gravCompensation[1] << endl;
             for(int i = 0; i < num_ctrl; i++){
                 control(i) = gravCompensation[i];
