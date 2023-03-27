@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
 
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+    cout << "starting state: " << startStateVector << endl;
 
     //Instantiate my optimiser
     activeVisualiser = new visualizer(activeModelTranslator);
@@ -155,8 +156,7 @@ void showInitControls(){
     int visualCounter = 0;
 
     std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
-
-    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+    activeModelTranslator->activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
 
     while(activeVisualiser->windowOpen()){
 

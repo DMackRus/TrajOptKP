@@ -414,7 +414,8 @@ bool MuJoCoHelper::isValidBodyName(string bodyName, int &bodyIndex){
             return true;
         }
     }
-    return false;
+    // return false;
+    return true;
 }
 
 bool MuJoCoHelper::setBodyPose_quat(string bodyName, pose_7 pose, int dataIndex){
@@ -458,7 +459,7 @@ bool MuJoCoHelper::setBodyPose_angle(string bodyName, pose_6 pose, int dataIndex
 
     int bodyIndex;
     if(!isValidBodyName(bodyName, bodyIndex)){
-        cout << "That body doesnt exist in the simulation\n";
+        cout << "That body doesnt exist in the simulation: " << bodyName << "\n";
         return false;
     }
 
@@ -556,11 +557,11 @@ bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex
     }
 
     for(int i = 0; i < 3; i++){
-        pose.position(i) = d->qpos[qposIndex + i];
+        pose.position(i) = d->xpos[(bodyId * 3) + i];
     }
 
     for(int i = 0; i < 4; i++){
-        pose.quat(i) = d->qpos[qposIndex + 3 + i];
+        pose.quat(i) = d->xquat[(bodyId * 4) + i];
     }
 
     return true;
@@ -569,7 +570,7 @@ bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex
 bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose, int dataIndex){
     int bodyIndex;
     if(!isValidBodyName(bodyName, bodyIndex)){
-        cout << "That body doesnt exist in the simulation\n";
+        cout << "That body doesnt exist in the simulation " << bodyName << endl;
         return false;
     }
 
@@ -592,13 +593,13 @@ bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose, int dataInde
     }
 
     for(int i = 0; i < 3; i++){
-        pose.position(i) = d->qpos[qposIndex + i];
+        pose.position(i) = d->xpos[(bodyId * 3) + i];
     }
 
     m_quat tempQuat;
 
     for(int i = 0; i < 4; i++){
-        tempQuat(i) = d->qpos[qposIndex + 3 + i];
+        tempQuat(i) = d->xquat[(bodyId * 4) + i];
     }
 
     m_point euler = quat2Eul(tempQuat);

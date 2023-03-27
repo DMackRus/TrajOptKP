@@ -11,6 +11,10 @@ public:
     MatrixXd returnRandomGoalState() override;
     std::vector<MatrixXd> createInitControls(int horizonLength) override;
 
+    void initControls_mainWayPoints(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon);
+    std::vector<m_point> initControls_createAllWayPoints(std::vector<m_point> mainWayPoints, std::vector<int> wayPointsTiming);
+    std::vector<MatrixXd> generate_initControls_fromWayPoints(std::vector<m_point> initPath);
+
 };
 
 

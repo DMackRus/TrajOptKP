@@ -118,9 +118,6 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
                 tempBody.angularPosCost[i] = angularPosCosts[i];
                 tempBody.angularVelCost[i] = angularVelCosts[i];
             }
-            
-
-            cout << "tempbody pos: " << tempBody.linearPosCost[0] << endl;
 
             _bodies.push_back(tempBody);
         }
@@ -326,6 +323,9 @@ MatrixXd modelTranslator::returnStateVector(int dataIndex){
             stateVector(j + (stateVectorSize/2), 0) = jointVelocities[j];
         }
 
+        cout << "robot " << i << " returned vector " << endl;
+        cout << "stateVector " << stateVector << endl;
+
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
         currentStateIndex += myStateVector.robots[i].jointNames.size();
     }
@@ -370,8 +370,6 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector, int dataIndex){
         return false;
     }
 
-    cout << "setting state vector" << _stateVector << endl;
-
     int currentStateIndex = 0;
 
     // Loop through all robots in the state vector
@@ -387,12 +385,12 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector, int dataIndex){
         activePhysicsSimulator->setRobotJointsPositions(myStateVector.robots[i].name, jointPositions, dataIndex);
         activePhysicsSimulator->setRobotJointsVelocities(myStateVector.robots[i].name, jointVelocities, dataIndex);
 
-        cout << "set pos and velocities for robot " << i << endl;
+        cout << "robot positions: " << jointPositions[0] << " " << jointPositions[1] << endl;
 
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
         currentStateIndex += myStateVector.robots[i].jointNames.size();
     }
-
+    cout << "current State Index << " << currentStateIndex << endl;
 
     // Loop through all bodies in the state vector
     for(int i = 0; i < myStateVector.bodiesStates.size(); i++){

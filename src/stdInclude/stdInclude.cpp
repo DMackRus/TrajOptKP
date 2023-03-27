@@ -52,3 +52,26 @@ m_point quat2Eul(m_quat quaternion){
 
     return eulAngles;
 }
+
+m_quat rotMat2Quat(Eigen::Matrix3d rotMat){
+    m_quat quat;
+
+    Eigen::Quaterniond q(rotMat);
+
+    quat(0) = q.w();
+    quat(1) = q.x();
+    quat(2) = q.y();
+    quat(3) = q.z();
+
+    return quat;
+}
+
+m_quat invQuat(m_quat quat){
+    m_quat invQuat;
+
+    invQuat(0) = quat(0);
+    invQuat(1) = -quat(1);
+    invQuat(2) = -quat(2);
+    invQuat(3) = -quat(3);
+    return invQuat;
+}

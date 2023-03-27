@@ -28,6 +28,8 @@ float randFloat(float floor, float ceiling);
 
 m_quat eul2Quat(m_point eulerAngles);
 m_point quat2Eul(m_quat quaternion);
+m_quat rotMat2Quat(Eigen::Matrix3d rotMat);
+m_quat invQuat(m_quat quat);
 
 
 
