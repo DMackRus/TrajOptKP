@@ -16,6 +16,7 @@
 
 #define POSE_DOFS       6
 #define MUJOCO_DT   0.004
+#define PI          3.14152
 
 using namespace std;
 using namespace Eigen;
@@ -28,8 +29,12 @@ float randFloat(float floor, float ceiling);
 
 m_quat eul2Quat(m_point eulerAngles);
 m_point quat2Eul(m_quat quaternion);
+m_point quat2Axis(m_quat quaternion);
 m_quat rotMat2Quat(Eigen::Matrix3d rotMat);
 m_quat invQuat(m_quat quat);
+m_quat multQuat(m_quat quat_l, m_quat quat_r);
+
+m_point crossProduct(m_point vec1, m_point vec2);
 
 
 

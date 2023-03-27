@@ -37,6 +37,9 @@ public:
     bool getBodyVelocity(string bodyName, pose_6 &velocity, int dataIndex) override;
     bool getBodyAcceleration(string bodyName, pose_6 &acceleration, int dataIndex) override;
 
+    // Extras
+    Eigen::MatrixXd calculateJacobian(std::string bodyName, int dataIndex) override;
+
     // ----- Loading and saving system states -----
     bool appendSystemStateToEnd(int dataIndex) override;
     bool checkIfDataIndexExists(int dataIndex) override;

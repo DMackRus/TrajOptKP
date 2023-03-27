@@ -684,6 +684,47 @@ bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration, in
 }
 // --------------------------------- END OF BODY UTILITY ---------------------------------------
 
+// - TODO create jacobian dynamically for the robot
+Eigen::MatrixXd MuJoCoHelper::calculateJacobian(std::string bodyName, int dataIndex){
+    Eigen::MatrixXd kinematicJacobian(6, 7);
+
+    mjData *d;
+    // use mdata
+    if(dataIndex == MAIN_DATA_STATE){
+        d = mdata;
+    }
+    // use a saved data state
+    else{
+        if(savedSystemStatesList.size() < dataIndex){
+            cout << "invalid data index, out of size of save system state list \n";
+        }
+        d = savedSystemStatesList[dataIndex];
+    }
+
+    //mjtNum* J_COMi_temp = mj_stackAlloc(_data, 3*_model->nv);
+    Matrix<double, Dynamic, Dynamic, RowMajor> J_p(3, model->nv);
+    Matrix<double, Dynamic, Dynamic, RowMajor> J_r(3, model->nv);
+
+    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+
+    mj_jacBody(model, d, J_p.data(), J_r.data(), bodyId);
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 7; j++) {
+            kinematicJacobian(i, j) = J_p(i, j);
+            //cout << kinematicJacobian(i, j) << endl;
+        }
+    }
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 7; j++) {
+            kinematicJacobian(i + 3, j) = J_r(i, j);
+        }
+    }
+
+    return kinematicJacobian;
+}
+
 // ------------------------------- System State Functions -----------------------------------------------
 bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 

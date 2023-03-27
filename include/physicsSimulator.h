@@ -63,6 +63,8 @@ public:
     virtual bool getBodyVelocity(string bodyName, pose_6 &velocity, int dataIndex) = 0;
     virtual bool getBodyAcceleration(string bodyName, pose_6 &acceleration, int dataIndex) = 0;
 
+    virtual Eigen::MatrixXd calculateJacobian(std::string bodyName, int dataIndex) = 0;
+
     // ----- Loading and saving system states -----
     virtual bool appendSystemStateToEnd(int dataIndex) = 0;
     virtual bool checkIfDataIndexExists(int dataIndex) = 0;

@@ -54,23 +54,25 @@ std::vector<MatrixXd> twoDPushing::createInitControls(int horizonLength){
     allWayPoints = initControls_createAllWayPoints(mainWayPoints, mainWayPointsTimings);
 
     // Step 3 - follow the points via the jacobian
+    initControls = generate_initControls_fromWayPoints(allWayPoints);
 
-    if(myStateVector.robots[0].torqueControlled){
+    // if(myStateVector.robots[0].torqueControlled){
 
-        MatrixXd control(num_ctrl, 1);
-        vector<double> gravCompensation;
-        for(int i = 0; i < horizonLength; i++){
+    //     MatrixXd control(num_ctrl, 1);
+    //     vector<double> gravCompensation;
+    //     for(int i = 0; i < horizonLength; i++){
 
-            activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+    //         activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
             
-            for(int i = 0; i < num_ctrl; i++){
-                control(i) = gravCompensation[i];
-            }
-            setControlVector(control, MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-            initControls.push_back(control);
-        }
-    }
+    //         for(int i = 0; i < num_ctrl; i++){
+    //             control(i) = gravCompensation[i];
+    //         }
+    //         setControlVector(control, MAIN_DATA_STATE);
+    //         activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+    //         initControls.push_back(control);
+    //     }
+    // }
+
     return initControls;
 
 }
@@ -170,22 +172,32 @@ std::vector<m_point> twoDPushing::initControls_createAllWayPoints(std::vector<m_
 }
 
 std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vector<m_point> initPath){
-    std::vector<m_ctrl> initControls;
+    std::vector<MatrixXd> initControls;
     std::string goalObjName = "blueTin";
     std::string EEName = "franka_gripper";
 
     pose_7 EE_start_pose;
-    activePhysicsSimulator->getBodyPose_quat(goalObjName, EE_start_pose, MAIN_DATA_STATE);
+    pose_6 goalobj_startPose;
+    activePhysicsSimulator->getBodyPose_quat(EEName, EE_start_pose, MAIN_DATA_STATE);
+    activePhysicsSimulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
 
     float angle_EE_push;
     float x_diff = X_desired(7) - goalobj_startPose.position(0);
     float y_diff = X_desired(8) - goalobj_startPose.position(1);
     angle_EE_push = atan2(y_diff, x_diff);
 
+    if(angle_EE_push < 0){
+        angle_EE_push = angle_EE_push + (2*PI);
+//        cout << "converted angle is: " << convertedAngle << endl;
+    }
+
+    double convertedAngle = angle_EE_push - (PI/4);
+
+    // Setup the desired rotation matrix for the end-effector
     m_point xAxis, yAxis, zAxis;
-    xAxis << cos(angle_EE_push), sin(angle_EE_push), 0;
+    xAxis << cos(convertedAngle), sin(convertedAngle), 0;
     zAxis << 0, 0, -1;
-    yAxis = globalMujocoController->crossProduct(zAxis, xAxis);
+    yAxis = crossProduct(zAxis, xAxis);
 
     Eigen::Matrix3d rotMat;
     rotMat << xAxis(0), yAxis(0), zAxis(0),
@@ -204,63 +216,63 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
     for(int i = 0; i < initPath.size(); i++){
         pose_7 currentEEPose;
-        activePhysicsSimulator->getBodyPose_quat(EE_name, currentEEPose, MAIN_DATA_STATE);
-        m_quat currentEEQuat, invQuat, quatDiff;
-        currentEEQuat(0) = currentEEPose.orientation[0];
-        currentEEQuat(1) = currentEEPose.orientation[1];
-        currentEEQuat(2) = currentEEPose.orientation[2];
-        currentEEQuat(3) = currentEEPose.orientation[3];
-        invQuat = invertQuat(currentEEQuat);
-        //         m_pose currentEEPose = globalMujocoController->returnBodyPose(model, d, EE_id);
-//         m_quat currentQuat = globalMujocoController->returnBodyQuat(model, d, EE_id);
-//         m_quat invQuat = globalMujocoController->invQuat(currentQuat);
-//         m_quat quatDiff = globalMujocoController->multQuat(desiredQuat, invQuat);
+        activePhysicsSimulator->getBodyPose_quat(EEName, currentEEPose, MAIN_DATA_STATE);
+        m_quat currentEEQuat, invertedQuat, quatDiff;
+        currentEEQuat(0) = currentEEPose.quat(0);
+        currentEEQuat(1) = currentEEPose.quat(1);
+        currentEEQuat(2) = currentEEPose.quat(2);
+        currentEEQuat(3) = currentEEPose.quat(3);
+        invertedQuat = invQuat(currentEEQuat);
+        quatDiff = multQuat(desiredQuat, invertedQuat);
 
-//         m_point axisDiff = globalMujocoController->quat2Axis(quatDiff);
+        
+        m_point axisDiff = quat2Axis(quatDiff);
+        MatrixXd differenceFromPath(6, 1);
+        float gainsTorque[6] = {10000, 10000, 30000, 500, 500, 500};
+        float gainsPositionControl[6] = {10000, 10000, 30000, 5000, 5000, 5000};
 
-//         m_pose differenceFromPath;
-//         float gains[6] = {10000, 10000, 30000, 5000, 5000, 5000};
-//         for (int j = 0; j < 3; j++) {
-//             differenceFromPath(j) = initPath[i](j) - currentEEPose(j);
-//             differenceFromPath(j + 3) = axisDiff(j);
-//         }
+        for(int j = 0; j < 3; j++){
+            differenceFromPath(j) = initPath[i](j) - currentEEPose.position(j);
+            differenceFromPath(j + 3) = axisDiff(j);
+        }
 
-//         // Calculate jacobian inverse
-//         MatrixXd Jac = globalMujocoController->calculateJacobian(model, d, EE_id);
-//         MatrixXd Jac_inv = Jac.completeOrthogonalDecomposition().pseudoInverse();
+        MatrixXd Jac, JacInv;
 
-//         m_pose desiredEEForce;
+        Jac = activePhysicsSimulator->calculateJacobian(EEName, MAIN_DATA_STATE);
+        JacInv = Jac.completeOrthogonalDecomposition().pseudoInverse();
 
-//         if(TORQUE_CONTROL){
-//             for (int j = 0; j < 6; j++) {
-//                 desiredEEForce(j) = differenceFromPath(j) * gains[j];
-//             }
-//             desiredControls = Jac_inv * desiredEEForce;
-//         }
-//         else{
-//             // Position control
-//             for (int j = 0; j < 6; j++) {
-//                 desiredEEForce(j) = differenceFromPath(j) * gains[j] * 0.000001;
-//             }
-//             desiredControls += Jac_inv * desiredEEForce;
-//             //cout << "desired controls: " << desiredControls << endl;
-//         }
+        MatrixXd desiredEEForce(6, 1);
+        MatrixXd desiredControls(num_ctrl, 1);
+
+        if(myStateVector.robots[0].torqueControlled){
+            for(int j = 0; j < 6; j++) {
+                desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
+            }
+            desiredControls = JacInv * desiredEEForce * 0.001;
+
+            std::vector<double> gravCompensation;
+            MatrixXd gravCompControl(num_ctrl, 1);
+            activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            for(int j = 0; j < num_ctrl; j++){
+                gravCompControl(j) = gravCompensation[j];
+            }
+            desiredControls += gravCompControl;
+        }
+        // Position control
+        else{
+            for(int j = 0; j < 6; j++) {
+                desiredEEForce(j) = differenceFromPath(j) * gainsPositionControl[j] * 0.000001;
+            }
+            desiredControls += JacInv * desiredEEForce;
+            //cout << "desired controls: " << desiredControls << endl;
+        }
 
 
-//         //cout << "desiredEEForce " << desiredEEForce << endl;
+        initControls.push_back(desiredControls);
 
+        setControlVector(desiredControls, MAIN_DATA_STATE);
+        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-//         initControls.push_back(m_ctrl());
-
-
-//         for (int k = 0; k < NUM_CTRL; k++) {
-
-//             initControls[i](k) = desiredControls(k);
-//         }
-
-//         tempModelTranslator.setControls(d, initControls[i], false);
-
-//         tempModelTranslator.stepModel(d, 1);
     }
 
     return initControls;
