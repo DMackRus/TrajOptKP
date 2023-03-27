@@ -6,6 +6,7 @@
 // --------------------- different scenes -----------------------
 #include "doublePendulum.h"
 #include "reaching.h"
+#include "twoDPushing.h"
 
 #include "visualizer.h"
 #include "MuJoCoHelper.h"
@@ -14,9 +15,9 @@
 #include "stomp.h"
 
 // ------------ MODES OF OEPRATION -------------------------------
-#define SHOW_INIT_CONTROLS          0
-#define ILQR_ONCE                   1
-#define MPC_CONTINOUS               0
+#define SHOW_INIT_CONTROLS          1
+#define ILQR_ONCE                   0
+#define MPC_CONTINOUS               1
 #define MPC_UNTIL_COMPLETE          0
 #define DEFAULT_KEYBOARD_CONTROL    0
 
@@ -24,7 +25,7 @@ enum scenes{
     pendulum = 0,
     reaching = 1,
     twoReaching = 2,
-    twoDPushing = 3,
+    cylinderPushing = 3,
     threeDPushing = 4,
     boxFlicking = 5
 };
@@ -61,10 +62,7 @@ int main(int argc, char **argv) {
     cout << "mode: " << mode << endl;
 
 
-
-
-
-    scenes myScene = reaching;
+    scenes myScene = cylinderPushing;
     MatrixXd startStateVector(1, 1);
 
     if(myScene == pendulum){
@@ -86,8 +84,11 @@ int main(int argc, char **argv) {
     else if(myScene == twoReaching){
 
     }
-    else if(myScene == twoDPushing){
-        
+    else if(myScene == cylinderPushing){
+        twoDPushing *myTwoDPushing = new twoDPushing();
+        activeModelTranslator = myTwoDPushing;
+        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+        startStateVector = activeModelTranslator->returnRandomStartState();
 
     }
     else if(myScene == threeDPushing){
@@ -120,6 +121,7 @@ int main(int argc, char **argv) {
     }
     
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 
     
 

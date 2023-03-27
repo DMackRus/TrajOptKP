@@ -13,8 +13,10 @@ struct bodyStateVec{
     string name;
     bool activeLinearDOF[3];
     bool activeAngularDOF[3];
-    double linearCost[3];
-    double angularCost[3];
+    double linearPosCost[3];
+    double linearVelCost[3];
+    double angularPosCost[3];
+    double angularVelCost[3];
 };
 
 struct stateVectorList{
@@ -64,6 +66,8 @@ protected:
 
     MatrixXd X_desired;
     bool analyticalCostDerivatives;
+
+    char* filePath; 
 
 private:
 

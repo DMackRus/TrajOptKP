@@ -14,22 +14,22 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
 
     int counter = 0;
 
-    robot tempRobot;
-    string robotName;
-    vector<string> jointNames;
-    int numActuators;
-    bool torqueControlled;
-    vector<double> torqueLimits;
-    vector<double> jointPosCosts;
-    vector<double> jointVelCosts;
-    vector<double> jointControlCosts;
-    
-
     modelFilePath = node["modelFile"].as<std::string>();
 
     for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
-        if(counter != 0){
+        // Robots
+        if(counter == 1){
             // Loop through robots list
+            robot tempRobot;
+            string robotName;
+            vector<string> jointNames;
+            int numActuators;
+            bool torqueControlled;
+            vector<double> torqueLimits;
+            vector<double> jointPosCosts;
+            vector<double> jointVelCosts;
+            vector<double> jointControlCosts;
+
             for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
 
                 robotName = robot_it->first.as<string>();
@@ -66,19 +66,72 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
             tempRobot.jointPosCosts = jointPosCosts;
             tempRobot.jointVelCosts = jointVelCosts;
             tempRobot.jointControlCosts = jointControlCosts;
-            cout << "test robot joints: " << tempRobot.jointNames[0] << endl;
-            cout << "toqrue limits: " << tempRobot.torqueLimits[0] << endl;
+
+             _robots.push_back(tempRobot);
+        }
+        // Loop through bodies
+        else if(counter == 2){
+            bodyStateVec tempBody;
+            std::string bodyName;
+            bool activeLinearDOF[3];
+            bool activeAngularDOF[3];
+            double linearPosCosts[3];
+            double linearVelCosts[3];
+            double angularPosCosts[3];
+            double angularVelCosts[3];
+            // Loop through bodies list
+            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
+
+                bodyName = robot_it->first.as<string>();
+
+                for(int i = 0; i < robot_it->second["activeLinearDOF"].size(); i++){
+                    activeLinearDOF[i] = robot_it->second["activeLinearDOF"][i].as<bool>();
+                }
+
+                for(int i = 0; i < robot_it->second["activeAngularDOF"].size(); i++){
+                    activeAngularDOF[i] = robot_it->second["activeAngularDOF"][i].as<bool>();
+                }
+
+                for(int i = 0; i < robot_it->second["linearPosCost"].size(); i++){
+                    linearPosCosts[i] = robot_it->second["linearPosCost"][i].as<double>();
+                }
+
+                for(int i = 0; i < robot_it->second["linearVelCost"].size(); i++){
+                    linearVelCosts[i] = robot_it->second["linearVelCost"][i].as<double>();
+                }
+
+                for(int i = 0; i < robot_it->second["angularPosCost"].size(); i++){
+                    angularPosCosts[i] = robot_it->second["angularPosCost"][i].as<double>();
+                }
+
+                for(int i = 0; i < robot_it->second["angularVelCost"].size(); i++){
+                    angularVelCosts[i] = robot_it->second["angularVelCost"][i].as<double>();
+                }
+            }
+
+            tempBody.name = bodyName;
+            for(int i = 0; i < 3; i++){
+                tempBody.activeLinearDOF[i] = activeLinearDOF[i];
+                tempBody.activeAngularDOF[i] = activeAngularDOF[i];
+                tempBody.linearPosCost[i] = linearPosCosts[i];
+                tempBody.linearVelCost[i] = linearVelCosts[i];
+                tempBody.angularPosCost[i] = angularPosCosts[i];
+                tempBody.angularVelCost[i] = angularVelCosts[i];
+            }
+            
+
+            cout << "tempbody pos: " << tempBody.linearPosCost[0] << endl;
+
+            _bodies.push_back(tempBody);
         }
         counter ++;
     }
 
-    _robots.push_back(tempRobot);
+   
 }
 
 void modelTranslator::initModelTranslator(std::string yamlFilePath){
     //initialise robot
-
-    //modelFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/Franka-emika-panda-arm/V1/reaching_scene.xml";
 
     vector<robot> robots;
     vector<bodyStateVec> bodies;
@@ -92,6 +145,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     vector<string> bodyNames;
     for(int i = 0; i < bodies.size(); i++){
         bodyNames.push_back(bodies[i].name);
+        cout << "body names: " << bodies[i].name << endl;
     }
     
     myHelper = new MuJoCoHelper(robots, bodyNames);
@@ -143,8 +197,50 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
             Q(Q_index + j + robotNumJoints, Q_index + j + robotNumJoints) = myStateVector.robots[i].jointVelCosts[j];
         }
         Q_index +=(2*robotNumJoints);
-        
+  
     }
+
+    // Loop through bodies
+    for(int i = 0; i < myStateVector.bodiesStates.size(); i++){
+        
+        int activeDOFs = 0;
+        for(int j = 0; j < 3; j++){
+            if(myStateVector.bodiesStates[i].activeLinearDOF[j]){
+                activeDOFs++;
+            }
+            if(myStateVector.bodiesStates[i].activeAngularDOF[j]){
+                activeDOFs++;
+            }
+        }
+        cout << "num of active dofs: " << activeDOFs << endl;
+
+        // Loop through linear states first
+        int activeDofCounter = 0;
+        for(int j = 0; j < 3; j++){
+            if(myStateVector.bodiesStates[i].activeLinearDOF[j]){
+                Q(Q_index + activeDofCounter, Q_index + activeDofCounter) = myStateVector.bodiesStates[i].linearPosCost[j];
+
+                Q(Q_index + activeDofCounter + activeDOFs, Q_index + activeDofCounter + activeDOFs) = myStateVector.bodiesStates[i].linearVelCost[j];
+
+                activeDofCounter++;
+            }
+
+        }
+
+        // Loop through angular states second
+        for(int j = 0; j < 3; j++){
+            if(myStateVector.bodiesStates[i].activeAngularDOF[j]){
+                Q(Q_index + activeDofCounter, Q_index + activeDofCounter) = myStateVector.bodiesStates[i].angularPosCost[j];
+
+                Q(Q_index + activeDofCounter + activeDOFs, Q_index + activeDofCounter + activeDOFs) = myStateVector.bodiesStates[i].angularVelCost[j];
+
+                activeDofCounter++;
+            }
+
+        }
+    }
+
+    cout << "after assigning q matrices \n";
 
     // Loop through robots and starting assinging control specific costs
     int R_index = 0;

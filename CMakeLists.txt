@@ -248,6 +248,7 @@ add_executable(${PROJECT_NAME} src/main.cpp
                 src/visualizer/visualizer.cpp
                 src/modelTranslator/doublePendulum.cpp
                 src/modelTranslator/reaching.cpp
+                src/modelTranslator/twoDPushing.cpp
                 src/differentiator/differentiator.cpp
                 src/optimiser/optimiser.cpp
                 src/optimiser/interpolated_iLQR.cpp
