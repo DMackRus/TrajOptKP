@@ -159,9 +159,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         
         auto stop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(stop - start);
-        cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
+        //cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
 
-        //cout << "f_x[1000] \n" << f_x[1000] << endl;
+        cout << "f_x[1900] \n" << f_x[1900] << endl;
         // cout << "f_u[1000] \n" << f_u[1000] << endl;
         // cout << "l_x[1000] \n" << l_x[1000] << endl;
         // cout << "l_xx[1000] \n" << l_xx[1000] << endl;
@@ -193,8 +193,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             }
         }
 
-        cout << "bp done \n";
-
         if(!lambdaExit){
             bool costReduced;
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
@@ -207,7 +205,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
                 oldCost = newCost;
             }
 
-            if(converged){
+            if(converged && (i > 2)){
                 break;
             }
         }

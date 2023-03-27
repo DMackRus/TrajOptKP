@@ -7,10 +7,9 @@ twoDPushing::twoDPushing(){
     analyticalCostDerivatives = true;
 
     X_desired << 1, 1.5, 2, -2, 0, 0.6, 1, 
-                 0.8, 0,
+                 1, 0.2,
                  0, 0, 0, 0, 0, 0, 0,
                  0, 0;
-
 }
 
 MatrixXd twoDPushing::returnRandomStartState(){
@@ -20,7 +19,7 @@ MatrixXd twoDPushing::returnRandomStartState(){
     float cubeY = randFloat(-0.1, 0.1);
 
     cubeX = 0.5;
-    cubeY = 0;
+    cubeY = 0.1;
     randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
                         cubeX, cubeY,
                         0, 0, 0, 0, 0, 0, 0,
@@ -57,7 +56,6 @@ std::vector<MatrixXd> twoDPushing::createInitControls(int horizonLength){
     initControls = generate_initControls_fromWayPoints(allWayPoints);
 
     // if(myStateVector.robots[0].torqueControlled){
-
     //     MatrixXd control(num_ctrl, 1);
     //     vector<double> gravCompensation;
     //     for(int i = 0; i < horizonLength; i++){
@@ -123,7 +121,8 @@ void twoDPushing::initControls_mainWayPoints(m_point desiredObjectEnd, std::vect
     // intermediatePoint(0) = intermediatePointX;
     // intermediatePoint(1) = intermediatePointY;
 
-    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
+    float maxDistTravelled = 0.001 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
+    // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
     float proportionOfDistTravelled = maxDistTravelled / desiredDistTravelled;
@@ -198,6 +197,9 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
     xAxis << cos(convertedAngle), sin(convertedAngle), 0;
     zAxis << 0, 0, -1;
     yAxis = crossProduct(zAxis, xAxis);
+    // xAxis << 0, 0, -1;
+    // zAxis << cos(convertedAngle), sin(convertedAngle), 0;
+    // yAxis = crossProduct(zAxis, xAxis);
 
     Eigen::Matrix3d rotMat;
     rotMat << xAxis(0), yAxis(0), zAxis(0),
@@ -228,7 +230,7 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
         
         m_point axisDiff = quat2Axis(quatDiff);
         MatrixXd differenceFromPath(6, 1);
-        float gainsTorque[6] = {10000, 10000, 30000, 500, 500, 500};
+        float gainsTorque[6] = {100, 100, 100, 500, 500, 500};
         float gainsPositionControl[6] = {10000, 10000, 30000, 5000, 5000, 5000};
 
         for(int j = 0; j < 3; j++){
@@ -248,7 +250,7 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
             for(int j = 0; j < 6; j++) {
                 desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
             }
-            desiredControls = JacInv * desiredEEForce * 0.001;
+            desiredControls = JacInv * desiredEEForce;
 
             std::vector<double> gravCompensation;
             MatrixXd gravCompControl(num_ctrl, 1);

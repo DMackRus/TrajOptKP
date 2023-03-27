@@ -56,8 +56,6 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
         MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
         MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
-        Ut << 0, 0;
-        U_last << 0, 0;
 
         Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
         X_last = Xt.replicate(1, 1);
@@ -71,13 +69,13 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         cout << "l_xx:" << l_xx << endl;
 
         MatrixXd posVector, velVector, accelVec, stateVector;
-        // posVector = activeModelTranslator->returnPositionVector();
-        // velVector = activeModelTranslator->returnVelocityVector();
-        // stateVector = activeModelTranslator->returnStateVector();
+        posVector = activeModelTranslator->returnPositionVector(MAIN_DATA_STATE);
+        velVector = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
+        stateVector = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
         accelVec = activeModelTranslator->returnAccelerationVector(MAIN_DATA_STATE);
-        // cout << "pos Vector: " << posVector << endl;
-        // cout << "vel vector: " << velVector << endl;
-        // cout << "stateVector: " << stateVector << endl;
+        cout << "pos Vector: " << posVector << endl;
+        cout << "vel vector: " << velVector << endl;
+        cout << "stateVector: " << stateVector << endl;
         cout << "accel vector: " << accelVec << endl;
         
     }

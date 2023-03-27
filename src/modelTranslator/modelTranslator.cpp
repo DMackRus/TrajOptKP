@@ -193,7 +193,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
             Q(Q_index + j + robotNumJoints, Q_index + j + robotNumJoints) = myStateVector.robots[i].jointVelCosts[j];
         }
-        Q_index +=(2*robotNumJoints);
+        Q_index += robotNumJoints;
   
     }
 
@@ -217,11 +217,10 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
             if(myStateVector.bodiesStates[i].activeLinearDOF[j]){
                 Q(Q_index + activeDofCounter, Q_index + activeDofCounter) = myStateVector.bodiesStates[i].linearPosCost[j];
 
-                Q(Q_index + activeDofCounter + activeDOFs, Q_index + activeDofCounter + activeDOFs) = myStateVector.bodiesStates[i].linearVelCost[j];
+                Q(Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof) = myStateVector.bodiesStates[i].linearVelCost[j];
 
                 activeDofCounter++;
             }
-
         }
 
         // Loop through angular states second
@@ -229,11 +228,10 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
             if(myStateVector.bodiesStates[i].activeAngularDOF[j]){
                 Q(Q_index + activeDofCounter, Q_index + activeDofCounter) = myStateVector.bodiesStates[i].angularPosCost[j];
 
-                Q(Q_index + activeDofCounter + activeDOFs, Q_index + activeDofCounter + activeDOFs) = myStateVector.bodiesStates[i].angularVelCost[j];
+                Q(Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof) = myStateVector.bodiesStates[i].angularVelCost[j];
 
                 activeDofCounter++;
             }
-
         }
     }
 
@@ -323,9 +321,6 @@ MatrixXd modelTranslator::returnStateVector(int dataIndex){
             stateVector(j + (stateVectorSize/2), 0) = jointVelocities[j];
         }
 
-        cout << "robot " << i << " returned vector " << endl;
-        cout << "stateVector " << stateVector << endl;
-
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
         currentStateIndex += myStateVector.robots[i].jointNames.size();
     }
@@ -384,8 +379,6 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector, int dataIndex){
 
         activePhysicsSimulator->setRobotJointsPositions(myStateVector.robots[i].name, jointPositions, dataIndex);
         activePhysicsSimulator->setRobotJointsVelocities(myStateVector.robots[i].name, jointVelocities, dataIndex);
-
-        cout << "robot positions: " << jointPositions[0] << " " << jointPositions[1] << endl;
 
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
         currentStateIndex += myStateVector.robots[i].jointNames.size();

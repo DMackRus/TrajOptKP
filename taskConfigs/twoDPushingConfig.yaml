@@ -12,7 +12,7 @@ bodies:
   blueTin:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
-    linearPosCost: [1, 1, 0]
+    linearPosCost: [3, 3, 0]
     linearVelCost: [0.1, 0.1, 0] 
     angularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
