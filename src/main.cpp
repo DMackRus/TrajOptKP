@@ -122,9 +122,6 @@ int main(int argc, char **argv) {
     }
     
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-
-    
 
     if(SHOW_INIT_CONTROLS){
         showInitControls();

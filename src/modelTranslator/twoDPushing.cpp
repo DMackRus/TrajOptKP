@@ -7,7 +7,7 @@ twoDPushing::twoDPushing(){
     analyticalCostDerivatives = true;
 
     X_desired << 1, 1.5, 2, -2, 0, 0.6, 1, 
-                 1, 0.2,
+                 0.7, 0.4,
                  0, 0, 0, 0, 0, 0, 0,
                  0, 0;
 }
@@ -36,6 +36,15 @@ MatrixXd twoDPushing::returnRandomGoalState(){
 
 std::vector<MatrixXd> twoDPushing::createInitControls(int horizonLength){
     std::vector<MatrixXd> initControls;
+
+    // Set the goal position so that we can see where we are pushing to
+    std::string goalMarkerName = "display_goal";
+    pose_6 displayBodyPose;
+    displayBodyPose.position[0] = X_desired(7);
+    displayBodyPose.position[1] = X_desired(8);
+    displayBodyPose.position[2] = 0.0f;
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MAIN_DATA_STATE);
+    activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -121,7 +130,7 @@ void twoDPushing::initControls_mainWayPoints(m_point desiredObjectEnd, std::vect
     // intermediatePoint(0) = intermediatePointX;
     // intermediatePoint(1) = intermediatePointY;
 
-    float maxDistTravelled = 0.001 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
+    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
