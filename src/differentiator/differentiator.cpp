@@ -252,7 +252,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     mj_deleteData(saveData);
 
     // need to set this as zero when reaching but not when pendulum????
-    //dqaccdq.setZero();
+    dqaccdq.setZero();
 
 
 

@@ -6,6 +6,7 @@
 #include "doublePendulum.h"
 #include "reaching.h"
 #include "twoDPushing.h"
+#include "twoDPushingClutter.h"
 
 #include "visualizer.h"
 #include "MuJoCoHelper.h"
@@ -14,7 +15,7 @@
 #include "stomp.h"
 
 // ------------ MODES OF OEPRATION -------------------------------
-#define SHOW_INIT_CONTROLS          0
+#define SHOW_INIT_CONTROLS          1
 #define ILQR_ONCE                   0
 #define MPC_CONTINOUS               1
 #define MPC_UNTIL_COMPLETE          0
@@ -26,7 +27,8 @@ enum scenes{
     twoReaching = 2,
     cylinderPushing = 3,
     threeDPushing = 4,
-    boxFlicking = 5
+    boxFlicking = 5,
+    cylinderPushingClutter = 6
 };
 
 modelTranslator *activeModelTranslator;
@@ -61,8 +63,7 @@ int main(int argc, char **argv) {
     cout << "task number: " << task << endl;
     cout << "mode: " << mode << endl;
 
-
-    scenes myScene = pendulum;
+    scenes myScene = cylinderPushingClutter;
     MatrixXd startStateVector(1, 1);
 
     if(myScene == pendulum){
@@ -100,6 +101,12 @@ int main(int argc, char **argv) {
     }
     else if(myScene == boxFlicking){
 
+    }
+    else if(myScene == cylinderPushingClutter){
+        twoDPushingClutter *myTwoDPushingClutter = new twoDPushingClutter();
+        activeModelTranslator = myTwoDPushingClutter;
+        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+        startStateVector = activeModelTranslator->returnRandomStartState();
     }
     else{
         std::cout << "invalid scene selected, exiting" << std::endl;
@@ -142,8 +149,6 @@ int main(int argc, char **argv) {
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
     }
-
-    //activeVisualiser->render();
 
     return 0;
 }
@@ -188,7 +193,7 @@ void iLQROnce(){
     std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
     activeModelTranslator->activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 4, horizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";

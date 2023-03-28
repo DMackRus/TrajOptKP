@@ -1,0 +1,32 @@
+modelFile: "/home/davidrussell/catkin_ws/src/autoTOTask/Franka-emika-panda-arm/V1/cylinder_pushing_clutter.xml"
+robots:
+  panda:
+    jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
+    numActuators: 7
+    torqueControl: true
+    torqueLimits: [87, 87, 87, 87, 12, 12, 12]
+    jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
+    jointVelCosts: [0, 0, 0, 0, 0, 0, 0]
+    jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
+bodies:
+  blueTin:
+    activeLinearDOF: [true, true, false]
+    activeAngularDOF: [false, false, false]
+    linearPosCost: [3, 3, 0]
+    linearVelCost: [0.1, 0.1, 0]
+    angularPosCost: [0, 0, 0]
+    angularVelCost: [0, 0, 0]
+  obstacle1:
+    activeLinearDOF: [ true, true, false ]
+    activeAngularDOF: [ false, false, false ]
+    linearPosCost: [ 1, 1, 0 ]
+    linearVelCost: [ 0, 0, 0 ]
+    angularPosCost: [ 0, 0, 0 ]
+    angularVelCost: [ 0, 0, 0 ]
+  obstacle2:
+    activeLinearDOF: [ true, true, false ]
+    activeAngularDOF: [ false, false, false ]
+    linearPosCost: [ 1, 1, 0 ]
+    linearVelCost: [ 0, 0, 0 ]
+    angularPosCost: [ 0, 0, 0 ]
+    angularVelCost: [ 0, 0, 0 ]

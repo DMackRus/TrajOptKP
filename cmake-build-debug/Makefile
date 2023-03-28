@@ -640,6 +640,30 @@ src/modelTranslator/twoDPushing.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/autoTOTask.dir/build.make CMakeFiles/autoTOTask.dir/src/modelTranslator/twoDPushing.cpp.s
 .PHONY : src/modelTranslator/twoDPushing.cpp.s
 
+src/modelTranslator/twoDPushingClutter.o: src/modelTranslator/twoDPushingClutter.cpp.o
+.PHONY : src/modelTranslator/twoDPushingClutter.o
+
+# target to build an object file
+src/modelTranslator/twoDPushingClutter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/autoTOTask.dir/build.make CMakeFiles/autoTOTask.dir/src/modelTranslator/twoDPushingClutter.cpp.o
+.PHONY : src/modelTranslator/twoDPushingClutter.cpp.o
+
+src/modelTranslator/twoDPushingClutter.i: src/modelTranslator/twoDPushingClutter.cpp.i
+.PHONY : src/modelTranslator/twoDPushingClutter.i
+
+# target to preprocess a source file
+src/modelTranslator/twoDPushingClutter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/autoTOTask.dir/build.make CMakeFiles/autoTOTask.dir/src/modelTranslator/twoDPushingClutter.cpp.i
+.PHONY : src/modelTranslator/twoDPushingClutter.cpp.i
+
+src/modelTranslator/twoDPushingClutter.s: src/modelTranslator/twoDPushingClutter.cpp.s
+.PHONY : src/modelTranslator/twoDPushingClutter.s
+
+# target to generate assembly for a file
+src/modelTranslator/twoDPushingClutter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/autoTOTask.dir/build.make CMakeFiles/autoTOTask.dir/src/modelTranslator/twoDPushingClutter.cpp.s
+.PHONY : src/modelTranslator/twoDPushingClutter.cpp.s
+
 src/optimiser/interpolated_iLQR.o: src/optimiser/interpolated_iLQR.cpp.o
 .PHONY : src/optimiser/interpolated_iLQR.o
 
@@ -864,6 +888,9 @@ help:
 	@echo "... src/modelTranslator/twoDPushing.o"
 	@echo "... src/modelTranslator/twoDPushing.i"
 	@echo "... src/modelTranslator/twoDPushing.s"
+	@echo "... src/modelTranslator/twoDPushingClutter.o"
+	@echo "... src/modelTranslator/twoDPushingClutter.i"
+	@echo "... src/modelTranslator/twoDPushingClutter.s"
 	@echo "... src/optimiser/interpolated_iLQR.o"
 	@echo "... src/optimiser/interpolated_iLQR.i"
 	@echo "... src/optimiser/interpolated_iLQR.s"

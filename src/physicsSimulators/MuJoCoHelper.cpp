@@ -846,6 +846,7 @@ void MuJoCoHelper::initVisualisation() {
     //mjv_defaultPerturb(&pert);				// what data type for pert?
     mjv_defaultOption(&opt);
     mjr_defaultContext(&con);
+    mjv_defaultScene(&scn);
 
     cam.distance = 10;
     cam.azimuth = 110.9;
@@ -864,8 +865,6 @@ void MuJoCoHelper::updateScene(GLFWwindow *window, const char* label){
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
     mjv_updateScene(model, mdata, &opt, NULL, &cam, mjCAT_ALL, &scn);
-
-    
 
     mjr_render(viewport, &scn, &con);
 
@@ -907,7 +906,7 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
     // cout << "fileName in init: " << fileName << endl;
     model = mj_loadXML(fileName, NULL, error, 1000);
-    // cout << "any errors? " << error << endl;
+    cout << "any errors? " << error << endl;
 
     model->opt.timestep = timestep;
 

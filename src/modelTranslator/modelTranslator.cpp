@@ -107,24 +107,22 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
                 for(int i = 0; i < robot_it->second["angularVelCost"].size(); i++){
                     angularVelCosts[i] = robot_it->second["angularVelCost"][i].as<double>();
                 }
-            }
 
-            tempBody.name = bodyName;
-            for(int i = 0; i < 3; i++){
-                tempBody.activeLinearDOF[i] = activeLinearDOF[i];
-                tempBody.activeAngularDOF[i] = activeAngularDOF[i];
-                tempBody.linearPosCost[i] = linearPosCosts[i];
-                tempBody.linearVelCost[i] = linearVelCosts[i];
-                tempBody.angularPosCost[i] = angularPosCosts[i];
-                tempBody.angularVelCost[i] = angularVelCosts[i];
-            }
+                tempBody.name = bodyName;
+                for(int i = 0; i < 3; i++){
+                    tempBody.activeLinearDOF[i] = activeLinearDOF[i];
+                    tempBody.activeAngularDOF[i] = activeAngularDOF[i];
+                    tempBody.linearPosCost[i] = linearPosCosts[i];
+                    tempBody.linearVelCost[i] = linearVelCosts[i];
+                    tempBody.angularPosCost[i] = angularPosCosts[i];
+                    tempBody.angularVelCost[i] = angularVelCosts[i];
+                }
 
-            _bodies.push_back(tempBody);
+                _bodies.push_back(tempBody);
+            }
         }
         counter ++;
     }
-
-   
 }
 
 void modelTranslator::initModelTranslator(std::string yamlFilePath){
@@ -135,8 +133,6 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
     loadRobotsandBodiesFromYAML(yamlFilePath, robots, bodies);
     const char* _modelPath = modelFilePath.c_str();
-
-    cout << "robots name: " << robots[0].name << endl;
 
     // initialise physics simulator
     vector<string> bodyNames;
@@ -233,6 +229,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
                 activeDofCounter++;
             }
         }
+        Q_index += activeDOFs;
     }
 
     cout << "after assigning q matrices \n";

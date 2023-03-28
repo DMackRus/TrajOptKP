@@ -582,6 +582,9 @@
 		<Unit filename="/home/davidrussell/catkin_ws/src/autoTOTask/src/modelTranslator/twoDPushing.cpp">
 			<Option target="autoTOTask"/>
 		</Unit>
+		<Unit filename="/home/davidrussell/catkin_ws/src/autoTOTask/src/modelTranslator/twoDPushingClutter.cpp">
+			<Option target="autoTOTask"/>
+		</Unit>
 		<Unit filename="/home/davidrussell/catkin_ws/src/autoTOTask/src/optimiser/interpolated_iLQR.cpp">
 			<Option target="autoTOTask"/>
 		</Unit>

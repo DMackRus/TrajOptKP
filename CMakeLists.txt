@@ -252,7 +252,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
                 src/differentiator/differentiator.cpp
                 src/optimiser/optimiser.cpp
                 src/optimiser/interpolated_iLQR.cpp
-                src/optimiser/stomp.cpp)
+                src/optimiser/stomp.cpp
+                src/modelTranslator/twoDPushingClutter.cpp)
 
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
