@@ -6,7 +6,7 @@ stomp::stomp(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimula
 
     noiseProfile.resize(num_ctrl, 1);
     for(int i = 0; i < num_ctrl; i++){
-        noiseProfile(i) = 0.2;
+        noiseProfile(i) = 0.05;
     }
 
     for(int i = 0; i < maxHorizon; i++){
@@ -76,6 +76,7 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
         U_best[i] = initControls[i];
     }
     bestCost = rolloutTrajectory(0, false, U_best);
+    cout << "cost of initial trajectory: " << bestCost << endl;
 
     for(int i = 0; i < maxIterations; i++){
         double costs[rolloutsPerIter];
@@ -86,7 +87,7 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
             costs[j] = rolloutTrajectory(j, false, U_noisy[j]);
         }
 
-        cout << "iteration: " << i << endl;
+
 
         double bestCostThisIter = costs[0];
         int bestCostIndex = 0;
@@ -97,6 +98,8 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
                 bestCostIndex = j;
             }
         }
+
+        //cout << "iteration: " << i << " cost: " << bestCostThisIter << endl;
 
         // reupdate U_best with new best trajectory if a better trajectory found
         if(bestCostThisIter < bestCost){

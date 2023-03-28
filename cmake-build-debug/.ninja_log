@@ -1,9 +1,0 @@
-# ninja log v5
-3	2886	1678184844489713483	CMakeFiles/physicsSimSwitching.dir/stdInclude/stdInclude.cpp.o	a42ed8662bdc0e99
-3	2537	1678376135910904523	CMakeFiles/physicsSimSwitching.dir/physicsSimulators/physicsSimulator.cpp.o	ac4b173448693165
-2168	2340	1678378063055670518	/home/dave/projects/physicsSimSwithching/physicsSimSwitching	2f7ee81878876793
-4	2903	1678376136302897284	CMakeFiles/physicsSimSwitching.dir/physicsSimulators/bulletHelper.cpp.o	63a4fe41d789408d
-3	1865	1678378062579679269	CMakeFiles/physicsSimSwitching.dir/main.cpp.o	64d579f983a0e54c
-4	2168	1678378062883673679	CMakeFiles/physicsSimSwitching.dir/modelTranslator/modelTranslator.cpp.o	acb5d5d0b63c315
-2	2359	1678376135758907330	CMakeFiles/physicsSimSwitching.dir/visualizer/visualizer.cpp.o	1dbdafa88d4a9ab4
-3	2537	1678376135934904081	CMakeFiles/physicsSimSwitching.dir/physicsSimulators/MuJoCoHelper.cpp.o	f407a289fa913864

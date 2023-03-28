@@ -11,13 +11,13 @@ doublePendulum::doublePendulum(): modelTranslator(){
     analyticalCostDerivatives = true;
 
     // Pendulum down stable position
-    //X_desired << 3.1415, 0, 0, 0;
+    X_desired << 3.1415, 0, 0, 0;
 
     // Pendulum unstable up configuration
     //X_desired << 0, 0, 0, 0;
 
     // Pendulum half untable position
-    X_desired << 3.1415, 3.1415, 0, 0;
+    //X_desired << 3.1415, 3.1415, 0, 0;
 }
 
 MatrixXd doublePendulum::returnRandomStartState(){

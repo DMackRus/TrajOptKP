@@ -2,7 +2,6 @@
 #include <yaml-cpp/yaml.h>
 #include "ros/ros.h"
 
-
 // --------------------- different scenes -----------------------
 #include "doublePendulum.h"
 #include "reaching.h"
@@ -16,8 +15,8 @@
 
 // ------------ MODES OF OEPRATION -------------------------------
 #define SHOW_INIT_CONTROLS          0
-#define ILQR_ONCE                   1
-#define MPC_CONTINOUS               0
+#define ILQR_ONCE                   0
+#define MPC_CONTINOUS               1
 #define MPC_UNTIL_COMPLETE          0
 #define DEFAULT_KEYBOARD_CONTROL    0
 
@@ -44,6 +43,7 @@ void MPCContinous();
 void keyboardControl();
 
 int main(int argc, char **argv) {
+    cout << "program started \n";
     //ros::init(argc, argv, "MuJoCo_node");
 
     //ros::NodeHandle nh;
@@ -62,7 +62,7 @@ int main(int argc, char **argv) {
     cout << "mode: " << mode << endl;
 
 
-    scenes myScene = cylinderPushing;
+    scenes myScene = pendulum;
     MatrixXd startStateVector(1, 1);
 
     if(myScene == pendulum){
@@ -122,6 +122,7 @@ int main(int argc, char **argv) {
     }
     
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 
     if(SHOW_INIT_CONTROLS){
         showInitControls();
@@ -243,7 +244,7 @@ void MPCContinous(){
     std::vector<MatrixXd> initControls;
     initControls = activeModelTranslator->createInitControls(horizon);
     cout << "init controls: " << initControls.size() << endl;
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 10, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, horizon);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);

@@ -43,8 +43,7 @@ std::vector<MatrixXd> twoDPushing::createInitControls(int horizonLength){
     displayBodyPose.position[0] = X_desired(7);
     displayBodyPose.position[1] = X_desired(8);
     displayBodyPose.position[2] = 0.0f;
-    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MAIN_DATA_STATE);
-    activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, 0);
 
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through

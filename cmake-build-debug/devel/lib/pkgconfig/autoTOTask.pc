@@ -1,0 +1,8 @@
+prefix=/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/devel
+
+Name: autoTOTask
+Description: Description of autoTOTask
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: roscpp rospy
