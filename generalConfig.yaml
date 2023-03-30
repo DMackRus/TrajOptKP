@@ -1,3 +1,5 @@
 optimiser: "interpolated_iLQR"
-taskNumber: 6
+# pendulum = 0, reaching = 1, pushing cylinder = 3, pushing cylinder into mild clutter = 6
+taskNumber: 1
+# init control = 0, optimise once = 1, MPCContinous = 2, MPC_until_completion = 3
 displayMode: 1

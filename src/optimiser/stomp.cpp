@@ -66,7 +66,7 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
     return cost;
 }
 
-std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIterations, int _horizonLength){
+std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
 
     std::vector<MatrixXd> optimisedControls;
     double bestCost;
@@ -78,7 +78,7 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
     bestCost = rolloutTrajectory(0, false, U_best);
     cout << "cost of initial trajectory: " << bestCost << endl;
 
-    for(int i = 0; i < maxIterations; i++){
+    for(int i = 0; i < maxIter; i++){
         double costs[rolloutsPerIter];
         
         #pragma omp parallel for

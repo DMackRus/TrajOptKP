@@ -197,7 +197,7 @@ void iLQROnce(){
     std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 4, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 4, 2, horizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";
@@ -239,7 +239,7 @@ void iLQROnce(){
 }
 
 void MPCContinous(){
-    int horizon = 500;
+    int horizon = 100;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -252,7 +252,7 @@ void MPCContinous(){
     initControls = activeModelTranslator->createInitControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     cout << "init controls: " << initControls.size() << endl;
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, 2, horizon);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
@@ -268,9 +268,9 @@ void MPCContinous(){
         reInitialiseCounter++;
         visualCounter++;
 
-        if(reInitialiseCounter > 50){
-            initControls = activeModelTranslator->createInitControls(horizon);
-            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, horizon);
+        if(reInitialiseCounter > 1){
+            //initControls = activeModelTranslator->createInitControls(horizon);
+            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, 8, 0, horizon);
             reInitialiseCounter = 0;
         }
 
@@ -385,7 +385,7 @@ void MPCUntilComplete(){
     initControls = activeModelTranslator->createInitControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     cout << "init controls: " << initControls.size() << endl;
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, 2, horizon);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
@@ -403,7 +403,7 @@ void MPCUntilComplete(){
 
         if(reInitialiseCounter > 50){
             initControls = activeModelTranslator->createInitControls(horizon);
-            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, horizon);
+            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, 0, horizon);
             reInitialiseCounter = 0;
         }
 

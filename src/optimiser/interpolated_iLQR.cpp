@@ -117,7 +117,9 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 //  optimisedControls - New optimised controls that give a lower cost than the initial controls
 //
 // -------------------------------------------------------------------------------------------------------
-std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIterations, int _horizonLength){
+std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
+    cout << " ---------------- optimisation begins -------------------" << endl;
+    auto optStart = high_resolution_clock::now();
     
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls;
@@ -130,7 +132,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     // Optimise for a set number of iterations
-    for(int i = 0; i < maxIterations; i++){
+    for(int i = 0; i < maxIter; i++){
 
 
         auto start = high_resolution_clock::now();
@@ -147,10 +149,10 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         // Interpolate derivatvies as required for a full set of derivatives
         interpolateDerivatives(evaluationPoints);
 
-        
         auto stop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(stop - start);
-        //cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
+        cout << "number of derivatives calculated via fd: " << evaluationPoints.size() << endl;
+        cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
 
         //cout << "f_x[1900] \n" << f_x[1900] << endl;
         // cout << "f_u[1000] \n" << f_u[1000] << endl;
@@ -164,6 +166,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         bool validBackwardsPass = false;
         bool lambdaExit = false;
 
+        auto bp_start = high_resolution_clock::now();
         while(!validBackwardsPass){
             validBackwardsPass = backwardsPass_Quu_reg();
 
@@ -183,12 +186,19 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
                 }
             }
         }
+        auto bp_stop = high_resolution_clock::now();
+        auto bpDuration = duration_cast<microseconds>(bp_stop - bp_start);
+        cout << "bp took: " << bpDuration.count() / 1000000.0f << " s\n";
 
         if(!lambdaExit){
             bool costReduced;
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
+            auto fp_start = high_resolution_clock::now();
             newCost = forwardsPass(oldCost, costReduced);
-            cout << "new cost is: " << newCost << endl;
+            auto fp_stop = high_resolution_clock::now();
+            auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
+            cout << "forward pass took: " << fpDuration.count() / 1000000.0f << " s\n";
+            cout << " ---------------- new cost is: " << newCost << " -------------------" << endl;
 
             // STEP 4 - Check for convergence
             bool converged = checkForConvergence(oldCost, newCost);
@@ -197,7 +207,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
                 oldCost = newCost;
             }
 
-            if(converged && (i > 2)){
+            if(converged && (i >= minIter)){
                 break;
             }
         }
@@ -214,6 +224,11 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         optimisedControls.push_back(U_old[i]);
     }
 
+    auto optFinish = high_resolution_clock::now();
+    auto optDuration = duration_cast<microseconds>(optFinish - optStart);
+    cout << "optimisation took: " << optDuration.count() / 1000000.0f << " s\n";
+    cout << " ---------------- optimisation complete -------------------" << endl;
+
     return optimisedControls;
 }
 // ------------------------------------------- STEP 1 FUNCTIONS (GET DERIVATIVES) ----------------------------------------------
@@ -222,14 +237,14 @@ std::vector<int> interpolatediLQR::generateEvalWaypoints(std::vector<MatrixXd> t
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
     std::vector<int> evaluationWaypoints;
     int counter = 0;
-    int numEvals = horizonLength / 2;
+    int numEvals = horizonLength / 4;
 
     evaluationWaypoints.push_back(counter);
 
     // set-interval method
     if(SET_INTERVAL){
         for(int i = 0; i < numEvals; i++){
-            evaluationWaypoints.push_back(i * 2);
+            evaluationWaypoints.push_back(i * 4);
         }
     }
     // adaptive-interval method
@@ -247,7 +262,6 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
 
     activeDifferentiator->initModelForFiniteDifferencing();
 
-    //#pragma omp parallel for default(none)
     #pragma omp parallel for
     for(int i = 0; i < indices.size(); i++){
 
