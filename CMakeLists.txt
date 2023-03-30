@@ -6,6 +6,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
+get_filename_component(PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -224,8 +226,9 @@ else()
     message(STATUS "could not find eigen library")
 endif (TARGET Eigen3::Eigen)
 
-set(Mujoco_INCLUDE_DIRS /home/davidrussell/catkin_ws/src/mujocoLib/include)
-file(GLOB LIB_MUJOCO /home/davidrussell/catkin_ws/src/mujocoLib/lib/libmujoco.so.2.3.2)
+set(Mujoco_INCLUDE_DIRS ${PARENT_DIR}/mujocoLib/include)
+file(GLOB LIB_MUJOCO ${PARENT_DIR}/mujocoLib/lib/libmujoco.so.2.3.2)
+message(STATUS "parent directory: " ${PARENT_DIR})
 message(STATUS "MuJoCo lib found at: " ${LIB_MUJOCO})
 message(STATUS "Mujoco include directory: " ${Mujoco_INCLUDE_DIRS})
 
@@ -237,7 +240,7 @@ else()
     message(STATUS "could not find yaml library")
 endif (TARGET yaml-cpp::yaml-cpp)
 
-set(PROJECT_INCLUDE_DIR /home/davidrussell/catkin_ws/src/autoTOTask/include)
+set(PROJECT_INCLUDE_DIR ${PARENT_DIR}/autoTOTask/include)
 
 
 add_executable(${PROJECT_NAME} src/main.cpp

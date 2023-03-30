@@ -9,8 +9,11 @@ modelTranslator::modelTranslator(){
 }
 
 void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies){
-    // YAML::Node node = YAML::Load("start: [1, 3, 0]");
-    YAML::Node node = YAML::LoadFile(yamlFilePath);
+    std::string mainPath = __FILE__;
+    mainPath = mainPath.substr(0, mainPath.find_last_of("/\\"));
+    mainPath = mainPath.substr(0, mainPath.find_last_of("/\\"));
+    mainPath = mainPath.substr(0, mainPath.find_last_of("/\\"));
+    YAML::Node node = YAML::LoadFile(mainPath + yamlFilePath);
 
     int counter = 0;
 
