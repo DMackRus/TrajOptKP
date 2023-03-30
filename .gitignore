@@ -34,3 +34,5 @@
 # Other git repositories
 /Franka-emika-panda-arm
 /cmake-build-debug
+/.vscode
+/.idea
