@@ -47,7 +47,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/catkin_generated/env_cached.sh"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/catkin_generated/env_cached.sh"
 		},
 		{
 			"name" : "CATKIN_PACKAGE_PREFIX",
@@ -95,7 +95,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/test_results"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/test_results"
 		},
 		{
 			"name" : "CMAKE_ADDR2LINE",
@@ -151,7 +151,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -223,7 +223,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "-j8"
+			"value" : "-j16"
 		},
 		{
 			"name" : "CMAKE_COLOR_DIAGNOSTICS",
@@ -739,7 +739,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles/pkgRedirects"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -835,7 +835,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask"
 		},
 		{
 			"name" : "CMAKE_INSTALL_BINDIR",
@@ -1843,7 +1843,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gmock"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gmock"
 		},
 		{
 			"name" : "GMOCK_FROM_SOURCE_MAIN_LIBRARIES",
@@ -1979,7 +1979,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest"
 		},
 		{
 			"name" : "GTEST_FROM_SOURCE_MAIN_LIBRARIES",
@@ -2419,7 +2419,7 @@
 				}
 			],
 			"type" : "STRING",
-			"value" : "DavePC"
+			"value" : "laptop"
 		},
 		{
 			"name" : "UBUNTU",
@@ -2527,7 +2527,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug"
 		},
 		{
 			"name" : "autoTOTask_IS_TOP_LEVEL",
@@ -2551,7 +2551,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask"
 		},
 		{
 			"name" : "catkin_DIR",
@@ -2587,7 +2587,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googlemock"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googlemock"
 		},
 		{
 			"name" : "gmock_IS_TOP_LEVEL",
@@ -2663,7 +2663,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest"
 		},
 		{
 			"name" : "googletest-distribution_IS_TOP_LEVEL",
@@ -2699,7 +2699,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest"
+			"value" : "/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest"
 		},
 		{
 			"name" : "gtest_IS_TOP_LEVEL",

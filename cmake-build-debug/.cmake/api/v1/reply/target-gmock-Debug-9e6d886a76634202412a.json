@@ -2,7 +2,7 @@
 	"artifacts" : 
 	[
 		{
-			"path" : "gtest/lib/libgmock_maind.so"
+			"path" : "gtest/lib/libgmockd.so"
 		}
 	],
 	"backtrace" : 3,
@@ -39,7 +39,7 @@
 			{
 				"command" : 2,
 				"file" : 1,
-				"line" : 103,
+				"line" : 101,
 				"parent" : 0
 			},
 			{
@@ -57,7 +57,7 @@
 			{
 				"command" : 3,
 				"file" : 1,
-				"line" : 104,
+				"line" : 102,
 				"parent" : 0
 			},
 			{
@@ -159,19 +159,17 @@
 					"define" : "GTEST_CREATE_SHARED_LIBRARY=1"
 				},
 				{
-					"define" : "gmock_main_EXPORTS"
+					"define" : "gmock_EXPORTS"
 				}
 			],
 			"includes" : 
 			[
 				{
 					"backtrace" : 18,
-					"isSystem" : true,
 					"path" : "/usr/src/googletest/googlemock/include"
 				},
 				{
 					"backtrace" : 18,
-					"isSystem" : true,
 					"path" : "/usr/src/googletest/googlemock"
 				},
 				{
@@ -204,14 +202,10 @@
 	[
 		{
 			"backtrace" : 4,
-			"id" : "gmock::@e3f94eedc5dc07131386"
-		},
-		{
-			"backtrace" : 4,
 			"id" : "gtest::@b738d542747fbb7ea6e3"
 		}
 	],
-	"id" : "gmock_main::@e3f94eedc5dc07131386",
+	"id" : "gmock::@e3f94eedc5dc07131386",
 	"link" : 
 	{
 		"commandFragments" : 
@@ -221,15 +215,11 @@
 				"role" : "flags"
 			},
 			{
-				"fragment" : "-Wl,-rpath,/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/lib",
+				"fragment" : "-Wl,-rpath,/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/lib",
 				"role" : "libraries"
 			},
 			{
 				"backtrace" : 4,
-				"fragment" : "../lib/libgmockd.so",
-				"role" : "libraries"
-			},
-			{
 				"fragment" : "../lib/libgtestd.so",
 				"role" : "libraries"
 			},
@@ -241,8 +231,8 @@
 		],
 		"language" : "CXX"
 	},
-	"name" : "gmock_main",
-	"nameOnDisk" : "libgmock_maind.so",
+	"name" : "gmock",
+	"nameOnDisk" : "libgmockd.so",
 	"paths" : 
 	{
 		"build" : "gtest/googlemock",
@@ -263,7 +253,7 @@
 		{
 			"backtrace" : 3,
 			"compileGroupIndex" : 0,
-			"path" : "/usr/src/googletest/googlemock/src/gmock_main.cc",
+			"path" : "/usr/src/googletest/googlemock/src/gmock-all.cc",
 			"sourceGroupIndex" : 0
 		}
 	],

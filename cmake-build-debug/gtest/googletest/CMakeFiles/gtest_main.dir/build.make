@@ -53,10 +53,10 @@ RM = /opt/clion-2022.3.3/bin/cmake/linux/x64/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/dave/catkin_ws/src/autoTOTask
+CMAKE_SOURCE_DIR = /home/davidrussell/catkin_ws/src/autoTOTask
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug
+CMAKE_BINARY_DIR = /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug
 
 # Include any dependencies generated for this target.
 include gtest/googletest/CMakeFiles/gtest_main.dir/depend.make
@@ -72,16 +72,16 @@ include gtest/googletest/CMakeFiles/gtest_main.dir/flags.make
 gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o: gtest/googletest/CMakeFiles/gtest_main.dir/flags.make
 gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o: /usr/src/googletest/googletest/src/gtest_main.cc
 gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o: gtest/googletest/CMakeFiles/gtest_main.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o"
-	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -MF CMakeFiles/gtest_main.dir/src/gtest_main.cc.o.d -o CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -c /usr/src/googletest/googletest/src/gtest_main.cc
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o"
+	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -MF CMakeFiles/gtest_main.dir/src/gtest_main.cc.o.d -o CMakeFiles/gtest_main.dir/src/gtest_main.cc.o -c /usr/src/googletest/googletest/src/gtest_main.cc
 
 gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/gtest_main.dir/src/gtest_main.cc.i"
-	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /usr/src/googletest/googletest/src/gtest_main.cc > CMakeFiles/gtest_main.dir/src/gtest_main.cc.i
+	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /usr/src/googletest/googletest/src/gtest_main.cc > CMakeFiles/gtest_main.dir/src/gtest_main.cc.i
 
 gtest/googletest/CMakeFiles/gtest_main.dir/src/gtest_main.cc.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/gtest_main.dir/src/gtest_main.cc.s"
-	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /usr/src/googletest/googletest/src/gtest_main.cc -o CMakeFiles/gtest_main.dir/src/gtest_main.cc.s
+	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && /usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /usr/src/googletest/googletest/src/gtest_main.cc -o CMakeFiles/gtest_main.dir/src/gtest_main.cc.s
 
 # Object files for target gtest_main
 gtest_main_OBJECTS = \
@@ -94,18 +94,18 @@ gtest/lib/libgtest_maind.so: gtest/googletest/CMakeFiles/gtest_main.dir/src/gtes
 gtest/lib/libgtest_maind.so: gtest/googletest/CMakeFiles/gtest_main.dir/build.make
 gtest/lib/libgtest_maind.so: gtest/lib/libgtestd.so
 gtest/lib/libgtest_maind.so: gtest/googletest/CMakeFiles/gtest_main.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX shared library ../lib/libgtest_maind.so"
-	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/gtest_main.dir/link.txt --verbose=$(VERBOSE)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX shared library ../lib/libgtest_maind.so"
+	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/gtest_main.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
 gtest/googletest/CMakeFiles/gtest_main.dir/build: gtest/lib/libgtest_maind.so
 .PHONY : gtest/googletest/CMakeFiles/gtest_main.dir/build
 
 gtest/googletest/CMakeFiles/gtest_main.dir/clean:
-	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && $(CMAKE_COMMAND) -P CMakeFiles/gtest_main.dir/cmake_clean.cmake
+	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest && $(CMAKE_COMMAND) -P CMakeFiles/gtest_main.dir/cmake_clean.cmake
 .PHONY : gtest/googletest/CMakeFiles/gtest_main.dir/clean
 
 gtest/googletest/CMakeFiles/gtest_main.dir/depend:
-	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/dave/catkin_ws/src/autoTOTask /usr/src/googletest/googletest /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest/CMakeFiles/gtest_main.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/davidrussell/catkin_ws/src/autoTOTask /usr/src/googletest/googletest /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest/googletest/CMakeFiles/gtest_main.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : gtest/googletest/CMakeFiles/gtest_main.dir/depend
 
