@@ -11,6 +11,23 @@ pandaReaching::pandaReaching(): modelTranslator(){
     std::cout << "initialised reaching model translator" << std::endl;
 }
 
+bool pandaReaching::taskComplete(int dataIndex){
+    double cumError = 0.0f;
+    MatrixXd X = returnStateVector(dataIndex);
+
+    for(int i = 0; i < dof; i++){
+        double diff = X_desired(i) - X(i);
+        cumError += diff;
+    }
+
+    if(cumError < 0.005){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
 MatrixXd pandaReaching::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 

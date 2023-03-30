@@ -68,8 +68,9 @@ public:
     // ----- Loading and saving system states -----
     virtual bool appendSystemStateToEnd(int dataIndex) = 0;
     virtual bool checkIfDataIndexExists(int dataIndex) = 0;
-    virtual bool saveSystemStateToIndex(int saveDataIndex, int listIndex) = 0;
-    virtual bool loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex) = 0;
+    virtual bool copySystemState(int dataDestinationIndex, int dataSourceIndex) = 0;
+    //virtual bool saveSystemStateToIndex(int saveDataIndex, int listIndex) = 0;
+    //virtual bool loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex) = 0;
     virtual bool deleteSystemStateFromIndex(int listIndex) = 0;
     virtual bool clearSystemStateList() = 0;
 

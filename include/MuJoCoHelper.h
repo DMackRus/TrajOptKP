@@ -43,8 +43,9 @@ public:
     // ----- Loading and saving system states -----
     bool appendSystemStateToEnd(int dataIndex) override;
     bool checkIfDataIndexExists(int dataIndex) override;
-    bool saveSystemStateToIndex(int saveDataIndex, int listIndex) override;
-    bool loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex) override;
+    bool copySystemState(int dataDestinationIndex, int dataSourceIndex) override;
+    //bool saveSystemStateToIndex(int saveDataIndex, int listIndex) override;
+    //bool loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex) override;
     bool deleteSystemStateFromIndex(int listIndex) override;
     bool clearSystemStateList() override;
 

@@ -19,14 +19,14 @@ bodies:
   obstacle1:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
-    linearPosCost: [ 1, 1, 0 ]
+    linearPosCost: [ 0.1, 0.1, 0 ]
     linearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
     angularVelCost: [ 0, 0, 0 ]
   obstacle2:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
-    linearPosCost: [ 1, 1, 0 ]
+    linearPosCost: [ 0.1, 0.1, 0 ]
     linearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
     angularVelCost: [ 0, 0, 0 ]

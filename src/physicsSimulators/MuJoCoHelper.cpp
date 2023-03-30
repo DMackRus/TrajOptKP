@@ -748,24 +748,7 @@ bool MuJoCoHelper::checkIfDataIndexExists(int dataIndex){
     return (savedSystemStatesList.size() > dataIndex);
 }
 
-bool MuJoCoHelper::saveSystemStateToIndex(int saveDataIndex, int listIndex){
-
-    mjData *saveData;
-    if(saveDataIndex == MAIN_DATA_STATE){
-        saveData = mdata;
-    }
-    else{
-        saveData = savedSystemStatesList[saveDataIndex];
-    }
-
-    mjData *d = mj_makeData(model);
-    // TODO - THIS MIGHT NOT WORK CORRECTLY
-    cpMjData(model, savedSystemStatesList[listIndex], saveData);
-
-    return true;
-}
-
-bool MuJoCoHelper::loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex){
+bool MuJoCoHelper::copySystemState(int dataDestinationIndex, int dataSourceIndex){
 
     mjData *dataDestination;
     if(dataDestinationIndex == MAIN_DATA_STATE){
@@ -788,6 +771,30 @@ bool MuJoCoHelper::loadSystemStateFromIndex(int dataDestinationIndex, int dataSo
 
     return true;
 }
+
+//bool MuJoCoHelper::loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex){
+//
+//    mjData *dataDestination;
+//    if(dataDestinationIndex == MAIN_DATA_STATE){
+//        dataDestination = mdata;
+//    }
+//    else{
+//        dataDestination = savedSystemStatesList[dataDestinationIndex];
+//    }
+//
+//    mjData *dataSource;
+//    if(dataSourceIndex == MAIN_DATA_STATE){
+//        dataSource = mdata;
+//    }
+//    else{
+//        dataSource = savedSystemStatesList[dataSourceIndex];
+//    }
+//
+//
+//    cpMjData(model, dataDestination, dataSource);
+//
+//    return true;
+//}
 
 bool MuJoCoHelper::deleteSystemStateFromIndex(int listIndex){
     mj_deleteData(savedSystemStatesList[listIndex]);

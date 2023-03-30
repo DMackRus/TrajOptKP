@@ -252,12 +252,10 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
     Q_terminal = Q.replicate(1, 1);
     for(int i = 0; i < dof; i++){
-        Q_terminal(i, i) *= 1000;
+        Q_terminal(i, i) *= 10000;
     }
 
     cout << "Q_terminal: " << Q_terminal << endl;
-
-    
 }
 
 double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal){
@@ -299,6 +297,10 @@ void modelTranslator::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last,
 
     l_u = 2 * R * Ut;
     l_uu = 2 * R;
+}
+
+bool modelTranslator::taskComplete(int dataIndex){
+    return false;
 }
 
 MatrixXd modelTranslator::returnStateVector(int dataIndex){

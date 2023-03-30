@@ -47,7 +47,7 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_O){
 
-        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
 

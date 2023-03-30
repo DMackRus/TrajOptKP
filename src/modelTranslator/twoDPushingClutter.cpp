@@ -11,7 +11,7 @@ twoDPushingClutter::twoDPushingClutter(){
     analyticalCostDerivatives = true;
 
     X_desired << 1, 1.5, 2, -2, 0, 0.6, 1,
-            0.7, 0.4, 1, 0, 1.2, 0,
+            0.6, 0.3, 0.6, 0.25, 0.7, 0.3,
             0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0;
 }
@@ -23,9 +23,9 @@ MatrixXd twoDPushingClutter::returnRandomStartState(){
     float cubeY = randFloat(-0.1, 0.1);
 
     cubeX = 0.5;
-    cubeY = 0.1;
+    cubeY = 0.2;
     randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-            cubeX, cubeY, 1, 1, 1.5, 1,
+            cubeX, cubeY, 0.48, 0.3, 0.6, 0.3,
             0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0;
 
@@ -67,24 +67,7 @@ std::vector<MatrixXd> twoDPushingClutter::createInitControls(int horizonLength){
     // Step 3 - follow the points via the jacobian
     initControls = generate_initControls_fromWayPoints(allWayPoints);
 
-    // if(myStateVector.robots[0].torqueControlled){
-    //     MatrixXd control(num_ctrl, 1);
-    //     vector<double> gravCompensation;
-    //     for(int i = 0; i < horizonLength; i++){
-
-    //         activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
-
-    //         for(int i = 0; i < num_ctrl; i++){
-    //             control(i) = gravCompensation[i];
-    //         }
-    //         setControlVector(control, MAIN_DATA_STATE);
-    //         activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-    //         initControls.push_back(control);
-    //     }
-    // }
-
     return initControls;
-
 }
 
 void twoDPushingClutter::initControls_mainWayPoints(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
