@@ -7,29 +7,13 @@
 
 #include "stdInclude.h"
 #include "MuJoCoHelper.h"
-#include <yaml-cpp/yaml.h>
-
-struct bodyStateVec{
-    string name;
-    bool activeLinearDOF[3];
-    bool activeAngularDOF[3];
-    double linearPosCost[3];
-    double linearVelCost[3];
-    double angularPosCost[3];
-    double angularVelCost[3];
-};
-
-struct stateVectorList{
-    vector<robot> robots;
-    vector<bodyStateVec> bodiesStates;
-};
+#include "fileHandler.h"
 
 class modelTranslator {
 public:
     modelTranslator();
 
     // - Functions that work for all tasks in base class
-    void loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies);
     void initModelTranslator(std::string filePath);
 
     MatrixXd returnStateVector(int dataIndex);
@@ -47,9 +31,10 @@ public:
     virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal);
     virtual void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
     virtual bool taskComplete(int dataIndex);
+    virtual std::vector<MatrixXd> createInitSetupControls(int horizonLength);
 
     // - Pure virtual functions that HAVE to be overwritten
-    virtual std::vector<MatrixXd> createInitControls(int horizonLength);
+    virtual std::vector<MatrixXd> createInitOptimisationControls(int horizonLength);
     virtual MatrixXd returnRandomStartState() = 0;
     virtual MatrixXd returnRandomGoalState() = 0;
 

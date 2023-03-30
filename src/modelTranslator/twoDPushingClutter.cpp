@@ -38,7 +38,7 @@ MatrixXd twoDPushingClutter::returnRandomGoalState(){
     return randomGoalState;
 }
 
-std::vector<MatrixXd> twoDPushingClutter::createInitControls(int horizonLength){
+std::vector<MatrixXd> twoDPushingClutter::createInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
     // Set the goal position so that we can see where we are pushing to

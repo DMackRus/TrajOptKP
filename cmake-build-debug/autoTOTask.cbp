@@ -567,6 +567,9 @@
 		<Unit filename="/home/davidrussell/catkin_ws/src/autoTOTask/src/differentiator/differentiator.cpp">
 			<Option target="autoTOTask"/>
 		</Unit>
+		<Unit filename="/home/davidrussell/catkin_ws/src/autoTOTask/src/fileHandler/fileHandler.cpp">
+			<Option target="autoTOTask"/>
+		</Unit>
 		<Unit filename="/home/davidrussell/catkin_ws/src/autoTOTask/src/main.cpp">
 			<Option target="autoTOTask"/>
 		</Unit>

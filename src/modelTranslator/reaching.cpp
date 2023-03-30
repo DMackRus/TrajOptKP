@@ -8,7 +8,6 @@ pandaReaching::pandaReaching(): modelTranslator(){
 
     X_desired << 1, 1.5, 2, -2, 0, 0.6, 1, 
                  0, 0, 0, 0, 0, 0, 0;
-    std::cout << "initialised reaching model translator" << std::endl;
 }
 
 bool pandaReaching::taskComplete(int dataIndex){
@@ -55,7 +54,7 @@ MatrixXd pandaReaching::returnRandomGoalState(){
     return randomGoalState;
 }
 
-std::vector<MatrixXd> pandaReaching::createInitControls(int horizonLength){
+std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
     if(myStateVector.robots[0].torqueControlled){

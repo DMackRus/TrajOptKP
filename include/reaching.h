@@ -14,7 +14,7 @@ public:
     bool taskComplete(int dataIndex) override;
     MatrixXd returnRandomStartState() override;
     MatrixXd returnRandomGoalState() override;
-    std::vector<MatrixXd> createInitControls(int horizonLength) override;
+    std::vector<MatrixXd> createInitOptimisationControls(int horizonLength) override;
 
     char* filePath; 
 

@@ -11,18 +11,6 @@
 
 #define MAIN_DATA_STATE  -1
 
-
-struct robot{
-    string name;
-    vector<string> jointNames;
-    int numActuators;
-    bool torqueControlled;
-    vector<double> torqueLimits;
-    vector<double> jointPosCosts;
-    vector<double> jointVelCosts;
-    vector<double> jointControlCosts;
-};
-
 struct pose_7{
     m_point position;
     m_quat quat;

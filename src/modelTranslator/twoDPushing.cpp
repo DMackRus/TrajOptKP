@@ -34,7 +34,7 @@ MatrixXd twoDPushing::returnRandomGoalState(){
     return randomGoalState;
 }
 
-std::vector<MatrixXd> twoDPushing::createInitControls(int horizonLength){
+std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
     // Set the goal position so that we can see where we are pushing to

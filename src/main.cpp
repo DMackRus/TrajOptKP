@@ -1,6 +1,6 @@
 #include "stdInclude.h"
-#include <yaml-cpp/yaml.h>
 #include "ros/ros.h"
+#include "fileHandler.h"
 
 // --------------------- different scenes -----------------------
 #include "doublePendulum.h"
@@ -15,11 +15,11 @@
 #include "stomp.h"
 
 // ------------ MODES OF OEPRATION -------------------------------
-#define SHOW_INIT_CONTROLS          1
-#define ILQR_ONCE                   0
-#define MPC_CONTINOUS               1
-#define MPC_UNTIL_COMPLETE          0
-#define DEFAULT_KEYBOARD_CONTROL    0
+#define SHOW_INIT_CONTROLS          0
+#define ILQR_ONCE                   1
+#define MPC_CONTINOUS               2
+#define MPC_UNTIL_COMPLETE          3
+#define DEFAULT_KEYBOARD_CONTROL    4
 
 enum scenes{
     pendulum = 0,
@@ -55,18 +55,16 @@ int main(int argc, char **argv) {
     int mode;
     int task;
 
-    //ros::param::get("/optimiser", optimiser);
-    ros::param::get("/taskNumber", task);
-    ros::param::get("/mode", mode);
-
-    cout << "optimiser: " << optimiser << endl;
-    cout << "task number: " << task << endl;
-    cout << "mode: " << mode << endl;
+    fileHandler yamlReader;
+    yamlReader.readSettingsFile("/generalConfig.yaml");
+    optimiser = yamlReader.optimiser;
+    mode = yamlReader.project_display_mode;
+    task = yamlReader.taskNumber;
 
     scenes myScene = cylinderPushingClutter;
     MatrixXd startStateVector(1, 1);
 
-    if(myScene == pendulum){
+    if(task == pendulum){
         doublePendulum *myDoublePendulum = new doublePendulum();
         activeModelTranslator = myDoublePendulum;
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
@@ -74,7 +72,7 @@ int main(int argc, char **argv) {
         startStateVector = activeModelTranslator->returnRandomStartState();
         //startStateVector << 3.14, 0, 0, 0;
     }
-    else if(myScene == reaching){
+    else if(task == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
         pandaReaching *myReaching = new pandaReaching();
         activeModelTranslator = myReaching;
@@ -82,27 +80,28 @@ int main(int argc, char **argv) {
         startStateVector = activeModelTranslator->returnRandomStartState();
 
     }
-    else if(myScene == twoReaching){
+    else if(task == twoReaching){
+        cout << "not implemented task yet " << endl;
+        return -1;
 
     }
-    else if(myScene == cylinderPushing){
+    else if(task == cylinderPushing){
         twoDPushing *myTwoDPushing = new twoDPushing();
         activeModelTranslator = myTwoDPushing;
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
         startStateVector = activeModelTranslator->returnRandomStartState();
 
     }
-    else if(myScene == threeDPushing){
-        // startStateVector << -1, 0.5, 0, -1, 0, 0.6, 1,
-    //         0.5, 0.5, 0.4, 0, 0, 0,
-    //         0, 0, 0, 0, 0, 0, 0,
-    //         0, 0, 0, 0, 0, 0;
+    else if(task == threeDPushing){
+        cout << "not implemented task yet " << endl;
+        return -1;
 
     }
-    else if(myScene == boxFlicking){
-
+    else if(task == boxFlicking){
+        cout << "not implemented task yet " << endl;
+        return -1;
     }
-    else if(myScene == cylinderPushingClutter){
+    else if(task == cylinderPushingClutter){
         twoDPushingClutter *myTwoDPushingClutter = new twoDPushingClutter();
         activeModelTranslator = myTwoDPushingClutter;
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
@@ -119,7 +118,7 @@ int main(int argc, char **argv) {
     //Instantiate my optimiser
     activeVisualiser = new visualizer(activeModelTranslator);
 
-    if(1){
+    if(optimiser == "interpolated_iLQR"){
         iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, 3000, activeVisualiser);
         activeOptimiser = iLQROptimiser;
     }
@@ -131,19 +130,24 @@ int main(int argc, char **argv) {
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 
-    if(SHOW_INIT_CONTROLS){
+    if(mode == SHOW_INIT_CONTROLS){
+        cout << "SHOWING INIT CONTROLS MODE \n";
         showInitControls();
     }
-    else if(ILQR_ONCE){
+    else if(mode == ILQR_ONCE){
+        cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
         iLQROnce();
     }
-    else if(MPC_CONTINOUS){
+    else if(mode == MPC_CONTINOUS){
+        cout << "CONTINOUS MPC MODE \n";
         MPCContinous();
     }
-    else if(MPC_UNTIL_COMPLETE){
+    else if(mode == MPC_UNTIL_COMPLETE){
+        cout << "MPC UNTIL TASK COMPLETE MODE \n";
         MPCUntilComplete();
     }
-    else if(DEFAULT_KEYBOARD_CONTROL){
+    else if(mode == DEFAULT_KEYBOARD_CONTROL){
+        cout << "KEYBOARD TESTING MODE \n";
         keyboardControl();
     }
     else{
@@ -158,7 +162,7 @@ void showInitControls(){
     int controlCounter = 0;
     int visualCounter = 0;
 
-    std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
+    std::vector<MatrixXd> initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     while(activeVisualiser->windowOpen()){
@@ -190,10 +194,10 @@ void iLQROnce(){
     bool showFinalControls = true;
     char* label = "Final controls";
 
-    std::vector<MatrixXd> initControls = activeModelTranslator->createInitControls(horizon);
+    std::vector<MatrixXd> initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 4, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 4, 2, horizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";
@@ -235,7 +239,7 @@ void iLQROnce(){
 }
 
 void MPCContinous(){
-    int horizon = 500;
+    int horizon = 100;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -245,10 +249,10 @@ void MPCContinous(){
 
     // Instantiate init controls
     std::vector<MatrixXd> initControls;
-    initControls = activeModelTranslator->createInitControls(horizon);
+    initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     cout << "init controls: " << initControls.size() << endl;
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, 2, horizon);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
@@ -264,9 +268,9 @@ void MPCContinous(){
         reInitialiseCounter++;
         visualCounter++;
 
-        if(reInitialiseCounter > 50){
-            initControls = activeModelTranslator->createInitControls(horizon);
-            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, horizon);
+        if(reInitialiseCounter > 1){
+            //initControls = activeModelTranslator->createInitControls(horizon);
+            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, 8, 0, horizon);
             reInitialiseCounter = 0;
         }
 
@@ -378,10 +382,10 @@ void MPCUntilComplete(){
 
     // Instantiate init controls
     std::vector<MatrixXd> initControls;
-    initControls = activeModelTranslator->createInitControls(horizon);
+    initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     cout << "init controls: " << initControls.size() << endl;
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, 2, horizon);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
@@ -398,8 +402,8 @@ void MPCUntilComplete(){
         visualCounter++;
 
         if(reInitialiseCounter > 50){
-            initControls = activeModelTranslator->createInitControls(horizon);
-            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, horizon);
+            initControls = activeModelTranslator->createInitOptimisationControls(horizon);
+            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, 0, horizon);
             reInitialiseCounter = 0;
         }
 

@@ -18,6 +18,32 @@
 #define MUJOCO_DT   0.004
 #define PI          3.14152
 
+struct robot{
+    std::string name;
+    std::vector<std::string> jointNames;
+    int numActuators;
+    bool torqueControlled;
+    std::vector<double> torqueLimits;
+    std::vector<double> jointPosCosts;
+    std::vector<double> jointVelCosts;
+    std::vector<double> jointControlCosts;
+};
+
+struct bodyStateVec{
+    std::string name;
+    bool activeLinearDOF[3];
+    bool activeAngularDOF[3];
+    double linearPosCost[3];
+    double linearVelCost[3];
+    double angularPosCost[3];
+    double angularVelCost[3];
+};
+
+struct stateVectorList{
+    std::vector<robot> robots;
+    std::vector<bodyStateVec> bodiesStates;
+};
+
 using namespace std;
 using namespace Eigen;
 using namespace chrono;
