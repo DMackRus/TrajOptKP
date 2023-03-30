@@ -53,10 +53,10 @@ RM = /opt/clion-2022.3.3/bin/cmake/linux/x64/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/davidrussell/catkin_ws/src/autoTOTask
+CMAKE_SOURCE_DIR = /home/dave/catkin_ws/src/autoTOTask
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug
+CMAKE_BINARY_DIR = /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug
 
 # Utility rule file for rosgraph_msgs_generate_messages_nodejs.
 
@@ -78,6 +78,6 @@ CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/clean:
 .PHONY : CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/clean
 
 CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/depend:
-	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/davidrussell/catkin_ws/src/autoTOTask /home/davidrussell/catkin_ws/src/autoTOTask /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/DependInfo.cmake --color=$(COLOR)
+	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_depends "Unix Makefiles" /home/dave/catkin_ws/src/autoTOTask /home/dave/catkin_ws/src/autoTOTask /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/DependInfo.cmake --color=$(COLOR)
 .PHONY : CMakeFiles/rosgraph_msgs_generate_messages_nodejs.dir/depend
 

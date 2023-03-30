@@ -697,7 +697,7 @@ bool modelTranslator::setVelocityVector(MatrixXd _velocityVector, int dataIndex)
     return true;
 }
 
-std::vector<MatrixXd> modelTranslator::createInitControls(int horizonLength){
+std::vector<MatrixXd> modelTranslator::createInitOptimisationControls(int horizonLength) {
     std::vector<MatrixXd> initControls;
 
     for(int i = 0; i < horizonLength; i++){

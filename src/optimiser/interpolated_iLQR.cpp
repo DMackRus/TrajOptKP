@@ -237,14 +237,14 @@ std::vector<int> interpolatediLQR::generateEvalWaypoints(std::vector<MatrixXd> t
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
     std::vector<int> evaluationWaypoints;
     int counter = 0;
-    int numEvals = horizonLength / 2;
+    int numEvals = horizonLength / 4;
 
     evaluationWaypoints.push_back(counter);
 
     // set-interval method
     if(SET_INTERVAL){
         for(int i = 0; i < numEvals; i++){
-            evaluationWaypoints.push_back(i * 2);
+            evaluationWaypoints.push_back(i * 4);
         }
     }
     // adaptive-interval method

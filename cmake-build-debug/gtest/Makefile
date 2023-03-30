@@ -57,10 +57,10 @@ RM = /opt/clion-2022.3.3/bin/cmake/linux/x64/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/davidrussell/catkin_ws/src/autoTOTask
+CMAKE_SOURCE_DIR = /home/dave/catkin_ws/src/autoTOTask
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug
+CMAKE_BINARY_DIR = /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -142,14 +142,14 @@ install/strip/fast: preinstall/fast
 
 # The main all target
 all: cmake_check_build_system
-	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_progress_start /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/gtest//CMakeFiles/progress.marks
-	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles 0
+	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -E cmake_progress_start /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/gtest//CMakeFiles/progress.marks
+	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest/clean
+	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest/clean
 .PHONY : clean
 
 # The main clean target
@@ -158,17 +158,17 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest/preinstall
+	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest/preinstall
+	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug && $(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 gtest/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
 # Help Target
@@ -195,6 +195,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	cd /home/davidrussell/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/dave/catkin_ws/src/autoTOTask/cmake-build-debug && $(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
