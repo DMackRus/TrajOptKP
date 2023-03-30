@@ -1,3 +1,3 @@
-optimiser: "iLQR"
-task: 0
-displayMode: 0
+optimiser: "interpolated_iLQR"
+taskNumber: 6
+displayMode: 1

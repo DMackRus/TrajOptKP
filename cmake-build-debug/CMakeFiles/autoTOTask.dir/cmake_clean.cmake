@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/autoTOTask.dir/src/differentiator/differentiator.cpp.o"
   "CMakeFiles/autoTOTask.dir/src/differentiator/differentiator.cpp.o.d"
+  "CMakeFiles/autoTOTask.dir/src/fileHandler/fileHandler.cpp.o"
+  "CMakeFiles/autoTOTask.dir/src/fileHandler/fileHandler.cpp.o.d"
   "CMakeFiles/autoTOTask.dir/src/main.cpp.o"
   "CMakeFiles/autoTOTask.dir/src/main.cpp.o.d"
   "CMakeFiles/autoTOTask.dir/src/modelTranslator/doublePendulum.cpp.o"

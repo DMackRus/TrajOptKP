@@ -7,29 +7,14 @@
 
 #include "stdInclude.h"
 #include "MuJoCoHelper.h"
-#include <yaml-cpp/yaml.h>
-
-struct bodyStateVec{
-    string name;
-    bool activeLinearDOF[3];
-    bool activeAngularDOF[3];
-    double linearPosCost[3];
-    double linearVelCost[3];
-    double angularPosCost[3];
-    double angularVelCost[3];
-};
-
-struct stateVectorList{
-    vector<robot> robots;
-    vector<bodyStateVec> bodiesStates;
-};
+#include "fileHandler.h"
 
 class modelTranslator {
 public:
     modelTranslator();
 
     // - Functions that work for all tasks in base class
-    void loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies);
+    //void loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies);
     void initModelTranslator(std::string filePath);
 
     MatrixXd returnStateVector(int dataIndex);

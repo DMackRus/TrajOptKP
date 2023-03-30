@@ -7,126 +7,126 @@
 modelTranslator::modelTranslator(){
 
 }
-
-void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies){
-    std::string mainPath = __FILE__;
-    mainPath = mainPath.substr(0, mainPath.find_last_of("/\\"));
-    mainPath = mainPath.substr(0, mainPath.find_last_of("/\\"));
-    mainPath = mainPath.substr(0, mainPath.find_last_of("/\\"));
-    YAML::Node node = YAML::LoadFile(mainPath + yamlFilePath);
-
-    int counter = 0;
-
-    modelFilePath = mainPath + node["modelFile"].as<std::string>();
-
-    for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
-        // Robots
-        if(counter == 1){
-            // Loop through robots list
-            robot tempRobot;
-            string robotName;
-            vector<string> jointNames;
-            int numActuators;
-            bool torqueControlled;
-            vector<double> torqueLimits;
-            vector<double> jointPosCosts;
-            vector<double> jointVelCosts;
-            vector<double> jointControlCosts;
-
-            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
-
-                robotName = robot_it->first.as<string>();
-
-                for(int i = 0; i < robot_it->second["jointNames"].size(); i++){
-                    jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
-                }
-
-                numActuators = robot_it->second["numActuators"].as<int>();
-                torqueControlled = robot_it->second["torqueControl"].as<bool>();
-
-                for(int i = 0; i < robot_it->second["torqueLimits"].size(); i++){
-                    torqueLimits.push_back(robot_it->second["torqueLimits"][i].as<double>());
-                }
-
-                for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
-                    jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
-                }
-
-                for(int i = 0; i < robot_it->second["jointVelCosts"].size(); i++){
-                    jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
-                }
-
-                for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
-                    jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
-                }
-            }
-
-            tempRobot.name = robotName;
-            tempRobot.jointNames = jointNames;
-            tempRobot.numActuators = numActuators;
-            tempRobot.torqueControlled = torqueControlled;
-            tempRobot.torqueLimits = torqueLimits;
-            tempRobot.jointPosCosts = jointPosCosts;
-            tempRobot.jointVelCosts = jointVelCosts;
-            tempRobot.jointControlCosts = jointControlCosts;
-
-             _robots.push_back(tempRobot);
-        }
-        // Loop through bodies
-        else if(counter == 2){
-            bodyStateVec tempBody;
-            std::string bodyName;
-            bool activeLinearDOF[3];
-            bool activeAngularDOF[3];
-            double linearPosCosts[3];
-            double linearVelCosts[3];
-            double angularPosCosts[3];
-            double angularVelCosts[3];
-            // Loop through bodies list
-            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
-
-                bodyName = robot_it->first.as<string>();
-
-                for(int i = 0; i < robot_it->second["activeLinearDOF"].size(); i++){
-                    activeLinearDOF[i] = robot_it->second["activeLinearDOF"][i].as<bool>();
-                }
-
-                for(int i = 0; i < robot_it->second["activeAngularDOF"].size(); i++){
-                    activeAngularDOF[i] = robot_it->second["activeAngularDOF"][i].as<bool>();
-                }
-
-                for(int i = 0; i < robot_it->second["linearPosCost"].size(); i++){
-                    linearPosCosts[i] = robot_it->second["linearPosCost"][i].as<double>();
-                }
-
-                for(int i = 0; i < robot_it->second["linearVelCost"].size(); i++){
-                    linearVelCosts[i] = robot_it->second["linearVelCost"][i].as<double>();
-                }
-
-                for(int i = 0; i < robot_it->second["angularPosCost"].size(); i++){
-                    angularPosCosts[i] = robot_it->second["angularPosCost"][i].as<double>();
-                }
-
-                for(int i = 0; i < robot_it->second["angularVelCost"].size(); i++){
-                    angularVelCosts[i] = robot_it->second["angularVelCost"][i].as<double>();
-                }
-
-                tempBody.name = bodyName;
-                for(int i = 0; i < 3; i++){
-                    tempBody.activeLinearDOF[i] = activeLinearDOF[i];
-                    tempBody.activeAngularDOF[i] = activeAngularDOF[i];
-                    tempBody.linearPosCost[i] = linearPosCosts[i];
-                    tempBody.linearVelCost[i] = linearVelCosts[i];
-                    tempBody.angularPosCost[i] = angularPosCosts[i];
-                    tempBody.angularVelCost[i] = angularVelCosts[i];
-                }
-
-                _bodies.push_back(tempBody);
-            }
-        }
-        counter ++;
-    }
-}
+//
+//void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies){
+//    std::string mainPath = __FILE__;
+//    mainPath = mainPath.substr(0, mainPath.find_last_of("/\\"));
+//    mainPath = mainPath.substr(0, mainPath.find_last_of("/\\"));
+//    mainPath = mainPath.substr(0, mainPath.find_last_of("/\\"));
+//    YAML::Node node = YAML::LoadFile(mainPath + yamlFilePath);
+//
+//    int counter = 0;
+//
+//    modelFilePath = mainPath + node["modelFile"].as<std::string>();
+//
+//    for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
+//        // Robots
+//        if(counter == 1){
+//            // Loop through robots list
+//            robot tempRobot;
+//            string robotName;
+//            vector<string> jointNames;
+//            int numActuators;
+//            bool torqueControlled;
+//            vector<double> torqueLimits;
+//            vector<double> jointPosCosts;
+//            vector<double> jointVelCosts;
+//            vector<double> jointControlCosts;
+//
+//            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
+//
+//                robotName = robot_it->first.as<string>();
+//
+//                for(int i = 0; i < robot_it->second["jointNames"].size(); i++){
+//                    jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
+//                }
+//
+//                numActuators = robot_it->second["numActuators"].as<int>();
+//                torqueControlled = robot_it->second["torqueControl"].as<bool>();
+//
+//                for(int i = 0; i < robot_it->second["torqueLimits"].size(); i++){
+//                    torqueLimits.push_back(robot_it->second["torqueLimits"][i].as<double>());
+//                }
+//
+//                for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
+//                    jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
+//                }
+//
+//                for(int i = 0; i < robot_it->second["jointVelCosts"].size(); i++){
+//                    jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
+//                }
+//
+//                for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
+//                    jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
+//                }
+//            }
+//
+//            tempRobot.name = robotName;
+//            tempRobot.jointNames = jointNames;
+//            tempRobot.numActuators = numActuators;
+//            tempRobot.torqueControlled = torqueControlled;
+//            tempRobot.torqueLimits = torqueLimits;
+//            tempRobot.jointPosCosts = jointPosCosts;
+//            tempRobot.jointVelCosts = jointVelCosts;
+//            tempRobot.jointControlCosts = jointControlCosts;
+//
+//             _robots.push_back(tempRobot);
+//        }
+//        // Loop through bodies
+//        else if(counter == 2){
+//            bodyStateVec tempBody;
+//            std::string bodyName;
+//            bool activeLinearDOF[3];
+//            bool activeAngularDOF[3];
+//            double linearPosCosts[3];
+//            double linearVelCosts[3];
+//            double angularPosCosts[3];
+//            double angularVelCosts[3];
+//            // Loop through bodies list
+//            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
+//
+//                bodyName = robot_it->first.as<string>();
+//
+//                for(int i = 0; i < robot_it->second["activeLinearDOF"].size(); i++){
+//                    activeLinearDOF[i] = robot_it->second["activeLinearDOF"][i].as<bool>();
+//                }
+//
+//                for(int i = 0; i < robot_it->second["activeAngularDOF"].size(); i++){
+//                    activeAngularDOF[i] = robot_it->second["activeAngularDOF"][i].as<bool>();
+//                }
+//
+//                for(int i = 0; i < robot_it->second["linearPosCost"].size(); i++){
+//                    linearPosCosts[i] = robot_it->second["linearPosCost"][i].as<double>();
+//                }
+//
+//                for(int i = 0; i < robot_it->second["linearVelCost"].size(); i++){
+//                    linearVelCosts[i] = robot_it->second["linearVelCost"][i].as<double>();
+//                }
+//
+//                for(int i = 0; i < robot_it->second["angularPosCost"].size(); i++){
+//                    angularPosCosts[i] = robot_it->second["angularPosCost"][i].as<double>();
+//                }
+//
+//                for(int i = 0; i < robot_it->second["angularVelCost"].size(); i++){
+//                    angularVelCosts[i] = robot_it->second["angularVelCost"][i].as<double>();
+//                }
+//
+//                tempBody.name = bodyName;
+//                for(int i = 0; i < 3; i++){
+//                    tempBody.activeLinearDOF[i] = activeLinearDOF[i];
+//                    tempBody.activeAngularDOF[i] = activeAngularDOF[i];
+//                    tempBody.linearPosCost[i] = linearPosCosts[i];
+//                    tempBody.linearVelCost[i] = linearVelCosts[i];
+//                    tempBody.angularPosCost[i] = angularPosCosts[i];
+//                    tempBody.angularVelCost[i] = angularVelCosts[i];
+//                }
+//
+//                _bodies.push_back(tempBody);
+//            }
+//        }
+//        counter ++;
+//    }
+//}
 
 void modelTranslator::initModelTranslator(std::string yamlFilePath){
     //initialise robot
@@ -134,7 +134,9 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     vector<robot> robots;
     vector<bodyStateVec> bodies;
 
-    loadRobotsandBodiesFromYAML(yamlFilePath, robots, bodies);
+    fileHandler yamlReader;
+    yamlReader.readModelConfigFile(yamlFilePath, robots, bodies, modelFilePath);
+    //loadRobotsandBodiesFromYAML(yamlFilePath, robots, bodies);
     const char* _modelPath = modelFilePath.c_str();
 
     // initialise physics simulator
@@ -234,8 +236,6 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
         }
         Q_index += activeDOFs;
     }
-
-    cout << "after assigning q matrices \n";
 
     // Loop through robots and starting assinging control specific costs
     int R_index = 0;

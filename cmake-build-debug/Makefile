@@ -520,6 +520,30 @@ src/differentiator/differentiator.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/autoTOTask.dir/build.make CMakeFiles/autoTOTask.dir/src/differentiator/differentiator.cpp.s
 .PHONY : src/differentiator/differentiator.cpp.s
 
+src/fileHandler/fileHandler.o: src/fileHandler/fileHandler.cpp.o
+.PHONY : src/fileHandler/fileHandler.o
+
+# target to build an object file
+src/fileHandler/fileHandler.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/autoTOTask.dir/build.make CMakeFiles/autoTOTask.dir/src/fileHandler/fileHandler.cpp.o
+.PHONY : src/fileHandler/fileHandler.cpp.o
+
+src/fileHandler/fileHandler.i: src/fileHandler/fileHandler.cpp.i
+.PHONY : src/fileHandler/fileHandler.i
+
+# target to preprocess a source file
+src/fileHandler/fileHandler.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/autoTOTask.dir/build.make CMakeFiles/autoTOTask.dir/src/fileHandler/fileHandler.cpp.i
+.PHONY : src/fileHandler/fileHandler.cpp.i
+
+src/fileHandler/fileHandler.s: src/fileHandler/fileHandler.cpp.s
+.PHONY : src/fileHandler/fileHandler.s
+
+# target to generate assembly for a file
+src/fileHandler/fileHandler.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/autoTOTask.dir/build.make CMakeFiles/autoTOTask.dir/src/fileHandler/fileHandler.cpp.s
+.PHONY : src/fileHandler/fileHandler.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -873,6 +897,9 @@ help:
 	@echo "... src/differentiator/differentiator.o"
 	@echo "... src/differentiator/differentiator.i"
 	@echo "... src/differentiator/differentiator.s"
+	@echo "... src/fileHandler/fileHandler.o"
+	@echo "... src/fileHandler/fileHandler.i"
+	@echo "... src/fileHandler/fileHandler.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
