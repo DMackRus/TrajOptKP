@@ -7,9 +7,6 @@ interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSim
     activeVisualizer = _visualizer;
 
     // initialise all vectors of matrices
-    cout << "dof: " << dof << endl;
-    cout << "num ctrl" << num_ctrl << endl;
-
     for(int i = 0; i < maxHorizon; i++){
         // Cost matrices
         l_x.push_back(MatrixXd(2*dof, 1));
@@ -50,7 +47,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     double cost = 0.0f;
 
     if(initialDataIndex != MAIN_DATA_STATE){
-        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, initialDataIndex);
+        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, initialDataIndex);
     }
 
     MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
@@ -59,9 +56,8 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
     X_old[0] = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-    cout << "X_start:" << X_old[0] << endl;
     if(activePhysicsSimulator->checkIfDataIndexExists(0)){
-        activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, 0);
+        activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     }
     else{
         activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
@@ -91,7 +87,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
             X_old[i + 1] = Xt.replicate(1, 1);
             U_old[i] = Ut.replicate(1, 1);
             if(activePhysicsSimulator->checkIfDataIndexExists(i + 1)){
-                activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, i + 1);
+                activePhysicsSimulator->copySystemState(i + 1, MAIN_DATA_STATE);
             }
             else{
                 activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
@@ -104,11 +100,6 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     }
 
     cout << "cost of trajectory was: " << cost << endl;
-    cout << "size of x_old " << X_old.size() << endl;
-    cout << "size of U_old " << U_old.size() << endl;
-    if(activePhysicsSimulator->checkIfDataIndexExists(1500)){
-        cout << "data index: 1500 exists \n";
-    }
 
     return cost;
 }
@@ -136,7 +127,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     double newCost = 0.0f;
 
     oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
-    activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     // Optimise for a set number of iterations
     for(int i = 0; i < maxIterations; i++){
@@ -217,7 +208,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     }
 
     // Load the initial data back into main data
-    activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_old[i]);
@@ -441,7 +432,7 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
     while(!costReduction){
 
         // Copy intial data state into main data state for rollout
-        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
         
         newCost = 0;
         MatrixXd stateFeedback(2*dof, 1);
@@ -523,7 +514,7 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
 
     // If the cost was reduced
     if(newCost < oldCost){
-        activePhysicsSimulator->loadSystemStateFromIndex(MAIN_DATA_STATE, 0);
+        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
         for(int i = 0; i < horizonLength; i++){
 
@@ -533,7 +524,7 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             // Log the old state
              X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 
-             activePhysicsSimulator->saveSystemStateToIndex(MAIN_DATA_STATE, i+1);
+             activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
 
              U_old[i] = U_new[i].replicate(1, 1);
 

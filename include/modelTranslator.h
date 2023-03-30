@@ -28,6 +28,7 @@ class modelTranslator {
 public:
     modelTranslator();
 
+    // - Functions that work for all tasks in base class
     void loadRobotsandBodiesFromYAML(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies);
     void initModelTranslator(std::string filePath);
 
@@ -41,10 +42,13 @@ public:
     MatrixXd returnAccelerationVector(int dataIndex);
     bool setPositionVector(MatrixXd _positionVector, int dataIndex);
     bool setVelocityVector(MatrixXd _velocityVector, int dataIndex);
-    
+
+    // - Optional override functions, have default implementations but can be overwritten
     virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal);
     virtual void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
-    
+    virtual bool taskComplete(int dataIndex);
+
+    // - Pure virtual functions that HAVE to be overwritten
     virtual std::vector<MatrixXd> createInitControls(int horizonLength);
     virtual MatrixXd returnRandomStartState() = 0;
     virtual MatrixXd returnRandomGoalState() = 0;

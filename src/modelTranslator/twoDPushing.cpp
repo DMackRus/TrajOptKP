@@ -1,7 +1,7 @@
 #include "twoDPushing.h"
 
 twoDPushing::twoDPushing(){
-    std::string yamlFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/taskConfigs/twoDPushingConfig.yaml";
+    std::string yamlFilePath = "/taskConfigs/twoDPushingConfig.yaml";
 
     initModelTranslator(yamlFilePath);
     analyticalCostDerivatives = true;

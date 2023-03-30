@@ -28,7 +28,7 @@ stomp::stomp(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimula
 double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
     double cost = 0.0f;
 
-    activePhysicsSimulator->loadSystemStateFromIndex(initialDataIndex, MAIN_DATA_STATE);
+    activePhysicsSimulator->copySystemState(initialDataIndex, MAIN_DATA_STATE);
 
     MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
     MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);

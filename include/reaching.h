@@ -11,6 +11,7 @@ class pandaReaching : public modelTranslator {
 public:
     pandaReaching();
 
+    bool taskComplete(int dataIndex) override;
     MatrixXd returnRandomStartState() override;
     MatrixXd returnRandomGoalState() override;
     std::vector<MatrixXd> createInitControls(int horizonLength) override;

@@ -748,24 +748,7 @@ bool MuJoCoHelper::checkIfDataIndexExists(int dataIndex){
     return (savedSystemStatesList.size() > dataIndex);
 }
 
-bool MuJoCoHelper::saveSystemStateToIndex(int saveDataIndex, int listIndex){
-
-    mjData *saveData;
-    if(saveDataIndex == MAIN_DATA_STATE){
-        saveData = mdata;
-    }
-    else{
-        saveData = savedSystemStatesList[saveDataIndex];
-    }
-
-    mjData *d = mj_makeData(model);
-    // TODO - THIS MIGHT NOT WORK CORRECTLY
-    cpMjData(model, savedSystemStatesList[listIndex], saveData);
-
-    return true;
-}
-
-bool MuJoCoHelper::loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex){
+bool MuJoCoHelper::copySystemState(int dataDestinationIndex, int dataSourceIndex){
 
     mjData *dataDestination;
     if(dataDestinationIndex == MAIN_DATA_STATE){
@@ -788,6 +771,30 @@ bool MuJoCoHelper::loadSystemStateFromIndex(int dataDestinationIndex, int dataSo
 
     return true;
 }
+
+//bool MuJoCoHelper::loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex){
+//
+//    mjData *dataDestination;
+//    if(dataDestinationIndex == MAIN_DATA_STATE){
+//        dataDestination = mdata;
+//    }
+//    else{
+//        dataDestination = savedSystemStatesList[dataDestinationIndex];
+//    }
+//
+//    mjData *dataSource;
+//    if(dataSourceIndex == MAIN_DATA_STATE){
+//        dataSource = mdata;
+//    }
+//    else{
+//        dataSource = savedSystemStatesList[dataSourceIndex];
+//    }
+//
+//
+//    cpMjData(model, dataDestination, dataSource);
+//
+//    return true;
+//}
 
 bool MuJoCoHelper::deleteSystemStateFromIndex(int listIndex){
     mj_deleteData(savedSystemStatesList[listIndex]);
@@ -846,6 +853,7 @@ void MuJoCoHelper::initVisualisation() {
     //mjv_defaultPerturb(&pert);				// what data type for pert?
     mjv_defaultOption(&opt);
     mjr_defaultContext(&con);
+    mjv_defaultScene(&scn);
 
     cam.distance = 10;
     cam.azimuth = 110.9;
@@ -864,8 +872,6 @@ void MuJoCoHelper::updateScene(GLFWwindow *window, const char* label){
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
     mjv_updateScene(model, mdata, &opt, NULL, &cam, mjCAT_ALL, &scn);
-
-    
 
     mjr_render(viewport, &scn, &con);
 
@@ -907,7 +913,7 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
     // cout << "fileName in init: " << fileName << endl;
     model = mj_loadXML(fileName, NULL, error, 1000);
-    // cout << "any errors? " << error << endl;
+    cout << "any errors? " << error << endl;
 
     model->opt.timestep = timestep;
 

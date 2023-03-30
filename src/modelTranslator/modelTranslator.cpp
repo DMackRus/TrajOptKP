@@ -17,7 +17,7 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
 
     int counter = 0;
 
-    modelFilePath = node["modelFile"].as<std::string>();
+    modelFilePath = mainPath + node["modelFile"].as<std::string>();
 
     for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
         // Robots
@@ -110,24 +110,22 @@ void modelTranslator::loadRobotsandBodiesFromYAML(std::string yamlFilePath, vect
                 for(int i = 0; i < robot_it->second["angularVelCost"].size(); i++){
                     angularVelCosts[i] = robot_it->second["angularVelCost"][i].as<double>();
                 }
-            }
 
-            tempBody.name = bodyName;
-            for(int i = 0; i < 3; i++){
-                tempBody.activeLinearDOF[i] = activeLinearDOF[i];
-                tempBody.activeAngularDOF[i] = activeAngularDOF[i];
-                tempBody.linearPosCost[i] = linearPosCosts[i];
-                tempBody.linearVelCost[i] = linearVelCosts[i];
-                tempBody.angularPosCost[i] = angularPosCosts[i];
-                tempBody.angularVelCost[i] = angularVelCosts[i];
-            }
+                tempBody.name = bodyName;
+                for(int i = 0; i < 3; i++){
+                    tempBody.activeLinearDOF[i] = activeLinearDOF[i];
+                    tempBody.activeAngularDOF[i] = activeAngularDOF[i];
+                    tempBody.linearPosCost[i] = linearPosCosts[i];
+                    tempBody.linearVelCost[i] = linearVelCosts[i];
+                    tempBody.angularPosCost[i] = angularPosCosts[i];
+                    tempBody.angularVelCost[i] = angularVelCosts[i];
+                }
 
-            _bodies.push_back(tempBody);
+                _bodies.push_back(tempBody);
+            }
         }
         counter ++;
     }
-
-   
 }
 
 void modelTranslator::initModelTranslator(std::string yamlFilePath){
@@ -138,8 +136,6 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
     loadRobotsandBodiesFromYAML(yamlFilePath, robots, bodies);
     const char* _modelPath = modelFilePath.c_str();
-
-    cout << "robots name: " << robots[0].name << endl;
 
     // initialise physics simulator
     vector<string> bodyNames;
@@ -236,6 +232,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
                 activeDofCounter++;
             }
         }
+        Q_index += activeDOFs;
     }
 
     cout << "after assigning q matrices \n";
@@ -258,12 +255,10 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
     Q_terminal = Q.replicate(1, 1);
     for(int i = 0; i < dof; i++){
-        Q_terminal(i, i) *= 1000;
+        Q_terminal(i, i) *= 10000;
     }
 
     cout << "Q_terminal: " << Q_terminal << endl;
-
-    
 }
 
 double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal){
@@ -305,6 +300,10 @@ void modelTranslator::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last,
 
     l_u = 2 * R * Ut;
     l_uu = 2 * R;
+}
+
+bool modelTranslator::taskComplete(int dataIndex){
+    return false;
 }
 
 MatrixXd modelTranslator::returnStateVector(int dataIndex){

@@ -1,7 +1,7 @@
 #include "reaching.h"
 
 pandaReaching::pandaReaching(): modelTranslator(){
-    std::string yamlFilePath = "/home/davidrussell/catkin_ws/src/autoTOTask/taskConfigs/reachingConfig.yaml";
+    std::string yamlFilePath = "/taskConfigs/reachingConfig.yaml";
 
     initModelTranslator(yamlFilePath);
     analyticalCostDerivatives = true;
@@ -9,6 +9,23 @@ pandaReaching::pandaReaching(): modelTranslator(){
     X_desired << 1, 1.5, 2, -2, 0, 0.6, 1, 
                  0, 0, 0, 0, 0, 0, 0;
     std::cout << "initialised reaching model translator" << std::endl;
+}
+
+bool pandaReaching::taskComplete(int dataIndex){
+    double cumError = 0.0f;
+    MatrixXd X = returnStateVector(dataIndex);
+
+    for(int i = 0; i < dof; i++){
+        double diff = X_desired(i) - X(i);
+        cumError += diff;
+    }
+
+    if(cumError < 0.005){
+        return true;
+    }
+    else{
+        return false;
+    }
 }
 
 MatrixXd pandaReaching::returnRandomStartState(){

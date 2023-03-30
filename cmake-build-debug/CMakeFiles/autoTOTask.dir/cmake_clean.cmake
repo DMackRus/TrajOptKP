@@ -11,6 +11,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/autoTOTask.dir/src/modelTranslator/reaching.cpp.o.d"
   "CMakeFiles/autoTOTask.dir/src/modelTranslator/twoDPushing.cpp.o"
   "CMakeFiles/autoTOTask.dir/src/modelTranslator/twoDPushing.cpp.o.d"
+  "CMakeFiles/autoTOTask.dir/src/modelTranslator/twoDPushingClutter.cpp.o"
+  "CMakeFiles/autoTOTask.dir/src/modelTranslator/twoDPushingClutter.cpp.o.d"
   "CMakeFiles/autoTOTask.dir/src/optimiser/interpolated_iLQR.cpp.o"
   "CMakeFiles/autoTOTask.dir/src/optimiser/interpolated_iLQR.cpp.o.d"
   "CMakeFiles/autoTOTask.dir/src/optimiser/optimiser.cpp.o"
