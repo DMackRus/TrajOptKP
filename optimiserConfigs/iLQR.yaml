@@ -1,0 +1,5 @@
+minIter: 5
+maxIter: 20
+maxHorizon: 3000
+setInterval: true
+intervalSize: 4

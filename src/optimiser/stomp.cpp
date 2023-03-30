@@ -6,7 +6,7 @@ stomp::stomp(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimula
 
     noiseProfile.resize(num_ctrl, 1);
     for(int i = 0; i < num_ctrl; i++){
-        noiseProfile(i) = 0.05;
+        noiseProfile(i) = 1;
     }
 
     for(int i = 0; i < maxHorizon; i++){
@@ -78,16 +78,14 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
     bestCost = rolloutTrajectory(0, false, U_best);
     cout << "cost of initial trajectory: " << bestCost << endl;
 
-    for(int i = 0; i < maxIter; i++){
+    for(int i = 0; i < maxIter; i++) {
         double costs[rolloutsPerIter];
-        
+
         #pragma omp parallel for
-        for(int j = 0; j < rolloutsPerIter; j ++){
+        for (int j = 0; j < rolloutsPerIter; j++) {
             U_noisy[j] = createNoisyTrajec(U_best);
             costs[j] = rolloutTrajectory(j, false, U_noisy[j]);
         }
-
-
 
         double bestCostThisIter = costs[0];
         int bestCostIndex = 0;
@@ -99,20 +97,22 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
             }
         }
 
-        //cout << "iteration: " << i << " cost: " << bestCostThisIter << endl;
+        bool converged = checkForConvergence(bestCost, bestCostThisIter);
 
         // reupdate U_best with new best trajectory if a better trajectory found
         if(bestCostThisIter < bestCost){
-            cout << "new trajectory cost: " << bestCostThisIter << endl;
+            cout << "new trajectory cost: " << bestCostThisIter << " at iteration: " << i << endl;
             bestCost = bestCostThisIter;
-            for(int j = 0; j < horizonLength; j++){
+            for(int j = 0; j < horizonLength; j++) {
                 U_best[j] = U_noisy[bestCostIndex][j];
             }
-            
         }
 
+        if(converged && (i >= minIter)){
+            cout << "converged early at iteration: " << i << endl;
+            break;
+        }
     }
-
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_best[i]);

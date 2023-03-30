@@ -144,3 +144,31 @@ void fileHandler::readSettingsFile(std::string settingsFilePath){
     project_display_mode = node["displayMode"].as<int>();
     taskNumber = node["taskNumber"].as<int>();
 }
+
+void fileHandler::readOptimisationSettingsFile(int optimiser) {
+    std::string optimisationSettingsFilePath;
+    YAML::Node node;
+
+    if (optimiser == opt_iLQR) {
+        optimisationSettingsFilePath = "/optimiserConfigs/iLQR.yaml";
+    }
+    else if(optimiser == opt_stomp){
+        optimisationSettingsFilePath = "/optimiserConfigs/stomp.yaml";
+    }
+    else if(optimiser == opt_gradDescent){
+        std::cout << "grad descent not yet implemented \n";
+    }
+    else{
+        std::cout << "invalid optimiser selected!!!";
+    }
+
+    node = YAML::LoadFile(projectParentPath + optimisationSettingsFilePath);
+    minIter = node["minIter"].as<int>();
+    maxIter = node["maxIter"].as<int>();
+    maxHorizon = node["maxHorizon"].as<int>();
+
+    if(optimiser == opt_iLQR){
+        setIntervalMethod = node["setInterval"].as<bool>();
+        intervalSize = node["intervalSize"].as<int>();
+    }
+}

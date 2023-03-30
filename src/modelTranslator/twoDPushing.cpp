@@ -149,7 +149,7 @@ void twoDPushing::initControls_mainWayPoints(m_point desiredObjectEnd, std::vect
     mainWayPoint(2) = 0.27f;
 
     mainWayPoints.push_back(mainWayPoint);
-    wayPointsTiming.push_back(horizon);
+    wayPointsTiming.push_back(horizon - 1);
 }
 
 std::vector<m_point> twoDPushing::initControls_createAllWayPoints(std::vector<m_point> mainWayPoints, std::vector<int> wayPointsTiming){

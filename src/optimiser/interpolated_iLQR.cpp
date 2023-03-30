@@ -208,6 +208,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             }
 
             if(converged && (i >= minIter)){
+                std::cout << "converged after " << i << " iterations" << std::endl;
                 break;
             }
         }

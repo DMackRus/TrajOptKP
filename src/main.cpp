@@ -31,12 +31,14 @@ enum scenes{
     cylinderPushingClutter = 6
 };
 
+// --------------------- Global class instances --------------------------------
 modelTranslator *activeModelTranslator;
 differentiator *activeDifferentiator;
 optimiser *activeOptimiser;
 interpolatediLQR *iLQROptimiser;
 stomp *stompOptimiser;
 visualizer *activeVisualiser;
+fileHandler yamlReader;
 
 void showInitControls();
 void iLQROnce();
@@ -46,16 +48,10 @@ void keyboardControl();
 
 int main(int argc, char **argv) {
     cout << "program started \n";
-    //ros::init(argc, argv, "MuJoCo_node");
-
-    //ros::NodeHandle nh;
-
-    // Get ros parameters
     std::string optimiser;
     int mode;
     int task;
 
-    fileHandler yamlReader;
     yamlReader.readSettingsFile("/generalConfig.yaml");
     optimiser = yamlReader.optimiser;
     mode = yamlReader.project_display_mode;
@@ -78,12 +74,10 @@ int main(int argc, char **argv) {
         activeModelTranslator = myReaching;
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
         startStateVector = activeModelTranslator->returnRandomStartState();
-
     }
     else if(task == twoReaching){
         cout << "not implemented task yet " << endl;
         return -1;
-
     }
     else if(task == cylinderPushing){
         twoDPushing *myTwoDPushing = new twoDPushing();
@@ -119,12 +113,22 @@ int main(int argc, char **argv) {
     activeVisualiser = new visualizer(activeModelTranslator);
 
     if(optimiser == "interpolated_iLQR"){
-        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, 3000, activeVisualiser);
+        yamlReader.readOptimisationSettingsFile(opt_iLQR);
+        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader.maxHorizon, activeVisualiser);
         activeOptimiser = iLQROptimiser;
     }
-    else{
-        stompOptimiser = new stomp(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, 3000, 8);
+    else if(optimiser == "stomp"){
+        yamlReader.readOptimisationSettingsFile(opt_stomp);
+        stompOptimiser = new stomp(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader.maxHorizon, 8);
         activeOptimiser = stompOptimiser;
+    }
+    else if(optimiser == "gradDescent"){
+        cout << "not implemented grad descent yet " << endl;
+        return -1;
+    }
+    else{
+        cout << "invalid optimiser selected, exiting" << endl;
+        return -1;
     }
     
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
@@ -168,7 +172,6 @@ void showInitControls(){
     while(activeVisualiser->windowOpen()){
 
         activeModelTranslator->setControlVector(initControls[controlCounter], MAIN_DATA_STATE);
-        //cout << "init controls: " << initControls[controlCounter] << endl;
 
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
@@ -197,12 +200,12 @@ void iLQROnce(){
     std::vector<MatrixXd> initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 4, 2, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader.maxIter, yamlReader.minIter, horizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";
 
-    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
 
     while(activeVisualiser->windowOpen()){
 
@@ -419,14 +422,14 @@ void keyboardControl(){
     
     while(activeVisualiser->windowOpen()){
         vector<double> gravCompensation;
-    activeModelTranslator->activePhysicsSimulator->getRobotJointsGravityCompensaionControls("panda", gravCompensation, MAIN_DATA_STATE);
-    MatrixXd control(activeModelTranslator->num_ctrl, 1);
-    for(int i = 0; i < activeModelTranslator->num_ctrl; i++){
-        control(i) = gravCompensation[i];
-    }
-    cout << "control: " << control << endl;
-    activeModelTranslator->setControlVector(control, MAIN_DATA_STATE);
-    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        activeModelTranslator->activePhysicsSimulator->getRobotJointsGravityCompensaionControls("panda", gravCompensation, MAIN_DATA_STATE);
+        MatrixXd control(activeModelTranslator->num_ctrl, 1);
+        for(int i = 0; i < activeModelTranslator->num_ctrl; i++){
+            control(i) = gravCompensation[i];
+        }
+        cout << "control: " << control << endl;
+        activeModelTranslator->setControlVector(control, MAIN_DATA_STATE);
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         activeVisualiser->render("keyboard control");
     }
