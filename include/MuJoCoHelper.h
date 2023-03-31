@@ -44,12 +44,11 @@ public:
     bool appendSystemStateToEnd(int dataIndex) override;
     bool checkIfDataIndexExists(int dataIndex) override;
     bool copySystemState(int dataDestinationIndex, int dataSourceIndex) override;
-    //bool saveSystemStateToIndex(int saveDataIndex, int listIndex) override;
-    //bool loadSystemStateFromIndex(int dataDestinationIndex, int dataSourceIndex) override;
     bool deleteSystemStateFromIndex(int listIndex) override;
     bool clearSystemStateList() override;
 
     void cpMjData(const mjModel* m, mjData* d_dest, const mjData* d_src);
+    mjData* returnDesiredDataState(int dataIndex);
 
     // ------------------------------- Visualisation -----------------------------------------
     void initVisualisation() override;
@@ -68,7 +67,8 @@ public:
     bool setBodyPosition(string bodyName, m_point position);
 
     vector<mjData*> savedSystemStatesList;
-    mjData *mdata;                   // MuJoCo data
+    mjData *d_master_reset;
+    mjData *mdata;                   // main mujcoc data
     mjModel *model;                  // MuJoCo model
 
 private:

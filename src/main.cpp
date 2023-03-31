@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
         startStateVector = activeModelTranslator->returnRandomStartState();
-        //startStateVector << 3.14, 0, 0, 0;
+        startStateVector << 3.14, 0, 0, 0;
     }
     else if(task == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
@@ -133,6 +133,8 @@ int main(int argc, char **argv) {
     
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+//    MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//    cout << "init state at at start of program: " << initState << endl;
 
     if(mode == SHOW_INIT_CONTROLS){
         cout << "SHOWING INIT CONTROLS MODE \n";
@@ -215,7 +217,6 @@ void iLQROnce(){
         else{
             activeModelTranslator->setControlVector(initControls[controlCounter], MAIN_DATA_STATE);
         }
-        
 
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
@@ -242,7 +243,7 @@ void iLQROnce(){
 }
 
 void MPCContinous(){
-    int horizon = 100;
+    int horizon = 50;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -254,8 +255,10 @@ void MPCContinous(){
     std::vector<MatrixXd> initControls;
     initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-    cout << "init controls: " << initControls.size() << endl;
+
     std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, 2, horizon);
+    MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    cout << "init state in MPC continous: " << initState << endl;
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
@@ -274,6 +277,8 @@ void MPCContinous(){
         if(reInitialiseCounter > 1){
             //initControls = activeModelTranslator->createInitControls(horizon);
             optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, 8, 0, horizon);
+            initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            cout << "init state in MPC continous: " << initState << endl;
             reInitialiseCounter = 0;
         }
 
