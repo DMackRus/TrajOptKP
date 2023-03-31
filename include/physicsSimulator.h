@@ -9,7 +9,8 @@
 #include <GLFW/glfw3.h>
 #include "mujoco.h"
 
-#define MAIN_DATA_STATE  -1
+#define MAIN_DATA_STATE     -1
+#define MASTER_RESET_DATA   -2
 
 struct pose_7{
     m_point position;
