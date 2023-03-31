@@ -24,6 +24,8 @@ struct robot{
     int numActuators;
     bool torqueControlled;
     std::vector<double> torqueLimits;
+    std::vector<double> startPos;
+    std::vector<double> goalPos;
     std::vector<double> jointPosCosts;
     std::vector<double> jointVelCosts;
     std::vector<double> jointControlCosts;
@@ -33,6 +35,10 @@ struct bodyStateVec{
     std::string name;
     bool activeLinearDOF[3];
     bool activeAngularDOF[3];
+    double startLinearPos[3];
+    double startAngularPos[3];
+    double goalLinearPos[3];
+    double goalAngularPos[3];
     double linearPosCost[3];
     double linearVelCost[3];
     double angularPosCost[3];

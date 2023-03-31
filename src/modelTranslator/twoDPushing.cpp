@@ -2,14 +2,8 @@
 
 twoDPushing::twoDPushing(){
     std::string yamlFilePath = "/taskConfigs/twoDPushingConfig.yaml";
-
     initModelTranslator(yamlFilePath);
     analyticalCostDerivatives = true;
-
-    X_desired << 1, 1.5, 2, -2, 0, 0.6, 1, 
-                 0.7, 0.4,
-                 0, 0, 0, 0, 0, 0, 0,
-                 0, 0;
 }
 
 MatrixXd twoDPushing::returnRandomStartState(){

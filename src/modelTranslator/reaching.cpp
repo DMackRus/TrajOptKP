@@ -6,8 +6,6 @@ pandaReaching::pandaReaching(): modelTranslator(){
     initModelTranslator(yamlFilePath);
     analyticalCostDerivatives = true;
 
-    X_desired << 1, 1.5, 2, -2, 0, 0.6, 1, 
-                 0, 0, 0, 0, 0, 0, 0;
 }
 
 bool pandaReaching::taskComplete(int dataIndex){

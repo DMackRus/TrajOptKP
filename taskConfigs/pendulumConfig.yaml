@@ -1,10 +1,13 @@
 modelFile: "/Franka-emika-panda-arm/Acrobot.xml"
+# stable down pos [3.1415, 0], half up unstable pos [3.14, 3.14], full up unstable pos [0, 0]
 robots:
   doublePendulum:
     jointNames: [shoulder, elbow]
     numActuators: 2
     torqueControl: true 
     torqueLimits: [100, 100]
+    startPos: [2, 0]
+    goalPos: [3.1415, 3.1415]
     jointPosCosts: [2, 1]
     jointVelCosts: [0, 0]
     jointControlCosts: [0.8, 0.8]

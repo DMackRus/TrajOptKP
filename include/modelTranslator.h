@@ -42,6 +42,8 @@ public:
     int num_ctrl;
     int stateVectorSize;
     struct stateVectorList myStateVector;
+    MatrixXd X_desired;
+    MatrixXd X_start;
 
     physicsSimulator *activePhysicsSimulator;
     MuJoCoHelper *myHelper;
@@ -53,7 +55,6 @@ protected:
     MatrixXd R;
     MatrixXd J;
 
-    MatrixXd X_desired;
     bool analyticalCostDerivatives;
 
     char* filePath; 

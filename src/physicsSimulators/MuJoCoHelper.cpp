@@ -724,13 +724,7 @@ Eigen::MatrixXd MuJoCoHelper::calculateJacobian(std::string bodyName, int dataIn
 // ------------------------------- System State Functions -----------------------------------------------
 bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 
-    mjData *saveData;// = returnDesiredDataState(dataIndex);
-    if(dataIndex == MAIN_DATA_STATE){
-        saveData = mdata;
-    }
-    else{
-        saveData = savedSystemStatesList[dataIndex];
-    }
+    mjData *saveData = returnDesiredDataState(dataIndex);
 
     mjData *d = mj_makeData(model);
     cpMjData(model, d, saveData);
@@ -746,22 +740,22 @@ bool MuJoCoHelper::checkIfDataIndexExists(int dataIndex){
 
 bool MuJoCoHelper::copySystemState(int dataDestinationIndex, int dataSourceIndex){
 
-    mjData *dataDestination;// = returnDesiredDataState(dataDestinationIndex);
+    mjData *dataDestination = returnDesiredDataState(dataDestinationIndex);
 
-    if(dataDestinationIndex == MAIN_DATA_STATE){
-        dataDestination = mdata;
-    }
-    else{
-        dataDestination = savedSystemStatesList[dataDestinationIndex];
-    }
+//    if(dataDestinationIndex == MAIN_DATA_STATE){
+//        dataDestination = mdata;
+//    }
+//    else{
+//        dataDestination = savedSystemStatesList[dataDestinationIndex];
+//    }
 
-    mjData *dataSource;// = returnDesiredDataState(dataSourceIndex);
-    if(dataSourceIndex == MAIN_DATA_STATE){
-        dataSource = mdata;
-    }
-    else{
-        dataSource = savedSystemStatesList[dataSourceIndex];
-    }
+    mjData *dataSource = returnDesiredDataState(dataSourceIndex);
+//    if(dataSourceIndex == MAIN_DATA_STATE){
+//        dataSource = mdata;
+//    }
+//    else{
+//        dataSource = savedSystemStatesList[dataSourceIndex];
+//    }
 
     cpMjData(model, dataDestination, dataSource);
 
@@ -810,17 +804,7 @@ mjData* MuJoCoHelper::returnDesiredDataState(int dataIndex){
 
 bool MuJoCoHelper::stepSimulator(int steps, int dataIndex){
 
-    mjData *d;// = returnDesiredDataState(dataIndex);
-    if(dataIndex == MAIN_DATA_STATE){
-        d = mdata;
-    }
-    else{
-        if(savedSystemStatesList.size() < dataIndex){
-            cout << "data index out of size in step simulator function \n";
-            return false;
-        }
-        d = savedSystemStatesList[dataIndex];
-    }
+    mjData *d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < steps; i++){
         mj_step(model, d);

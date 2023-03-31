@@ -9,11 +9,6 @@ twoDPushingClutter::twoDPushingClutter(){
 
     initModelTranslator(yamlFilePath);
     analyticalCostDerivatives = true;
-
-    X_desired << 1, 1.5, 2, -2, 0, 0.6, 1,
-            0.6, 0.3, 0.6, 0.25, 0.7, 0.3,
-            0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0;
 }
 
 MatrixXd twoDPushingClutter::returnRandomStartState(){
@@ -47,6 +42,7 @@ std::vector<MatrixXd> twoDPushingClutter::createInitOptimisationControls(int hor
     displayBodyPose.position[0] = X_desired(7);
     displayBodyPose.position[1] = X_desired(8);
     displayBodyPose.position[2] = 0.0f;
+    cout << "goal position: " << displayBodyPose.position[0] << ", " << displayBodyPose.position[1] << endl;
     activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, 0);
 
     // Pushing create init controls borken into three main steps

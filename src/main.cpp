@@ -63,17 +63,11 @@ int main(int argc, char **argv) {
     if(task == pendulum){
         doublePendulum *myDoublePendulum = new doublePendulum();
         activeModelTranslator = myDoublePendulum;
-        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-
-        startStateVector = activeModelTranslator->returnRandomStartState();
-        startStateVector << 3.14, 0, 0, 0;
     }
     else if(task == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
         pandaReaching *myReaching = new pandaReaching();
         activeModelTranslator = myReaching;
-        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-        startStateVector = activeModelTranslator->returnRandomStartState();
     }
     else if(task == twoReaching){
         cout << "not implemented task yet " << endl;
@@ -82,8 +76,6 @@ int main(int argc, char **argv) {
     else if(task == cylinderPushing){
         twoDPushing *myTwoDPushing = new twoDPushing();
         activeModelTranslator = myTwoDPushing;
-        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-        startStateVector = activeModelTranslator->returnRandomStartState();
 
     }
     else if(task == threeDPushing){
@@ -98,16 +90,18 @@ int main(int argc, char **argv) {
     else if(task == cylinderPushingClutter){
         twoDPushingClutter *myTwoDPushingClutter = new twoDPushingClutter();
         activeModelTranslator = myTwoDPushingClutter;
-        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-        startStateVector = activeModelTranslator->returnRandomStartState();
     }
     else{
         std::cout << "invalid scene selected, exiting" << std::endl;
     }
 
+    startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+    startStateVector = activeModelTranslator->X_start;
+
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
     cout << "starting state: " << startStateVector << endl;
+    cout << "desired state: " << activeModelTranslator->X_desired << endl;
 
     //Instantiate my optimiser
     activeVisualiser = new visualizer(activeModelTranslator);
@@ -133,8 +127,8 @@ int main(int argc, char **argv) {
     
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-//    MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//    cout << "init state at at start of program: " << initState << endl;
+    MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    cout << "init state at at start of program: " << initState << endl;
 
     if(mode == SHOW_INIT_CONTROLS){
         cout << "SHOWING INIT CONTROLS MODE \n";
@@ -243,7 +237,7 @@ void iLQROnce(){
 }
 
 void MPCContinous(){
-    int horizon = 50;
+    int horizon = 500;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -274,11 +268,11 @@ void MPCContinous(){
         reInitialiseCounter++;
         visualCounter++;
 
-        if(reInitialiseCounter > 1){
+        if(reInitialiseCounter > 50){
             //initControls = activeModelTranslator->createInitControls(horizon);
             optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, 8, 0, horizon);
-            initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-            cout << "init state in MPC continous: " << initState << endl;
+            //initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            //cout << "init state in MPC continous: " << initState << endl;
             reInitialiseCounter = 0;
         }
 
@@ -380,7 +374,7 @@ void MPCContinous(){
 }
 
 void MPCUntilComplete(){
-    int horizon = 500;
+    int horizon = 50;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -409,7 +403,7 @@ void MPCUntilComplete(){
         reInitialiseCounter++;
         visualCounter++;
 
-        if(reInitialiseCounter > 50){
+        if(reInitialiseCounter > 1){
             initControls = activeModelTranslator->createInitOptimisationControls(horizon);
             optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, 0, horizon);
             reInitialiseCounter = 0;

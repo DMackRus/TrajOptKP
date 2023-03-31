@@ -130,6 +130,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
     oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    //MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    //cout << "init state at at start of optimisation: " << initState << endl;
 
     // Optimise for a set number of iterations
     for(int i = 0; i < maxIter; i++){

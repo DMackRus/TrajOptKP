@@ -27,112 +27,139 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
 
     modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
 
-    for(YAML::const_iterator it=node.begin(); it!=node.end(); ++it) {
-        // Robots
-        if(counter == 1){
-            // Loop through robots list
-            robot tempRobot;
-            string robotName;
-            vector<string> jointNames;
-            int numActuators;
-            bool torqueControlled;
-            vector<double> torqueLimits;
-            vector<double> jointPosCosts;
-            vector<double> jointVelCosts;
-            vector<double> jointControlCosts;
+    // Loop through robots
+    for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){
+        robot tempRobot;
+        string robotName;
+        vector<string> jointNames;
+        int numActuators;
+        bool torqueControlled;
+        vector<double> torqueLimits;
+        vector<double> startPos;
+        vector<double> goalPos;
+        vector<double> jointPosCosts;
+        vector<double> jointVelCosts;
+        vector<double> jointControlCosts;
 
-            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
+        robotName = robot_it->first.as<string>();
 
-                robotName = robot_it->first.as<string>();
-
-                for(int i = 0; i < robot_it->second["jointNames"].size(); i++){
-                    jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
-                }
-
-                numActuators = robot_it->second["numActuators"].as<int>();
-                torqueControlled = robot_it->second["torqueControl"].as<bool>();
-
-                for(int i = 0; i < robot_it->second["torqueLimits"].size(); i++){
-                    torqueLimits.push_back(robot_it->second["torqueLimits"][i].as<double>());
-                }
-
-                for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
-                    jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
-                }
-
-                for(int i = 0; i < robot_it->second["jointVelCosts"].size(); i++){
-                    jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
-                }
-
-                for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
-                    jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
-                }
-            }
-
-            tempRobot.name = robotName;
-            tempRobot.jointNames = jointNames;
-            tempRobot.numActuators = numActuators;
-            tempRobot.torqueControlled = torqueControlled;
-            tempRobot.torqueLimits = torqueLimits;
-            tempRobot.jointPosCosts = jointPosCosts;
-            tempRobot.jointVelCosts = jointVelCosts;
-            tempRobot.jointControlCosts = jointControlCosts;
-
-            _robots.push_back(tempRobot);
+        for(int i = 0; i < robot_it->second["jointNames"].size(); i++){
+            jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
         }
-            // Loop through bodies
-        else if(counter == 2){
-            bodyStateVec tempBody;
-            std::string bodyName;
-            bool activeLinearDOF[3];
-            bool activeAngularDOF[3];
-            double linearPosCosts[3];
-            double linearVelCosts[3];
-            double angularPosCosts[3];
-            double angularVelCosts[3];
-            // Loop through bodies list
-            for(YAML::const_iterator robot_it=it->second.begin(); robot_it!=it->second.end(); ++robot_it){
 
-                bodyName = robot_it->first.as<string>();
+        numActuators = robot_it->second["numActuators"].as<int>();
+        torqueControlled = robot_it->second["torqueControl"].as<bool>();
 
-                for(int i = 0; i < robot_it->second["activeLinearDOF"].size(); i++){
-                    activeLinearDOF[i] = robot_it->second["activeLinearDOF"][i].as<bool>();
-                }
-
-                for(int i = 0; i < robot_it->second["activeAngularDOF"].size(); i++){
-                    activeAngularDOF[i] = robot_it->second["activeAngularDOF"][i].as<bool>();
-                }
-
-                for(int i = 0; i < robot_it->second["linearPosCost"].size(); i++){
-                    linearPosCosts[i] = robot_it->second["linearPosCost"][i].as<double>();
-                }
-
-                for(int i = 0; i < robot_it->second["linearVelCost"].size(); i++){
-                    linearVelCosts[i] = robot_it->second["linearVelCost"][i].as<double>();
-                }
-
-                for(int i = 0; i < robot_it->second["angularPosCost"].size(); i++){
-                    angularPosCosts[i] = robot_it->second["angularPosCost"][i].as<double>();
-                }
-
-                for(int i = 0; i < robot_it->second["angularVelCost"].size(); i++){
-                    angularVelCosts[i] = robot_it->second["angularVelCost"][i].as<double>();
-                }
-
-                tempBody.name = bodyName;
-                for(int i = 0; i < 3; i++){
-                    tempBody.activeLinearDOF[i] = activeLinearDOF[i];
-                    tempBody.activeAngularDOF[i] = activeAngularDOF[i];
-                    tempBody.linearPosCost[i] = linearPosCosts[i];
-                    tempBody.linearVelCost[i] = linearVelCosts[i];
-                    tempBody.angularPosCost[i] = angularPosCosts[i];
-                    tempBody.angularVelCost[i] = angularVelCosts[i];
-                }
-
-                _bodies.push_back(tempBody);
-            }
+        for(int i = 0; i < robot_it->second["torqueLimits"].size(); i++){
+            torqueLimits.push_back(robot_it->second["torqueLimits"][i].as<double>());
         }
-        counter ++;
+
+        for(int i = 0; i < robot_it->second["startPos"].size(); i++){
+            startPos.push_back(robot_it->second["startPos"][i].as<double>());
+        }
+
+        for(int i = 0; i < robot_it->second["goalPos"].size(); i++){
+            goalPos.push_back(robot_it->second["goalPos"][i].as<double>());
+        }
+
+        for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
+            jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
+        }
+
+        for(int i = 0; i < robot_it->second["jointVelCosts"].size(); i++){
+            jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
+        }
+
+        for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
+            jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
+        }
+
+        tempRobot.name = robotName;
+        tempRobot.jointNames = jointNames;
+        tempRobot.numActuators = numActuators;
+        tempRobot.torqueControlled = torqueControlled;
+        tempRobot.torqueLimits = torqueLimits;
+        tempRobot.startPos = startPos;
+        tempRobot.goalPos = goalPos;
+        tempRobot.jointPosCosts = jointPosCosts;
+        tempRobot.jointVelCosts = jointVelCosts;
+        tempRobot.jointControlCosts = jointControlCosts;
+
+        _robots.push_back(tempRobot);
+    }
+
+    // Loop through bodies
+    for(YAML::const_iterator body_it=node["bodies"].begin(); body_it!=node["bodies"].end(); ++body_it) {
+        bodyStateVec tempBody;
+        std::string bodyName;
+        bool activeLinearDOF[3];
+        bool activeAngularDOF[3];
+        double startLinearPos[3];
+        double startAngularPos[3];
+        double goalLinearPos[3];
+        double goalAngularPos[3];
+        double linearPosCosts[3];
+        double linearVelCosts[3];
+        double angularPosCosts[3];
+        double angularVelCosts[3];
+
+        bodyName = body_it->first.as<string>();
+
+        for(int i = 0; i < body_it->second["activeLinearDOF"].size(); i++){
+            activeLinearDOF[i] = body_it->second["activeLinearDOF"][i].as<bool>();
+        }
+
+        for(int i = 0; i < body_it->second["activeAngularDOF"].size(); i++){
+            activeAngularDOF[i] = body_it->second["activeAngularDOF"][i].as<bool>();
+        }
+
+        for(int i = 0; i < body_it->second["startLinearPos"].size(); i++){
+            startLinearPos[i] = body_it->second["startLinearPos"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["startAngularPos"].size(); i++){
+            startAngularPos[i] = body_it->second["startAngularPos"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["goalLinearPos"].size(); i++){
+            goalLinearPos[i] = body_it->second["goalLinearPos"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["goalAngularPos"].size(); i++){
+            goalAngularPos[i] = body_it->second["goalAngularPos"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["linearPosCost"].size(); i++){
+            linearPosCosts[i] = body_it->second["linearPosCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["linearVelCost"].size(); i++){
+            linearVelCosts[i] = body_it->second["linearVelCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["angularPosCost"].size(); i++){
+            angularPosCosts[i] = body_it->second["angularPosCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["angularVelCost"].size(); i++){
+            angularVelCosts[i] = body_it->second["angularVelCost"][i].as<double>();
+        }
+
+        tempBody.name = bodyName;
+        for(int i = 0; i < 3; i++){
+            tempBody.activeLinearDOF[i] = activeLinearDOF[i];
+            tempBody.activeAngularDOF[i] = activeAngularDOF[i];
+            tempBody.startLinearPos[i] = startLinearPos[i];
+            tempBody.startAngularPos[i] = startAngularPos[i];
+            tempBody.goalLinearPos[i] = goalLinearPos[i];
+            tempBody.goalAngularPos[i] = goalAngularPos[i];
+            tempBody.linearPosCost[i] = linearPosCosts[i];
+            tempBody.linearVelCost[i] = linearVelCosts[i];
+            tempBody.angularPosCost[i] = angularPosCosts[i];
+            tempBody.angularVelCost[i] = angularVelCosts[i];
+        }
+
+        _bodies.push_back(tempBody);
     }
 }
 
