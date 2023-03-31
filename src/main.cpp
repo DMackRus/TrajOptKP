@@ -108,7 +108,7 @@ int main(int argc, char **argv) {
 
     if(optimiser == "interpolated_iLQR"){
         yamlReader.readOptimisationSettingsFile(opt_iLQR);
-        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader.maxHorizon, activeVisualiser);
+        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader.maxHorizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
     }
     else if(optimiser == "stomp"){
@@ -153,7 +153,6 @@ int main(int argc, char **argv) {
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
     }
-
     return 0;
 }
 

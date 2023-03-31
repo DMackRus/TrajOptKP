@@ -4,12 +4,11 @@
 #include "optimiser.h"
 #include "differentiator.h"
 #include "visualizer.h"
-
-#define SET_INTERVAL        1
+#include "fileHandler.h"
 
 class interpolatediLQR: public optimiser{
 public:
-    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer);
+    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer, fileHandler _yamlReader);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
@@ -29,6 +28,8 @@ private:
     double minLambda = 0.00001;
     double lambdaFactor = 10;
     int maxHorizon = 0;
+    int intervalSize = 1;
+    bool setIntervalMethod = true;
 
     // -------------- Vectors of matrices for gradient information about the trajectory -------------
     // First order dynamics
@@ -55,6 +56,8 @@ private:
 
     differentiator *activeDifferentiator;
     visualizer *activeVisualizer;
+
+    vector<vector<MatrixXd>> U_alpha;
 
 
 
