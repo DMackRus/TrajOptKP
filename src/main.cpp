@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
         startStateVector = activeModelTranslator->returnRandomStartState();
-        //startStateVector << 3.14, 0, 0, 0;
+        startStateVector << 3.14, 0, 0, 0;
     }
     else if(task == reaching){
         // std::cout << "before creating reaching problem" << std::endl;
