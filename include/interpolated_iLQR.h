@@ -21,6 +21,7 @@ public:
     bool isMatrixPD(Ref<MatrixXd> matrix);
 
     double forwardsPass(double oldCost, bool &costReduced);
+    double forwardsPassParallel(double oldCost, bool &costReduced);
 
 private:
     double lambda = 0.1;
