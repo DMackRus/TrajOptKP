@@ -13,6 +13,7 @@
 
 #include "interpolated_iLQR.h"
 #include "stomp.h"
+#include "gradDescent.h"
 
 // ------------ MODES OF OEPRATION -------------------------------
 #define SHOW_INIT_CONTROLS          0
@@ -37,6 +38,7 @@ differentiator *activeDifferentiator;
 optimiser *activeOptimiser;
 interpolatediLQR *iLQROptimiser;
 stomp *stompOptimiser;
+gradDescent *gradDescentOptimiser;
 visualizer *activeVisualiser;
 fileHandler yamlReader;
 
@@ -113,12 +115,13 @@ int main(int argc, char **argv) {
     }
     else if(optimiser == "stomp"){
         yamlReader.readOptimisationSettingsFile(opt_stomp);
-        stompOptimiser = new stomp(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader.maxHorizon, 8);
+        stompOptimiser = new stomp(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader.maxHorizon, 50);
         activeOptimiser = stompOptimiser;
     }
     else if(optimiser == "gradDescent"){
-        cout << "not implemented grad descent yet " << endl;
-        return -1;
+        yamlReader.readOptimisationSettingsFile(opt_gradDescent);
+        gradDescentOptimiser = new gradDescent(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader.maxHorizon, yamlReader);
+        activeOptimiser = gradDescentOptimiser;
     }
     else{
         cout << "invalid optimiser selected, exiting" << endl;

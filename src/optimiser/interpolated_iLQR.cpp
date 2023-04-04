@@ -43,10 +43,6 @@ interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSim
 
     }
 
-    cout << "Alpha: " << U_alpha.size() << endl;
-    cout << "U_alpha[0]: " << U_alpha[0].size() << endl;
-    cout << "U_alpha[0][0]: " << U_alpha[0][0].rows() << " " << U_alpha[0][0].cols() << endl;
-
     // One more state than control
     X_old.push_back(MatrixXd(2*dof, 1));
     X_new.push_back(MatrixXd(2*dof, 1));
@@ -278,8 +274,6 @@ std::vector<int> interpolatediLQR::generateEvalWaypoints(std::vector<MatrixXd> t
     evaluationWaypoints.push_back(horizonLength);
 
     return evaluationWaypoints;
-
-    
 }
 
 void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
@@ -337,16 +331,7 @@ void interpolatediLQR::interpolateDerivatives(std::vector<int> calculatedIndices
         for(int i = 0; i < nextInterpolationSize; i++){
             f_x[startIndex + i] = A[t].replicate(1,1) + (addA * i);
             f_u[startIndex + i] = B[t].replicate(1,1) + (addB * i);
-
-
-            //cout << "index: " << startIndex + i << endl;
-            //cout << f_x[startIndex + i] << endl;
-
         }
-//            cout << "start A " << endl << startA << endl;
-//            cout << "endA A " << endl << endA << endl;
-//            cout << "diff A " << endl << diff << endl;
-//            cout << "add A " << endl << add << endl;
     }
 
     f_x[horizonLength - 1] = f_x[horizonLength - 2].replicate(1,1);
@@ -354,7 +339,6 @@ void interpolatediLQR::interpolateDerivatives(std::vector<int> calculatedIndices
 
     f_x[horizonLength] = f_x[horizonLength - 1].replicate(1,1);
     f_u[horizonLength] = f_u[horizonLength - 1].replicate(1,1);
-
 }
 
 

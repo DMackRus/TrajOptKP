@@ -173,80 +173,80 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(dataIndex);
 
     // Calculate dqaccdq
-    for(int i = 0; i < dof; i++){
-        // Perturb position vector positively
-        MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
-        perturbedPositions(i) += epsPositions;
-        activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
-
-        // Integrate the simulator
-        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
-        mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], mjSTAGE_NONE, 1);
-
-        // return the new velocity vector
-        accellInc = activeModelTranslator->returnAccelerationVector(dataIndex);
-
-        // reset the data state back to initial data state
-        activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
-
-        // perturb position vector negatively
-        perturbedPositions = unperturbedPositions.replicate(1, 1);
-        perturbedPositions(i) -= epsPositions;
-        activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
-
-        // Integrate the simulator
-        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
-        mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], mjSTAGE_NONE, 1);
-
-        // Return the new velocity vector
-        accellDec = activeModelTranslator->returnAccelerationVector(dataIndex);
-
-        // Calculate one column of the dqaccdq matrix
-        for(int j = 0; j < dof; j++){
-            dqaccdq(j, i) = (accellInc(j) - accellDec(j))/(2*epsPositions);
-        }
-
-        // Undo perturbation
-        activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
-    }
+//    for(int i = 0; i < dof; i++){
+//        // Perturb position vector positively
+//        MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
+//        perturbedPositions(i) += epsPositions;
+//        activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
+//
+//        // Integrate the simulator
+//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//        mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], mjSTAGE_NONE, 1);
+//
+//        // return the new velocity vector
+//        accellInc = activeModelTranslator->returnAccelerationVector(dataIndex);
+//
+//        // reset the data state back to initial data state
+//        activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
+//
+//        // perturb position vector negatively
+//        perturbedPositions = unperturbedPositions.replicate(1, 1);
+//        perturbedPositions(i) -= epsPositions;
+//        activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
+//
+//        // Integrate the simulator
+//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//        mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], mjSTAGE_NONE, 1);
+//
+//        // Return the new velocity vector
+//        accellDec = activeModelTranslator->returnAccelerationVector(dataIndex);
+//
+//        // Calculate one column of the dqaccdq matrix
+//        for(int j = 0; j < dof; j++){
+//            dqaccdq(j, i) = (accellInc(j) - accellDec(j))/(2*epsPositions);
+//        }
+//
+//        // Undo perturbation
+//        activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
+//    }
 
     // Calculate dqveldq
-//     for(int i = 0; i < dof; i++){
-//         // Perturb position vector positively
-//         MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
-//         perturbedPositions(i) += epsPositions;
-//         activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
-//
-//         // Integrate the simulator
-//         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
-//         activePhysicsSimulator->stepSimulator(1, dataIndex);
-//
-//         // return the new velocity vector
-//         velocityInc = activeModelTranslator->returnVelocityVector(dataIndex);
-//
-//         // reset the data state back to initial data state
-//         activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
-//
-//         // perturb position vector negatively
-//         perturbedPositions = unperturbedPositions.replicate(1, 1);
-//         perturbedPositions(i) -= epsPositions;
-//         activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
-//
-//         // Integrate the simulator
-//         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
-//         activePhysicsSimulator->stepSimulator(1, dataIndex);
-//
-//         // Return the new velocity vector
-//         velocityDec = activeModelTranslator->returnVelocityVector(dataIndex);
-//
-//         // Calculate one column of the dqaccdq matrix
-//         for(int j = 0; j < dof; j++){
-//             dqveldq(j, i) = (velocityInc(j) - velocityDec(j))/(2*epsPositions);
-//         }
-//
-//         // Undo perturbation
-//         activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
-//     }
+     for(int i = 0; i < dof; i++){
+         // Perturb position vector positively
+         MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
+         perturbedPositions(i) += epsPositions;
+         activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
+
+         // Integrate the simulator
+         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+         activePhysicsSimulator->stepSimulator(1, dataIndex);
+
+         // return the new velocity vector
+         velocityInc = activeModelTranslator->returnVelocityVector(dataIndex);
+
+         // reset the data state back to initial data state
+         activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
+
+         // perturb position vector negatively
+         perturbedPositions = unperturbedPositions.replicate(1, 1);
+         perturbedPositions(i) -= epsPositions;
+         activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
+
+         // Integrate the simulator
+         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+         activePhysicsSimulator->stepSimulator(1, dataIndex);
+
+         // Return the new velocity vector
+         velocityDec = activeModelTranslator->returnVelocityVector(dataIndex);
+
+         // Calculate one column of the dqaccdq matrix
+         for(int j = 0; j < dof; j++){
+             dqveldq(j, i) = (velocityInc(j) - velocityDec(j))/(2*epsPositions);
+         }
+
+         // Undo perturbation
+         activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
+     }
 
     // Delete temporary data object to prevent memory leak
     mj_deleteData(saveData);
@@ -278,8 +278,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
 
     A.block(dof, dof, dof, dof) = dqveldqvel;
 
-    //A.block(dof, 0, dof, dof) = dqveldq;
-    A.block(dof, 0, dof, dof) = (dqaccdq * MUJOCO_DT);
+    A.block(dof, 0, dof, dof) = dqveldq;
+    //A.block(dof, 0, dof, dof) = (dqaccdq * MUJOCO_DT);
 
 
     // ------------- B -------------------
