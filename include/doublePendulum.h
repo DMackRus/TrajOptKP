@@ -11,6 +11,7 @@ class doublePendulum : public modelTranslator {
 public:
     doublePendulum();
 
+    bool taskComplete(int dataIndex) override;
     MatrixXd returnRandomStartState() override;
     MatrixXd returnRandomGoalState() override;
 

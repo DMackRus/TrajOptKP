@@ -373,23 +373,25 @@ void MPCContinous(){
 }
 
 void MPCUntilComplete(){
-    int horizon = 50;
+    int horizon = 100;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
     int overallTaskCounter = 0;
     int reInitialiseCounter = 0;
-    const char* label = "MPC Continous";
+    const char* label = "MPC until complete";
 
     // Instantiate init controls
     std::vector<MatrixXd> initControls;
     initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, 0);
     cout << "init controls: " << initControls.size() << endl;
     std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, 2, horizon);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
+        activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
 
         optimisedControls.erase(optimisedControls.begin());
 
@@ -402,16 +404,47 @@ void MPCUntilComplete(){
         reInitialiseCounter++;
         visualCounter++;
 
-        if(reInitialiseCounter > 1){
-            initControls = activeModelTranslator->createInitOptimisationControls(horizon);
-            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, 0, horizon);
-            reInitialiseCounter = 0;
+        if(activeModelTranslator->taskComplete(MAIN_DATA_STATE)){
+            taskComplete = true;
+        }
+        else{
+            if(reInitialiseCounter > 20){
+                initControls = activeModelTranslator->createInitOptimisationControls(horizon);
+                optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, 0, horizon);
+                reInitialiseCounter = 0;
+            }
         }
 
         if(visualCounter > 5){
             activeVisualiser->render(label);
             visualCounter = 0;
         }
+
+    }
+    cout << "finished \n";
+
+    while(activeVisualiser->windowOpen()){
+        if(activeVisualiser->replayTriggered){
+            activeVisualiser->replayTriggered = false;
+
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+            int controlCounter = 0;
+            while(controlCounter < activeVisualiser->replayControls.size()){
+                MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
+
+                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+
+                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+                controlCounter++;
+
+                if(controlCounter % 5 == 0){
+                    activeVisualiser->render("replaying");
+                }
+            }
+
+        }
+        activeVisualiser->render("replay_mode");
     }
 
 }

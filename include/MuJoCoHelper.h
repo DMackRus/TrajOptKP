@@ -72,8 +72,6 @@ public:
     mjModel *model;                  // MuJoCo model
 
 private:
-   
-    
 
 };
 

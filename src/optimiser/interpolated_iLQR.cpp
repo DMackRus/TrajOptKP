@@ -599,7 +599,6 @@ double interpolatediLQR::forwardsPassParallel(double oldCost, bool &costReduced)
     }
 
     MatrixXd initState = activeModelTranslator->returnStateVector(1);
-    cout << "init state in recompute fd: " << initState << endl;
 
     #pragma omp parallel for
     for(int i = 0; i < 8; i++){
