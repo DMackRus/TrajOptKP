@@ -6,7 +6,7 @@ stomp::stomp(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimula
 
     noiseProfile.resize(num_ctrl, 1);
     for(int i = 0; i < num_ctrl; i++){
-        noiseProfile(i) = 0.2;
+        noiseProfile(i) = 0.1;
     }
 
     for(int i = 0; i < maxHorizon; i++){

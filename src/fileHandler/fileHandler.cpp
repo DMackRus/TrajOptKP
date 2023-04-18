@@ -183,7 +183,7 @@ void fileHandler::readOptimisationSettingsFile(int optimiser) {
         optimisationSettingsFilePath = "/optimiserConfigs/stomp.yaml";
     }
     else if(optimiser == opt_gradDescent){
-        std::cout << "grad descent not yet implemented \n";
+        optimisationSettingsFilePath = "/optimiserConfigs/gradDescent.yaml";
     }
     else{
         std::cout << "invalid optimiser selected!!!";
@@ -194,7 +194,7 @@ void fileHandler::readOptimisationSettingsFile(int optimiser) {
     maxIter = node["maxIter"].as<int>();
     maxHorizon = node["maxHorizon"].as<int>();
 
-    if(optimiser == opt_iLQR){
+    if(optimiser == opt_iLQR || optimiser == opt_gradDescent){
         setIntervalMethod = node["setInterval"].as<bool>();
         intervalSize = node["intervalSize"].as<int>();
     }

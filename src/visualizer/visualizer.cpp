@@ -39,7 +39,7 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
     if (act == GLFW_PRESS && key == GLFW_KEY_BACKSPACE)
     {
-
+        replayTriggered = true;
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_P){
 

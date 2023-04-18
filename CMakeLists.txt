@@ -257,7 +257,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
                 src/optimiser/interpolated_iLQR.cpp
                 src/optimiser/stomp.cpp
                 src/modelTranslator/twoDPushingClutter.cpp
-                src/fileHandler/fileHandler.cpp)
+                src/fileHandler/fileHandler.cpp
+                src/optimiser/gradDescent.cpp)
 
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}

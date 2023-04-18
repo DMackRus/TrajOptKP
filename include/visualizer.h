@@ -55,6 +55,9 @@ public:
     int currentShownDataIndex = 0;
     float testVel = 0;
 
+    std::vector<MatrixXd> replayControls;
+    bool replayTriggered = false;
+
 private:
     physicsSimulator *activePhysicsSimulator;
     modelTranslator *activeModelTranslator;

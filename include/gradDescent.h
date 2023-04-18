@@ -1,14 +1,19 @@
-#ifndef INTERPOLATED_ILQR_H
-#define INTERPOLATED_ILQR_H
+//
+// Created by davidrussell on 4/4/23.
+//
+
+#ifndef AUTOTOTASK_GRADDESCENT_H
+#define AUTOTOTASK_GRADDESCENT_H
 
 #include "optimiser.h"
-#include "differentiator.h"
+#include "modelTranslator.h"
+#include "physicsSimulator.h"
 #include "visualizer.h"
-#include "fileHandler.h"
+#include "differentiator.h"
 
-class interpolatediLQR: public optimiser{
+class gradDescent: public optimiser{
 public:
-    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer, fileHandler _yamlReader);
+    gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler _yamlReader);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
@@ -17,20 +22,16 @@ public:
     void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
     void interpolateDerivatives(std::vector<int> calculatedIndices);
 
-    bool backwardsPass_Quu_reg();
-    bool isMatrixPD(Ref<MatrixXd> matrix);
+    void backwardsPass();
 
     double forwardsPass(double oldCost, bool &costReduced);
     double forwardsPassParallel(double oldCost, bool &costReduced);
 
+
 private:
-    double lambda = 0.1;
-    double maxLambda = 10000;
-    double minLambda = 0.00001;
-    double lambdaFactor = 10;
-    int maxHorizon = 0;
     int intervalSize = 1;
     bool setIntervalMethod = true;
+    int maxHorizon;
 
     // -------------- Vectors of matrices for gradient information about the trajectory -------------
     // First order dynamics
@@ -39,15 +40,12 @@ private:
     vector<MatrixXd> A;
     vector<MatrixXd> B;
 
-    // First and second order cost derivatives
+    // First order cost derivatives
     vector<MatrixXd> l_x;
-    vector<MatrixXd> l_xx;
     vector<MatrixXd> l_u;
-    vector<MatrixXd> l_uu;
 
-    // Feedback gains matrices
-    vector<MatrixXd> k;
-    vector<MatrixXd> K;
+    // Optimal control gradient information
+    vector<MatrixXd> J_u;
 
     // Saved states and controls
     vector<MatrixXd> U_new;
@@ -60,9 +58,6 @@ private:
 
     vector<vector<MatrixXd>> U_alpha;
 
-
-
 };
 
-
-#endif
+#endif //AUTOTOTASK_GRADDESCENT_H

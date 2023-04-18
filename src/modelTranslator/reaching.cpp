@@ -17,7 +17,7 @@ bool pandaReaching::taskComplete(int dataIndex){
         cumError += diff;
     }
 
-    if(cumError < 0.005){
+    if(cumError < 0.01){
         return true;
     }
     else{
@@ -58,13 +58,23 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
     if(myStateVector.robots[0].torqueControlled){
 
         MatrixXd control(num_ctrl, 1);
+        double gains[7] = {10, 10, 10, 10, 5, 5, 5};
+        MatrixXd Xt;
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
             activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+
+            Xt = returnStateVector(MAIN_DATA_STATE);
+
             for(int i = 0; i < num_ctrl; i++){
                 control(i) = gravCompensation[i];
+                double diff = X_desired(i) - Xt(i);
+                control(i) += diff * gains[i];
             }
+
+            setControlVector(control, MAIN_DATA_STATE);
+            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
             initControls.push_back(control);
         }
     }

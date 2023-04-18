@@ -10,6 +10,21 @@ doublePendulum::doublePendulum(): modelTranslator(){
     analyticalCostDerivatives = true;
 }
 
+bool doublePendulum::taskComplete(int dataIndex){
+    double diff = 0.0f;
+
+    MatrixXd Xt = returnStateVector(dataIndex);
+
+    for(int i = 0; i < dof; i++){
+        diff += abs(X_desired(i) - Xt(i));
+    }
+
+    if(diff < 0.01){
+        return true;
+    }
+    return false;
+}
+
 MatrixXd doublePendulum::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
