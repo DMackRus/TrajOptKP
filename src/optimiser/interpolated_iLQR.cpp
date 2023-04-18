@@ -469,11 +469,7 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             //_U = activeModelTranslator->returnControlVector(t);
             _U = U_old[t].replicate(1, 1);
 
-            cout << "x_old: " << _X << endl;
-
-
             X_new = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-            cout << "X_new " << X_new << endl;
             // Calculate difference from new state to old state
             stateFeedback = X_new - _X;
 

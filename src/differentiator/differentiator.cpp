@@ -279,7 +279,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     A.block(dof, dof, dof, dof) = dqveldqvel;
 
     A.block(dof, 0, dof, dof) = dqveldq;
-    //A.block(dof, 0, dof, dof) = (dqaccdq * MUJOCO_DT);
+//    A.block(dof, 0, dof, dof) = (dqaccdq * MUJOCO_DT);
 
 
     // ------------- B -------------------

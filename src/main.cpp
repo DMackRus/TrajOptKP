@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
     }
     else if(optimiser == "gradDescent"){
         yamlReader.readOptimisationSettingsFile(opt_gradDescent);
-        gradDescentOptimiser = new gradDescent(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader.maxHorizon, yamlReader);
+        gradDescentOptimiser = new gradDescent(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, activeVisualiser, yamlReader.maxHorizon, yamlReader);
         activeOptimiser = gradDescentOptimiser;
     }
     else{
@@ -252,7 +252,7 @@ void MPCContinous(){
     initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, 2, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader.maxIter, yamlReader.minIter, horizon);
     MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
     cout << "init state in MPC continous: " << initState << endl;
 
@@ -272,7 +272,7 @@ void MPCContinous(){
 
         if(reInitialiseCounter > 50){
             //initControls = activeModelTranslator->createInitControls(horizon);
-            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, 8, 0, horizon);
+            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader.maxIter, yamlReader.minIter, horizon);
             //initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
             //cout << "init state in MPC continous: " << initState << endl;
             reInitialiseCounter = 0;
@@ -390,7 +390,7 @@ void MPCUntilComplete(){
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, 0);
     cout << "init controls: " << initControls.size() << endl;
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, 1000, 2, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader.maxIter, yamlReader.minIter, horizon);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
@@ -411,9 +411,9 @@ void MPCUntilComplete(){
             taskComplete = true;
         }
         else{
-            if(reInitialiseCounter > 20){
-                initControls = activeModelTranslator->createInitOptimisationControls(horizon);
-                optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initControls, 8, 0, horizon);
+            if(reInitialiseCounter > 2){
+                //initControls = activeModelTranslator->createInitOptimisationControls(horizon);
+                optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader.maxIter, yamlReader.minIter, horizon);
                 reInitialiseCounter = 0;
             }
         }

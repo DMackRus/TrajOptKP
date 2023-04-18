@@ -4,8 +4,9 @@
 
 #include "gradDescent.h"
 
-gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, fileHandler _yamlReader) : optimiser(_modelTranslator, _physicsSimulator) {
+gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler _yamlReader) : optimiser(_modelTranslator, _physicsSimulator) {
     activeDifferentiator = _differentiator;
+    activeVisualizer = _visualizer;
 
     maxHorizon = _maxHorizon;
 
@@ -154,7 +155,7 @@ std::vector<MatrixXd> gradDescent::optimise(int initialDataIndex, std::vector<Ma
         // STEP 3 - rollout new trajectory with line searching parameter for optimal sequence of controls
         bool costReduced;
         auto fp_start = high_resolution_clock::now();
-        //newCost = forwardsPass(oldCost, costReduced);
+//        newCost = forwardsPass(oldCost, costReduced);
         newCost = forwardsPassParallel(oldCost, costReduced);
         auto fp_stop = high_resolution_clock::now();
         auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
@@ -280,12 +281,26 @@ void gradDescent::interpolateDerivatives(std::vector<int> calculatedIndices){
 }
 
 void gradDescent::backwardsPass(){
-    MatrixXd V_x(2*dof, 2*dof);
+    MatrixXd V_x(2*dof, 1);
     V_x = l_x[horizonLength];
+
+    MatrixXd Q_x(2*dof, 1);
+    MatrixXd Q_u(num_ctrl, 1);
 
     for(int t = horizonLength - 1; t > -1; t--){
 
-        J_u[t] = l_u[t] + (f_u[t].transpose() * V_x);
+//        // Q_x = l_x + A*V_x
+//        Q_x = l_x[t] + (f_x[t].transpose() * V_x);
+//
+//        Q_u = l_u[t] + (f_u[t].transpose() * V_x);
+//
+//        // k = -Q_u;
+//        J_u[t] = -Q_u;
+//
+//        // Update cost to go
+//        V_x = Q_x.replicate(1,1);
+
+        J_u[t] = l_u[t] + (f_u[t].transpose() * V_x.replicate(1, 1));
 
         V_x = l_x[t] + (f_x[t].transpose() * V_x);
 
@@ -293,7 +308,119 @@ void gradDescent::backwardsPass(){
 }
 
 double gradDescent::forwardsPass(double oldCost, bool &costReduced){
+    float alpha = 1.0;
+    double newCost = 0.0;
+    bool costReduction = false;
+    int alphaCount = 0;
+    float alphaReduc = 0.1;
+    int alphaMax = (1 / alphaReduc) - 1;
 
+    MatrixXd Xt(2 * dof, 1);
+    MatrixXd X_last(2 * dof, 1);
+    MatrixXd Ut(num_ctrl, 1);
+    MatrixXd U_last(num_ctrl, 1);
+
+    while(!costReduction){
+
+        // Copy intial data state into main data state for rollout
+        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+
+        newCost = 0;
+        MatrixXd stateFeedback(2*dof, 1);
+        MatrixXd _X(2*dof, 1);
+        MatrixXd X_new(2*dof, 1);
+        MatrixXd _U(num_ctrl, 1);
+
+//        #pragma omp parallel for
+        for(int t = 0; t < horizonLength; t++) {
+            // Step 1 - get old state and old control that were linearised around
+            _X = activeModelTranslator->returnStateVector(t);
+            //_U = activeModelTranslator->returnControlVector(t);
+            _U = U_old[t].replicate(1, 1);
+
+            X_new = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+
+            // Calculate new optimal controls
+            U_new[t] = _U + (alpha * J_u[t]);
+
+            // Clamp torque within limits
+            if(activeModelTranslator->myStateVector.robots[0].torqueControlled){
+                for(int i = 0; i < num_ctrl; i++){
+                    if (U_new[t](i) > activeModelTranslator->myStateVector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->myStateVector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) < -activeModelTranslator->myStateVector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->myStateVector.robots[0].torqueLimits[i];
+                }
+
+            }
+
+//            cout << "old control: " << endl << U_old[t] << endl;
+//            cout << "state feedback" << endl << stateFeedback << endl;
+//            cout << "new control: " << endl << U_new[t] << endl;
+
+            activeModelTranslator->setControlVector(U_new[t], MAIN_DATA_STATE);
+            Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+
+            Ut = U_new[t].replicate(1, 1);
+
+            double newStateCost;
+            // Terminal state
+            if(t == horizonLength - 1){
+                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, true);
+            }
+            else{
+                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+            }
+
+            newCost += (newStateCost * MUJOCO_DT);
+
+            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+             if(t % 20 == 0){
+                 const char* fplabel = "fp";
+                 activeVisualizer->render(fplabel);
+             }
+
+            X_last = Xt.replicate(1, 1);
+            U_last = Ut.replicate(1, 1);
+
+        }
+
+        cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
+
+        if(newCost < oldCost){
+            costReduction = true;
+            costReduced = true;
+        }
+        else{
+            alpha = alpha - 0.1;
+            alphaCount++;
+            if(alphaCount >= alphaMax){
+                break;
+            }
+        }
+    }
+
+    // If the cost was reduced
+    if(newCost < oldCost){
+        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+
+        for(int i = 0; i < horizonLength; i++){
+
+            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
+            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+            // Log the old state
+            X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+
+            activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
+
+            U_old[i] = U_new[i].replicate(1, 1);
+
+        }
+
+        return newCost;
+    }
+
+    return oldCost;
 }
 
 double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
@@ -304,7 +431,9 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
     MatrixXd X_last(2 * dof, 1);
     MatrixXd Ut(num_ctrl, 1);
     MatrixXd U_last(num_ctrl, 1);
-    double alphas[8] = {1.0, 0.875, 0.75, 0.675, 0.5, 0.375, 0.25, 0.125};
+//    double alphas[8] = {1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 32e-6, 64e-6, 128e-6};
+//    double alphas[8] = {1e-6, 5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3};
+    double alphas[8] = {1e-8, 5e-8, 1e-7, 5e-7, 1e-6, 5e-6, 1e-5, 5e-4};
     double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     for(int i = 0; i < 8; i++){
@@ -313,7 +442,7 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
 
     MatrixXd initState = activeModelTranslator->returnStateVector(1);
 
-    #pragma omp parallel for
+//    #pragma omp parallel for
     for(int i = 0; i < 8; i++){
         MatrixXd stateFeedback(2*dof, 1);
         MatrixXd _X(2*dof, 1);
@@ -322,8 +451,6 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
 
         for(int t = 0; t < horizonLength; t++) {
             _U = U_old[t].replicate(1, 1);
-
-            X_new = X_old[t].replicate(1,1);
 
             // Calculate new optimal controls
             U_alpha[t][i] = _U - (alphas[i] * J_u[t]);
@@ -337,18 +464,20 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
             }
 
             activeModelTranslator->setControlVector(U_alpha[t][i], i+1);
-//            Xt = activeModelTranslator->returnStateVector(i+1);
+            Xt = activeModelTranslator->returnStateVector(i+1);
 //            //cout << "Xt: " << Xt << endl;
 //
             Ut = U_alpha[t][i].replicate(1, 1);
+//            cout << "old U: " << _U << endl;
+//            cout << "New U: " << Ut << endl;
 //
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(X_new, Ut, X_last, U_last, true);
+                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(X_new, Ut, X_last, U_last, false);
+                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
             }
 
             newCosts[i] += (newStateCost * MUJOCO_DT);
