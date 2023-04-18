@@ -589,7 +589,7 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
     double alphas[8] = {0.125, 0.25, 0.375, 0.5, 0.675, 0.75, 0.875, 1.0};
     double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for(int i = 0; i < 8; i++){
 
         activePhysicsSimulator->copySystemState(i+1, 0);
