@@ -20,12 +20,11 @@ fileHandler::fileHandler(){
 
 }
 
-void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies, std::string &modelFilePath){
+void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies, std::string &modelFilePath, std::string &modelName){
     YAML::Node node = YAML::LoadFile(projectParentPath + yamlFilePath);
 
-    int counter = 0;
-
     modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
+    modelName = node["modelName"].as<std::string>();
 
     // Loop through robots
     for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){
@@ -198,4 +197,67 @@ void fileHandler::readOptimisationSettingsFile(int optimiser) {
         setIntervalMethod = node["setInterval"].as<bool>();
         intervalSize = node["intervalSize"].as<int>();
     }
+}
+
+void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber){
+    int size = A_matrices.size();
+    cout << "trajectory size: " << size << endl;
+    std::string rootPath = projectParentPath + "/savedTrajecInfo" + filePrefix + "/" + std::to_string(trajecNumber);
+    mkdir(rootPath.c_str(), 0777);
+    std::string filename = rootPath + "/A_matrices.csv";
+    fileOutput.open(filename);
+    int dof = A_matrices[0].rows() / 2;
+    int num_ctrl = B_matrices[0].cols();
+
+    // trajectory length
+    for(int i = 0; i < size; i++){
+        // Row
+        for(int j = 0; j < (dof); j++){
+            // Column
+            for(int k = 0; k < (2 * dof); k++){
+                fileOutput << A_matrices[i](j + dof, k) << ",";
+            }
+
+        }
+        fileOutput << endl;
+    }
+    fileOutput.close();
+
+    filename = rootPath + "/B_matrices.csv";
+    fileOutput.open(filename);
+
+    for(int i = 0; i < size; i++){
+        for(int j = 0; j < (dof); j++){
+            for(int k = 0; k < num_ctrl; k++){
+                fileOutput << B_matrices[i](j + dof, k) << ",";
+            }
+        }
+        fileOutput << endl;
+    }
+
+    fileOutput.close();
+
+    filename = rootPath + "/states.csv";
+    fileOutput.open(filename);
+    for(int i = 0; i < size; i++){
+        for(int j = 0; j < (dof * 2); j++)
+        {
+            fileOutput << states[i](j) << ",";
+        }
+        fileOutput << endl;
+    }
+
+    fileOutput.close();
+
+    filename = rootPath + "/controls.csv";
+    fileOutput.open(filename);
+
+    for(int i = 0; i < size; i++){
+        for(int j = 0; j < num_ctrl; j++) {
+            fileOutput << controls[i](j) << ",";
+        }
+        fileOutput << endl;
+    }
+
+    fileOutput.close();
 }

@@ -13,7 +13,7 @@
 
 class gradDescent: public optimiser{
 public:
-    gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler _yamlReader);
+    gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler *_yamlReader);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;

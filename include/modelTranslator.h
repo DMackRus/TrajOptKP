@@ -48,6 +48,7 @@ public:
     physicsSimulator *activePhysicsSimulator;
     MuJoCoHelper *myHelper;
     std::string modelFilePath;
+    std::string modelName;
 
 protected:
     MatrixXd Q;

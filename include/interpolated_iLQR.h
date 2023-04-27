@@ -8,7 +8,7 @@
 
 class interpolatediLQR: public optimiser{
 public:
-    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer, fileHandler _yamlReader);
+    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer, fileHandler *_yamlReader);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
@@ -57,6 +57,7 @@ private:
 
     differentiator *activeDifferentiator;
     visualizer *activeVisualizer;
+    fileHandler *activeYamlReader;
 
     vector<vector<MatrixXd>> U_alpha;
 

@@ -40,7 +40,7 @@ interpolatediLQR *iLQROptimiser;
 stomp *stompOptimiser;
 gradDescent *gradDescentOptimiser;
 visualizer *activeVisualiser;
-fileHandler yamlReader;
+fileHandler *yamlReader;
 
 void showInitControls();
 void iLQROnce();
@@ -54,12 +54,12 @@ int main(int argc, char **argv) {
     int mode;
     int task;
 
-    yamlReader.readSettingsFile("/generalConfig.yaml");
-    optimiser = yamlReader.optimiser;
-    mode = yamlReader.project_display_mode;
-    task = yamlReader.taskNumber;
+    yamlReader = new fileHandler();
+    yamlReader->readSettingsFile("/generalConfig.yaml");
+    optimiser = yamlReader->optimiser;
+    mode = yamlReader->project_display_mode;
+    task = yamlReader->taskNumber;
 
-    scenes myScene = cylinderPushingClutter;
     MatrixXd startStateVector(1, 1);
 
     if(task == pendulum){
@@ -109,18 +109,18 @@ int main(int argc, char **argv) {
     activeVisualiser = new visualizer(activeModelTranslator);
 
     if(optimiser == "interpolated_iLQR"){
-        yamlReader.readOptimisationSettingsFile(opt_iLQR);
-        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader.maxHorizon, activeVisualiser, yamlReader);
+        yamlReader->readOptimisationSettingsFile(opt_iLQR);
+        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
     }
     else if(optimiser == "stomp"){
-        yamlReader.readOptimisationSettingsFile(opt_stomp);
-        stompOptimiser = new stomp(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader.maxHorizon, 50);
+        yamlReader->readOptimisationSettingsFile(opt_stomp);
+        stompOptimiser = new stomp(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader->maxHorizon, 50);
         activeOptimiser = stompOptimiser;
     }
     else if(optimiser == "gradDescent"){
-        yamlReader.readOptimisationSettingsFile(opt_gradDescent);
-        gradDescentOptimiser = new gradDescent(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, activeVisualiser, yamlReader.maxHorizon, yamlReader);
+        yamlReader->readOptimisationSettingsFile(opt_gradDescent);
+        gradDescentOptimiser = new gradDescent(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, activeVisualiser, yamlReader->maxHorizon, yamlReader);
         activeOptimiser = gradDescentOptimiser;
     }
     else{
@@ -198,7 +198,7 @@ void iLQROnce(){
     std::vector<MatrixXd> initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader.maxIter, yamlReader.minIter, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader->maxIter, yamlReader->minIter, horizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";
@@ -252,7 +252,7 @@ void MPCContinous(){
     initControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader.maxIter, yamlReader.minIter, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader->maxIter, yamlReader->minIter, horizon);
     MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
     cout << "init state in MPC continous: " << initState << endl;
 
@@ -272,7 +272,7 @@ void MPCContinous(){
 
         if(reInitialiseCounter > 50){
             //initControls = activeModelTranslator->createInitControls(horizon);
-            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader.maxIter, yamlReader.minIter, horizon);
+            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader->maxIter, yamlReader->minIter, horizon);
             //initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
             //cout << "init state in MPC continous: " << initState << endl;
             reInitialiseCounter = 0;
@@ -390,7 +390,7 @@ void MPCUntilComplete(){
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, 0);
     cout << "init controls: " << initControls.size() << endl;
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader.maxIter, yamlReader.minIter, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader->maxIter, yamlReader->minIter, horizon);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
@@ -413,7 +413,7 @@ void MPCUntilComplete(){
         else{
             if(reInitialiseCounter > 2){
                 //initControls = activeModelTranslator->createInitOptimisationControls(horizon);
-                optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader.maxIter, yamlReader.minIter, horizon);
+                optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader->maxIter, yamlReader->minIter, horizon);
                 reInitialiseCounter = 0;
             }
         }

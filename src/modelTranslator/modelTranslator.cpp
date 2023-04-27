@@ -15,7 +15,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     vector<bodyStateVec> bodies;
 
     fileHandler yamlReader;
-    yamlReader.readModelConfigFile(yamlFilePath, robots, bodies, modelFilePath);
+    yamlReader.readModelConfigFile(yamlFilePath, robots, bodies, modelFilePath, modelName);
     const char* _modelPath = modelFilePath.c_str();
 
     // initialise physics simulator

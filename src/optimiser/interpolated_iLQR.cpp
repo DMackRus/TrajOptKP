@@ -1,10 +1,11 @@
 #include "interpolated_iLQR.h"
 
-interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer, fileHandler _yamlReader) : optimiser(_modelTranslator, _physicsSimulator){
+interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer, fileHandler *_yamlReader) : optimiser(_modelTranslator, _physicsSimulator){
 
     activeDifferentiator = _differentiator;
     maxHorizon = _maxHorizon;
     activeVisualizer = _visualizer;
+    activeYamlReader = _yamlReader;
 
     // initialise all vectors of matrices
     for(int i = 0; i < maxHorizon; i++){
@@ -47,8 +48,8 @@ interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSim
     X_old.push_back(MatrixXd(2*dof, 1));
     X_new.push_back(MatrixXd(2*dof, 1));
 
-    intervalSize = _yamlReader.intervalSize;
-    setIntervalMethod = _yamlReader.setIntervalMethod;
+    intervalSize = _yamlReader->intervalSize;
+    setIntervalMethod = _yamlReader->setIntervalMethod;
 }
 
 double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
@@ -135,14 +136,15 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     double oldCost = 0.0f;
     double newCost = 0.0f;
 
+
     oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
+    activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 0);
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     //MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
     //cout << "init state at at start of optimisation: " << initState << endl;
 
     // Optimise for a set number of iterations
     for(int i = 0; i < maxIter; i++){
-
 
         auto start = high_resolution_clock::now();
         // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory

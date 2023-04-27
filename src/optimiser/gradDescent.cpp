@@ -4,7 +4,7 @@
 
 #include "gradDescent.h"
 
-gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler _yamlReader) : optimiser(_modelTranslator, _physicsSimulator) {
+gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler *_yamlReader) : optimiser(_modelTranslator, _physicsSimulator) {
     activeDifferentiator = _differentiator;
     activeVisualizer = _visualizer;
 
@@ -47,8 +47,8 @@ gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_p
     X_old.push_back(MatrixXd(2*dof, 1));
     X_new.push_back(MatrixXd(2*dof, 1));
 
-    setIntervalMethod = _yamlReader.setIntervalMethod;
-    intervalSize = _yamlReader.intervalSize;
+    setIntervalMethod = _yamlReader->setIntervalMethod;
+    intervalSize = _yamlReader->intervalSize;
 }
 
 double gradDescent::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
