@@ -138,7 +138,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
 
     oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
-    activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 0);
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     //MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
     //cout << "init state at at start of optimisation: " << initState << endl;
@@ -245,6 +244,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_old[i]);
     }
+
+    activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 0);
 
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
