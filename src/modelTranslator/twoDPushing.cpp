@@ -342,3 +342,22 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
     return initControls;
 }
+
+bool twoDPushing::taskComplete(int dataIndex){
+    bool taskComplete = false;
+
+    MatrixXd currentState = returnStateVector(dataIndex);
+
+    float x_diff = currentState(7) - X_desired(7);
+    float y_diff = currentState(8) - X_desired(8);
+
+    float distance = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
+    std::cout << "distance is: " << distance << std::endl;
+
+    if(distance < 0.05){
+        taskComplete = true;
+    }
+
+
+    return taskComplete;
+}

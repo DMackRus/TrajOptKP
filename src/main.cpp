@@ -160,12 +160,23 @@ int main(int argc, char **argv) {
 }
 
 void showInitControls(){
-    int horizon = 2000;
+    int setupHorizon = 1000;
+    int optHorizon = 1000;
     int controlCounter = 0;
     int visualCounter = 0;
 
-    std::vector<MatrixXd> initControls = activeModelTranslator->createInitOptimisationControls(horizon);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    std::vector<MatrixXd> initControls;
+
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+
+    //Stitch setup and optimisation controls together
+    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
+    initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
+
 
     while(activeVisualiser->windowOpen()){
 
@@ -176,9 +187,9 @@ void showInitControls(){
         controlCounter++;
         visualCounter++;
 
-        if(controlCounter >= horizon){
+        if(controlCounter >= initControls.size()){
             controlCounter = 0;
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
         }
 
         if(visualCounter > 5){
@@ -391,51 +402,96 @@ void MPCContinous(){
 }
 
 void MPCUntilComplete(){
-    int horizon = 100;
+    int setupHorizon = 1000;
+    int optHorizon = 100;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
     int overallTaskCounter = 0;
     int reInitialiseCounter = 0;
     const char* label = "MPC until complete";
+    bool applyingSetupControls = false;
+
+    std::vector<MatrixXd> setupControls;
+    std::vector<MatrixXd> optimisedControls;
 
     // Instantiate init controls
-    std::vector<MatrixXd> initControls;
-    initControls = activeModelTranslator->createInitOptimisationControls(horizon);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, 0);
-    cout << "init controls: " << initControls.size() << endl;
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader->maxIter, yamlReader->minIter, horizon);
+    std::vector<MatrixXd> initOptimisationControls;
+    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+    setupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    if(setupControls.size() > 0){
+        applyingSetupControls = true;
+    }
+    else{
+        activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+        initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+
+        cout << "init controls: " << initOptimisationControls.size() << endl;
+        optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    }
 
     while(!taskComplete){
-        MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
-        activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
+        if(applyingSetupControls){
+            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+            std::vector<MatrixXd> setupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-        optimisedControls.erase(optimisedControls.begin());
+            while(setupControls.size() > 0){
+                MatrixXd nextControl = setupControls[0].replicate(1, 1);
+                activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
+                setupControls.erase(setupControls.begin());
+                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+                visualCounter++;
+                if(visualCounter >= 20){
+                    activeVisualiser->render("MPC Until Complete");
+                    visualCounter = 0;
+                }
+            }
+            applyingSetupControls = false;
+            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+            initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-        optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
+            cout << "init controls: " << initOptimisationControls.size() << endl;
+            optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-        activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
-
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-
-        reInitialiseCounter++;
-        visualCounter++;
-
-        if(activeModelTranslator->taskComplete(MAIN_DATA_STATE)){
-            taskComplete = true;
         }
         else{
-            if(reInitialiseCounter > 2){
-                //initControls = activeModelTranslator->createInitOptimisationControls(horizon);
-                optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader->maxIter, yamlReader->minIter, horizon);
-                reInitialiseCounter = 0;
-            }
-        }
+            MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
+            activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
 
-        if(visualCounter > 5){
-            activeVisualiser->render(label);
-            visualCounter = 0;
+            optimisedControls.erase(optimisedControls.begin());
+
+            optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
+
+            activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+
+            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+            reInitialiseCounter++;
+            visualCounter++;
+
+            if(activeModelTranslator->taskComplete(MAIN_DATA_STATE)){
+                taskComplete = true;
+            }
+            else{
+                if(reInitialiseCounter > 2){
+                    //initControls = activeModelTranslator->createInitOptimisationControls(horizon);
+                    optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+                    reInitialiseCounter = 0;
+                }
+            }
+
+            if(visualCounter > 5){
+                activeVisualiser->render(label);
+                visualCounter = 0;
+            }
         }
 
     }
