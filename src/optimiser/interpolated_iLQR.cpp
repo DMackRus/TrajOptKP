@@ -512,10 +512,10 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-//             if(t % 20 == 0){
-//                 const char* fplabel = "fp";
-//                 activeVisualizer->render(fplabel);
-//             }
+             if(t % 20 == 0){
+                 const char* fplabel = "fp";
+                 activeVisualizer->render(fplabel);
+             }
 
             X_last = Xt.replicate(1, 1);
             U_last = Ut.replicate(1, 1);

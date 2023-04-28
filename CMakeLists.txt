@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(autoTOTask)
+project(automaticTOTaskSpecification)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
@@ -240,7 +240,8 @@ else()
     message(STATUS "could not find yaml library")
 endif (TARGET yaml-cpp::yaml-cpp)
 
-set(PROJECT_INCLUDE_DIR ${PARENT_DIR}/autoTOTask/include)
+set(PROJECT_INCLUDE_DIR ${PARENT_DIR}/${PROJECT_NAME}/include)
+message(STATUS "project include directory: " ${PROJECT_INCLUDE_DIR})
 
 
 add_executable(${PROJECT_NAME} src/main.cpp

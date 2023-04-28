@@ -189,26 +189,41 @@ void showInitControls(){
 }
 
 void iLQROnce(){
-    int horizon = 3000;
+    int setupHorizon = 1000;
+    int optHorizon = 1000;
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
     char* label = "Final controls";
 
-    std::vector<MatrixXd> initControls = activeModelTranslator->createInitOptimisationControls(horizon);
+    std::vector<MatrixXd> initControls;
+    std::vector<MatrixXd> finalControls;
+
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader->maxIter, yamlReader->minIter, horizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";
 
-    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    // Stitch together setup controls with init control + optimised controls
+    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
+    initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
+    finalControls.insert(finalControls.end(), initSetupControls.begin(), initSetupControls.end());
+    finalControls.insert(finalControls.end(), optimisedControls.begin(), optimisedControls.end());
+
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
 
     while(activeVisualiser->windowOpen()){
 
         if(showFinalControls){
-            activeModelTranslator->setControlVector(optimisedControls[controlCounter], MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(finalControls[controlCounter], MAIN_DATA_STATE);
         }
         else{
             activeModelTranslator->setControlVector(initControls[controlCounter], MAIN_DATA_STATE);
@@ -219,9 +234,9 @@ void iLQROnce(){
         controlCounter++;
         visualCounter++;
 
-        if(controlCounter >= horizon){
+        if(controlCounter >= finalControls.size()){
             controlCounter = 0;
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
             showFinalControls = !showFinalControls;
             if(showFinalControls){
                 label = "Final controls";

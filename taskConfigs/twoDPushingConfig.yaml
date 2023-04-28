@@ -15,9 +15,9 @@ bodies:
   blueTin:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
-    startLinearPos: [ 0.5, 0.2, 0.0 ]
+    startLinearPos: [ 0.5, 0.1, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.6, 0.3, 0.0 ]
+    goalLinearPos: [ 0.7, 0.0, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
     linearPosCost: [3, 3, 0]
     linearVelCost: [0.1, 0.1, 0] 

@@ -28,16 +28,8 @@ MatrixXd twoDPushing::returnRandomGoalState(){
     return randomGoalState;
 }
 
-std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLength){
-    std::vector<MatrixXd> initControls;
-
-    // Set the goal position so that we can see where we are pushing to
-    std::string goalMarkerName = "display_goal";
-    pose_6 displayBodyPose;
-    displayBodyPose.position[0] = X_desired(7);
-    displayBodyPose.position[1] = X_desired(8);
-    displayBodyPose.position[2] = 0.0f;
-    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, 0);
+std::vector<MatrixXd> twoDPushing::createInitSetupControls(int horizonLength){
+    std::vector<MatrixXd> initSetupControls;
 
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -47,7 +39,92 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
     std::vector<m_point> allWayPoints;
     goalPos(0) = X_desired(7);
     goalPos(1) = X_desired(8);
-    initControls_mainWayPoints(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
+    initControls_mainWayPoints_setup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
+    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
+    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
+
+    // Step 2 - create all subwaypoints over the entire trajectory
+    allWayPoints = initControls_createAllWayPoints(mainWayPoints, mainWayPointsTimings);
+
+    // Step 3 - follow the points via the jacobian
+    initSetupControls = generate_initControls_fromWayPoints(allWayPoints);
+
+    return initSetupControls;
+}
+
+void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
+    const std::string goalObject = "blueTin";
+    const std::string EE_name = "franka_gripper";
+
+    pose_6 EE_startPose;
+    pose_6 goalobj_startPose;
+    activePhysicsSimulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
+    activePhysicsSimulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+
+    m_point mainWayPoint;
+    // First waypoint - where the end-effector is currently
+    mainWayPoint << EE_startPose.position(0), EE_startPose.position(1), EE_startPose.position(2);
+    mainWayPoints.push_back(mainWayPoint);
+    wayPointsTiming.push_back(0);
+
+    // Calculate the angle of approach - from goal position to object start position
+    float angle_EE_push;
+    float x_diff = X_desired(7) - goalobj_startPose.position(0);
+    float y_diff = X_desired(8) - goalobj_startPose.position(1);
+    angle_EE_push = atan2(y_diff, x_diff);
+
+    // TODO hard coded - get it programmatically? - also made it slightly bigger so trajectory has room to improve
+//    float cylinder_radius = 0.08;
+    float cylinder_radius = 0.1;
+    float x_cylinder0ffset = cylinder_radius * cos(angle_EE_push);
+    float y_cylinder0ffset = cylinder_radius * sin(angle_EE_push);
+
+    float endPointX;
+    float endPointY;
+    float intermediatePointY = goalobj_startPose.position(1);
+    float intermediatePointX = goalobj_startPose.position(0);
+    if(desiredObjectEnd(1) - goalobj_startPose.position(1) > 0){
+        intermediatePointY = intermediatePointY + y_cylinder0ffset;
+    }
+    else{
+        intermediatePointY = intermediatePointY - y_cylinder0ffset;
+    }
+
+    std::string goalMarkerName = "display_intermediate";
+    pose_6 displayBodyPose;
+    displayBodyPose.position[0] = intermediatePointX;
+    displayBodyPose.position[1] = intermediatePointY;
+    displayBodyPose.position[2] = 0.0f;
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+
+    mainWayPoint(0) = intermediatePointX;
+    mainWayPoint(1) = intermediatePointY;
+    mainWayPoint(2) = 0.27f;
+    mainWayPoints.push_back(mainWayPoint);
+    wayPointsTiming.push_back(horizon - 1);
+
+}
+
+std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLength){
+    std::vector<MatrixXd> initControls;
+
+    // Set the goal position so that we can see where we are pushing to
+    std::string goalMarkerName = "display_goal";
+    pose_6 displayBodyPose;
+    displayBodyPose.position[0] = X_desired(7);
+    displayBodyPose.position[1] = X_desired(8);
+    displayBodyPose.position[2] = 0.0f;
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+
+    // Pushing create init controls borken into three main steps
+    // Step 1 - create main waypoints we want to end-effector to pass through
+    m_point goalPos;
+    std::vector<m_point> mainWayPoints;
+    std::vector<int> mainWayPointsTimings;
+    std::vector<m_point> allWayPoints;
+    goalPos(0) = X_desired(7);
+    goalPos(1) = X_desired(8);
+    initControls_mainWayPoints_optimisation(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
     cout << "mainwaypoint 0: " << mainWayPoints[0] << endl;
     cout << "mainWayPoint " << mainWayPoints[1] << endl;
 
@@ -57,27 +134,11 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
     // Step 3 - follow the points via the jacobian
     initControls = generate_initControls_fromWayPoints(allWayPoints);
 
-    // if(myStateVector.robots[0].torqueControlled){
-    //     MatrixXd control(num_ctrl, 1);
-    //     vector<double> gravCompensation;
-    //     for(int i = 0; i < horizonLength; i++){
-
-    //         activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
-            
-    //         for(int i = 0; i < num_ctrl; i++){
-    //             control(i) = gravCompensation[i];
-    //         }
-    //         setControlVector(control, MAIN_DATA_STATE);
-    //         activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-    //         initControls.push_back(control);
-    //     }
-    // }
-
     return initControls;
 
 }
 
-void twoDPushing::initControls_mainWayPoints(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
+void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
     const std::string goalObject = "blueTin";
     const std::string EE_name = "franka_gripper";
 
