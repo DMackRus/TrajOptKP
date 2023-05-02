@@ -170,7 +170,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         // cout << "l_xx[1000] \n" << l_xx[1000] << endl;
         // cout << "l_u[1000] \n" << l_u[1000] << endl;
         // cout << "l_uu[1000] \n" << l_uu[1000] << endl;
-        
 
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
         bool validBackwardsPass = false;
