@@ -14,23 +14,119 @@ twoDPushingClutter::twoDPushingClutter(){
 MatrixXd twoDPushingClutter::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
-    float cubeX = randFloat(0.45, 0.55);
-    float cubeY = randFloat(-0.1, 0.1);
+    float startX = randFloat(0.45, 0.55);
+    float startY = randFloat(-0.1, 0.1);
 
-    cubeX = 0.5;
-    cubeY = 0.2;
+    float goalX = randFloat(0.6, 0.8);
+    float goalY = randFloat(-0.1, 0.3);
+    randomGoalX = goalX;
+    randomGoalY = goalY;
+
+    float obstacle1_x = goalX + 0.1 * cos(PI/4);
+    float obstacle1_y = goalY + 0.1 * sin(PI/4);
+
+    float obstacle2_x = goalX - 0.1 * cos(PI/4);
+    float obstacle2_y = goalY - 0.1 * sin(PI/4);
+
+    // obstacles, 0.48, 0.3, 0.6, 0.3
+
     randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-            cubeX, cubeY, 0.48, 0.3, 0.6, 0.3,
+            startX, startY, obstacle1_x, obstacle1_y, obstacle2_x, obstacle2_y,
             0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0;
 
     return randomStartState;
 }
 
-MatrixXd twoDPushingClutter::returnRandomGoalState(){
+MatrixXd twoDPushingClutter::returnRandomGoalState(MatrixXd X0){
     MatrixXd randomGoalState(stateVectorSize, 1);
 
+    randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+            randomGoalX, randomGoalY, X0(9), X0(10), X0(11), X0(12),
+            0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0;
+
     return randomGoalState;
+}
+
+std::vector<MatrixXd> twoDPushingClutter::createInitSetupControls(int horizonLength){
+    std::vector<MatrixXd> initSetupControls;
+
+    // Pushing create init controls broken into three main steps
+    // Step 1 - create main waypoints we want to end-effector to pass through
+    m_point goalPos;
+    std::vector<m_point> mainWayPoints;
+    std::vector<int> mainWayPointsTimings;
+    std::vector<m_point> allWayPoints;
+    goalPos(0) = X_desired(7);
+    goalPos(1) = X_desired(8);
+    initControls_mainWayPoints_setup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
+    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
+    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
+
+    // Step 2 - create all subwaypoints over the entire trajectory
+    allWayPoints = initControls_createAllWayPoints(mainWayPoints, mainWayPointsTimings);
+
+    // Step 3 - follow the points via the jacobian
+    initSetupControls = generate_initControls_fromWayPoints(allWayPoints);
+
+    return initSetupControls;
+}
+
+void twoDPushingClutter::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
+    const std::string goalObject = "blueTin";
+    const std::string EE_name = "franka_gripper";
+
+    pose_6 EE_startPose;
+    pose_6 goalobj_startPose;
+    activePhysicsSimulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
+    activePhysicsSimulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+
+    m_point mainWayPoint;
+    // First waypoint - where the end-effector is currently
+    mainWayPoint << EE_startPose.position(0), EE_startPose.position(1), EE_startPose.position(2);
+    mainWayPoints.push_back(mainWayPoint);
+    wayPointsTiming.push_back(0);
+
+    // Calculate the angle of approach - from goal position to object start position
+    float angle_EE_push;
+    float x_diff = X_desired(7) - goalobj_startPose.position(0);
+    float y_diff = X_desired(8) - goalobj_startPose.position(1);
+    angle_EE_push = atan2(y_diff, x_diff);
+
+    // TODO hard coded - get it programmatically? - also made it slightly bigger so trajectory has room to improve
+//    float cylinder_radius = 0.08;
+    float cylinder_radius = 0.1;
+    float x_cylinder0ffset = cylinder_radius * cos(angle_EE_push);
+    float y_cylinder0ffset = cylinder_radius * sin(angle_EE_push);
+
+    float endPointX;
+    float endPointY;
+    float intermediatePointY = goalobj_startPose.position(1);
+    float intermediatePointX = goalobj_startPose.position(0);
+
+    intermediatePointX = intermediatePointX - 0.15*cos(angle_EE_push);
+    intermediatePointY = intermediatePointY - 0.15*sin(angle_EE_push);
+//    if(desiredObjectEnd(1) - goalobj_startPose.position(1) > 0){
+//        intermediatePointY = intermediatePointY + y_cylinder0ffset;
+//    }
+//    else{
+//        intermediatePointY = intermediatePointY - y_cylinder0ffset;
+//    }
+
+    std::string goalMarkerName = "display_intermediate";
+    pose_6 displayBodyPose;
+    displayBodyPose.position[0] = intermediatePointX;
+    displayBodyPose.position[1] = intermediatePointY;
+    displayBodyPose.position[2] = 0.0f;
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+
+    mainWayPoint(0) = intermediatePointX;
+    mainWayPoint(1) = intermediatePointY;
+    mainWayPoint(2) = 0.27f;
+    mainWayPoints.push_back(mainWayPoint);
+    wayPointsTiming.push_back(horizon - 1);
+
 }
 
 std::vector<MatrixXd> twoDPushingClutter::createInitOptimisationControls(int horizonLength){
@@ -43,7 +139,7 @@ std::vector<MatrixXd> twoDPushingClutter::createInitOptimisationControls(int hor
     displayBodyPose.position[1] = X_desired(8);
     displayBodyPose.position[2] = 0.0f;
     cout << "goal position: " << displayBodyPose.position[0] << ", " << displayBodyPose.position[1] << endl;
-    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, 0);
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -53,7 +149,7 @@ std::vector<MatrixXd> twoDPushingClutter::createInitOptimisationControls(int hor
     std::vector<m_point> allWayPoints;
     goalPos(0) = X_desired(7);
     goalPos(1) = X_desired(8);
-    initControls_mainWayPoints(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
+    initControls_mainWayPoints_optimisation(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
     cout << "mainwaypoint 0: " << mainWayPoints[0] << endl;
     cout << "mainWayPoint " << mainWayPoints[1] << endl;
 
@@ -66,7 +162,7 @@ std::vector<MatrixXd> twoDPushingClutter::createInitOptimisationControls(int hor
     return initControls;
 }
 
-void twoDPushingClutter::initControls_mainWayPoints(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
+void twoDPushingClutter::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
     const std::string goalObject = "blueTin";
     const std::string EE_name = "franka_gripper";
 

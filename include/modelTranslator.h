@@ -36,7 +36,7 @@ public:
     // - Pure virtual functions that HAVE to be overwritten
     virtual std::vector<MatrixXd> createInitOptimisationControls(int horizonLength);
     virtual MatrixXd returnRandomStartState() = 0;
-    virtual MatrixXd returnRandomGoalState() = 0;
+    virtual MatrixXd returnRandomGoalState(MatrixXd X0) = 0;
 
     int dof;
     int num_ctrl;

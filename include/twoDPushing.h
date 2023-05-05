@@ -8,7 +8,7 @@ public:
     twoDPushing();
 
     MatrixXd returnRandomStartState() override;
-    MatrixXd returnRandomGoalState() override;
+    MatrixXd returnRandomGoalState(MatrixXd X0) override;
     std::vector<MatrixXd> createInitOptimisationControls(int horizonLength) override;
     void initControls_mainWayPoints_optimisation(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon);
     std::vector<MatrixXd> createInitSetupControls(int horizonLength) override;

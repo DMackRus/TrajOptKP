@@ -20,11 +20,13 @@ fileHandler::fileHandler(){
 
 }
 
-void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies, std::string &modelFilePath, std::string &modelName){
+
+void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies, std::string &modelFilePath, std::string &_modelName){
     YAML::Node node = YAML::LoadFile(projectParentPath + yamlFilePath);
 
     modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
-    modelName = node["modelName"].as<std::string>();
+    _modelName = node["modelName"].as<std::string>();
+    modelName = _modelName;
 
     // Loop through robots
     for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){
@@ -169,6 +171,10 @@ void fileHandler::readSettingsFile(std::string settingsFilePath){
     optimiser = node["optimiser"].as<std::string>();
     project_display_mode = node["displayMode"].as<int>();
     taskNumber = node["taskNumber"].as<int>();
+    taskInitMode = node["taskInitMode"].as<std::string>();
+    csvRow = node["csvRow"].as<int>();
+    filtering = node["filtering"].as<bool>();
+
 }
 
 void fileHandler::readOptimisationSettingsFile(int optimiser) {
@@ -194,8 +200,9 @@ void fileHandler::readOptimisationSettingsFile(int optimiser) {
     maxHorizon = node["maxHorizon"].as<int>();
 
     if(optimiser == opt_iLQR || optimiser == opt_gradDescent){
-        setIntervalMethod = node["setInterval"].as<bool>();
-        intervalSize = node["intervalSize"].as<int>();
+        keyPointMethod = node["keyPointMethod"].as<int>();
+        minInterval = node["min_interval"].as<int>();
+        maxInterval = node["max_interval"].as<int>();
     }
 }
 
@@ -258,6 +265,73 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
         }
         fileOutput << endl;
     }
+
+    fileOutput.close();
+}
+
+void fileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, MatrixXd startState, MatrixXd goalState){
+
+    std::string rootPath = projectParentPath + "/testTasks/" + taskPrefix;
+    mkdir(rootPath.c_str(), 0777);
+    std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
+    fileOutput.open(filename);
+
+    for(int i = 0; i < startState.rows(); i++){
+        fileOutput << startState(i) << ",";
+    }
+
+    for(int i = 0; i < goalState.rows(); i++){
+        fileOutput << goalState(i) << ",";
+    }
+
+    fileOutput << std::endl;
+
+    fileOutput.close();
+
+}
+
+void fileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, MatrixXd &startState, MatrixXd &goalState){
+
+    std::string rootPath = projectParentPath + "/testTasks/" + taskPrefix;
+    mkdir(rootPath.c_str(), 0777);
+    std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
+
+    fstream fin;
+
+    fin.open(filename, ios::in);
+    std::vector<string> row;
+    std::string line, word, temp;
+
+    while(fin >> temp){
+        row.clear();
+
+        getline(fin, line);
+
+        stringstream s(temp);
+
+        while(getline(s, word, ',')){
+            row.push_back(word);
+        }
+        int stateVecSize = startState.size();
+        for(int i = 0; i < stateVecSize; i++){
+            startState(i) = stod(row[i]);
+            goalState(i) = stod(row[i + stateVecSize]);
+        }
+
+    }
+}
+
+void fileHandler::saveCostHistory(std::vector<double> costHistory, std::string filePrefix, int trajecNumber){
+    std::string rootPath = projectParentPath + "/testingData/" + filePrefix;
+    mkdir(rootPath.c_str(), 0777);
+    std::string filename = rootPath + "/" + std::to_string(trajecNumber) + ".csv";
+    fileOutput.open(filename);
+
+    for(int i = 0; i < costHistory.size(); i++){
+        fileOutput << costHistory[i] << ",";
+    }
+
+    fileOutput << std::endl;
 
     fileOutput.close();
 }

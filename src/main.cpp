@@ -20,7 +20,9 @@
 #define ILQR_ONCE                   1
 #define MPC_CONTINOUS               2
 #define MPC_UNTIL_COMPLETE          3
-#define DEFAULT_KEYBOARD_CONTROL    4
+#define GENERATE_TEST_SCENES        4
+#define GENERATE_TESTING_DATA       5
+#define DEFAULT_KEYBOARD_CONTROL    6
 
 enum scenes{
     pendulum = 0,
@@ -42,23 +44,30 @@ gradDescent *gradDescentOptimiser;
 visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
+int interpolationMethod = linear;
+int keyPointMethod = adaptive_jerk;
+
 void showInitControls();
 void iLQROnce();
 void MPCUntilComplete();
 void MPCContinous();
+void generateTestScenes();
 void keyboardControl();
+void generateTestingData();
 
 int main(int argc, char **argv) {
     cout << "program started \n";
     std::string optimiser;
     int mode;
     int task;
+    std::string taskInitMode;
 
     yamlReader = new fileHandler();
     yamlReader->readSettingsFile("/generalConfig.yaml");
     optimiser = yamlReader->optimiser;
     mode = yamlReader->project_display_mode;
     task = yamlReader->taskNumber;
+    taskInitMode = yamlReader->taskInitMode;
 
     MatrixXd startStateVector(1, 1);
 
@@ -100,6 +109,20 @@ int main(int argc, char **argv) {
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
     startStateVector = activeModelTranslator->X_start;
 
+    // random start and goal state
+    std::string taskPrefix = yamlReader->modelName;
+    if(taskInitMode == "random"){
+        startStateVector = activeModelTranslator->returnRandomStartState();
+        activeModelTranslator->X_start = startStateVector;
+        activeModelTranslator->X_desired = activeModelTranslator->returnRandomGoalState(startStateVector);
+
+        yamlReader->saveTaskToFile(taskPrefix, 0, activeModelTranslator->X_start, activeModelTranslator->X_desired);
+    }
+    else if(taskInitMode == "fromCSV"){
+        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, startStateVector, activeModelTranslator->X_desired);
+        activeModelTranslator->X_start = startStateVector;
+    }
+
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
     cout << "starting state: " << startStateVector << endl;
@@ -130,8 +153,6 @@ int main(int argc, char **argv) {
     
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-    MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-    cout << "init state at at start of program: " << initState << endl;
 
     if(mode == SHOW_INIT_CONTROLS){
         cout << "SHOWING INIT CONTROLS MODE \n";
@@ -149,6 +170,14 @@ int main(int argc, char **argv) {
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
         MPCUntilComplete();
     }
+    else if(mode == GENERATE_TEST_SCENES){
+        cout << "TASK INIT MODE \n";
+        generateTestScenes();
+    }
+    else if(mode == GENERATE_TESTING_DATA){
+        cout << "GENERATE TESTING DATA MODE \n";
+        generateTestingData();
+    }
     else if(mode == DEFAULT_KEYBOARD_CONTROL){
         cout << "KEYBOARD TESTING MODE \n";
         keyboardControl();
@@ -159,9 +188,86 @@ int main(int argc, char **argv) {
     return 0;
 }
 
+void generateTestingData(){
+    int setupHorizon = 1000;
+    int optHorizon = 1500;
+
+    MatrixXd startStateVector;
+    startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+
+    for(int i = 0; i < 50; i++){
+        // Load a task from saved tasks
+
+        yamlReader->loadTaskFromFile(yamlReader->modelName, i, startStateVector, activeModelTranslator->X_desired);
+        activeModelTranslator->X_start = startStateVector;
+        cout << "starting state: " << startStateVector << endl;
+        cout << "desired state: " << activeModelTranslator->X_desired << endl;
+        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+        // Load optimiser
+
+        // Reset optimisers variables as required
+        activeOptimiser->setupTestingExtras(i, interpolationMethod, keyPointMethod);
+
+        // Generate init controls
+        std::vector<MatrixXd> initControls;
+        std::vector<MatrixXd> finalControls;
+
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+        activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+        std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+
+        auto start = high_resolution_clock::now();
+        std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+        auto stop = high_resolution_clock::now();
+        auto linDuration = duration_cast<microseconds>(stop - start);
+        cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " s\n";
+
+        initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
+        initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
+        finalControls.insert(finalControls.end(), initSetupControls.begin(), initSetupControls.end());
+        finalControls.insert(finalControls.end(), optimisedControls.begin(), optimisedControls.end());
+
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+
+        int controlCounter = 0;
+        int visualCounter = 0;
+        cout << "final controls size: " << finalControls.size() << endl;
+
+//        while(controlCounter < finalControls.size()){
+//
+//            activeModelTranslator->setControlVector(initControls[controlCounter], MAIN_DATA_STATE);
+//
+//            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//
+//            controlCounter++;
+//            visualCounter++;
+//
+//            if(visualCounter > 5){
+//
+//                activeVisualiser->render("show init controls");
+//                visualCounter = 0;
+//            }
+//        }
+
+    }
+}
+
+void generateTestScenes(){
+    for(int i = 0; i < 50; i++){
+        MatrixXd startStateVector = activeModelTranslator->returnRandomStartState();
+        activeModelTranslator->X_start = startStateVector;
+        activeModelTranslator->X_desired = activeModelTranslator->returnRandomGoalState(startStateVector);
+        yamlReader->saveTaskToFile(yamlReader->modelName, i, activeModelTranslator->X_start, activeModelTranslator->X_desired);
+    }
+}
+
 void showInitControls(){
     int setupHorizon = 1000;
-    int optHorizon = 1000;
+    int optHorizon = 2000;
     int controlCounter = 0;
     int visualCounter = 0;
 
@@ -201,7 +307,7 @@ void showInitControls(){
 
 void iLQROnce(){
     int setupHorizon = 1000;
-    int optHorizon = 1000;
+    int optHorizon = 2200;
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
@@ -215,6 +321,8 @@ void iLQROnce(){
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+
+    activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod);
 
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     auto start = high_resolution_clock::now();

@@ -12,8 +12,6 @@ MatrixXd twoDPushing::returnRandomStartState(){
     float cubeX = randFloat(0.45, 0.55);
     float cubeY = randFloat(-0.1, 0.1);
 
-    cubeX = 0.5;
-    cubeY = 0.1;
     randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
                         cubeX, cubeY,
                         0, 0, 0, 0, 0, 0, 0,
@@ -22,8 +20,17 @@ MatrixXd twoDPushing::returnRandomStartState(){
     return randomStartState;
 }
 
-MatrixXd twoDPushing::returnRandomGoalState(){
+MatrixXd twoDPushing::returnRandomGoalState(MatrixXd X0){
     MatrixXd randomGoalState(stateVectorSize, 1);
+
+    float cubeX = randFloat(0.6, 0.8);
+    float cubeY = randFloat(-0.1, 0.3);
+
+    randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+            cubeX, cubeY,
+            0, 0, 0, 0, 0, 0, 0,
+            0, 0;
+
 
     return randomGoalState;
 }
@@ -83,12 +90,15 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
     float endPointY;
     float intermediatePointY = goalobj_startPose.position(1);
     float intermediatePointX = goalobj_startPose.position(0);
-    if(desiredObjectEnd(1) - goalobj_startPose.position(1) > 0){
-        intermediatePointY = intermediatePointY + y_cylinder0ffset;
-    }
-    else{
-        intermediatePointY = intermediatePointY - y_cylinder0ffset;
-    }
+
+    intermediatePointX = intermediatePointX - 0.15*cos(angle_EE_push);
+    intermediatePointY = intermediatePointY - 0.15*sin(angle_EE_push);
+//    if(desiredObjectEnd(1) - goalobj_startPose.position(1) > 0){
+//        intermediatePointY = intermediatePointY + y_cylinder0ffset;
+//    }
+//    else{
+//        intermediatePointY = intermediatePointY - y_cylinder0ffset;
+//    }
 
     std::string goalMarkerName = "display_intermediate";
     pose_6 displayBodyPose;

@@ -36,13 +36,17 @@ MatrixXd doublePendulum::returnRandomStartState(){
     return randomStartState;
 }
 
-MatrixXd doublePendulum::returnRandomGoalState(){
+MatrixXd doublePendulum::returnRandomGoalState(MatrixXd X0){
     MatrixXd randomGoalState(stateVectorSize, 1);
 
     float randomNum = randFloat(0, 1);
     // stable down position
-    if(randomNum > 0.5){
+    if(randomNum < 0.33){
         randomGoalState << 3.1415, 0, 0, 0;
+    }
+    // Half up unstable
+    else if(randomNum > 0.33 && randomNum < 0.66){
+        randomGoalState << 3.1415, 3.1415, 0, 0;
     }
     // Unstable up position
     else{

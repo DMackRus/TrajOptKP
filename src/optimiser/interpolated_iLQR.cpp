@@ -48,8 +48,12 @@ interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSim
     X_old.push_back(MatrixXd(2*dof, 1));
     X_new.push_back(MatrixXd(2*dof, 1));
 
-    intervalSize = _yamlReader->intervalSize;
-    setIntervalMethod = _yamlReader->setIntervalMethod;
+    min_interval = _yamlReader->minInterval;
+    max_interval = _yamlReader->maxInterval;
+    keyPointsMethod = _yamlReader->keyPointMethod;
+
+    filteringMatrices = activeYamlReader->filtering;
+
 }
 
 double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
@@ -103,11 +107,11 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
             }
             
         }
-
         cost += (stateCost * MUJOCO_DT);
     }
 
     cout << "cost of trajectory was: " << cost << endl;
+    costHistory.push_back(cost);
 
     return cost;
 }
@@ -135,7 +139,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     lambda = 0.1;
     double oldCost = 0.0f;
     double newCost = 0.0f;
-
+    costHistory.clear();
 
     oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -148,28 +152,39 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         auto start = high_resolution_clock::now();
         // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
         // generate the dynamics evaluation waypoints
-        std::vector<int> evaluationPoints = generateEvalWaypoints(X_old, U_old);
-        // for(int j = 0; j < evaluationPoints.size(); j++){
-        //     cout << "eval: " << j << ": " << evaluationPoints[j] << endl;
-        // }
+        std::vector<int> keyPoints = generateKeyPoints(X_old, U_old);
+//         for(int j = 0; j < keyPoints.size(); j++){
+//             cout << "eval: " << j << ": " << keyPoints[j] << endl;
+//         }
         
         // Calculate derivatives via finite differnecing / analytically for cost functions if available
-        getDerivativesAtSpecifiedIndices(evaluationPoints);
+        getDerivativesAtSpecifiedIndices(keyPoints);
 
         // Interpolate derivatvies as required for a full set of derivatives
-        interpolateDerivatives(evaluationPoints);
+        interpolateDerivatives(keyPoints);
+
+//        f_x.resize(initControls.size());
+//        activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 1);
+
+        if(filteringMatrices){
+            filterMatrices();
+        }
+
+//        f_x.resize(initControls.size());
+//        activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 2);
 
         auto stop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(stop - start);
-        cout << "number of derivatives calculated via fd: " << evaluationPoints.size() << endl;
+        cout << "number of derivatives calculated via fd: " << keyPoints.size() << endl;
         cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
 
-        //cout << "f_x[1900] \n" << f_x[1900] << endl;
-        // cout << "f_u[1000] \n" << f_u[1000] << endl;
-        // cout << "l_x[1000] \n" << l_x[1000] << endl;
+//        cout << "f_x[1000] \n" << f_x[1000] << endl;
+//        cout << "f_x[1001] \n" << f_x[1001] << endl;
+//         cout << "f_u[1000] \n" << f_u[1000] << endl;
+//         cout << "l_x[1000] \n" << l_x[1000] << endl;
         // cout << "l_xx[1000] \n" << l_xx[1000] << endl;
         // cout << "l_u[1000] \n" << l_u[1000] << endl;
-        // cout << "l_uu[1000] \n" << l_uu[1000] << endl;
+//         cout << "l_uu[1000] \n" << l_uu[1000] << endl;
 
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
         bool validBackwardsPass = false;
@@ -199,6 +214,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         auto bp_stop = high_resolution_clock::now();
         auto bpDuration = duration_cast<microseconds>(bp_stop - bp_start);
         cout << "bp took: " << bpDuration.count() / 1000000.0f << " s\n";
+//        cout << "K[1000] " << K[1000] << endl;
 
         if(!lambdaExit){
             bool costReduced;
@@ -210,6 +226,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
             cout << "forward pass took: " << fpDuration.count() / 1000000.0f << " s\n";
             cout << " ---------------- new cost is: " << newCost << " -------------------" << endl;
+
+            costHistory.push_back(newCost);
 
             // STEP 4 - Check for convergence
             bool converged = checkForConvergence(oldCost, newCost);
@@ -244,7 +262,24 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         optimisedControls.push_back(U_old[i]);
     }
 
-    activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 0);
+
+
+    if(saveTrajecInfomation){
+        //remove std vector elements after size of init controls
+        f_x.resize(initControls.size());
+        activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 0);
+    }
+
+    if(saveCostHistory){
+        cout << "saving cost history \n";
+        if(filteringMatrices){
+            activeYamlReader->saveCostHistory(costHistory, "filtering", currentTrajecNumber);
+        }
+        else{
+            activeYamlReader->saveCostHistory(costHistory, "no_filtering", currentTrajecNumber);
+        }
+
+    }
 
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
@@ -255,27 +290,174 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 }
 // ------------------------------------------- STEP 1 FUNCTIONS (GET DERIVATIVES) ----------------------------------------------
 
-std::vector<int> interpolatediLQR::generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
+std::vector<int> interpolatediLQR::generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
     std::vector<int> evaluationWaypoints;
-    int counter = 0;
-    int numEvals = horizonLength / intervalSize;
+    evaluationWaypoints.push_back(0);
+    cout << "keyPointsMethod is: " << keyPointsMethod << "\n";
 
-    evaluationWaypoints.push_back(counter);
-
-    // set-interval method
-    if(setIntervalMethod){
-        for(int i = 0; i < numEvals; i++){
-            evaluationWaypoints.push_back(i * intervalSize);
+    if(keyPointsMethod == setInterval){
+        int numEvals = horizonLength / min_interval;
+        for(int i = 1; i < numEvals; i++){
+            if(i * min_interval < horizonLength){
+                evaluationWaypoints.push_back(i * min_interval);
+            }
         }
-    }
-    // adaptive-interval method
-    else{
 
     }
-    evaluationWaypoints.push_back(horizonLength);
+    else if(keyPointsMethod == adaptive_jerk){
+        int counter = 0;
+        std::vector<MatrixXd> jerkProfile = generateJerkProfile();
+        for(int i = 0; i < horizonLength; i++){
+            counter++;
+
+            if(counter > min_interval){
+                for(int j = 0; j < activeModelTranslator->dof; j++){
+                    if(jerkProfile.size() > i) {
+
+                        if (jerkProfile[i](j, 0) > 0.002) {
+                            evaluationWaypoints.push_back(i);
+                            counter = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if(counter > max_interval){
+                evaluationWaypoints.push_back(i);
+                counter = 0;
+            }
+
+        }
+
+    }
+    else if(keyPointsMethod == adaptive_accel){
+        int counter = 0;
+        std::vector<MatrixXd> jerkProfile = generateJerkProfile();
+        for(int i = 0; i < horizonLength; i++){
+            counter++;
+
+            if(counter > min_interval){
+                for(int j = 0; j < activeModelTranslator->dof; j++){
+                    if(jerkProfile.size() > i) {
+
+                        if (jerkProfile[i](j, 0) > 0.002) {
+                            evaluationWaypoints.push_back(i);
+                            counter = 0;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if(counter > max_interval){
+                evaluationWaypoints.push_back(i);
+                counter = 0;
+            }
+
+        }
+
+    }
+    else if(keyPointsMethod == iterative_error){
+        // TODO - start with small number of keypoints and expand the list iteratively to reduce
+        // midpoint error. This is a bit more complicated as we need to evaluate the error at each
+
+        int startInterval = horizonLength / 2;
+
+        evalPoints = []
+
+        startInterval = int(self.trajecLength / 2)
+        numMaxBins = int((self.trajecLength / startInterval))
+
+        for i in range(numMaxBins):
+        binComplete = False
+        startIndex = i * startInterval
+        endIndex = (i + 1) * startInterval
+        if(endIndex >= self.trajecLength):
+        endIndex = self.trajecLength - 1
+        listofIndicesCheck = []
+        indexTuple = (startIndex, endIndex)
+        listofIndicesCheck.append(indexTuple)
+        subListIndices = []
+        subListWithMidpoints = []
+
+        while(not binComplete):
+
+        allChecksComplete = True
+        for j in range(len(listofIndicesCheck)):
+
+        approximationGood, midIndex = self.oneCheck(A_matrices, listofIndicesCheck[j])
+
+        if not approximationGood:
+        allChecksComplete = False
+
+        indexTuple1 = (listofIndicesCheck[j][0], midIndex)
+        indexTuple2 = (midIndex, listofIndicesCheck[j][1])
+        subListIndices.append(indexTuple1)
+        subListIndices.append(indexTuple2)
+        else:
+        subListWithMidpoints.append(listofIndicesCheck[j][0])
+        subListWithMidpoints.append(midIndex)
+        subListWithMidpoints.append(listofIndicesCheck[j][1])
+
+        if(allChecksComplete):
+        binComplete = True
+        for k in range(len(subListWithMidpoints)):
+        evalPoints.append(subListWithMidpoints[k])
+
+        subListWithMidpoints = []
+
+        listofIndicesCheck = subListIndices.copy()
+        subListIndices = []
+
+        evalPoints.sort()
+        evalPoints = list(dict.fromkeys(evalPoints))
+
+
+    }
+    else{
+        std::cout << "ERROR: keyPointsMethod not recognised \n";
+    }
+
+    //Check if last element in evaluationWaypoints is horizonLength - 1
+    if(evaluationWaypoints.back() != horizonLength - 1){
+        evaluationWaypoints.push_back(horizonLength - 1);
+    }
 
     return evaluationWaypoints;
+}
+
+bool interpolatediLQR::checkMatricesError(MatrixXd A, MatrixXd B){
+
+}
+
+std::vector<MatrixXd> interpolatediLQR::generateJerkProfile(){
+
+    MatrixXd jerk(activeModelTranslator->dof, 1);
+
+    MatrixXd state1(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd state2(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd state3(activeModelTranslator->stateVectorSize, 1);
+
+    std::vector<MatrixXd> jerkProfile;
+
+    for(int i = 0; i < horizonLength - 2; i++){
+        state1 = X_old[i];
+        state2 = X_old[i + 1];
+        state3 = X_old[i + 2];
+
+        MatrixXd accell1 = state2 - state1;
+        MatrixXd accell2 = state3 - state2;
+
+        for(int j = 0; j < activeModelTranslator->dof; j++){
+            jerk(j, 0) = accell2(j+dof, 0) - accell1(j+dof, 0);
+        }
+
+        jerkProfile.push_back(jerk);
+    }
+
+    return jerkProfile;
 }
 
 void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
@@ -328,11 +510,11 @@ void interpolatediLQR::interpolateDerivatives(std::vector<int> calculatedIndices
         MatrixXd diffB = endB - startB;
         addB = diffB / nextInterpolationSize;
 
-
         // Interpolate A and B matrices
         for(int i = 0; i < nextInterpolationSize; i++){
             f_x[startIndex + i] = A[t].replicate(1,1) + (addA * i);
             f_u[startIndex + i] = B[t].replicate(1,1) + (addB * i);
+//            cout << "f_x[" << startIndex + i << "] = " << f_x[startIndex + i] << endl;
         }
     }
 
@@ -341,6 +523,44 @@ void interpolatediLQR::interpolateDerivatives(std::vector<int> calculatedIndices
 
     f_x[horizonLength] = f_x[horizonLength - 1].replicate(1,1);
     f_u[horizonLength] = f_u[horizonLength - 1].replicate(1,1);
+}
+
+void interpolatediLQR::filterMatrices(){
+
+    for(int i = dof; i < 2 * dof; i++){
+        for(int j = 0; j < 2 * dof; j++){
+            std::vector<double> unfiltered;
+            std::vector<double> filtered;
+
+            for(int k = 0; k < horizonLength; k++){
+                unfiltered.push_back(f_x[k](i, j));
+            }
+            filtered = filterIndividualValue(unfiltered);
+            for(int k = 0; k < horizonLength; k++){
+                f_x[k](i, j) = filtered[k];
+            }
+        }
+    }
+}
+
+std::vector<double> interpolatediLQR::filterIndividualValue(std::vector<double> unfiltered){
+    double yn1 = unfiltered[0];
+    double xn1 = unfiltered[0];
+    double a = 0.25;
+
+    std::vector<double> filtered;
+    for(int i = 0; i < unfiltered.size(); i++){
+        double xn = unfiltered[i];
+//        double yn = -0.7254*yn1 + 0.8627*xn + 0.8627*xn1;
+
+        double yn = ((1-a)*yn1) + a*((xn + xn1)/2);
+
+        xn1 = xn;
+        yn1 = yn;
+
+        filtered.push_back(yn);
+    }
+    return filtered;
 }
 
 
@@ -497,6 +717,7 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
             Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 
             Ut = U_new[t].replicate(1, 1);
+//            cout << "U_new: " << endl << U_new[t] << endl;
 
             double newStateCost;
             // Terminal state

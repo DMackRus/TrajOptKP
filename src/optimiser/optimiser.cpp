@@ -19,3 +19,9 @@ bool optimiser::checkForConvergence(double oldCost, double newCost){
     return false;
 }
 
+void optimiser::setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod){
+    currentTrajecNumber = _trajecNumber;
+    interpMethod = _interpMethod;
+    keyPointsMethod = _keyPointsMethod;
+}
+

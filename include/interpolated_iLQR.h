@@ -13,7 +13,7 @@ public:
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
 
-    std::vector<int> generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
+    std::vector<int> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
     void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
     void interpolateDerivatives(std::vector<int> calculatedIndices);
 
@@ -23,14 +23,24 @@ public:
     double forwardsPass(double oldCost, bool &costReduced);
     double forwardsPassParallel(double oldCost, bool &costReduced);
 
+    void filterMatrices();
+    std::vector<double> filterIndividualValue(std::vector<double> unfiltered);
+
+    std::vector<double> costHistory;
+    int numIters = 0;
+    bool filteringMatrices = true;
+
+    bool saveTrajecInfomation = false;
+    bool saveCostHistory = true;
+
 private:
     double lambda = 0.1;
     double maxLambda = 10000;
     double minLambda = 0.00001;
     double lambdaFactor = 10;
     int maxHorizon = 0;
-    int intervalSize = 1;
-    bool setIntervalMethod = true;
+    int min_interval = 1;
+    int max_interval = 100;
 
     // -------------- Vectors of matrices for gradient information about the trajectory -------------
     // First order dynamics
@@ -61,7 +71,9 @@ private:
 
     vector<vector<MatrixXd>> U_alpha;
 
+    std::vector<MatrixXd> generateJerkProfile();
 
+    int testNumber = 0;
 
 };
 

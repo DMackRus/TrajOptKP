@@ -34,7 +34,7 @@ MatrixXd pandaReaching::returnRandomStartState(){
     return randomStartState;
 }
 
-MatrixXd pandaReaching::returnRandomGoalState(){
+MatrixXd pandaReaching::returnRandomGoalState(MatrixXd X0){
     MatrixXd randomGoalState(stateVectorSize, 1);
 
     float randomNum = randFloat(0, 1);
