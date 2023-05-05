@@ -5,6 +5,12 @@
 #include "differentiator.h"
 #include "visualizer.h"
 #include "fileHandler.h"
+#include <algorithm>
+
+struct indexTuple{
+    int startIndex;
+    int endIndex;
+};
 
 class interpolatediLQR: public optimiser{
 public:
@@ -72,6 +78,8 @@ private:
     vector<vector<MatrixXd>> U_alpha;
 
     std::vector<MatrixXd> generateJerkProfile();
+    std::vector<int> generateKeyPointsIteratively();
+    bool checkOneMatrixError(indexTuple indices);
 
     int testNumber = 0;
 

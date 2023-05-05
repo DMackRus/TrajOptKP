@@ -51,8 +51,6 @@ public:
     int minInterval;
     int maxInterval;
 
-    std::string modelName;
-
 private:
     std::string projectParentPath;
 

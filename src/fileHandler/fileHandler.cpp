@@ -26,7 +26,6 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
 
     modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
     _modelName = node["modelName"].as<std::string>();
-    modelName = _modelName;
 
     // Loop through robots
     for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){

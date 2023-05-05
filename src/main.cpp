@@ -45,7 +45,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = adaptive_jerk;
+int keyPointMethod = iterative_error;
 
 void showInitControls();
 void iLQROnce();
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
     startStateVector = activeModelTranslator->X_start;
 
     // random start and goal state
-    std::string taskPrefix = yamlReader->modelName;
+    std::string taskPrefix = activeModelTranslator->modelName;
     if(taskInitMode == "random"){
         startStateVector = activeModelTranslator->returnRandomStartState();
         activeModelTranslator->X_start = startStateVector;
@@ -198,7 +198,7 @@ void generateTestingData(){
     for(int i = 0; i < 50; i++){
         // Load a task from saved tasks
 
-        yamlReader->loadTaskFromFile(yamlReader->modelName, i, startStateVector, activeModelTranslator->X_desired);
+        yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
         cout << "starting state: " << startStateVector << endl;
         cout << "desired state: " << activeModelTranslator->X_desired << endl;
@@ -261,7 +261,7 @@ void generateTestScenes(){
         MatrixXd startStateVector = activeModelTranslator->returnRandomStartState();
         activeModelTranslator->X_start = startStateVector;
         activeModelTranslator->X_desired = activeModelTranslator->returnRandomGoalState(startStateVector);
-        yamlReader->saveTaskToFile(yamlReader->modelName, i, activeModelTranslator->X_start, activeModelTranslator->X_desired);
+        yamlReader->saveTaskToFile(activeModelTranslator->modelName, i, activeModelTranslator->X_start, activeModelTranslator->X_desired);
     }
 }
 

@@ -355,65 +355,10 @@ std::vector<int> interpolatediLQR::generateKeyPoints(std::vector<MatrixXd> traje
                 evaluationWaypoints.push_back(i);
                 counter = 0;
             }
-
         }
-
     }
     else if(keyPointsMethod == iterative_error){
-        // TODO - start with small number of keypoints and expand the list iteratively to reduce
-        // midpoint error. This is a bit more complicated as we need to evaluate the error at each
-
-        int startInterval = horizonLength / 2;
-
-        evalPoints = []
-
-        startInterval = int(self.trajecLength / 2)
-        numMaxBins = int((self.trajecLength / startInterval))
-
-        for i in range(numMaxBins):
-        binComplete = False
-        startIndex = i * startInterval
-        endIndex = (i + 1) * startInterval
-        if(endIndex >= self.trajecLength):
-        endIndex = self.trajecLength - 1
-        listofIndicesCheck = []
-        indexTuple = (startIndex, endIndex)
-        listofIndicesCheck.append(indexTuple)
-        subListIndices = []
-        subListWithMidpoints = []
-
-        while(not binComplete):
-
-        allChecksComplete = True
-        for j in range(len(listofIndicesCheck)):
-
-        approximationGood, midIndex = self.oneCheck(A_matrices, listofIndicesCheck[j])
-
-        if not approximationGood:
-        allChecksComplete = False
-
-        indexTuple1 = (listofIndicesCheck[j][0], midIndex)
-        indexTuple2 = (midIndex, listofIndicesCheck[j][1])
-        subListIndices.append(indexTuple1)
-        subListIndices.append(indexTuple2)
-        else:
-        subListWithMidpoints.append(listofIndicesCheck[j][0])
-        subListWithMidpoints.append(midIndex)
-        subListWithMidpoints.append(listofIndicesCheck[j][1])
-
-        if(allChecksComplete):
-        binComplete = True
-        for k in range(len(subListWithMidpoints)):
-        evalPoints.append(subListWithMidpoints[k])
-
-        subListWithMidpoints = []
-
-        listofIndicesCheck = subListIndices.copy()
-        subListIndices = []
-
-        evalPoints.sort()
-        evalPoints = list(dict.fromkeys(evalPoints))
-
+        evaluationWaypoints = generateKeyPointsIteratively();
 
     }
     else{
@@ -428,8 +373,127 @@ std::vector<int> interpolatediLQR::generateKeyPoints(std::vector<MatrixXd> traje
     return evaluationWaypoints;
 }
 
-bool interpolatediLQR::checkMatricesError(MatrixXd A, MatrixXd B){
+std::vector<int> interpolatediLQR::generateKeyPointsIteratively(){
+    std::vector<int> evalPoints;
+    bool binsComplete = false;
+    std::vector<indexTuple> indexTuples;
+    int startIndex = 0;
+    int endIndex = horizonLength - 1;
 
+    std::vector<indexTuple> listOfIndicesCheck;
+    indexTuple initialTuple;
+    initialTuple.startIndex = startIndex;
+    initialTuple.endIndex = endIndex;
+
+    std::vector<indexTuple> subListIndices;
+    std::vector<int> subListWithMidpoints;
+
+    listOfIndicesCheck.push_back(initialTuple);
+
+    while(!binsComplete){
+        bool allChecksComplete = true;
+
+        for(int j = 0; j < listOfIndicesCheck.size(); j++) {
+
+            int midIndex = (listOfIndicesCheck[j].startIndex + listOfIndicesCheck[j].endIndex) / 2;
+            bool approximationGood = checkOneMatrixError(listOfIndicesCheck[j]);
+
+            if (!approximationGood) {
+                allChecksComplete = false;
+                indexTuple tuple1;
+                tuple1.startIndex = listOfIndicesCheck[j].startIndex;
+                tuple1.endIndex = midIndex;
+                indexTuple tuple2;
+                tuple2.startIndex = midIndex;
+                tuple2.endIndex = listOfIndicesCheck[j].endIndex;
+                subListIndices.push_back(tuple1);
+                subListIndices.push_back(tuple2);
+            } else {
+                subListWithMidpoints.push_back(listOfIndicesCheck[j].startIndex);
+                subListWithMidpoints.push_back(midIndex);
+                subListWithMidpoints.push_back(listOfIndicesCheck[j].endIndex);
+            }
+        }
+
+        if(allChecksComplete){
+            binsComplete = true;
+            for(int k = 0; k < subListWithMidpoints.size(); k++){
+                evalPoints.push_back(subListWithMidpoints[k]);
+            }
+
+            subListWithMidpoints.clear();
+        }
+
+        listOfIndicesCheck = subListIndices;
+//        for(int k = 0; k < listOfIndicesCheck.size(); k++){
+//            cout << listOfIndicesCheck[k].startIndex << " " << listOfIndicesCheck[k].endIndex << "\n";
+//        }
+        subListIndices.clear();
+    }
+
+    // Sort list into order
+    std::sort(evalPoints.begin(), evalPoints.end());
+
+    // Remove duplicates
+    evalPoints.erase(std::unique(evalPoints.begin(), evalPoints.end()), evalPoints.end());
+//
+//    for(int i = 0; i < evalPoints.size(); i++){
+//        cout << "evalPoints[" << i << "] = " << evalPoints[i] << "\n";
+//    }
+
+    return evalPoints;
+
+}
+
+bool interpolatediLQR::checkOneMatrixError(indexTuple indices){
+    MatrixXd matrixStart(activeModelTranslator->stateVectorSize, activeModelTranslator->stateVectorSize);
+    MatrixXd matrixEnd(activeModelTranslator->stateVectorSize, activeModelTranslator->stateVectorSize);
+    MatrixXd matrixMidTrue(activeModelTranslator->stateVectorSize, activeModelTranslator->stateVectorSize);
+    MatrixXd matrixMidApprox(activeModelTranslator->stateVectorSize, activeModelTranslator->stateVectorSize);
+    MatrixXd matrixNullB(activeModelTranslator->stateVectorSize, activeModelTranslator->num_ctrl);
+
+    int midIndex = (indices.startIndex + indices.endIndex) / 2;
+    if((indices.endIndex - indices.startIndex) < 5){
+        return true;
+    }
+
+    activeDifferentiator->getDerivatives(matrixStart, matrixNullB, false, indices.startIndex);
+    activeDifferentiator->getDerivatives(matrixMidTrue, matrixNullB, false, midIndex);
+    activeDifferentiator->getDerivatives(matrixEnd, matrixNullB, false, indices.endIndex);
+
+    matrixMidApprox = (matrixStart + matrixEnd) / 2;
+
+//    cout << "matrixMidTrue: \n" << matrixMidTrue << "\n";
+//    cout << "matrixMidApprox: \n" << matrixMidApprox << "\n";
+
+    bool approximationGood = false;
+    int dof = activeModelTranslator->dof;
+    double errorSum = 0.0f;
+    int counter = 0;
+
+    for(int i = dof; i < activeModelTranslator->stateVectorSize; i++){
+        for(int j = 0; j < activeModelTranslator->stateVectorSize; j++){
+            double sqDiff = pow((matrixMidTrue(i, j) - matrixMidApprox(i, j)),2);
+            if(sqDiff > 0.5){
+                sqDiff = 0.0f;
+            }
+            else if(sqDiff < 0.00001){
+                sqDiff = 0.0f;
+            }
+            else{
+
+                counter++;
+            }
+            errorSum += sqDiff;
+        }
+    }
+
+    double averageError = errorSum / counter;
+    if(averageError < 0.002){
+        approximationGood = true;
+    }
+
+    return approximationGood;
 }
 
 std::vector<MatrixXd> interpolatediLQR::generateJerkProfile(){
