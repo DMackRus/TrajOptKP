@@ -111,6 +111,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     }
 
     cout << "cost of trajectory was: " << cost << endl;
+    initialCost = cost;
     costHistory.push_back(cost);
 
     return cost;
@@ -139,7 +140,15 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     lambda = 0.1;
     double oldCost = 0.0f;
     double newCost = 0.0f;
+
+    // Clear data saving variables
     costHistory.clear();
+    optTime = 0;
+    costReduction = 1.0f;
+    numDerivsPerIter.clear();
+    timeDerivsPerIter.clear();
+    avgNumDerivs = 0;
+    avgTimePerDerivs = 0.0f;
 
     oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -153,12 +162,20 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
         // generate the dynamics evaluation waypoints
         std::vector<int> keyPoints = generateKeyPoints(X_old, U_old);
-//         for(int j = 0; j < keyPoints.size(); j++){
-//             cout << "eval: " << j << ": " << keyPoints[j] << endl;
-//         }
+         for(int j = 0; j < keyPoints.size(); j++){
+             cout << keyPoints[j] << " ";
+         }
+         cout << endl;
+         cout << "keypoints size: " << keyPoints.size() << endl;
         
         // Calculate derivatives via finite differnecing / analytically for cost functions if available
-        getDerivativesAtSpecifiedIndices(keyPoints);
+        if(keyPointsMethod != iterative_error){
+            getDerivativesAtSpecifiedIndices(keyPoints);
+        }
+        else{
+            getCostDerivs();
+        }
+
 
         // Interpolate derivatvies as required for a full set of derivatives
         interpolateDerivatives(keyPoints);
@@ -177,6 +194,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         auto linDuration = duration_cast<microseconds>(stop - start);
         cout << "number of derivatives calculated via fd: " << keyPoints.size() << endl;
         cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
+
+        numDerivsPerIter.push_back(keyPoints.size());
+        timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 
 //        cout << "f_x[1000] \n" << f_x[1000] << endl;
 //        cout << "f_x[1001] \n" << f_x[1001] << endl;
@@ -255,14 +275,19 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         }
     }
 
+    costReduction = newCost / initialCost;
+    auto optFinish = high_resolution_clock::now();
+    auto optDuration = duration_cast<microseconds>(optFinish - optStart);
+    optTime = optDuration.count() / 1000000.0f;
+    cout << "optimisation took: " << optTime<< " s\n";
+    cout << " ---------------- optimisation complete -------------------" << endl;
+
     // Load the initial data back into main data
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_old[i]);
     }
-
-
 
     if(saveTrajecInfomation){
         //remove std vector elements after size of init controls
@@ -281,10 +306,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
     }
 
-    auto optFinish = high_resolution_clock::now();
-    auto optDuration = duration_cast<microseconds>(optFinish - optStart);
-    cout << "optimisation took: " << optDuration.count() / 1000000.0f << " s\n";
-    cout << " ---------------- optimisation complete -------------------" << endl;
+
 
     return optimisedControls;
 }
@@ -358,7 +380,10 @@ std::vector<int> interpolatediLQR::generateKeyPoints(std::vector<MatrixXd> traje
         }
     }
     else if(keyPointsMethod == iterative_error){
+        computedKeyPoints.clear();
+        activeDifferentiator->initModelForFiniteDifferencing();
         evaluationWaypoints = generateKeyPointsIteratively();
+        activeDifferentiator->resetModelAfterFiniteDifferencing();
 
     }
     else{
@@ -446,22 +471,47 @@ std::vector<int> interpolatediLQR::generateKeyPointsIteratively(){
 }
 
 bool interpolatediLQR::checkOneMatrixError(indexTuple indices){
-    MatrixXd matrixStart(activeModelTranslator->stateVectorSize, activeModelTranslator->stateVectorSize);
-    MatrixXd matrixEnd(activeModelTranslator->stateVectorSize, activeModelTranslator->stateVectorSize);
-    MatrixXd matrixMidTrue(activeModelTranslator->stateVectorSize, activeModelTranslator->stateVectorSize);
     MatrixXd matrixMidApprox(activeModelTranslator->stateVectorSize, activeModelTranslator->stateVectorSize);
-    MatrixXd matrixNullB(activeModelTranslator->stateVectorSize, activeModelTranslator->num_ctrl);
 
     int midIndex = (indices.startIndex + indices.endIndex) / 2;
     if((indices.endIndex - indices.startIndex) < 5){
         return true;
     }
 
-    activeDifferentiator->getDerivatives(matrixStart, matrixNullB, false, indices.startIndex);
-    activeDifferentiator->getDerivatives(matrixMidTrue, matrixNullB, false, midIndex);
-    activeDifferentiator->getDerivatives(matrixEnd, matrixNullB, false, indices.endIndex);
+    bool startIndexExists;
+    bool midIndexExists;
+    bool endIndexExists;
 
-    matrixMidApprox = (matrixStart + matrixEnd) / 2;
+    for(int i = 0; i < computedKeyPoints.size(); i++){
+        if(computedKeyPoints[i] == indices.startIndex){
+            startIndexExists = true;
+        }
+
+        if(computedKeyPoints[i] == midIndex){
+            midIndexExists = true;
+        }
+
+        if(computedKeyPoints[i] == indices.endIndex){
+            endIndexExists = true;
+        }
+    }
+
+    if(!startIndexExists){
+        activeDifferentiator->getDerivatives(A[indices.startIndex], B[indices.startIndex], false, indices.startIndex);
+        computedKeyPoints.push_back(indices.startIndex);
+    }
+
+    if(!midIndexExists){
+        activeDifferentiator->getDerivatives(A[midIndex], B[midIndex], false, midIndex);
+        computedKeyPoints.push_back(midIndex);
+    }
+
+    if(!endIndexExists){
+        activeDifferentiator->getDerivatives(A[indices.endIndex], B[indices.endIndex], false, indices.endIndex);
+        computedKeyPoints.push_back(indices.endIndex);
+    }
+
+    matrixMidApprox = (A[indices.startIndex] + A[indices.endIndex]) / 2;
 
 //    cout << "matrixMidTrue: \n" << matrixMidTrue << "\n";
 //    cout << "matrixMidApprox: \n" << matrixMidApprox << "\n";
@@ -473,7 +523,7 @@ bool interpolatediLQR::checkOneMatrixError(indexTuple indices){
 
     for(int i = dof; i < activeModelTranslator->stateVectorSize; i++){
         for(int j = 0; j < activeModelTranslator->stateVectorSize; j++){
-            double sqDiff = pow((matrixMidTrue(i, j) - matrixMidApprox(i, j)),2);
+            double sqDiff = pow((A[midIndex](i, j) - matrixMidApprox(i, j)),2);
             if(sqDiff > 0.5){
                 sqDiff = 0.0f;
             }
@@ -524,6 +574,22 @@ std::vector<MatrixXd> interpolatediLQR::generateJerkProfile(){
     return jerkProfile;
 }
 
+void interpolatediLQR::getCostDerivs(){
+    #pragma omp parallel for
+    for(int i = 0; i < horizonLength; i++){
+        if(i == 0){
+            activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+        }
+        else{
+            activeModelTranslator->costDerivatives(X_old[i], U_old[i], X_old[i-1], U_old[i-1], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+        }
+
+    }
+
+    activeModelTranslator->costDerivatives(X_old[horizonLength], U_old[horizonLength - 1], X_old[horizonLength - 1], U_old[horizonLength - 1],
+                                           l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength], true);
+}
+
 void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
 
     activeDifferentiator->initModelForFiniteDifferencing();
@@ -557,33 +623,64 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
 void interpolatediLQR::interpolateDerivatives(std::vector<int> calculatedIndices){
 
     // Interpolate all the derivatvies that were not calculated via finite differencing
-    for(int t = 0; t < calculatedIndices.size()-1; t++){
 
-        MatrixXd addA(2*dof, 2*dof);
-        MatrixXd addB(2*dof, num_ctrl);
-        int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
-        int startIndex = calculatedIndices[t];
+    if(keyPointsMethod != iterative_error){
+        for(int t = 0; t < calculatedIndices.size()-1; t++){
 
-        MatrixXd startA = A[t].replicate(1, 1);
-        MatrixXd endA = A[t + 1].replicate(1, 1);
-        MatrixXd diffA = endA - startA;
-        addA = diffA / nextInterpolationSize;
+            MatrixXd addA(2*dof, 2*dof);
+            MatrixXd addB(2*dof, num_ctrl);
+            int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
+            int startIndex = calculatedIndices[t];
 
-        MatrixXd startB = B[t].replicate(1, 1);
-        MatrixXd endB = B[t + 1].replicate(1, 1);
-        MatrixXd diffB = endB - startB;
-        addB = diffB / nextInterpolationSize;
+            MatrixXd startA = A[t].replicate(1, 1);
+            MatrixXd endA = A[t + 1].replicate(1, 1);
+            MatrixXd diffA = endA - startA;
+            addA = diffA / nextInterpolationSize;
 
-        // Interpolate A and B matrices
-        for(int i = 0; i < nextInterpolationSize; i++){
-            f_x[startIndex + i] = A[t].replicate(1,1) + (addA * i);
-            f_u[startIndex + i] = B[t].replicate(1,1) + (addB * i);
+            MatrixXd startB = B[t].replicate(1, 1);
+            MatrixXd endB = B[t + 1].replicate(1, 1);
+            MatrixXd diffB = endB - startB;
+            addB = diffB / nextInterpolationSize;
+
+            // Interpolate A and B matrices
+            for(int i = 0; i < nextInterpolationSize; i++){
+                f_x[startIndex + i] = A[t].replicate(1,1) + (addA * i);
+                f_u[startIndex + i] = B[t].replicate(1,1) + (addB * i);
 //            cout << "f_x[" << startIndex + i << "] = " << f_x[startIndex + i] << endl;
+            }
+        }
+    }
+    else{
+        for(int t = 0; t < calculatedIndices.size()-1; t++){
+
+            MatrixXd addA(2*dof, 2*dof);
+            MatrixXd addB(2*dof, num_ctrl);
+            int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
+            int startIndex = calculatedIndices[t];
+            int endIndex = calculatedIndices[t+1];
+
+            MatrixXd startA = A[startIndex].replicate(1, 1);
+            MatrixXd endA = A[endIndex].replicate(1, 1);
+            MatrixXd diffA = endA - startA;
+            addA = diffA / nextInterpolationSize;
+
+            MatrixXd startB = B[startIndex].replicate(1, 1);
+            MatrixXd endB = B[endIndex].replicate(1, 1);
+            MatrixXd diffB = endB - startB;
+            addB = diffB / nextInterpolationSize;
+
+            // Interpolate A and B matrices
+            for(int i = 0; i < nextInterpolationSize; i++){
+                f_x[startIndex + i] = A[startIndex].replicate(1,1) + (addA * i);
+                f_u[startIndex + i] = B[startIndex].replicate(1,1) + (addB * i);
+//                cout << "f_x[" << startIndex + i << "] = " << f_x[startIndex + i] << endl;
+            }
         }
     }
 
-    f_x[horizonLength - 1] = f_x[horizonLength - 2].replicate(1,1);
-    f_u[horizonLength - 1] = f_u[horizonLength - 2].replicate(1,1);
+//
+//    f_x[horizonLength - 1] = f_x[horizonLength - 2].replicate(1,1);
+//    f_u[horizonLength - 1] = f_u[horizonLength - 2].replicate(1,1);
 
     f_x[horizonLength] = f_x[horizonLength - 1].replicate(1,1);
     f_u[horizonLength] = f_u[horizonLength - 1].replicate(1,1);
@@ -796,10 +893,10 @@ double interpolatediLQR::forwardsPass(double oldCost, bool &costReduced){
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-             if(t % 20 == 0){
-                 const char* fplabel = "fp";
-                 activeVisualizer->render(fplabel);
-             }
+//             if(t % 20 == 0){
+//                 const char* fplabel = "fp";
+//                 activeVisualizer->render(fplabel);
+//             }
 
             X_last = Xt.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
@@ -867,7 +964,7 @@ double interpolatediLQR::forwardsPassParallel(double oldCost, bool &costReduced)
 
     MatrixXd initState = activeModelTranslator->returnStateVector(1);
 
-    #pragma omp parallel for
+//    #pragma omp parallel for
     for(int i = 0; i < 8; i++){
         MatrixXd stateFeedback(2*dof, 1);
         MatrixXd _X(2*dof, 1);
@@ -948,7 +1045,7 @@ double interpolatediLQR::forwardsPassParallel(double oldCost, bool &costReduced)
 
         for(int i = 0; i < horizonLength; i++){
 
-            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
             // Log the old state

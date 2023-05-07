@@ -21,6 +21,7 @@ public:
 
     std::vector<int> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
     void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
+    void getCostDerivs();
     void interpolateDerivatives(std::vector<int> calculatedIndices);
 
     bool backwardsPass_Quu_reg();
@@ -45,8 +46,6 @@ private:
     double minLambda = 0.00001;
     double lambdaFactor = 10;
     int maxHorizon = 0;
-    int min_interval = 1;
-    int max_interval = 100;
 
     // -------------- Vectors of matrices for gradient information about the trajectory -------------
     // First order dynamics
@@ -81,6 +80,7 @@ private:
     std::vector<int> generateKeyPointsIteratively();
     bool checkOneMatrixError(indexTuple indices);
 
+    std::vector<int> computedKeyPoints;
     int testNumber = 0;
 
 };
