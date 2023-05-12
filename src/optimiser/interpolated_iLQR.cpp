@@ -110,7 +110,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         cost += (stateCost * MUJOCO_DT);
     }
 
-    cout << "cost of trajectory was: " << cost << endl;
+    cout << "cost of initial trajectory was: " << cost << endl;
     initialCost = cost;
     costHistory.push_back(cost);
 
@@ -228,6 +228,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
             }
             else{
+                costReducedLastIter = false;
                 if(lambda < maxLambda){
                     lambda *= lambdaFactor;
                     lambda *= lambdaFactor;
@@ -493,6 +494,11 @@ bool interpolatediLQR::checkOneMatrixError(indexTuple indices){
     bool midIndexExists;
     bool endIndexExists;
 
+    int counterTooSmall = 0;
+    int counterTooLarge = 0;
+
+//    cout << "start index: " << indices.startIndex << " mid index: " << midIndex << " end index: " << indices.endIndex << "\n";
+
     for(int i = 0; i < computedKeyPoints.size(); i++){
         if(computedKeyPoints[i] == indices.startIndex){
             startIndexExists = true;
@@ -535,11 +541,14 @@ bool interpolatediLQR::checkOneMatrixError(indexTuple indices){
     for(int i = dof; i < activeModelTranslator->stateVectorSize; i++){
         for(int j = 0; j < activeModelTranslator->stateVectorSize; j++){
             double sqDiff = pow((A[midIndex](i, j) - matrixMidApprox(i, j)),2);
+
             if(sqDiff > 0.5){
                 sqDiff = 0.0f;
+                counterTooLarge++;
             }
             else if(sqDiff < 0.00001){
                 sqDiff = 0.0f;
+                counterTooSmall++;
             }
             else{
 
@@ -549,10 +558,31 @@ bool interpolatediLQR::checkOneMatrixError(indexTuple indices){
         }
     }
 
-    double averageError = errorSum / counter;
+    double averageError;
+    if(counter > 0){
+        averageError = errorSum / counter;
+    }
+    else{
+        averageError = 0.0f;
+    }
+
+//    cout << "average error: " << averageError << "\n";
+//    cout << "num valid: " << counter << "\n";
+//    cout << "num too small: " << counterTooSmall << "\n";
+//    cout << "num too large: " << counterTooLarge << "\n";
     if(averageError < 0.002){
         approximationGood = true;
     }
+    else{
+//        cout << "matrix mid approx" << matrixMidApprox << "\n";
+//        cout << "matrix mid true" << A[midIndex] << "\n";
+    }
+
+//    if(counter == 0){
+//        cout << "start index: " << indices.startIndex << " mid index: " << midIndex << " end index: " << indices.endIndex << "\n";
+//        cout << "matrix mid approx" << matrixMidApprox << "\n";
+//        cout << "matrix mid true" << A[midIndex] << "\n";
+//    }
 
     return approximationGood;
 }
@@ -609,7 +639,7 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
     for(int i = 0; i < indices.size(); i++){
 
         int index = indices[i];
-        activeDifferentiator->getDerivatives(A[i], B[i], false, index);
+        activeDifferentiator->getDerivatives(A[index], B[index], false, index);
 
     }
 
@@ -634,64 +664,31 @@ void interpolatediLQR::getDerivativesAtSpecifiedIndices(std::vector<int> indices
 void interpolatediLQR::interpolateDerivatives(std::vector<int> calculatedIndices){
 
     // Interpolate all the derivatvies that were not calculated via finite differencing
+    for(int t = 0; t < calculatedIndices.size()-1; t++){
 
-    if(keyPointsMethod != iterative_error){
-        for(int t = 0; t < calculatedIndices.size()-1; t++){
+        MatrixXd addA(2*dof, 2*dof);
+        MatrixXd addB(2*dof, num_ctrl);
+        int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
+        int startIndex = calculatedIndices[t];
+        int endIndex = calculatedIndices[t+1];
 
-            MatrixXd addA(2*dof, 2*dof);
-            MatrixXd addB(2*dof, num_ctrl);
-            int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
-            int startIndex = calculatedIndices[t];
+        MatrixXd startA = A[startIndex].replicate(1, 1);
+        MatrixXd endA = A[endIndex].replicate(1, 1);
+        MatrixXd diffA = endA - startA;
+        addA = diffA / nextInterpolationSize;
 
-            MatrixXd startA = A[t].replicate(1, 1);
-            MatrixXd endA = A[t + 1].replicate(1, 1);
-            MatrixXd diffA = endA - startA;
-            addA = diffA / nextInterpolationSize;
+        MatrixXd startB = B[startIndex].replicate(1, 1);
+        MatrixXd endB = B[endIndex].replicate(1, 1);
+        MatrixXd diffB = endB - startB;
+        addB = diffB / nextInterpolationSize;
 
-            MatrixXd startB = B[t].replicate(1, 1);
-            MatrixXd endB = B[t + 1].replicate(1, 1);
-            MatrixXd diffB = endB - startB;
-            addB = diffB / nextInterpolationSize;
-
-            // Interpolate A and B matrices
-            for(int i = 0; i < nextInterpolationSize; i++){
-                f_x[startIndex + i] = A[t].replicate(1,1) + (addA * i);
-                f_u[startIndex + i] = B[t].replicate(1,1) + (addB * i);
-//            cout << "f_x[" << startIndex + i << "] = " << f_x[startIndex + i] << endl;
-            }
-        }
-    }
-    else{
-        for(int t = 0; t < calculatedIndices.size()-1; t++){
-
-            MatrixXd addA(2*dof, 2*dof);
-            MatrixXd addB(2*dof, num_ctrl);
-            int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
-            int startIndex = calculatedIndices[t];
-            int endIndex = calculatedIndices[t+1];
-
-            MatrixXd startA = A[startIndex].replicate(1, 1);
-            MatrixXd endA = A[endIndex].replicate(1, 1);
-            MatrixXd diffA = endA - startA;
-            addA = diffA / nextInterpolationSize;
-
-            MatrixXd startB = B[startIndex].replicate(1, 1);
-            MatrixXd endB = B[endIndex].replicate(1, 1);
-            MatrixXd diffB = endB - startB;
-            addB = diffB / nextInterpolationSize;
-
-            // Interpolate A and B matrices
-            for(int i = 0; i < nextInterpolationSize; i++){
-                f_x[startIndex + i] = A[startIndex].replicate(1,1) + (addA * i);
-                f_u[startIndex + i] = B[startIndex].replicate(1,1) + (addB * i);
+        // Interpolate A and B matrices
+        for(int i = 0; i < nextInterpolationSize; i++){
+            f_x[startIndex + i] = A[startIndex].replicate(1,1) + (addA * i);
+            f_u[startIndex + i] = B[startIndex].replicate(1,1) + (addB * i);
 //                cout << "f_x[" << startIndex + i << "] = " << f_x[startIndex + i] << endl;
-            }
         }
     }
-
-//
-//    f_x[horizonLength - 1] = f_x[horizonLength - 2].replicate(1,1);
-//    f_u[horizonLength - 1] = f_u[horizonLength - 2].replicate(1,1);
 
     f_x[horizonLength] = f_x[horizonLength - 1].replicate(1,1);
     f_u[horizonLength] = f_u[horizonLength - 1].replicate(1,1);
