@@ -741,9 +741,9 @@ void MuJoCoHelper::initVisualisation() {
     mjr_defaultContext(&con);
     mjv_defaultScene(&scn);
 
-    cam.distance = 1.33095;
-    cam.azimuth = 176.5;
-    cam.elevation = -19.1;
+    cam.distance = 0.945;
+    cam.azimuth = 135.1;
+    cam.elevation = -11.3;
     cam.lookat[0] = 0.459;
     cam.lookat[1] = 0.003;
     cam.lookat[2] = 0.263;
@@ -761,13 +761,13 @@ void MuJoCoHelper::updateScene(GLFWwindow *window, const char* label){
 
     mjr_render(viewport, &scn, &con);
 
-    cout << "------------------------------------------------- \n";
-    cout << "camera dist: " << cam.distance << endl;
-    cout << "camera azimuth: " << cam.azimuth << endl;
-    cout << "camera elevation: " << cam.elevation << endl;
-    cout << "camera look at: " << cam.lookat[0] << endl;
-    cout << "camera look at: " << cam.lookat[1] << endl;
-    cout << "camera look at: " << cam.lookat[2] << endl;
+//    cout << "------------------------------------------------- \n";
+//    cout << "camera dist: " << cam.distance << endl;
+//    cout << "camera azimuth: " << cam.azimuth << endl;
+//    cout << "camera elevation: " << cam.elevation << endl;
+//    cout << "camera look at: " << cam.lookat[0] << endl;
+//    cout << "camera look at: " << cam.lookat[1] << endl;
+//    cout << "camera look at: " << cam.lookat[2] << endl;
 
     mjrRect rect{0, 0, 100, 100};
     mjr_rectangle(rect, 0, 0, 0, 0);

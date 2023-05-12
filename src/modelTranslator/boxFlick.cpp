@@ -102,7 +102,8 @@ void boxFlick::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std::v
 
     std::string goalMarkerName = "display_intermediate";
     pose_6 displayBodyPose;
-    displayBodyPose.position[0] = intermediatePointX;
+//    displayBodyPose.position[0] = intermediatePointX;
+    displayBodyPose.position[0] = 100.0f;
     displayBodyPose.position[1] = intermediatePointY;
     displayBodyPose.position[2] = 0.0f;
     activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
@@ -122,7 +123,8 @@ std::vector<MatrixXd> boxFlick::createInitOptimisationControls(int horizonLength
     std::string goalMarkerName = "display_goal";
     pose_6 displayBodyPose;
     displayBodyPose.position[0] = X_desired(9);
-    displayBodyPose.position[1] = X_desired(10);
+//    displayBodyPose.position[1] = X_desired(10);
+    displayBodyPose.position[1] = 100.0f;
     displayBodyPose.position[2] = 0.0f;
     activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 

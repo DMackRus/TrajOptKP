@@ -105,7 +105,7 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
     displayBodyPose.position[0] = intermediatePointX;
     displayBodyPose.position[1] = intermediatePointY;
     displayBodyPose.position[2] = 0.0f;
-//    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 
     mainWayPoint(0) = intermediatePointX;
     mainWayPoint(1) = intermediatePointY;

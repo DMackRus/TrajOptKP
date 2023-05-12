@@ -51,7 +51,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = iterative_error;
+int keyPointMethod = adaptive_jerk;
 //int keyPointMethod = adaptive_jerk;
 
 void showInitControls();
@@ -484,7 +484,7 @@ void generateTestScenes(){
 
 void showInitControls(){
     int setupHorizon = 1000;
-    int optHorizon = 2000;
+    int optHorizon = 2200;
     int controlCounter = 0;
     int visualCounter = 0;
 
@@ -509,6 +509,21 @@ void showInitControls(){
 
         controlCounter++;
         visualCounter++;
+
+        if(controlCounter == setupHorizon){
+            int a = 1;
+
+        }
+
+        if(controlCounter == setupHorizon + optHorizon/2){
+            int a = 1;
+
+        }
+
+        if(controlCounter == setupHorizon + optHorizon){
+            int a = 1;
+
+        }
 
         if(controlCounter >= initControls.size()){
             controlCounter = 0;
