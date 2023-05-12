@@ -51,8 +51,8 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-//int keyPointMethod = setInterval;
-int keyPointMethod = adaptive_jerk;
+int keyPointMethod = iterative_error;
+//int keyPointMethod = adaptive_jerk;
 
 void showInitControls();
 void iLQROnce();

@@ -264,6 +264,17 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
 //        }
 //    }
 
+    for(int i = 0; i < dof; i++){
+        for(int j = 0; j < dof; j++){
+            if(dqveldq(i, j) > 2){
+                dqveldq(i, j) = 2;
+            }
+            if(dqveldq(i, j)< -2){
+                dqveldq(i, j) = -2;
+            }
+        }
+    }
+
 
 
     // ------------ A -----------------

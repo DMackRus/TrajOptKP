@@ -40,7 +40,7 @@ public:
     int numIters = 0;
     bool filteringMatrices = true;
 
-    bool saveTrajecInfomation = false;
+    bool saveTrajecInfomation = true;
     bool saveCostHistory = true;
 
 private:

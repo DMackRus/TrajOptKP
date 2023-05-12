@@ -139,6 +139,7 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Z){
+        // Print screen view settings
 
 
     }
