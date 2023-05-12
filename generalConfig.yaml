@@ -10,4 +10,4 @@ displayMode: 5
 # Loadmodes can be, "random", "fromCSV", "fromYAML"
 taskInitMode: "fromCSV"
 csvRow: 0
-filtering: true
+filtering: false
