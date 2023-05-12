@@ -7,6 +7,8 @@
 #include "reaching.h"
 #include "twoDPushing.h"
 #include "twoDPushingClutter.h"
+#include "twoDPushingHeavyClutter.h"
+#include "boxFlick.h"
 
 #include "visualizer.h"
 #include "MuJoCoHelper.h"
@@ -24,15 +26,18 @@
 #define GENERATE_TESTING_DATA       5
 #define GENERATE_FILTERING_DATA     6
 #define DEFAULT_KEYBOARD_CONTROL    7
+#define GENERIC_TESTING             9
 
 enum scenes{
     pendulum = 0,
     reaching = 1,
-    twoReaching = 2,
-    cylinderPushing = 3,
-    threeDPushing = 4,
+    cylinderPushing = 2,
+    cylinderPushingMildClutter = 3,
+    cylinderPushingHeavyClutter = 4,
+    boxPushingToppling = 4,
     boxFlicking = 5,
-    cylinderPushingClutter = 6
+    boxFlickingMildClutter = 6,
+    boxFlickingHeavyClutter = 7
 };
 
 // --------------------- Global class instances --------------------------------
@@ -46,7 +51,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = iterative_error;
+int keyPointMethod = setInterval;
 //int keyPointMethod = adaptive_jerk;
 
 void showInitControls();
@@ -57,6 +62,8 @@ void generateTestScenes();
 void keyboardControl();
 void generateTestingData();
 void generateFilteringData();
+
+void genericTesting();
 
 int main(int argc, char **argv) {
     cout << "program started \n";
@@ -79,31 +86,39 @@ int main(int argc, char **argv) {
         activeModelTranslator = myDoublePendulum;
     }
     else if(task == reaching){
-        // std::cout << "before creating reaching problem" << std::endl;
         pandaReaching *myReaching = new pandaReaching();
         activeModelTranslator = myReaching;
-    }
-    else if(task == twoReaching){
-        cout << "not implemented task yet " << endl;
-        return -1;
     }
     else if(task == cylinderPushing){
         twoDPushing *myTwoDPushing = new twoDPushing();
         activeModelTranslator = myTwoDPushing;
 
     }
-    else if(task == threeDPushing){
-        cout << "not implemented task yet " << endl;
-        return -1;
-
-    }
-    else if(task == boxFlicking){
-        cout << "not implemented task yet " << endl;
-        return -1;
-    }
-    else if(task == cylinderPushingClutter){
+    else if(task == cylinderPushingMildClutter){
         twoDPushingClutter *myTwoDPushingClutter = new twoDPushingClutter();
         activeModelTranslator = myTwoDPushingClutter;
+
+    }
+    else if(task == cylinderPushingHeavyClutter){
+        twoDPushingHeavyClutter *myTwoDPushingHeavyClutter = new twoDPushingHeavyClutter();
+        activeModelTranslator = myTwoDPushingHeavyClutter;
+
+    }
+    else if(task == boxPushingToppling){
+        cout << "not implemented task yet " << endl;
+        return -1;
+    }
+    else if(task == boxFlicking){
+        boxFlick *myBoxFlick = new boxFlick();
+        activeModelTranslator = myBoxFlick;
+    }
+    else if(task == boxFlickingMildClutter){
+        cout << "not implemented task yet " << endl;
+        return -1;
+    }
+    else if(task == boxFlickingHeavyClutter){
+        cout << "not implemented task yet " << endl;
+        return -1;
     }
     else{
         std::cout << "invalid scene selected, exiting" << std::endl;
@@ -111,6 +126,7 @@ int main(int argc, char **argv) {
 
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
     startStateVector = activeModelTranslator->X_start;
+    cout << "start state vector: " << startStateVector << endl;
 
     // random start and goal state
     std::string taskPrefix = activeModelTranslator->modelName;
@@ -128,8 +144,6 @@ int main(int argc, char **argv) {
 
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
-    cout << "starting state: " << startStateVector << endl;
-    cout << "desired state: " << activeModelTranslator->X_desired << endl;
 
     //Instantiate my optimiser
     activeVisualiser = new visualizer(activeModelTranslator);
@@ -189,10 +203,112 @@ int main(int argc, char **argv) {
         cout << "KEYBOARD TESTING MODE \n";
         keyboardControl();
     }
+    else if(mode == GENERIC_TESTING){
+        genericTesting();
+    }
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
     }
     return 0;
+}
+
+void genericTesting(){
+
+    int dof = 21;
+    int num_ctrl = 7;
+
+    MatrixXd l_u(num_ctrl, 1);
+    MatrixXd l_x(2*dof, 1);
+    MatrixXd l_xx(2*dof, 2*dof);
+    MatrixXd l_uu(num_ctrl, num_ctrl);
+
+    MatrixXd f_x(2*dof, 2*dof);
+    MatrixXd f_u(2*dof, num_ctrl);
+
+    l_u.setRandom();
+    l_x.setRandom();
+    l_xx.setRandom();
+    l_uu.setRandom();
+
+    f_x.setRandom();
+    f_u.setRandom();
+
+    MatrixXd V_x(2*dof, 2*dof);
+    V_x = l_x;
+    MatrixXd V_xx(2*dof, 2*dof);
+    V_xx = l_xx;
+
+    MatrixXd Q_x(2*dof, 1);
+    MatrixXd Q_u(num_ctrl, 1);
+    MatrixXd Q_xx(2*dof, 2*dof);
+    MatrixXd Q_uu(num_ctrl, num_ctrl);
+    MatrixXd Q_ux(num_ctrl, 2*dof);
+
+    //set threads to 1
+    Eigen::setNbThreads(1);
+    int n  = Eigen::nbThreads( );
+    cout << "number of threads: " << n << endl;
+
+    // Simulate a backwards pass for arbitrary state vector size and time it
+    auto timeStart = std::chrono::high_resolution_clock::now();
+
+//    int bigNum = 1000;
+//
+//    MatrixXd test1(bigNum, bigNum);
+//    test1.setOnes();
+//    MatrixXd test2(bigNum, bigNum);
+//    test2.setOnes();
+//
+//    MatrixXd result(bigNum, bigNum);
+//
+//
+//    for(int i = 0; i < 10; i++){
+//        result = test1 * test2;
+//        cout << "done 1" << endl;
+//
+//    }
+
+
+    for(int t = 1500; t > 0; t--){
+
+        Q_u = (f_u.transpose() * V_x);
+        Q_u = l_u + Q_u;
+
+        Q_x = (f_x.transpose() * V_x);
+        Q_x = l_x + Q_x;
+
+        Q_ux = (f_u.transpose() * (V_xx * f_x));
+
+        Q_uu = (f_u.transpose() * (V_xx * f_u));
+        Q_uu = l_uu + Q_uu;
+
+        Q_xx = (f_x.transpose() * (V_xx * f_x));
+        Q_xx = l_xx + Q_xx;
+
+        MatrixXd Q_uu_reg = Q_uu.replicate(1, 1);
+
+        for(int i = 0; i < Q_uu.rows(); i++){
+            Q_uu_reg(i, i) += 0.1;
+        }
+
+        auto temp = (Q_uu_reg).ldlt();
+        MatrixXd I(num_ctrl, num_ctrl);
+        I.setIdentity();
+        MatrixXd Q_uu_inv = temp.solve(I);
+
+        MatrixXd k = -Q_uu_inv * Q_u;
+        MatrixXd K = -Q_uu_inv * Q_ux;
+
+        V_x = Q_x - (K.transpose() * Q_uu * k) + (K.transpose() * Q_u) + (Q_ux.transpose() * k);
+        V_xx = Q_xx - (K.transpose() * Q_uu * K) + (K.transpose() * Q_ux) + (Q_ux.transpose() * K);
+
+        V_xx = (V_xx + V_xx.transpose()) / 2;
+
+    }
+    auto timeEnd = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(timeEnd - timeStart);
+    std::cout << "time taken for backwards pass: " << duration.count() / 1000000.0f << " s" << std::endl;
+
 }
 
 void generateTestingData(){

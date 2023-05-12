@@ -148,15 +148,15 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     }
     // ----------------------------------------------------------------------------------------------
 
-    cout << "Q: " << Q << std::endl;
-    cout << "R: " << R << std::endl;
+//    cout << "Q: " << Q << std::endl;
+//    cout << "R: " << R << std::endl;
 
     Q_terminal = Q.replicate(1, 1);
     for(int i = 0; i < dof; i++){
         Q_terminal(i, i) *= 10000;
     }
 
-    cout << "Q_terminal: " << Q_terminal << endl;
+//    cout << "Q_terminal: " << Q_terminal << endl;
 }
 
 double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal){
@@ -288,13 +288,15 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector, int dataIndex){
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
         currentStateIndex += myStateVector.robots[i].jointNames.size();
     }
-    cout << "current State Index << " << currentStateIndex << endl;
 
     // Loop through all bodies in the state vector
     for(int i = 0; i < myStateVector.bodiesStates.size(); i++){
         // Get the body's position and orientation
         pose_6 bodyPose;
         pose_6 bodyVelocity;
+
+        activePhysicsSimulator->getBodyPose_angle(myStateVector.bodiesStates[i].name, bodyPose, dataIndex);
+        activePhysicsSimulator->getBodyVelocity(myStateVector.bodiesStates[i].name, bodyVelocity, dataIndex);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions

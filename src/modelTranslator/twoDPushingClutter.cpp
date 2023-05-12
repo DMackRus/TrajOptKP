@@ -61,8 +61,6 @@ std::vector<MatrixXd> twoDPushingClutter::createInitSetupControls(int horizonLen
     goalPos(0) = X_desired(7);
     goalPos(1) = X_desired(8);
     initControls_mainWayPoints_setup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
-    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
-    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
 
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = initControls_createAllWayPoints(mainWayPoints, mainWayPointsTimings);
@@ -150,8 +148,6 @@ std::vector<MatrixXd> twoDPushingClutter::createInitOptimisationControls(int hor
     goalPos(0) = X_desired(7);
     goalPos(1) = X_desired(8);
     initControls_mainWayPoints_optimisation(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
-    cout << "mainwaypoint 0: " << mainWayPoints[0] << endl;
-    cout << "mainWayPoint " << mainWayPoints[1] << endl;
 
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = initControls_createAllWayPoints(mainWayPoints, mainWayPointsTimings);

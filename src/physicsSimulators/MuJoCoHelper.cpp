@@ -250,18 +250,6 @@ bool MuJoCoHelper::getRobotJointsVelocities(string robotName, vector<double> &jo
     }
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
         jointVelocities.push_back(d->qvel[startIndex + i]);
@@ -293,18 +281,6 @@ bool MuJoCoHelper::getRobotJointsAccelerations(string robotName, vector<double> 
     }
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
         jointAccelerations.push_back(d->qacc[startIndex + i]);
@@ -338,18 +314,6 @@ bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &join
     }
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
         jointControls.push_back(d->ctrl[startIndex + i]);
@@ -383,18 +347,6 @@ bool MuJoCoHelper::getRobotJointsGravityCompensaionControls(string robotName, ve
     }
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
         jointsControls.push_back(d->qfrc_bias[startIndex + i]);
@@ -430,18 +382,6 @@ bool MuJoCoHelper::setBodyPose_quat(string bodyName, pose_7 pose, int dataIndex)
     const int qposIndex = model->jnt_qposadr[jointIndex];
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < 3; i++){
         d->qpos[qposIndex + i] = pose.position(i);
@@ -469,22 +409,13 @@ bool MuJoCoHelper::setBodyPose_angle(string bodyName, pose_6 pose, int dataIndex
     m_quat q = eul2Quat(pose.orientation);
 
     mjData *d = returnDesiredDataState(dataIndex);
-//    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < 3; i++){
         d->qpos[qposIndex + i] = pose.position(i);
     }
+
+//    cout << "bodyName: " << bodyName << "\n";
+//    cout << "pose.position: " << pose.position << "\n";
 
     for(int i = 0; i < 4; i++){
         d->qpos[qposIndex + 3 + i] = q(i);
@@ -506,18 +437,6 @@ bool MuJoCoHelper::setBodyVelocity(string bodyName, pose_6 velocity, int dataInd
     const int qvelIndex = model->jnt_dofadr[jointIndex];
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < 3; i++){
         d->qvel[qvelIndex + i] = velocity.position(i);

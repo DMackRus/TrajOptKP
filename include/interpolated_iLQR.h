@@ -19,12 +19,15 @@ public:
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
 
+    void generateDerivatives();
     std::vector<int> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
     void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
     void getCostDerivs();
     void interpolateDerivatives(std::vector<int> calculatedIndices);
 
     bool backwardsPass_Quu_reg();
+    bool backwardsPass_Quu_reg_parallel();
+    bool backwardsPass_Quu_skips();
     bool isMatrixPD(Ref<MatrixXd> matrix);
 
     double forwardsPass(double oldCost, bool &costReduced);

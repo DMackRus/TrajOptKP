@@ -33,6 +33,8 @@ public:
     int currentTrajecNumber = 0;
     int interpMethod = linear;
     int keyPointsMethod = setInterval;
+    std::string interpMethodsStrings[3] = {"linear", "quadratic", "cubic"};
+    std::string keyPointsMethodsStrings[4] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error"};
 
     double optTime;
 

@@ -427,27 +427,26 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
     double newCost = 0.0;
     bool costReduction = false;
 
-    MatrixXd Xt(2 * dof, 1);
-    MatrixXd X_last(2 * dof, 1);
-    MatrixXd Ut(num_ctrl, 1);
-    MatrixXd U_last(num_ctrl, 1);
 //    double alphas[8] = {1e-6, 1e-5, 1e-4, 1e-3, 1e-2, 32e-6, 64e-6, 128e-6};
-//    double alphas[8] = {1e-6, 5e-6, 1e-5, 5e-5, 1e-4, 5e-4, 1e-3, 5e-3};
-    double alphas[8] = {1e-8, 5e-8, 1e-7, 5e-7, 1e-6, 5e-6, 1e-5, 5e-4};
+    double alphas[8] = {1e-4, 5e-4, 1e-3, 5e-3, 1e-2, 5e-2, 1e-1, 1};
+//    double alphas[8] = {1e-8, 5e-8, 1e-7, 5e-7, 1e-6, 5e-6, 1e-5, 5e-4};
+//    double alphas[8] = {1e-20, 5e-16, 1e-9, 5e-9, 1e-8, 5e-8, 1e-5, 0};
     double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     for(int i = 0; i < 8; i++){
         activePhysicsSimulator->copySystemState(i+1, 0);
     }
 
-    MatrixXd initState = activeModelTranslator->returnStateVector(1);
-
-//    #pragma omp parallel for
+    #pragma omp parallel for
     for(int i = 0; i < 8; i++){
         MatrixXd stateFeedback(2*dof, 1);
         MatrixXd _X(2*dof, 1);
         MatrixXd X_new(2*dof, 1);
         MatrixXd _U(num_ctrl, 1);
+        MatrixXd Xt(2 * dof, 1);
+        MatrixXd X_last(2 * dof, 1);
+        MatrixXd Ut(num_ctrl, 1);
+        MatrixXd U_last(num_ctrl, 1);
 
         for(int t = 0; t < horizonLength; t++) {
             _U = U_old[t].replicate(1, 1);
@@ -504,11 +503,10 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
 
     // If the cost was reduced
     if(newCost < oldCost){
-        initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 
         for(int i = 0; i < horizonLength; i++){
 
-            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
             // Log the old state

@@ -205,6 +205,34 @@ void fileHandler::readOptimisationSettingsFile(int optimiser) {
     }
 }
 
+void fileHandler::generalSaveMatrices(std::vector<MatrixXd> matrices, std::string fileName){
+    int size = matrices.size();
+    cout << "trajectory size: " << size << endl;
+    std::string rootPath = projectParentPath;
+    mkdir(rootPath.c_str(), 0777);
+    std::string filename = rootPath + "/" + fileName + ".csv";
+    fileOutput.open(filename);
+    int rows = matrices[0].rows();
+    int cols = matrices[0].cols();
+
+    // trajectory length
+    for(int i = 0; i < size; i++){
+        // Row
+        for(int j = 0; j < (rows); j++){
+            // Column
+            for(int k = 0; k < cols; k++){
+                fileOutput << matrices[i](j, k) << ",";
+            }
+
+        }
+        fileOutput << endl;
+    }
+    fileOutput.close();
+
+
+
+}
+
 void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber){
     int size = A_matrices.size();
     cout << "trajectory size: " << size << endl;

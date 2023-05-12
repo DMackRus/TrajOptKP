@@ -1,0 +1,36 @@
+modelFile: "/Franka-emika-panda-arm/V1/boxFlick.xml"
+modelName: "/panda_pushing"
+robots:
+  panda:
+    jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
+    numActuators: 7
+    torqueControl: true 
+    torqueLimits: [87, 87, 87, 87, 12, 12, 12]
+    startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
+    goalPos: [ 0, 0, 0, 0, 0, 0, 0 ]
+    jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
+    jointVelCosts: [0, 0, 0, 0, 0, 0, 0]
+    jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
+bodies:
+  goal:
+    activeLinearDOF: [true, true, false]
+    activeAngularDOF: [false, false, false]
+    startLinearPos: [ 0.5, 0.1, 0.0 ]
+    startAngularPos: [ 0, 0, 0 ]
+    goalLinearPos: [ 0.5, 0.1, 0.0 ]
+    goalAngularPos: [ 0, 0, 0 ]
+    linearPosCost: [1, 1, 0]
+    linearVelCost: [0.1, 0.1, 0] 
+    angularPosCost: [0, 0, 0]
+    angularVelCost: [0, 0, 0]
+  obstacle1:
+    activeLinearDOF: [ true, true, true ]
+    activeAngularDOF: [ false, false, false ]
+    startLinearPos: [ 0.5, 0.1, 0.1 ]
+    startAngularPos: [ 0, 0, 0 ]
+    goalLinearPos: [ 0.7, 0.2, 0.0 ]
+    goalAngularPos: [ 0, 0, 0 ]
+    linearPosCost: [ 0, 0, 3 ]
+    linearVelCost: [ 0, 0, 0 ]
+    angularPosCost: [ 0, 0, 0 ]
+    angularVelCost: [ 0, 0, 0 ]
