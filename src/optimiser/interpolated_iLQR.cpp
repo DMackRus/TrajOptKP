@@ -95,6 +95,8 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
             stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
         }
 
+//        cout << "state cost: " << stateCost << endl;
+
         // If required to save states to trajectory tracking, then save state
         if(saveStates){
             X_old[i + 1] = Xt.replicate(1, 1);

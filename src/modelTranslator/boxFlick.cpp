@@ -1,7 +1,24 @@
 #include "boxFlick.h"
 
-boxFlick::boxFlick(){
-    std::string yamlFilePath = "/taskConfigs/boxFlick.yaml";
+boxFlick::boxFlick(int _clutterLevel){
+
+    clutterLevel = _clutterLevel;
+    std::string yamlFilePath = "/taskConfigs/boxFlickConfig.yaml";
+
+    if(clutterLevel == noClutter){
+        yamlFilePath = "/taskConfigs/boxFlickConfig.yaml";
+    }
+    else if(clutterLevel == lowClutter){
+        yamlFilePath = "/taskConfigs/boxFlickLowClutterConfig.yaml";
+    }
+    else if(clutterLevel == heavyClutter){
+        yamlFilePath = "/taskConfigs/boxFlickHeavyClutterConfig.yaml";
+    }
+    else{
+        cout << "ERROR: Invalid clutter level" << endl;
+    }
+
+
     initModelTranslator(yamlFilePath);
 }
 
@@ -32,6 +49,31 @@ MatrixXd boxFlick::returnRandomGoalState(MatrixXd X0){
 
 
     return randomGoalState;
+}
+
+double boxFlick::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal){
+    double cost = 0.0f;
+
+    MatrixXd X_diff = Xt - X_desired;
+    MatrixXd temp;
+
+    double obstacleDistCost = 0.0f;
+
+
+    double objectsDiffX = Xt(9) - boxStartX;
+    double objectsDiffY = Xt(10) - boxStartY;
+
+    obstacleDistCost = (A * exp(-(pow(objectsDiffX,2)/sigma))) + (A * exp(-(pow(objectsDiffY,2)/sigma)));
+
+    temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
+
+    cost = temp(0) + obstacleDistCost;
+
+    return cost;
+}
+
+void boxFlick::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+
 }
 
 std::vector<MatrixXd> boxFlick::createInitSetupControls(int horizonLength){
@@ -101,8 +143,8 @@ void boxFlick::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std::v
 
     std::string goalMarkerName = "display_intermediate";
     pose_6 displayBodyPose;
-//    displayBodyPose.position[0] = intermediatePointX;
-    displayBodyPose.position[0] = 100.0f;
+    displayBodyPose.position[0] = intermediatePointX;
+//    displayBodyPose.position[0] = 100.0f;
     displayBodyPose.position[1] = intermediatePointY;
     displayBodyPose.position[2] = 0.0f;
     activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
@@ -122,8 +164,8 @@ std::vector<MatrixXd> boxFlick::createInitOptimisationControls(int horizonLength
     std::string goalMarkerName = "display_goal";
     pose_6 displayBodyPose;
     displayBodyPose.position[0] = X_desired(9);
-//    displayBodyPose.position[1] = X_desired(10);
-    displayBodyPose.position[1] = 100.0f;
+    displayBodyPose.position[1] = X_desired(10);
+//    displayBodyPose.position[1] = 100.0f;
     displayBodyPose.position[2] = 0.0f;
     activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 

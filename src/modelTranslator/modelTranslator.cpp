@@ -56,9 +56,9 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
     // --------- Set size of cost matrices correctly ------------
     num_ctrl = myStateVector.robots[0].numActuators;
-    Q.resize(stateVectorSize, stateVectorSize);
+    Q.resize(stateVectorSize);
     Q.setZero();
-    R.resize(num_ctrl, num_ctrl);
+    R.resize(num_ctrl);
     R.setZero();
 
     // -----------------------------------------------------------------------------------------
@@ -71,9 +71,9 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
         // Loop through the robot joints
         for(int j = 0; j < robotNumJoints; j++){
-            Q(Q_index + j, Q_index + j) = myStateVector.robots[i].jointPosCosts[j];
+            Q.diagonal()[Q_index + j, Q_index + j] = myStateVector.robots[i].jointPosCosts[j];
 
-            Q(Q_index + j + dof, Q_index + j + dof) = myStateVector.robots[i].jointVelCosts[j];
+            Q.diagonal()[Q_index + j + dof, Q_index + j + dof] = myStateVector.robots[i].jointVelCosts[j];
 
             X_desired(Q_index + j, 0) = myStateVector.robots[i].goalPos[j];
             X_desired(Q_index + j + dof, 0) = 0.0f;
@@ -101,9 +101,9 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
         int activeDofCounter = 0;
         for(int j = 0; j < 3; j++){
             if(myStateVector.bodiesStates[i].activeLinearDOF[j]){
-                Q(Q_index + activeDofCounter, Q_index + activeDofCounter) = myStateVector.bodiesStates[i].linearPosCost[j];
+                Q.diagonal()[Q_index + activeDofCounter, Q_index + activeDofCounter] = myStateVector.bodiesStates[i].linearPosCost[j];
 
-                Q(Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof) = myStateVector.bodiesStates[i].linearVelCost[j];
+                Q.diagonal()[Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof] = myStateVector.bodiesStates[i].linearVelCost[j];
 
                 X_desired(Q_index + j, 0) = myStateVector.bodiesStates[i].goalLinearPos[j];
                 X_desired(Q_index + j + dof, 0) = 0.0f;
@@ -118,9 +118,9 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
         // Loop through angular states second
         for(int j = 0; j < 3; j++){
             if(myStateVector.bodiesStates[i].activeAngularDOF[j]){
-                Q(Q_index + activeDofCounter, Q_index + activeDofCounter) = myStateVector.bodiesStates[i].angularPosCost[j];
+                Q.diagonal()[Q_index + activeDofCounter, Q_index + activeDofCounter] = myStateVector.bodiesStates[i].angularPosCost[j];
 
-                Q(Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof) = myStateVector.bodiesStates[i].angularVelCost[j];
+                Q.diagonal()[Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof] = myStateVector.bodiesStates[i].angularVelCost[j];
 
                 X_desired(Q_index + j, 0) = myStateVector.bodiesStates[i].goalAngularPos[j];
                 X_desired(Q_index + j + dof, 0) = 0.0f;
@@ -141,7 +141,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
         // Loop through the robot joints
         for(int j = 0; j < robotNumJoints; j++){
-            R(R_index + j, R_index + j) = myStateVector.robots[i].jointControlCosts[j];
+            R.diagonal()[R_index + j, R_index + j] = myStateVector.robots[i].jointControlCosts[j];
         }
 
         R_index += robotNumJoints;
@@ -151,12 +151,14 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 //    cout << "Q: " << Q << std::endl;
 //    cout << "R: " << R << std::endl;
 
-    Q_terminal = Q.replicate(1, 1);
+    // Set terminal cost matrix
+    Q_terminal.resize(stateVectorSize);
+    Q_terminal.setZero();
     for(int i = 0; i < dof; i++){
-        Q_terminal(i, i) *= 10000;
+        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 10000;
     }
 
-//    cout << "Q_terminal: " << Q_terminal << endl;
+   cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
 }
 
 double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal){

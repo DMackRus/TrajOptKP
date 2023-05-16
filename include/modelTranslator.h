@@ -57,10 +57,10 @@ public:
     std::string modelName;
 
 protected:
-    MatrixXd Q;
-    MatrixXd Q_terminal;
-    MatrixXd R;
-    MatrixXd J;
+    DiagonalMatrix<double, Eigen::Dynamic> Q;
+    DiagonalMatrix<double, Eigen::Dynamic> Q_terminal;
+    DiagonalMatrix<double, Eigen::Dynamic> R;
+    DiagonalMatrix<double, Eigen::Dynamic> J;
 
 private:
 

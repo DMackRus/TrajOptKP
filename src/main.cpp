@@ -6,8 +6,8 @@
 #include "doublePendulum.h"
 #include "reaching.h"
 #include "twoDPushing.h"
-#include "twoDPushingClutter.h"
-#include "twoDPushingHeavyClutter.h"
+//#include "twoDPushingClutter.h"
+//#include "twoDPushingHeavyClutter.h"
 #include "boxFlick.h"
 
 #include "visualizer.h"
@@ -51,7 +51,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = adaptive_accel;
+int keyPointMethod = setInterval;
 //int keyPointMethod = adaptive_jerk;
 
 void showInitControls();
@@ -110,16 +110,16 @@ int main(int argc, char **argv) {
         return -1;
     }
     else if(task == boxFlicking){
-        boxFlick *myBoxFlick = new boxFlick();
+        boxFlick *myBoxFlick = new boxFlick(noClutter);
         activeModelTranslator = myBoxFlick;
     }
     else if(task == boxFlickingMildClutter){
-        cout << "not implemented task yet " << endl;
-        return -1;
+        boxFlick *myBoxFlick = new boxFlick(lowClutter);
+        activeModelTranslator = myBoxFlick;
     }
     else if(task == boxFlickingHeavyClutter){
-        cout << "not implemented task yet " << endl;
-        return -1;
+        boxFlick *myBoxFlick = new boxFlick(heavyClutter);
+        activeModelTranslator = myBoxFlick;
     }
     else{
         std::cout << "invalid scene selected, exiting" << std::endl;
