@@ -43,6 +43,7 @@ public:
     std::string taskInitMode;
     int csvRow = 0;
     bool filtering = false;
+    bool costDerivsFD = false;
     ofstream fileOutput;
 
     int minIter;

@@ -7,23 +7,12 @@
 #include "fileHandler.h"
 #include <algorithm>
 
-struct indexTuple{
-    int startIndex;
-    int endIndex;
-};
-
 class interpolatediLQR: public optimiser{
 public:
     interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer, fileHandler *_yamlReader);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
-
-    void generateDerivatives();
-    std::vector<int> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
-    void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
-    void getCostDerivs();
-    void interpolateDerivatives(std::vector<int> calculatedIndices);
 
     bool backwardsPass_Quu_reg();
     bool backwardsPass_Quu_reg_parallel();
@@ -33,12 +22,9 @@ public:
     double forwardsPass(double oldCost, bool &costReduced);
     double forwardsPassParallel(double oldCost, bool &costReduced);
 
-    void filterMatrices();
-    std::vector<double> filterIndividualValue(std::vector<double> unfiltered);
 
     std::vector<double> costHistory;
     int numIters = 0;
-    bool filteringMatrices = true;
 
     bool saveTrajecInfomation = true;
     bool saveCostHistory = true;
@@ -50,41 +36,13 @@ private:
     double lambdaFactor = 10;
     int maxHorizon = 0;
 
-    // -------------- Vectors of matrices for gradient information about the trajectory -------------
-    // First order dynamics
-    vector<MatrixXd> f_x;
-    vector<MatrixXd> f_u;
-    vector<MatrixXd> A;
-    vector<MatrixXd> B;
-
-    // First and second order cost derivatives
-    vector<MatrixXd> l_x;
-    vector<MatrixXd> l_xx;
-    vector<MatrixXd> l_u;
-    vector<MatrixXd> l_uu;
-
     // Feedback gains matrices
     vector<MatrixXd> k;
     vector<MatrixXd> K;
 
-    // Saved states and controls
-    vector<MatrixXd> U_new;
-    vector<MatrixXd> U_old;
-    vector<MatrixXd> X_new;
-    vector<MatrixXd> X_old;
-
-    differentiator *activeDifferentiator;
     visualizer *activeVisualizer;
-    fileHandler *activeYamlReader;
 
     vector<vector<MatrixXd>> U_alpha;
-
-    std::vector<MatrixXd> generateJerkProfile();
-    std::vector<int> generateKeyPointsIteratively();
-    bool checkOneMatrixError(indexTuple indices);
-
-    std::vector<int> computedKeyPoints;
-    int testNumber = 0;
 
 };
 

@@ -7,7 +7,6 @@ differentiator::differentiator(modelTranslator *_modelTranslator, MuJoCoHelper *
     char error[1000];
 
     const char* fileName = activeModelTranslator->modelFilePath.c_str();
-    cout << "filename diff " << fileName << endl;
 
     m = mj_loadXML(fileName, NULL, NULL, 1000);
 
@@ -30,14 +29,16 @@ void differentiator::resetModelAfterFiniteDifferencing(){
 
 }
 
-void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, int dataIndex){
+void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal){
     double epsControls = 1e-5;
     double epsVelocities = 1e-5;
     double epsPositions = 1e-5;
 
-
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
+
+    MatrixXd currentState = activeModelTranslator->returnStateVector(dataIndex);
+    MatrixXd currentControls = activeModelTranslator->returnControlVector(dataIndex);
 
     // Initialise sub matrices of A and B matrix
     // ------------ dof x dof ----------------
@@ -58,6 +59,17 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
     MatrixXd positionDec(dof, 1);
     MatrixXd accellInc(dof, 1);
     MatrixXd accellDec(dof, 1);
+
+    // ---------- 1 x dof -------------------
+    MatrixXd dqcostdctrl(numCtrl, 1);
+    MatrixXd dqcostdq(dof, 1);
+    MatrixXd dqcostdqvel(dof, 1);
+
+    MatrixXd l_x_inc(dof*2, 1);
+    MatrixXd l_x_dec(dof*2, 1);
+
+    double costInc = 0.0f;
+    double costDec = 0.0f;
 
     // A.resize(2*dof, 2*dof);
     // B.resize(2*dof, numCtrl);
@@ -105,6 +117,12 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         // return the  new velcoity vector
         velocityInc = activeModelTranslator->returnVelocityVector(dataIndex);
 
+        // If calculating cost derivatives
+        if(costDerivs){
+            // Calculate cost
+            costInc = activeModelTranslator->costFunction(currentState, perturbedControls, currentState, perturbedControls, terminal);
+        }
+
         // return data state back to initial data state
         activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
 
@@ -119,9 +137,20 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         // return the new velocity vector
         velocityDec = activeModelTranslator->returnVelocityVector(dataIndex);
 
+        // If calculating cost derivatives via finite-differencing
+        if(costDerivs){
+            // Calculate cost
+            costDec = activeModelTranslator->costFunction(currentState, perturbedControls, currentState, perturbedControls, terminal);
+        }
+
         // Calculate one column of the dqveldctrl matrix
         for(int j = 0; j < dof; j++){
             dqveldctrl(j, i) = (velocityInc(j) - velocityDec(j))/(2*epsControls);
+
+        }
+
+        if(costDerivs){
+            dqcostdctrl(i, 0) = (costInc - costDec)/(2*epsControls);
         }
 
         // Undo pertubation
@@ -145,6 +174,14 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         // return the new velocity vector
         velocityInc = activeModelTranslator->returnVelocityVector(dataIndex);
 
+        // If calculating cost derivs via finite-differencing
+        if(costDerivs){
+            // Calculate cost
+            MatrixXd perturbedState = currentState.replicate(1, 1);
+            perturbedState(i + dof) = perturbedVelocities(i);
+            costInc = activeModelTranslator->costFunction(perturbedState, currentControls, perturbedState, currentControls, terminal);
+        }
+
         // reset the data state back to initial data state
         activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
 
@@ -160,9 +197,21 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         // Return the new velocity vector
         velocityDec = activeModelTranslator->returnVelocityVector(dataIndex);
 
+        // If calculating cost derivs via finite-differencing
+        if(costDerivs){
+            // Calculate cost
+            MatrixXd perturbedState = currentState.replicate(1, 1);
+            perturbedState(i + dof) = perturbedVelocities(i);
+            costDec = activeModelTranslator->costFunction(perturbedState, currentControls, perturbedState, currentControls, terminal);
+        }
+
         // Calculate one column of the dqveldqvel matrix
         for(int j = 0; j < dof; j++){
             dqveldqvel(j, i) = (velocityInc(j) - velocityDec(j))/(2*epsVelocities);
+        }
+
+        if(costDerivs){
+            dqcostdqvel(i, 0) = (costInc - costDec)/(2*epsVelocities);
         }
 
         // Undo perturbation
@@ -224,6 +273,13 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
          // return the new velocity vector
          velocityInc = activeModelTranslator->returnVelocityVector(dataIndex);
 
+         if(costDerivs){
+                // Calculate cost
+                MatrixXd perturbedState = currentState.replicate(1, 1);
+                perturbedState(i) = perturbedPositions(i);
+                costInc = activeModelTranslator->costFunction(perturbedState, currentControls, perturbedState, currentControls, terminal);
+         }
+
          // reset the data state back to initial data state
          activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
 
@@ -239,14 +295,86 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
          // Return the new velocity vector
          velocityDec = activeModelTranslator->returnVelocityVector(dataIndex);
 
+            if(costDerivs){
+                    // Calculate cost
+                    MatrixXd perturbedState = currentState.replicate(1, 1);
+                    perturbedState(i) = perturbedPositions(i);
+                    costDec = activeModelTranslator->costFunction(perturbedState, currentControls, perturbedState, currentControls, terminal);
+            }
+
          // Calculate one column of the dqaccdq matrix
          for(int j = 0; j < dof; j++){
              dqveldq(j, i) = (velocityInc(j) - velocityDec(j))/(2*epsPositions);
          }
 
+        if(costDerivs){
+            dqcostdq(i, 0) = (costInc - costDec)/(2*epsPositions);
+        }
+
          // Undo perturbation
          activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->savedSystemStatesList[dataIndex], saveData);
      }
+
+    if(costDerivs) {
+        l_x.block(0, 0, dof, 1) = dqcostdq;
+        l_x.block(dof, 0, dof, 1) = dqcostdqvel;
+
+
+//    l_xx.block(0, 0, dof, dof) = dqcostdq;
+
+        // ------------- l_u / l_uu -------------------
+        //                dqcostdctrl
+        // --------------------------------------------
+
+        l_u.block(0, 0, numCtrl, 1) = dqcostdctrl;
+
+    }
+
+    if(costDerivs) {
+        double epsCost = 1e-1;
+
+        for(int i = 0; i < 2*dof; i++){
+            MatrixXd perturbedState = currentState.replicate(1, 1);
+            perturbedState(i) += epsCost;
+
+            for(int j = 0; j < 2*dof; j++){
+                MatrixXd stateInc = perturbedState.replicate(1,1);
+                stateInc(j) += epsPositions;
+
+                costInc = activeModelTranslator->costFunction(stateInc, currentControls, stateInc, currentControls, terminal);
+
+                MatrixXd stateDec = perturbedState.replicate(1,1);
+                stateDec(j) -= epsPositions;
+
+                costDec = activeModelTranslator->costFunction(stateDec, currentControls, stateDec, currentControls, terminal);
+
+                l_x_inc(j, 0) = (costInc - costDec)/(2*epsPositions);
+            }
+
+            perturbedState = currentState.replicate(1, 1);
+            perturbedState(i) -= epsCost;
+
+            for(int j = 0; j < 2*dof; j++){
+                MatrixXd stateInc = perturbedState.replicate(1,1);
+                stateInc(j) += epsPositions;
+
+                costInc = activeModelTranslator->costFunction(stateInc, currentControls, stateInc, currentControls, terminal);
+
+                MatrixXd stateDec = perturbedState.replicate(1,1);
+                stateDec(j) -= epsPositions;
+
+                costDec = activeModelTranslator->costFunction(stateDec, currentControls, stateDec, currentControls, terminal);
+
+                l_x_dec(j, 0) = (costInc - costDec)/(2*epsPositions);
+            }
+
+            // New l_x at perturbed position i
+
+            for(int j = 0; j < 2*dof; j++){
+                l_xx(j, i) = (l_x_inc(j, 0) - l_x_dec(j, 0))/(2*epsCost);
+            }
+        }
+    }
 
     // Delete temporary data object to prevent memory leak
     mj_deleteData(saveData);
@@ -275,8 +403,6 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
         }
     }
 
-
-
     // ------------ A -----------------
     // dqposdqpos       dqposdqvel
     //
@@ -300,4 +426,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, bool costDerivs, i
 
     B.block(0, 0, dof, numCtrl).setZero();
     B.block(dof, 0, dof, numCtrl) = dqveldctrl;
+
+    l_u.setZero();
+    l_uu.setZero();
+
 }

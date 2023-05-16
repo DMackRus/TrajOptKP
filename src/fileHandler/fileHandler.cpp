@@ -173,6 +173,7 @@ void fileHandler::readSettingsFile(std::string settingsFilePath){
     taskInitMode = node["taskInitMode"].as<std::string>();
     csvRow = node["csvRow"].as<int>();
     filtering = node["filtering"].as<bool>();
+    costDerivsFD = node["costDerivsFD"].as<bool>();
 
 }
 

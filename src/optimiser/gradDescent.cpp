@@ -4,7 +4,7 @@
 
 #include "gradDescent.h"
 
-gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler *_yamlReader) : optimiser(_modelTranslator, _physicsSimulator) {
+gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler *_yamlReader) : optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
     activeDifferentiator = _differentiator;
     activeVisualizer = _visualizer;
 
@@ -220,7 +220,13 @@ void gradDescent::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
     for(int i = 0; i < indices.size(); i++){
 
         int index = indices[i];
-        activeDifferentiator->getDerivatives(A[i], B[i], false, index);
+        MatrixXd l_uu;
+        MatrixXd l_xx;
+        bool terminal = false;
+        if(index == horizonLength){
+            terminal = true;
+        }
+        activeDifferentiator->getDerivatives(A[i], B[i], l_x[i], l_xx, l_u[i], l_uu, false, index, terminal);
 
     }
 

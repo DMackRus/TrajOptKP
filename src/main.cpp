@@ -51,7 +51,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = adaptive_jerk;
+int keyPointMethod = setInterval;
 //int keyPointMethod = adaptive_jerk;
 
 void showInitControls();
@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
     }
     else if(optimiser == "stomp"){
         yamlReader->readOptimisationSettingsFile(opt_stomp);
-        stompOptimiser = new stomp(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader->maxHorizon, 50);
+        stompOptimiser = new stomp(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader, activeDifferentiator, yamlReader->maxHorizon, 50);
         activeOptimiser = stompOptimiser;
     }
     else if(optimiser == "gradDescent"){
@@ -484,7 +484,7 @@ void generateTestScenes(){
 
 void showInitControls(){
     int setupHorizon = 1000;
-    int optHorizon = 2200;
+    int optHorizon = 2600;
     int controlCounter = 0;
     int visualCounter = 0;
 
@@ -741,7 +741,7 @@ void MPCContinous(){
 
 void MPCUntilComplete(){
     int setupHorizon = 1000;
-    int optHorizon = 100;
+    int optHorizon = 1000;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -758,7 +758,7 @@ void MPCUntilComplete(){
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
     setupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     if(setupControls.size() > 0){
         applyingSetupControls = true;
     }
@@ -795,7 +795,7 @@ void MPCUntilComplete(){
             initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
             activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-            cout << "init controls: " << initOptimisationControls.size() << endl;
+            cout << "init controls: " << initOptimisationControls[0] << endl;
             optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
             activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
@@ -819,9 +819,12 @@ void MPCUntilComplete(){
                 taskComplete = true;
             }
             else{
-                if(reInitialiseCounter > 2){
-                    //initControls = activeModelTranslator->createInitOptimisationControls(horizon);
-                    optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+                if(reInitialiseCounter > 800){
+                    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+                    initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+                    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+
+                    optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
                     reInitialiseCounter = 0;
                 }
             }

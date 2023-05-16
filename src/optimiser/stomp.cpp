@@ -1,6 +1,6 @@
 #include "stomp.h"
 
-stomp::stomp(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, int _maxHorizon, int _rolloutsPerIter): optimiser(_modelTranslator, _physicsSimulator){
+stomp::stomp(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, fileHandler *_yamlReader, differentiator *_differentiator, int _maxHorizon, int _rolloutsPerIter): optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
     maxHorizon = _maxHorizon;
     rolloutsPerIter = _rolloutsPerIter;
 
