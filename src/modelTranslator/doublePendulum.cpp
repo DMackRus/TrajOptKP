@@ -7,7 +7,6 @@
 doublePendulum::doublePendulum(): modelTranslator(){
     std::string yamlFilePath = "/taskConfigs/pendulumConfig.yaml";
     initModelTranslator(yamlFilePath);
-    analyticalCostDerivatives = true;
 }
 
 bool doublePendulum::taskComplete(int dataIndex){

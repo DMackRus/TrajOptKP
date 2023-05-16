@@ -3,7 +3,6 @@
 boxFlick::boxFlick(){
     std::string yamlFilePath = "/taskConfigs/boxFlick.yaml";
     initModelTranslator(yamlFilePath);
-    analyticalCostDerivatives = true;
 }
 
 MatrixXd boxFlick::returnRandomStartState(){

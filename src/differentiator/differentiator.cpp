@@ -5,7 +5,6 @@ differentiator::differentiator(modelTranslator *_modelTranslator, MuJoCoHelper *
     activePhysicsSimulator = _physicsSimulator;
 
     char error[1000];
-
     const char* fileName = activeModelTranslator->modelFilePath.c_str();
 
     m = mj_loadXML(fileName, NULL, NULL, 1000);
@@ -79,6 +78,9 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, Mat
     saveData = mj_makeData(m);
     activePhysicsSimulator->cpMjData(m, saveData, activePhysicsSimulator->savedSystemStatesList[dataIndex]);
 
+//    MatrixXd testState = activeModelTranslator->returnStateVector(dataIndex);
+//    cout << "testState: " << testState << endl;
+
     // Allocate memory for variables
     mjtNum* warmstart = mj_stackAlloc(saveData, dof);
 
@@ -93,7 +95,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, Mat
         mj_forwardSkip(m, saveData, mjSTAGE_VEL, 1);
 
     // save output for center point and warmstart (needed in forward only)
-    mju_copy(warmstart, saveData->qacc_warmstart, dof);
+//    mju_copy(warmstart, saveData->qacc_warmstart, dof);
+//    cout << "dof: " << m->nv << endl;
 
     
 
@@ -111,7 +114,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, Mat
         activeModelTranslator->setControlVector(perturbedControls, dataIndex);
 
         // Integrate the simulator
-        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         activePhysicsSimulator->stepSimulator(1, dataIndex);
 
         // return the  new velcoity vector
@@ -131,7 +134,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, Mat
         perturbedControls(i) -= epsControls;
 
         // integrate simulator
-        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         activePhysicsSimulator->stepSimulator(1, dataIndex);
 
         // return the new velocity vector
@@ -168,7 +171,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, Mat
         activeModelTranslator->setVelocityVector(perturbedVelocities, dataIndex);
 
         // Integrate the simulator
-        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         activePhysicsSimulator->stepSimulator(1, dataIndex);
 
         // return the new velocity vector
@@ -191,7 +194,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, Mat
         activeModelTranslator->setVelocityVector(perturbedVelocities, dataIndex);
 
         // Integrate the simulatormodel
-        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
         activePhysicsSimulator->stepSimulator(1, dataIndex);
 
         // Return the new velocity vector
@@ -267,7 +270,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, Mat
          activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
 
          // Integrate the simulator
-         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
          activePhysicsSimulator->stepSimulator(1, dataIndex);
 
          // return the new velocity vector
@@ -289,7 +292,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, Mat
          activeModelTranslator->setPositionVector(perturbedPositions, dataIndex);
 
          // Integrate the simulator
-         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
          activePhysicsSimulator->stepSimulator(1, dataIndex);
 
          // Return the new velocity vector

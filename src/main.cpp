@@ -51,7 +51,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = setInterval;
+int keyPointMethod = adaptive_accel;
 //int keyPointMethod = adaptive_jerk;
 
 void showInitControls();
@@ -90,18 +90,19 @@ int main(int argc, char **argv) {
         activeModelTranslator = myReaching;
     }
     else if(task == cylinderPushing){
-        twoDPushing *myTwoDPushing = new twoDPushing();
+        twoDPushing *myTwoDPushing = new twoDPushing(noClutter);
         activeModelTranslator = myTwoDPushing;
 
     }
     else if(task == cylinderPushingMildClutter){
-        twoDPushingClutter *myTwoDPushingClutter = new twoDPushingClutter();
-        activeModelTranslator = myTwoDPushingClutter;
+
+        twoDPushing *myTwoDPushing = new twoDPushing(lowClutter);
+        activeModelTranslator = myTwoDPushing;
 
     }
     else if(task == cylinderPushingHeavyClutter){
-        twoDPushingHeavyClutter *myTwoDPushingHeavyClutter = new twoDPushingHeavyClutter();
-        activeModelTranslator = myTwoDPushingHeavyClutter;
+        twoDPushing *myTwoDPushing = new twoDPushing(heavyClutter);
+        activeModelTranslator = myTwoDPushing;
 
     }
     else if(task == boxPushingToppling){
@@ -146,6 +147,9 @@ int main(int argc, char **argv) {
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+
+    MatrixXd testStateVector = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    cout << "test state vector: " << testStateVector << endl;
 
     //Instantiate my optimiser
     activeVisualiser = new visualizer(activeModelTranslator);
@@ -484,7 +488,7 @@ void generateTestScenes(){
 
 void showInitControls(){
     int setupHorizon = 1000;
-    int optHorizon = 2600;
+    int optHorizon = 2200;
     int controlCounter = 0;
     int visualCounter = 0;
 
@@ -556,7 +560,7 @@ void iLQROnce(){
 
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";

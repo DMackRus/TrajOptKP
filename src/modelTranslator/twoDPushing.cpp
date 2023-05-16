@@ -1,21 +1,61 @@
 #include "twoDPushing.h"
 
-twoDPushing::twoDPushing(){
+twoDPushing::twoDPushing(int _clutterLevel){
+
+    clutterLevel = _clutterLevel;
     std::string yamlFilePath = "/taskConfigs/twoDPushingConfig.yaml";
+    if(clutterLevel == noClutter){
+        yamlFilePath = "/taskConfigs/twoDPushingConfig.yaml";
+    }
+    else if(clutterLevel == lowClutter){
+        yamlFilePath = "/taskConfigs/twoDPushingClutterConfig.yaml";
+    }
+    else if(clutterLevel == heavyClutter){
+        yamlFilePath = "/taskConfigs/twoDPushingHeavyClutterConfig.yaml";
+    }
+    else{
+        cout << "ERROR: Invalid clutter level" << endl;
+    }
+
     initModelTranslator(yamlFilePath);
-    analyticalCostDerivatives = true;
 }
 
 MatrixXd twoDPushing::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
-    float cubeX = randFloat(0.45, 0.55);
-    float cubeY = randFloat(-0.1, 0.1);
+    float startX = randFloat(0.45, 0.55);
+    float startY = randFloat(-0.1, 0.1);
 
-    randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                        cubeX, cubeY,
-                        0, 0, 0, 0, 0, 0, 0,
-                        0, 0;
+    float goalX = randFloat(0.6, 0.8);
+    float goalY = randFloat(-0.1, 0.3);
+    randomGoalX = goalX;
+    randomGoalY = goalY;
+
+    std::vector<double> objectXPos;
+    std::vector<double> objectYPos;
+
+    if(clutterLevel == lowClutter){
+        objectXPos.push_back(goalX + 0.1 * cos(PI/4));
+        objectYPos.push_back(goalY + 0.1 * sin(PI/4));
+
+        objectXPos.push_back(goalX - 0.1 * cos(PI/4));
+        objectYPos.push_back(goalY - 0.1 * sin(PI/4));
+
+        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                startX, startY, objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0;
+
+    }
+    else if(clutterLevel == heavyClutter){
+
+    }
+    else{
+        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                startX, startY,
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0;
+    }
 
     return randomStartState;
 }
@@ -23,13 +63,23 @@ MatrixXd twoDPushing::returnRandomStartState(){
 MatrixXd twoDPushing::returnRandomGoalState(MatrixXd X0){
     MatrixXd randomGoalState(stateVectorSize, 1);
 
-    float cubeX = randFloat(0.6, 0.8);
-    float cubeY = randFloat(-0.1, 0.3);
+    if(clutterLevel == noClutter){
+        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                randomGoalX, randomGoalY,
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0;
+    }
+    else if(clutterLevel == lowClutter){
+        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                randomGoalX, randomGoalY, X0(9), X0(10), X0(11), X0(12),
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0;
+    }
+    else{
 
-    randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-            cubeX, cubeY,
-            0, 0, 0, 0, 0, 0, 0,
-            0, 0;
+    }
+
+
 
 
     return randomGoalState;

@@ -5,7 +5,7 @@
 
 class twoDPushing: public modelTranslator{
 public:
-    twoDPushing();
+    twoDPushing(int clutterLevel);
 
     MatrixXd returnRandomStartState() override;
     MatrixXd returnRandomGoalState(MatrixXd X0) override;
@@ -19,6 +19,11 @@ public:
     std::vector<MatrixXd> generate_initControls_fromWayPoints(std::vector<m_point> initPath);
 
     bool taskComplete(int dataIndex) override;
+
+private:
+    int clutterLevel = noClutter;
+    double randomGoalX = 0.0;
+    double randomGoalY = 0.0;
 
 };
 

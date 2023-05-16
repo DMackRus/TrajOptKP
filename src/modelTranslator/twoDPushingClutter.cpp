@@ -8,7 +8,6 @@ twoDPushingClutter::twoDPushingClutter(){
     std::string yamlFilePath = "/taskConfigs/twoDPushingClutterConfig.yaml";
 
     initModelTranslator(yamlFilePath);
-    analyticalCostDerivatives = true;
 }
 
 MatrixXd twoDPushingClutter::returnRandomStartState(){

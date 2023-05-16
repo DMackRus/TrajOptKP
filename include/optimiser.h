@@ -98,6 +98,7 @@ protected:
     void getCostDerivs();
     void interpolateDerivatives(std::vector<int> calculatedIndices);
     std::vector<MatrixXd> generateJerkProfile();
+    std::vector<MatrixXd> generateAccelProfile();
     std::vector<int> generateKeyPointsIteratively();
     bool checkOneMatrixError(indexTuple indices);
     void filterMatrices();

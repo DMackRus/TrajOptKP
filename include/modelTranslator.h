@@ -9,6 +9,12 @@
 #include "MuJoCoHelper.h"
 #include "fileHandler.h"
 
+enum clutterLevels{
+    noClutter = 0,
+    lowClutter = 1,
+    heavyClutter = 2
+};
+
 class modelTranslator {
 public:
     modelTranslator();
@@ -55,10 +61,6 @@ protected:
     MatrixXd Q_terminal;
     MatrixXd R;
     MatrixXd J;
-
-    bool analyticalCostDerivatives;
-
-    char* filePath; 
 
 private:
 

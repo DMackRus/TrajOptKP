@@ -84,6 +84,13 @@ void optimiser::generateDerivatives(){
 
 
     // Interpolate derivatvies as required for a full set of derivatives
+//    if((keyPointsMethod == setInterval) && (min_interval == 1)){
+//
+//    }
+//    else{
+//        interpolateDerivatives(keyPoints);
+//    }
+
     interpolateDerivatives(keyPoints);
 
 //        f_x.resize(initControls.size());
@@ -148,15 +155,15 @@ std::vector<int> optimiser::generateKeyPoints(std::vector<MatrixXd> trajecStates
     }
     else if(keyPointsMethod == adaptive_accel){
         int counter = 0;
-        std::vector<MatrixXd> jerkProfile = generateJerkProfile();
+        std::vector<MatrixXd> accelProfile = generateAccelProfile();
         for(int i = 0; i < horizonLength; i++){
             counter++;
 
             if(counter > min_interval){
                 for(int j = 0; j < activeModelTranslator->dof; j++){
-                    if(jerkProfile.size() > i) {
+                    if(accelProfile.size() > i) {
 
-                        if (jerkProfile[i](j, 0) > 0.002) {
+                        if (accelProfile[i](j, 0) > 0.0005) {
                             evaluationWaypoints.push_back(i);
                             counter = 0;
                             break;
@@ -369,34 +376,6 @@ bool optimiser::checkOneMatrixError(indexTuple indices){
     return approximationGood;
 }
 
-std::vector<MatrixXd> optimiser::generateJerkProfile(){
-
-    MatrixXd jerk(activeModelTranslator->dof, 1);
-
-    MatrixXd state1(activeModelTranslator->stateVectorSize, 1);
-    MatrixXd state2(activeModelTranslator->stateVectorSize, 1);
-    MatrixXd state3(activeModelTranslator->stateVectorSize, 1);
-
-    std::vector<MatrixXd> jerkProfile;
-
-    for(int i = 0; i < horizonLength - 2; i++){
-        state1 = X_old[i];
-        state2 = X_old[i + 1];
-        state3 = X_old[i + 2];
-
-        MatrixXd accell1 = state2 - state1;
-        MatrixXd accell2 = state3 - state2;
-
-        for(int j = 0; j < activeModelTranslator->dof; j++){
-            jerk(j, 0) = accell2(j+dof, 0) - accell1(j+dof, 0);
-        }
-
-        jerkProfile.push_back(jerk);
-    }
-
-    return jerkProfile;
-}
-
 void optimiser::getCostDerivs(){
 #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
@@ -417,7 +396,7 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
 
     activeDifferentiator->initModelForFiniteDifferencing();
 
-#pragma omp parallel for
+    #pragma omp parallel for
     for(int i = 0; i < indices.size(); i++){
 
         int index = indices[i];
@@ -435,7 +414,7 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
     activeDifferentiator->resetModelAfterFiniteDifferencing();
 
     if(!activeYamlReader->costDerivsFD){
-#pragma omp parallel for
+        #pragma omp parallel for
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
                 activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
@@ -453,7 +432,8 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
 
 void optimiser::interpolateDerivatives(std::vector<int> calculatedIndices){
 
-    // Interpolate all the derivatvies that were not calculated via finite differencing
+    // ------------------------- DYNAMICS DERIVATIVES --------------------------------
+    // Interpolate all the derivatives that were not calculated via finite differencing
     for(int t = 0; t < calculatedIndices.size()-1; t++){
 
         MatrixXd addA(2*dof, 2*dof);
@@ -482,6 +462,108 @@ void optimiser::interpolateDerivatives(std::vector<int> calculatedIndices){
 
     f_x[horizonLength - 1] = f_x[horizonLength - 2].replicate(1,1);
     f_u[horizonLength - 1] = f_u[horizonLength - 2].replicate(1,1);
+
+    // ------------------------- COST DERIVATIVES --------------------------------
+    // Interpolate all the derivatives that were not calculated via finite differencing
+    if(activeYamlReader->costDerivsFD){
+        for(int t = 0; t < calculatedIndices.size()-1; t++){
+
+            MatrixXd addl_x(2*dof, 1);
+            MatrixXd addl_xx(2*dof, 2*dof);
+            MatrixXd addl_u(num_ctrl, 1);
+            MatrixXd addl_uu(num_ctrl, num_ctrl);
+
+
+            int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
+            int startIndex = calculatedIndices[t];
+            int endIndex = calculatedIndices[t+1];
+
+
+            MatrixXd startl_x = l_x[startIndex].replicate(1, 1);
+            MatrixXd endl_x = l_x[endIndex].replicate(1, 1);
+            MatrixXd diffl_x = endl_x - startl_x;
+            addl_x = diffl_x / nextInterpolationSize;
+
+            MatrixXd startl_xx = l_xx[startIndex].replicate(1, 1);
+            MatrixXd endl_xx = l_xx[endIndex].replicate(1, 1);
+            MatrixXd diffl_xx = endl_xx - startl_xx;
+            addl_xx = diffl_xx / nextInterpolationSize;
+
+            MatrixXd startl_u = l_u[startIndex].replicate(1, 1);
+            MatrixXd endl_u = l_u[endIndex].replicate(1, 1);
+            MatrixXd diffl_u = endl_u - startl_u;
+            addl_u = diffl_u / nextInterpolationSize;
+
+            MatrixXd startl_uu = l_uu[startIndex].replicate(1, 1);
+            MatrixXd endl_uu = l_uu[endIndex].replicate(1, 1);
+            MatrixXd diffl_uu = endl_uu - startl_uu;
+            addl_uu = diffl_uu / nextInterpolationSize;
+
+
+            // Interpolate A and B matrices
+            for(int i = 0; i < nextInterpolationSize; i++){
+                l_x[startIndex + i] = l_x[startIndex].replicate(1,1) + (addl_x * i);
+                l_u[startIndex + i] = l_u[startIndex].replicate(1,1) + (addl_u * i);
+                l_xx[startIndex + i] = l_xx[startIndex].replicate(1,1) + (addl_xx * i);
+                l_uu[startIndex + i] = l_uu[startIndex].replicate(1,1) + (addl_uu * i);
+//            cout << "f_x[" << startIndex + i << "] = " << f_x[startIndex + i] << endl;
+            }
+        }
+    }
+}
+
+std::vector<MatrixXd> optimiser::generateJerkProfile(){
+
+    MatrixXd jerk(activeModelTranslator->dof, 1);
+
+    MatrixXd state1(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd state2(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd state3(activeModelTranslator->stateVectorSize, 1);
+
+    std::vector<MatrixXd> jerkProfile;
+
+    for(int i = 0; i < horizonLength - 2; i++){
+        state1 = X_old[i];
+        state2 = X_old[i + 1];
+        state3 = X_old[i + 2];
+
+        MatrixXd accell1 = state2 - state1;
+        MatrixXd accell2 = state3 - state2;
+
+        for(int j = 0; j < activeModelTranslator->dof; j++){
+            jerk(j, 0) = accell2(j+dof, 0) - accell1(j+dof, 0);
+        }
+
+        jerkProfile.push_back(jerk);
+    }
+
+    return jerkProfile;
+}
+
+std::vector<MatrixXd> optimiser::generateAccelProfile(){
+
+    MatrixXd accel(activeModelTranslator->dof, 1);
+
+    MatrixXd state1(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd state2(activeModelTranslator->stateVectorSize, 1);
+
+    std::vector<MatrixXd> accelProfile;
+
+    for(int i = 0; i < horizonLength - 1; i++){
+        state1 = X_old[i];
+        state2 = X_old[i + 1];
+
+        MatrixXd accelState = state2 - state1;
+
+        for(int j = 0; j < activeModelTranslator->dof; j++){
+            accel(j, 0) = accelState(j+dof, 0);
+        }
+
+        accelProfile.push_back(accel);
+    }
+
+    return accelProfile;
+
 }
 
 void optimiser::filterMatrices(){

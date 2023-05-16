@@ -4,7 +4,6 @@ pandaReaching::pandaReaching(): modelTranslator(){
     std::string yamlFilePath = "/taskConfigs/reachingConfig.yaml";
 
     initModelTranslator(yamlFilePath);
-    analyticalCostDerivatives = true;
 
 }
 
