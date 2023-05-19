@@ -23,38 +23,119 @@ twoDPushing::twoDPushing(int _clutterLevel){
 MatrixXd twoDPushing::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
-    float startX = randFloat(0.45, 0.55);
-    float startY = randFloat(-0.1, 0.1);
+    float randStartAngle = randFloat(0, PI);
+    float randStartDist = randFloat(0.05, 0.1);
 
-    float goalX = randFloat(0.6, 0.8);
-    float goalY = randFloat(-0.1, 0.3);
+    float startX = 0.4 + randStartDist * sin(randStartAngle); //randFloat(0.45, 0.55);
+    float startY = 0 + randStartDist * cos(randStartAngle); //randFloat(-0.1, 0.1);
+
+    float randAngle = randFloat(-PI/4, PI/4);
+    float randDist = randFloat(0.2, 0.4);
+
+    float goalX = startX + randDist * cos(randAngle);
+    float goalY = startY + randDist * sin(randAngle);
+
     randomGoalX = goalX;
     randomGoalY = goalY;
 
     std::vector<double> objectXPos;
     std::vector<double> objectYPos;
 
-    if(clutterLevel == lowClutter){
-        objectXPos.push_back(goalX + 0.1 * cos(PI/4));
-        objectYPos.push_back(goalY + 0.1 * sin(PI/4));
-
-        objectXPos.push_back(goalX - 0.1 * cos(PI/4));
-        objectYPos.push_back(goalY - 0.1 * sin(PI/4));
-
-        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                startX, startY, objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
-                0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0;
-
-    }
-    else if(clutterLevel == heavyClutter){
-
-    }
-    else{
+    if(clutterLevel == noClutter){
         randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
                 startX, startY,
                 0, 0, 0, 0, 0, 0, 0,
                 0, 0;
+    }
+    else if(clutterLevel == lowClutter){
+
+        std::string objectNames[3] = {"bigBox", "smallBox","tallCylinder"};
+        int validObjectCounter = 0;
+
+        for(int i = 0; i < 3; i++){
+            bool validPlacement = false;
+            float size = 0.08;
+            while(!validPlacement){
+                size += 0.005;
+
+                float randX = randFloat(goalX - size, goalX + size);
+                float randY = randFloat(goalY - size, goalY + size);
+
+                pose_6 objectCurrentPose;
+                pose_6 newObjectPose;
+
+                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                newObjectPose = objectCurrentPose;
+                newObjectPose.position(0) = randX;
+                newObjectPose.position(1) = randY;
+                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+
+                if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                    cout << "invalid placement at : " << randX << ", " << randY << endl;
+                }
+                else{
+                    validPlacement = true;
+                    objectXPos.push_back(randX);
+                    objectYPos.push_back(randY);
+                }
+            }
+            validObjectCounter++;
+        }
+
+        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                startX, startY, objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1], objectXPos[2], objectYPos[2],
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 0;
+
+    }
+    else if(clutterLevel == heavyClutter){
+
+        std::string objectNames[6] = {"obstacle1", "bigBox", "obstacle2", "obstacle3", "obstacle4", "obstacle5"};
+        int validObjectCounter = 0;
+
+        for(int i = 0; i < 6; i++){
+            bool validPlacement = false;
+            float size = 0.08;
+            while(!validPlacement){
+                size += 0.001;
+
+                float randX = randFloat(goalX - size, goalX + size);
+                float randY = randFloat(goalY - size, goalY + size);
+
+                pose_6 objectCurrentPose;
+                pose_6 newObjectPose;
+
+                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                newObjectPose = objectCurrentPose;
+                newObjectPose.position(0) = randX;
+                newObjectPose.position(1) = randY;
+                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+
+                if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                    cout << "invalid placement at : " << randX << ", " << randY << endl;
+                }
+                else{
+                    validPlacement = true;
+                    objectXPos.push_back(randX);
+                    objectYPos.push_back(randY);
+                }
+            }
+            validObjectCounter++;
+        }
+
+        pose_6 stackedCylinderPose;
+        stackedCylinderPose.position(0) = objectXPos[1];
+        stackedCylinderPose.position(1) = objectYPos[1];
+        stackedCylinderPose.position(2) = 0.2;
+
+        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                startX, startY, objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
+                stackedCylinderPose.position(0), stackedCylinderPose.position(1), stackedCylinderPose.position(2), objectXPos[2], objectYPos[2],
+                objectXPos[3], objectYPos[3], objectXPos[4], objectYPos[4], objectXPos[5], objectYPos[5],
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0;
     }
 
     return randomStartState;
@@ -71,15 +152,21 @@ MatrixXd twoDPushing::returnRandomGoalState(MatrixXd X0){
     }
     else if(clutterLevel == lowClutter){
         randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                randomGoalX, randomGoalY, X0(9), X0(10), X0(11), X0(12),
+                randomGoalX, randomGoalY, X0(9), X0(10), X0(11), X0(12), X0(13), X0(14),
                 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0;
+                0, 0, 0, 0, 0, 0, 0, 0;
     }
     else{
+        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                randomGoalX, randomGoalY, X0(9), X0(10), X0(11), X0(12),
+                X0(13), X0(14), X0(15), X0(16), X0(17),
+                X0(18), X0(19), X0(20), X0(21), X0(22), X0(23),
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0, 0;
 
     }
-
-
 
 
     return randomGoalState;
@@ -153,7 +240,8 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
     std::string goalMarkerName = "display_intermediate";
     pose_6 displayBodyPose;
     displayBodyPose.position[0] = intermediatePointX;
-    displayBodyPose.position[1] = intermediatePointY;
+//    displayBodyPose.position[1] = intermediatePointY;
+    displayBodyPose.position[1] = 100.0f;
     displayBodyPose.position[2] = 0.0f;
     activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 

@@ -320,9 +320,11 @@ void fileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, MatrixXd s
 
 void fileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, MatrixXd &startState, MatrixXd &goalState){
 
-    std::string rootPath = projectParentPath + "/testTasks/" + taskPrefix;
+    std::string rootPath = projectParentPath + "/testTasks" + taskPrefix;
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
+
+    cout << "start state size: " << startState.size() << endl;
 
     fstream fin;
 

@@ -39,6 +39,8 @@ public:
 
     // Extras
     Eigen::MatrixXd calculateJacobian(std::string bodyName, int dataIndex) override;
+    int checkSystemForCollisions(int dataIndex) override;
+    bool checkBodyForCollisions(string bodyName, int dataIndex) override;
 
     // ----- Loading and saving system states -----
     bool appendSystemStateToEnd(int dataIndex) override;

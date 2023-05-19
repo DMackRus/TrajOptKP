@@ -23,7 +23,7 @@ bodies:
     linearVelCost: [0.1, 0.1, 0]
     angularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
-  obstacle1:
+  bigBox:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
     startLinearPos: [0.48, 0.3, 0.0]
@@ -34,7 +34,7 @@ bodies:
     linearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
-  obstacle2:
+  tallCylinder:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.6, 0.4, 0.0 ]
@@ -45,14 +45,14 @@ bodies:
     linearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
     angularVelCost: [ 0, 0, 0 ]
-#  obstacle3:
-#    activeLinearDOF: [ true, true, false ]
-#    activeAngularDOF: [ false, false, false ]
-#    startLinearPos: [ 0.7, 0.3, 0.0 ]
-#    startAngularPos: [ 0, 0, 0 ]
-#    goalLinearPos: [ 0.7, 0.3, 0.0 ]
-#    goalAngularPos: [ 0, 0, 0 ]
-#    linearPosCost: [ 0.1, 0.1, 0 ]
-#    linearVelCost: [ 0, 0, 0 ]
-#    angularPosCost: [ 0, 0, 0 ]
-#    angularVelCost: [ 0, 0, 0 ]
+  smallBox:
+    activeLinearDOF: [ true, true, false ]
+    activeAngularDOF: [ false, false, false ]
+    startLinearPos: [ 0.7, 0.3, 0.0 ]
+    startAngularPos: [ 0, 0, 0 ]
+    goalLinearPos: [ 0.7, 0.3, 0.0 ]
+    goalAngularPos: [ 0, 0, 0 ]
+    linearPosCost: [ 0.1, 0.1, 0 ]
+    linearVelCost: [ 0, 0, 0 ]
+    angularPosCost: [ 0, 0, 0 ]
+    angularVelCost: [ 0, 0, 0 ]

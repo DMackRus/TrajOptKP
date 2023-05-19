@@ -640,6 +640,104 @@ Eigen::MatrixXd MuJoCoHelper::calculateJacobian(std::string bodyName, int dataIn
     return kinematicJacobian;
 }
 
+int MuJoCoHelper::checkSystemForCollisions(int dataIndex){
+
+    mjData *d = returnDesiredDataState(dataIndex);
+    mj_forward(model, d);
+
+    int numContacts = d->ncon;
+    int numCollisions = 0;
+
+    for(int i = 0; i < numContacts; i++){
+        auto contact = d->contact[i];
+
+        int bodyInContact1 = model->body_rootid[model->geom_bodyid[contact.geom1]];
+        int bodyInContact2 = model->body_rootid[model->geom_bodyid[contact.geom2]];
+
+        // Get name of bodies in contact
+        string bodyName1 = mj_id2name(model, mjOBJ_BODY, bodyInContact1);
+        string bodyName2 = mj_id2name(model, mjOBJ_BODY, bodyInContact2);
+
+
+
+        if(bodyInContact1 == 0 || bodyInContact2 == 0){
+        }
+        else{
+            cout << "bodies in contact: " << bodyName1 << " " << bodyName2 << endl;
+            numCollisions++;
+        }
+
+
+
+    }
+//    for (int i = 0; i < numContacts; i++) {
+//        auto contact = d->contact[i];
+//
+//        // Get the ids of the two bodies in contacts
+//        int bodyInContact1 = _model->body_rootid[_model->geom_bodyid[contact.geom1]];
+//        int bodyInContact2 = _model->body_rootid[_model->geom_bodyid[contact.geom2]];
+//
+//        // only consider it a collision if robot - robot
+//        // or robot - table
+//
+//        bool contact1Robot = false;
+//        bool contact1Table = false;
+//        bool contact2Robot = false;
+//        bool contact2Table = false;
+//        for (int j = 0; j < 11; j++) {
+//            if (bodyInContact1 == robotBodyID[j]) {
+//                contact1Robot = true;
+//            }
+//
+//            if (bodyInContact2 == robotBodyID[j]) {
+//                contact2Robot = true;
+//            }
+//        }
+//
+//        if (contact1Robot) {
+//            if (contact2Robot || contact2Table) {
+//                numCollisions++;
+//            }
+//        }
+//        else if(contact2Robot) {
+//            if (contact1Robot || contact1Table) {
+//                numCollisions++;
+//            }
+//        }
+//    }
+
+    return numCollisions;
+}
+
+bool MuJoCoHelper::checkBodyForCollisions(string bodyName, int dataIndex){
+    mjData *d = returnDesiredDataState(dataIndex);
+    mj_forward(model, d);
+
+    int numContacts = d->ncon;
+    int numCollisions = 0;
+
+    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    bool objectCollisionFound = false;
+
+    for(int i = 0; i < numContacts; i++) {
+        auto contact = d->contact[i];
+
+        int bodyInContact1 = model->body_rootid[model->geom_bodyid[contact.geom1]];
+        int bodyInContact2 = model->body_rootid[model->geom_bodyid[contact.geom2]];
+
+        if(bodyInContact1 == bodyId && bodyInContact2 != 0){
+            objectCollisionFound = true;
+            break;
+        }
+
+        if(bodyInContact2 == bodyId && bodyInContact1 != 0){
+            objectCollisionFound = true;
+            break;
+        }
+    }
+    return objectCollisionFound;
+}
+
 // ------------------------------- System State Functions -----------------------------------------------
 bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 
@@ -741,12 +839,12 @@ void MuJoCoHelper::initVisualisation() {
     mjr_defaultContext(&con);
     mjv_defaultScene(&scn);
 
-    cam.distance = 0.945;
-    cam.azimuth = 135.1;
-    cam.elevation = -11.3;
-    cam.lookat[0] = 0.459;
-    cam.lookat[1] = 0.003;
-    cam.lookat[2] = 0.263;
+    cam.distance = 1.66269;
+    cam.azimuth = -118.7;
+    cam.elevation = -34.7;
+    cam.lookat[0] = 0.4027;
+    cam.lookat[1] = 0.0169;
+    cam.lookat[2] = 0.1067;
 
     // create scene and context
     mjv_makeScene(model, &scn, 2000);

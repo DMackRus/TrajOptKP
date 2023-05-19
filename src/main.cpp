@@ -81,6 +81,11 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
+    if(1){
+        generateTestingData();
+        return -1;
+    }
+
     if(task == pendulum){
         doublePendulum *myDoublePendulum = new doublePendulum();
         activeModelTranslator = myDoublePendulum;
@@ -127,7 +132,6 @@ int main(int argc, char **argv) {
 
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
     startStateVector = activeModelTranslator->X_start;
-    cout << "start state vector: " << startStateVector << endl;
 
     // random start and goal state
     std::string taskPrefix = activeModelTranslator->modelName;
@@ -143,13 +147,12 @@ int main(int argc, char **argv) {
         activeModelTranslator->X_start = startStateVector;
     }
 
+    cout << "start state vector: " << startStateVector << endl;
+
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-
-    MatrixXd testStateVector = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-    cout << "test state vector: " << testStateVector << endl;
 
     //Instantiate my optimiser
     activeVisualiser = new visualizer(activeModelTranslator);
@@ -314,9 +317,12 @@ void genericTesting(){
 
 }
 
-void generateTestingData(){
+void onetaskGenerateTestingData(){
     int setupHorizon = 1000;
     int optHorizon = 2200;
+
+    MatrixXd startStateVector;
+    startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
     std::vector<std::vector<double>> optTimes;
     std::vector<double> optTimesRow;
@@ -330,16 +336,13 @@ void generateTestingData(){
     std::vector<std::vector<double>> avgTimeForDerivs;
     std::vector<double> avgTimeForDerivsRow;
 
-    MatrixXd startStateVector;
-    startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-
     std::vector<std::string> methodNames = {"baseline", "setInterval5", "adaptive_jerk", "iterative_error"};
     int keyPointMethods[4] = {setInterval, setInterval, adaptive_jerk, iterative_error};
     int interpMethod[4] = {linear, linear, linear, linear};
     int minN[4] = {1, 5, 5, 0};
 
     // Loop through saved trajectories
-    for(int i = 0; i < 50; i++){
+    for(int i = 0; i < 1; i++){
         cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
 
         // Loop through our interpolating derivatives methods
@@ -370,7 +373,6 @@ void generateTestingData(){
 
         std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
 
-
         for(int j = 0; j < 4; j++){
             double optTime;
             double costReduction;
@@ -391,6 +393,28 @@ void generateTestingData(){
             avgNumDerivsRow.push_back(avgNumDerivs);
             avgTimeForDerivsRow.push_back(avgTimeForDerivs);
 
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+
+            int controlCounter = 0;
+            int visualCounter = 0;
+            cout << "final controls size: " << optimisedControls.size() << endl;
+
+            while(controlCounter < initOptimisationControls.size()){
+
+                activeModelTranslator->setControlVector(initOptimisationControls[controlCounter], MAIN_DATA_STATE);
+
+                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+                controlCounter++;
+                visualCounter++;
+
+                if(visualCounter > 5){
+
+                    activeVisualiser->render("show init controls");
+                    visualCounter = 0;
+                }
+            }
+
         }
         optTimes.push_back(optTimesRow);
         costReductions.push_back(costReductionsRow);
@@ -403,7 +427,32 @@ void generateTestingData(){
     // Save data to file
     cout << "save data to file \n";
     yamlReader->saveResultsDataForMethods(activeModelTranslator->modelName, methodNames,optTimes, costReductions, avgNumDerivs, avgTimeForDerivs);
+}
 
+void generateTestingData(){
+
+    int configs[3] = {noClutter, lowClutter, heavyClutter};
+
+    for(int i = 0; i < 3; i ++){
+        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
+        activeModelTranslator = myTwoDPushing;
+        activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
+
+        MatrixXd startStateVector;
+        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+        startStateVector = activeModelTranslator->X_start;
+        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+
+        activeVisualiser = new visualizer(activeModelTranslator);
+        yamlReader->readOptimisationSettingsFile(opt_iLQR);
+        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
+        activeOptimiser = iLQROptimiser;
+
+        onetaskGenerateTestingData();
+
+    }
 }
 
 void generateFilteringData(){
@@ -478,7 +527,7 @@ void generateFilteringData(){
 }
 
 void generateTestScenes(){
-    for(int i = 0; i < 50; i++){
+    for(int i = 0; i < 100; i++){
         MatrixXd startStateVector = activeModelTranslator->returnRandomStartState();
         activeModelTranslator->X_start = startStateVector;
         activeModelTranslator->X_desired = activeModelTranslator->returnRandomGoalState(startStateVector);
@@ -586,6 +635,26 @@ void iLQROnce(){
 
         controlCounter++;
         visualCounter++;
+
+        if(controlCounter == setupHorizon){
+            int a = 1;
+
+        }
+
+        if(controlCounter == setupHorizon + optHorizon/3){
+            int a = 1;
+
+        }
+
+        if(controlCounter == setupHorizon + (2*optHorizon/3)){
+            int a = 1;
+
+        }
+
+        if(controlCounter == setupHorizon + optHorizon){
+            int a = 1;
+
+        }
 
         if(controlCounter >= finalControls.size()){
             controlCounter = 0;
