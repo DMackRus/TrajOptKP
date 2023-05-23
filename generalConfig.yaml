@@ -2,13 +2,13 @@ optimiser: "interpolated_iLQR"
 #optimiser: "stomp"
 #optimiser: "gradDescent"
 # pendulum = 0, reaching = 1, pushing cylinder = 2, pushing cylinder into mild clutter = 3, pushing cylinder heavy clutter = 4
-# boxFlick = 5, boxFlickMediumCluter = 6, boxFlickHeavyClutter = 7
-taskNumber: 4
+# boxFlick = 5, boxFlickLowClutter = 6, boxFlickHeavyClutter = 7
+taskNumber: 6
 # init control = 0, optimise once = 1, MPCContinous = 2, MPC_until_completion = 3, generateTestScenes = 4, generateTestingData = 5, generateFilteringData = 6
 # generic testing = 9
 displayMode: 1
 # Loadmodes can be, "random", "fromCSV", "fromYAML"
 taskInitMode: "fromCSV"
-csvRow: 0
+csvRow: 1
 filtering: true
 costDerivsFD: false

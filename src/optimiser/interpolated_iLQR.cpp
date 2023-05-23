@@ -324,12 +324,13 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
 
         if(Quu_pd_check_counter >= number_steps_between_pd_checks){
             if(!isMatrixPD(Q_uu_reg)){
-                cout << "iteration " << t << endl;
-                cout << "f_x[t - 3] " << f_x[t - 3] << endl;
-                cout << "f_x[t - 2] " << f_x[t - 2] << endl;
-                cout << "f_x[t - 1] " << f_x[t - 1] << endl;
-                cout << "f_x[t] " << f_x[t] << endl;
-                cout << "Q_uu_reg " << Q_uu_reg << endl;
+                cout << "non PD matrix encountered at t = " << t << endl;
+//                cout << "iteration " << t << endl;
+//                cout << "f_x[t - 3] " << f_x[t - 3] << endl;
+//                cout << "f_x[t - 2] " << f_x[t - 2] << endl;
+//                cout << "f_x[t - 1] " << f_x[t - 1] << endl;
+//                cout << "f_x[t] " << f_x[t] << endl;
+//                cout << "Q_uu_reg " << Q_uu_reg << endl;
                 return false;
             }
             Quu_pd_check_counter = 0;

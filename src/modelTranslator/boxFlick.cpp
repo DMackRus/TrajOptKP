@@ -18,20 +18,98 @@ boxFlick::boxFlick(int _clutterLevel){
         cout << "ERROR: Invalid clutter level" << endl;
     }
 
-
     initModelTranslator(yamlFilePath);
 }
 
 MatrixXd boxFlick::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
-    float cubeX = randFloat(0.45, 0.55);
-    float cubeY = randFloat(-0.1, 0.1);
+    float randStartAngle = randFloat(0, PI);
+    float randStartDist = randFloat(0.05, 0.2);
 
-    randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-            cubeX, cubeY,
-            0, 0, 0, 0, 0, 0, 0,
-            0, 0;
+    float startX = randFloat(0.4, 0.55);
+    float startY = randFloat(-0.2, 0.2);
+
+    pose_6 stackedObjectPose;
+    stackedObjectPose.position(0) = startX;
+    stackedObjectPose.position(1) = startY;
+    stackedObjectPose.position(2) = 0.2;
+
+    std::vector<double> objectXPos;
+    std::vector<double> objectYPos;
+
+    pose_6 objectCurrentPose;
+    activePhysicsSimulator->getBodyPose_angle("goal", objectCurrentPose, MASTER_RESET_DATA);
+    objectCurrentPose.position(0) = startX;
+    objectCurrentPose.position(1) = startY;
+    activePhysicsSimulator->setBodyPose_angle("goal", objectCurrentPose, MAIN_DATA_STATE);
+
+    activePhysicsSimulator->getBodyPose_angle("obstacle1", objectCurrentPose, MASTER_RESET_DATA);
+    objectCurrentPose.position(0) = startX;
+    objectCurrentPose.position(1) = startY;
+    objectCurrentPose.position(2) = 0.2;
+    activePhysicsSimulator->setBodyPose_angle("obstacle1", objectCurrentPose, MAIN_DATA_STATE);
+
+
+    if(clutterLevel == noClutter){
+        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                startX, startY, stackedObjectPose.position(0), stackedObjectPose.position(1), stackedObjectPose.position(2),
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0;
+    }
+    else if(clutterLevel == lowClutter){
+
+        std::string objectNames[2] = {"obstacle2", "obstacle3"};
+        int validObjectCounter = 0;
+
+        for(int i = 0; i < 2; i++){
+            bool validPlacement = false;
+            float sizeX = 0.08;
+            float sizeY = 0.04;
+            while(!validPlacement){
+                sizeX += 0.005;
+                sizeY += 0.005;
+
+                float randX = randFloat(startX, startX + sizeX);
+                float randY = randFloat(startY - sizeY, startY + sizeY);
+
+                pose_6 objectCurrentPose;
+                pose_6 newObjectPose;
+
+                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                newObjectPose = objectCurrentPose;
+                newObjectPose.position(0) = randX;
+                newObjectPose.position(1) = randY;
+                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+
+                if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                    cout << "invalid placement at : " << randX << ", " << randY << endl;
+                }
+                else{
+                    validPlacement = true;
+                    objectXPos.push_back(randX);
+                    objectYPos.push_back(randY);
+                }
+            }
+            validObjectCounter++;
+        }
+
+        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                startX, startY, stackedObjectPose.position(0), stackedObjectPose.position(1), stackedObjectPose.position(2),
+                objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
+                0, 0, 0, 0;
+
+    }
+    else if(clutterLevel == heavyClutter){
+
+    }
+    else{
+        cout << "ERROR: Invalid clutter level" << endl;
+    }
+
+
 
     return randomStartState;
 }
@@ -39,14 +117,20 @@ MatrixXd boxFlick::returnRandomStartState(){
 MatrixXd boxFlick::returnRandomGoalState(MatrixXd X0){
     MatrixXd randomGoalState(stateVectorSize, 1);
 
-    float cubeX = randFloat(0.6, 0.8);
-    float cubeY = randFloat(-0.1, 0.3);
-
-    randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-            cubeX, cubeY,
-            0, 0, 0, 0, 0, 0, 0,
-            0, 0;
-
+    if(clutterLevel == noClutter){
+        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                X0(7), X0(8), X0(9), X0(10), X0(11),
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0;
+    }
+    else if(clutterLevel == lowClutter){
+        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+                X0(7), X0(8), X0(9), X0(10), X0(11),
+                X0(12), X0(13), X0(14), X0(15),
+                0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 0, 0,
+                0, 0, 0, 0;
+    }
 
     return randomGoalState;
 }
@@ -59,21 +143,72 @@ double boxFlick::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixX
 
     double obstacleDistCost = 0.0f;
 
-
     double objectsDiffX = Xt(9) - boxStartX;
     double objectsDiffY = Xt(10) - boxStartY;
 
     obstacleDistCost = (A * exp(-(pow(objectsDiffX,2)/sigma))) + (A * exp(-(pow(objectsDiffY,2)/sigma)));
 
-    temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
+//    obstacleDistCost = 0.01/(pow(objectsDiffX,2) + 0.1) + 0.01/(pow(objectsDiffY,2) + 0.1);
+
+//    if(terminal){
+//        obstacleDistCost = 1/(pow(hypotenuseDiff,2) + 0.1);
+//    }
+
+    if(terminal){
+        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
+    }
+    else{
+        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
+    }
 
     cost = temp(0) + obstacleDistCost;
+
+    cost = obstacleDistCost;
 
     return cost;
 }
 
 void boxFlick::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd X_diff = Xt - X_desired;
 
+
+    // Special elemetns for gaussian distance of obstacle1 to goal
+    double objectsDiffX = Xt(9) - boxStartX;
+    double objectsDiffY = Xt(10) - boxStartY;
+
+    double exponentialX = exp(-(pow(objectsDiffX,2)/sigma));
+    double exponentialY = exp(-(pow(objectsDiffY,2)/sigma));
+
+    double l_x_X_add = -(2 * A * objectsDiffX * exponentialX)/sigma;
+    double l_x_Y_add = -(2 * A * objectsDiffY * exponentialY)/sigma;
+
+    double l_xx_X_add = (-2 * A * objectsDiffX * exponentialX)/sigma + (4 * pow(A, 2) * pow(objectsDiffX,2) * exponentialX)/pow(sigma,2);
+    double l_xx_y_add = (-2 * A * objectsDiffY * exponentialY)/sigma + (4 * pow(A, 2) * pow(objectsDiffY,2) * exponentialY)/pow(sigma,2);
+
+    // Size cost derivatives appropriately
+    l_x.resize(stateVectorSize, 1);
+    l_xx.resize(stateVectorSize, stateVectorSize);
+
+    l_u.resize(num_ctrl, 1);
+    l_uu.resize(num_ctrl, num_ctrl);
+
+    if(terminal){
+        l_x = 2 * Q_terminal * X_diff;
+        l_xx = 2 * Q_terminal;
+    }
+    else{
+        l_x = 2 * Q * X_diff;
+        l_xx = 2 * Q;
+    }
+
+    l_x(9) = l_x(9) + l_x_X_add;
+    l_x(10) = l_x(10) + l_x_Y_add;
+
+    l_xx(9,9) = l_xx(9,9) + l_xx_X_add;
+    l_xx(10,10) = l_xx(10,10) + l_xx_y_add;
+
+    l_u = 2 * R * Ut;
+    l_uu = 2 * R;
 }
 
 std::vector<MatrixXd> boxFlick::createInitSetupControls(int horizonLength){
@@ -85,11 +220,13 @@ std::vector<MatrixXd> boxFlick::createInitSetupControls(int horizonLength){
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = X_desired(7);
-    goalPos(1) = X_desired(8);
+    goalPos(0) = X_desired(7) + 0.2;
+    goalPos(1) = X_desired(8) + 0.1;
+
     initControls_mainWayPoints_setup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
-    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
-    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
+
+    boxStartX = X_desired(7);
+    boxStartY = X_desired(8);
 
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = initControls_createAllWayPoints(mainWayPoints, mainWayPointsTimings);
@@ -117,8 +254,8 @@ void boxFlick::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std::v
 
     // Calculate the angle of approach - from goal position to object start position
     float angle_EE_push;
-    float x_diff = X_desired(7) - goalobj_startPose.position(0);
-    float y_diff = X_desired(8) - goalobj_startPose.position(1);
+    float x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
+    float y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
     angle_EE_push = atan2(y_diff, x_diff);
 
     // TODO hard coded - get it programmatically? - also made it slightly bigger so trajectory has room to improve
@@ -161,13 +298,7 @@ std::vector<MatrixXd> boxFlick::createInitOptimisationControls(int horizonLength
     std::vector<MatrixXd> initControls;
 
     // Set the goal position so that we can see where we are pushing to
-    std::string goalMarkerName = "display_goal";
-    pose_6 displayBodyPose;
-    displayBodyPose.position[0] = X_desired(9);
-    displayBodyPose.position[1] = X_desired(10);
-//    displayBodyPose.position[1] = 100.0f;
-    displayBodyPose.position[2] = 0.0f;
-    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+
 
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -175,8 +306,16 @@ std::vector<MatrixXd> boxFlick::createInitOptimisationControls(int horizonLength
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = X_desired(9);
-    goalPos(1) = X_desired(10);
+    goalPos(0) = X_desired(7) + 0.2;
+    goalPos(1) = X_desired(8) + 0.1;
+
+    std::string goalMarkerName = "display_goal";
+    pose_6 displayBodyPose;
+    displayBodyPose.position[0] = goalPos(0);
+    displayBodyPose.position[1]  = goalPos(1);
+//    displayBodyPose.position[1] = 100.0f;
+    displayBodyPose.position[2] = 0.0f;
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
     initControls_mainWayPoints_optimisation(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
     cout << "mainwaypoint 0: " << mainWayPoints[0] << endl;
     cout << "mainWayPoint " << mainWayPoints[1] << endl;
@@ -208,8 +347,8 @@ void boxFlick::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd,
 
     // Calculate the angle of approach - from goal position to object start position
     float angle_EE_push;
-    float x_diff = X_desired(7) - goalobj_startPose.position(0);
-    float y_diff = X_desired(8) - goalobj_startPose.position(1);
+    float x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
+    float y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
     angle_EE_push = atan2(y_diff, x_diff);
 
     // TODO hard coded - get it programmatically? - also made it slightly bigger so trajectory has room to improve
@@ -297,8 +436,8 @@ std::vector<MatrixXd> boxFlick::generate_initControls_fromWayPoints(std::vector<
     activePhysicsSimulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
 
     float angle_EE_push;
-    float x_diff = X_desired(9) - goalobj_startPose.position(0);
-    float y_diff = X_desired(10) - goalobj_startPose.position(1);
+    float x_diff = 0.2;
+    float y_diff = 0.1;
     angle_EE_push = atan2(y_diff, x_diff);
 
     if(angle_EE_push < 0){
@@ -401,13 +540,13 @@ bool boxFlick::taskComplete(int dataIndex){
 
     MatrixXd currentState = returnStateVector(dataIndex);
 
-    float x_diff = currentState(7) - X_desired(7);
-    float y_diff = currentState(8) - X_desired(8);
+    float x_diff = currentState(9) - currentState(7);
+    float y_diff = currentState(10) - currentState(8);
 
     float distance = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
     std::cout << "distance is: " << distance << std::endl;
 
-    if(distance < 0.05){
+    if(distance > 0.1){
         taskComplete = true;
     }
 

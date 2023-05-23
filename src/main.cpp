@@ -6,8 +6,6 @@
 #include "doublePendulum.h"
 #include "reaching.h"
 #include "twoDPushing.h"
-//#include "twoDPushingClutter.h"
-//#include "twoDPushingHeavyClutter.h"
 #include "boxFlick.h"
 
 #include "visualizer.h"
@@ -81,7 +79,7 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(1){
+    if(0){
         generateTestingData();
         return -1;
     }
@@ -146,8 +144,6 @@ int main(int argc, char **argv) {
         yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
     }
-
-    cout << "start state vector: " << startStateVector << endl;
 
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
@@ -342,7 +338,7 @@ void onetaskGenerateTestingData(){
     int minN[4] = {1, 5, 5, 0};
 
     // Loop through saved trajectories
-    for(int i = 0; i < 1; i++){
+    for(int i = 0; i < 100; i++){
         cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
 
         // Loop through our interpolating derivatives methods
@@ -395,25 +391,25 @@ void onetaskGenerateTestingData(){
 
             activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-            int controlCounter = 0;
-            int visualCounter = 0;
-            cout << "final controls size: " << optimisedControls.size() << endl;
-
-            while(controlCounter < initOptimisationControls.size()){
-
-                activeModelTranslator->setControlVector(initOptimisationControls[controlCounter], MAIN_DATA_STATE);
-
-                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-
-                controlCounter++;
-                visualCounter++;
-
-                if(visualCounter > 5){
-
-                    activeVisualiser->render("show init controls");
-                    visualCounter = 0;
-                }
-            }
+//            int controlCounter = 0;
+//            int visualCounter = 0;
+//            cout << "final controls size: " << optimisedControls.size() << endl;
+//
+//            while(controlCounter < initOptimisationControls.size()){
+//
+//                activeModelTranslator->setControlVector(initOptimisationControls[controlCounter], MAIN_DATA_STATE);
+//
+//                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//
+//                controlCounter++;
+//                visualCounter++;
+//
+//                if(visualCounter > 5){
+//
+//                    activeVisualiser->render("show init controls");
+//                    visualCounter = 0;
+//                }
+//            }
 
         }
         optTimes.push_back(optTimesRow);

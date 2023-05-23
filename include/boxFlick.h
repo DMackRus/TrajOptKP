@@ -23,10 +23,14 @@ public:
 
     bool taskComplete(int dataIndex) override;
 
+
+
 private:
     int clutterLevel;
+
     double boxStartX = 0.5;
     double boxStartY = 0.1;
+
     double A = 1;
     double sigma = 0.005;
 
