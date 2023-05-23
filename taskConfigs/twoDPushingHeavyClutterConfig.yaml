@@ -1,4 +1,4 @@
-modelFile: "/Franka-emika-panda-arm/V1/cylinder_pushing_heavy_clutter.xml"
+modelFile: "/Franka-emika-panda-arm/V1/cylinder_pushing_heavyClutter.xml"
 modelName: "/panda_pushing_heavy_clutter"
 robots:
   panda:

@@ -32,10 +32,11 @@ enum scenes{
     cylinderPushing = 2,
     cylinderPushingMildClutter = 3,
     cylinderPushingHeavyClutter = 4,
-    boxPushingToppling = 4,
-    boxFlicking = 5,
-    boxFlickingMildClutter = 6,
-    boxFlickingHeavyClutter = 7
+    cylinderPushingMldClutterConstrained = 5,
+    boxPushingToppling = 6,
+    boxFlicking = 7,
+    boxFlickingMildClutter = 8,
+    boxFlickingHeavyClutter = 9
 };
 
 // --------------------- Global class instances --------------------------------
@@ -107,6 +108,10 @@ int main(int argc, char **argv) {
         twoDPushing *myTwoDPushing = new twoDPushing(heavyClutter);
         activeModelTranslator = myTwoDPushing;
 
+    }
+    else if(task == cylinderPushingMldClutterConstrained){
+        twoDPushing *myTwoDPushing = new twoDPushing(constrainedClutter);
+        activeModelTranslator = myTwoDPushing;
     }
     else if(task == boxPushingToppling){
         cout << "not implemented task yet " << endl;

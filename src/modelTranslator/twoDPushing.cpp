@@ -8,10 +8,13 @@ twoDPushing::twoDPushing(int _clutterLevel){
         yamlFilePath = "/taskConfigs/twoDPushingConfig.yaml";
     }
     else if(clutterLevel == lowClutter){
-        yamlFilePath = "/taskConfigs/twoDPushingClutterConfig.yaml";
+        yamlFilePath = "/taskConfigs/twoDPushingLowClutterConfig.yaml";
     }
     else if(clutterLevel == heavyClutter){
         yamlFilePath = "/taskConfigs/twoDPushingHeavyClutterConfig.yaml";
+    }
+    else if(clutterLevel == constrainedClutter){
+        yamlFilePath = "/taskConfigs/twoDPushingConstrainedClutterConfig.yaml";
     }
     else{
         cout << "ERROR: Invalid clutter level" << endl;
@@ -23,17 +26,32 @@ twoDPushing::twoDPushing(int _clutterLevel){
 MatrixXd twoDPushing::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
-    float randStartAngle = randFloat(0, PI);
-    float randStartDist = randFloat(0.05, 0.1);
+    float startX;
+    float startY;
+    float goalX;
+    float goalY;
 
-    float startX = 0.4 + randStartDist * sin(randStartAngle); //randFloat(0.45, 0.55);
-    float startY = 0 + randStartDist * cos(randStartAngle); //randFloat(-0.1, 0.1);
+    if(clutterLevel == constrainedClutter){
+        startX = randFloat(0.45, 0.46);
+        startY = randFloat(-0.05, 0.05);
 
-    float randAngle = randFloat(-PI/4, PI/4);
-    float randDist = randFloat(0.2, 0.4);
+        goalX = randFloat(0.6, 0.65);
+        goalY = randFloat(-0.2, 0.2);
 
-    float goalX = startX + randDist * cos(randAngle);
-    float goalY = startY + randDist * sin(randAngle);
+    }
+    else{
+        float randStartAngle = randFloat(0, PI);
+        float randStartDist = randFloat(0.05, 0.1);
+
+        float startX = 0.4 + randStartDist * sin(randStartAngle);
+        float startY = 0 + randStartDist * cos(randStartAngle);
+
+        float randAngle = randFloat(-PI/4, PI/4);
+        float randDist = randFloat(0.2, 0.4);
+
+        float goalX = startX + randDist * cos(randAngle);
+        float goalY = startY + randDist * sin(randAngle);
+    }
 
     randomGoalX = goalX;
     randomGoalY = goalY;
@@ -41,25 +59,39 @@ MatrixXd twoDPushing::returnRandomStartState(){
     std::vector<double> objectXPos;
     std::vector<double> objectYPos;
 
+    pose_6 objectCurrentPose;
+    activePhysicsSimulator->getBodyPose_angle("goal", objectCurrentPose, MASTER_RESET_DATA);
+    objectCurrentPose.position(0) = startX;
+    objectCurrentPose.position(1) = startY;
+    activePhysicsSimulator->setBodyPose_angle("goal", objectCurrentPose, MAIN_DATA_STATE);
+
     if(clutterLevel == noClutter){
         randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
                 startX, startY,
                 0, 0, 0, 0, 0, 0, 0,
                 0, 0;
     }
-    else if(clutterLevel == lowClutter){
+    else if(clutterLevel == lowClutter  || clutterLevel == constrainedClutter){
 
         std::string objectNames[3] = {"bigBox", "smallBox","tallCylinder"};
         int validObjectCounter = 0;
 
         for(int i = 0; i < 3; i++){
             bool validPlacement = false;
-            float size = 0.08;
+            float size = 0.01;
             while(!validPlacement){
-                size += 0.005;
+                size += 0.0005;
 
-                float randX = randFloat(goalX - size, goalX + size);
-                float randY = randFloat(goalY - size, goalY + size);
+                float randX, randY;
+
+                if(clutterLevel == constrainedClutter){
+                    randX = randFloat(startX, goalX + 0.1);
+                    randY = randFloat(goalY - size, goalY + size);
+                }
+                else{
+                    randX = randFloat(goalX, goalX + size);
+                    randY = randFloat(goalY - size, goalY + size);
+                }
 
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
@@ -150,13 +182,13 @@ MatrixXd twoDPushing::returnRandomGoalState(MatrixXd X0){
                 0, 0, 0, 0, 0, 0, 0,
                 0, 0;
     }
-    else if(clutterLevel == lowClutter){
+    else if(clutterLevel == lowClutter || clutterLevel == constrainedClutter){
         randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
                 randomGoalX, randomGoalY, X0(9), X0(10), X0(11), X0(12), X0(13), X0(14),
                 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0, 0;
     }
-    else{
+    else if(clutterLevel == heavyClutter){
         randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
                 randomGoalX, randomGoalY, X0(9), X0(10), X0(11), X0(12),
                 X0(13), X0(14), X0(15), X0(16), X0(17),

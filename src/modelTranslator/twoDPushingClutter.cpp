@@ -5,7 +5,7 @@
 #include "twoDPushingClutter.h"
 
 twoDPushingClutter::twoDPushingClutter(){
-    std::string yamlFilePath = "/taskConfigs/twoDPushingClutterConfig.yaml";
+    std::string yamlFilePath = "/taskConfigs/twoDPushingLowClutterConfig.yaml";
 
     initModelTranslator(yamlFilePath);
 }

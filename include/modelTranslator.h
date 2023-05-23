@@ -12,7 +12,8 @@
 enum clutterLevels{
     noClutter = 0,
     lowClutter = 1,
-    heavyClutter = 2
+    heavyClutter = 2,
+    constrainedClutter = 3
 };
 
 class modelTranslator {
