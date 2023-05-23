@@ -29,6 +29,7 @@ struct robot{
     std::vector<double> jointPosCosts;
     std::vector<double> jointVelCosts;
     std::vector<double> jointControlCosts;
+    std::vector<double> jointJerkThresholds;
 };
 
 struct bodyStateVec{
@@ -43,6 +44,8 @@ struct bodyStateVec{
     double linearVelCost[3];
     double angularPosCost[3];
     double angularVelCost[3];
+    double linearJerkThreshold[3];
+    double angularJerkThreshold[3];
 };
 
 struct stateVectorList{

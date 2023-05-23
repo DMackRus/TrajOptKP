@@ -228,7 +228,6 @@ double boxFlick::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixX
 void boxFlick::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
     MatrixXd X_diff = Xt - X_desired;
 
-
     // Special elemetns for gaussian distance of obstacle1 to goal
     double objectsDiffX = Xt(9) - boxStartX;
     double objectsDiffY = Xt(10) - boxStartY;
@@ -271,7 +270,7 @@ void boxFlick::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, Matrix
 std::vector<MatrixXd> boxFlick::createInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
 
-    // Pushing create init controls borken into three main steps
+    // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
     m_point goalPos;
     std::vector<m_point> mainWayPoints;
