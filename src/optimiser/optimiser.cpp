@@ -53,10 +53,11 @@ void optimiser::generateDerivatives(){
     // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
     // generate the dynamics evaluation waypoints
     std::vector<std::vector<int>> keyPoints = generateKeyPoints(X_old, U_old);
+
 //    for(int j = 0; j < keyPoints.size(); j++){
 //        cout << "col " << j << ": " << keyPoints[j].size() << endl;
 //    }
-//    cout << endl;
+
 //    cout << "keypoints size: " << keyPoints.size() << endl;
 
     // Calculate derivatives via finite differnecing / analytically for cost functions if available
@@ -66,6 +67,8 @@ void optimiser::generateDerivatives(){
     else{
         getCostDerivs();
     }
+
+//    cout << "A[horizonLength - 1] " << A[horizonLength - 1] << endl;
 
 //    activeYamlReader->generalSaveMatrices(l_x, "l_x");
 //    activeYamlReader->generalSaveMatrices(l_xx, "l_xx");
@@ -91,10 +94,19 @@ void optimiser::generateDerivatives(){
 //        interpolateDerivatives(keyPoints);
 //    }
 
+    // time how long it takes to inteprolate
+    auto testStart = high_resolution_clock::now();
     interpolateDerivatives(keyPoints);
+    auto testStop = high_resolution_clock::now();
+    auto testDuration = duration_cast<microseconds>(testStop - testStart);
+    cout << "interpolate took: " << testDuration.count() / 1000000.0f << " s\n";
 
-    cout << "f_x[0] " << f_x[0] << endl;
-    cout << "f_x[1] " << f_x[1] << endl;
+//    cout << "f_x[0] " << f_x[0] << endl;
+//    cout << "f_x[1] " << f_x[1] << endl;
+//
+//    cout << "f_u[0] " << f_u[0] << endl;
+//
+//    cout << "f_x[horizonLength - 1] " << f_x[horizonLength - 1] << endl;
 
 //        f_x.resize(initControls.size());
 //        activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 1);
@@ -125,7 +137,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
     evaluationWaypoints.push_back(oneRow);
 
     if(keyPointsMethod == setInterval){
-        for(int i = 1; i < horizonLength; i++){
+        for(int i = 1; i < horizonLength - 1; i++){
 
             if(i % min_interval == 0){
                 std::vector<int> oneRow;
@@ -172,12 +184,18 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
     //Check if last element in evaluationWaypoints is horizonLength - 1
     if(evaluationWaypoints.back().size() != 0){
         if(evaluationWaypoints.back()[0] != horizonLength - 1){
-            std::vector<int> oneRow(dof, horizonLength - 1);
+            std::vector<int> oneRow;
+            for(int i = 0; i < dof; i++){
+                oneRow.push_back(i);
+            }
             evaluationWaypoints.push_back(oneRow);
         }
     }
     else{
-        std::vector<int> oneRow(dof, horizonLength - 1);
+        std::vector<int> oneRow;
+        for(int i = 0; i < dof; i++){
+            oneRow.push_back(i);
+        }
         evaluationWaypoints.push_back(oneRow);
     }
 
@@ -449,7 +467,7 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
 
     activeDifferentiator->initModelForFiniteDifferencing();
 
-//    #pragma omp parallel for
+    #pragma omp parallel for
     for(int i = 0; i < keyPoints.size(); i++){
 
         int timeIndex = i;
@@ -512,6 +530,8 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints){
             }
 
             if(pairFound){
+                pairFound = false;
+
                 // Interpolate between start index and endIndex for column i and i + dof
                 int interpolationSize = endIndex - startIndex;
                 MatrixXd startA = A[startIndex].replicate(1, 1);
@@ -520,18 +540,20 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints){
                 MatrixXd endA = A[endIndex].replicate(1, 1);
                 MatrixXd endB = B[endIndex].replicate(1, 1);
 
-                MatrixXd addA(2*dof, 2*dof);
-                MatrixXd addB(2*dof, num_ctrl);
+                MatrixXd addA = (endA - startA) / interpolationSize;
+                MatrixXd addB = (endB - startB) / interpolationSize;
 
                 for(int k = 0; k < interpolationSize; k++){
-                    f_x[startIndex + k].block(0, i, 2*dof, 1) = startA.block(0, i, 2*dof, 1) + (k+1)*(endA.block(0, i, 2*dof, 1) - startA.block(0, i, 2*dof, 1))/interpolationSize;
+                    f_x[startIndex + k].block(0, i, 2*dof, 1) = startA.block(0, i, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
                     // Same for B
                     if(i < num_ctrl){
-                        f_u[startIndex + k].block(0, i, 2*dof, 1) = startB.block(0, i, 2*dof, 1) + (k+1)*(endB.block(0, i, 2*dof, 1) - startB.block(0, i, 2*dof, 1))/interpolationSize;
+                        f_u[startIndex + k].block(0, i, 2*dof, 1) = startB.block(0, i, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
                     }
 
-                    f_x[startIndex + k].block(0, i+dof, 2*dof, 1) = startA.block(0, i+dof, 2*dof, 1) + (k+1)*(endA.block(0, i+dof, 2*dof, 1) - startA.block(0, i+dof, 2*dof, 1))/interpolationSize;
+                    f_x[startIndex + k].block(0, i+dof, 2*dof, 1) = startA.block(0, i+dof, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
                 }
+
+                startIndex = endIndex;
             }
         }
     }
