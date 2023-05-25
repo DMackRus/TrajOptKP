@@ -50,7 +50,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = setInterval;
+int keyPointMethod = adaptive_jerk;
 //int keyPointMethod = adaptive_jerk;
 
 void showInitControls();

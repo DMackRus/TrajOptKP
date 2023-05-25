@@ -127,56 +127,13 @@ std::vector<int> optimiser::generateKeyPoints(std::vector<MatrixXd> trajecStates
 
     }
     else if(keyPointsMethod == adaptive_jerk){
-        int counter = 0;
         std::vector<MatrixXd> jerkProfile = generateJerkProfile();
-        for(int i = 0; i < horizonLength; i++){
-            counter++;
-
-            if(counter > min_interval){
-                for(int j = 0; j < activeModelTranslator->dof; j++){
-                    if(jerkProfile.size() > i) {
-
-                        if (jerkProfile[i](j, 0) > 0.002) {
-                            evaluationWaypoints.push_back(i);
-                            counter = 0;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if(counter > max_interval){
-                evaluationWaypoints.push_back(i);
-                counter = 0;
-            }
-
-        }
+        evaluationWaypoints = generateKeyPointsAdaptive(jerkProfile);
 
     }
     else if(keyPointsMethod == adaptive_accel){
-        int counter = 0;
         std::vector<MatrixXd> accelProfile = generateAccelProfile();
-        for(int i = 0; i < horizonLength; i++){
-            counter++;
-
-            if(counter > min_interval){
-                for(int j = 0; j < activeModelTranslator->dof; j++){
-                    if(accelProfile.size() > i) {
-
-                        if (accelProfile[i](j, 0) > 0.0005) {
-                            evaluationWaypoints.push_back(i);
-                            counter = 0;
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if(counter > max_interval){
-                evaluationWaypoints.push_back(i);
-                counter = 0;
-            }
-        }
+        evaluationWaypoints = generateKeyPointsAdaptive(accelProfile);
     }
     else if(keyPointsMethod == iterative_error){
         computedKeyPoints.clear();
@@ -192,6 +149,79 @@ std::vector<int> optimiser::generateKeyPoints(std::vector<MatrixXd> trajecStates
     //Check if last element in evaluationWaypoints is horizonLength - 1
     if(evaluationWaypoints.back() != horizonLength - 1){
         evaluationWaypoints.push_back(horizonLength - 1);
+    }
+
+    return evaluationWaypoints;
+}
+
+std::vector<int> optimiser::generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile){
+    std::vector<int> evaluationWaypoints;
+    evaluationWaypoints.push_back(0);
+    int counter = 0;
+    for(int i = 0; i < trajecProfile.size(); i++){
+        counter++;
+        int dofCounter = 0;
+
+        if(counter > min_interval){
+            bool addKeyPoint = false;
+            // Loop through all possible robots
+            for(int j = 0; j < activeModelTranslator->myStateVector.robots.size(); j++) {
+                bool breakEarly = false;
+                // Loop through all joints of each robot
+                for(int k = 0; k < activeModelTranslator->myStateVector.robots[j].jointNames.size(); k++) {
+                    // Check if the jerk is above the threshold
+                    if (trajecProfile[i](dofCounter, 0) > activeModelTranslator->myStateVector.robots[j].jointJerkThresholds[k]) {
+                        dofCounter++;
+                        breakEarly = true;
+                        addKeyPoint = true;
+                    }
+                }
+
+                if(breakEarly){
+                    break;
+                }
+            }
+
+            // Loop through all bodies in simulation state
+            for(int j = 0; j < activeModelTranslator->myStateVector.bodiesStates.size(); j++){
+                bool breakEarly = false;
+                //Loop through linear states
+                for(int k = 0; k < 3; k++){
+                    if(activeModelTranslator->myStateVector.bodiesStates[j].activeLinearDOF[k]){
+                        if(trajecProfile[i](dofCounter, 0) > activeModelTranslator->myStateVector.bodiesStates[j].linearJerkThreshold[k]){
+                            addKeyPoint = true;
+                            dofCounter++;
+                            breakEarly = true;
+                        }
+                    }
+                }
+
+                //Loop through angular states
+                for(int k = 0; k < 3; k++){
+                    if(activeModelTranslator->myStateVector.bodiesStates[j].activeAngularDOF[k]){
+                        if(trajecProfile[i](dofCounter, 0) > activeModelTranslator->myStateVector.bodiesStates[j].angularJerkThreshold[k]){
+                            addKeyPoint = true;
+                            dofCounter++;
+                            breakEarly = true;
+                        }
+                    }
+                }
+
+                if(breakEarly){
+                    break;
+                }
+            }
+
+            if(addKeyPoint){
+                evaluationWaypoints.push_back(i);
+                counter = 0;
+            }
+        }
+
+        if(counter > max_interval){
+            evaluationWaypoints.push_back(i);
+            counter = 0;
+        }
     }
 
     return evaluationWaypoints;

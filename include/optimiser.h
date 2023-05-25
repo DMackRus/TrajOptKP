@@ -92,15 +92,24 @@ protected:
 
     std::vector<int> computedKeyPoints;
 
+    // - Top level function - ensures all derivates are calculate over an entire trajectory by some method
     void generateDerivatives();
+
+    // Generate keypoints we will calculate derivatives at
     std::vector<int> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
+    std::vector<int> generateKeyPointsIteratively();
+    bool checkOneMatrixError(indexTuple indices);
+    std::vector<int> generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile);
+    std::vector<MatrixXd> generateJerkProfile();
+    std::vector<MatrixXd> generateAccelProfile();
+
+    // Calculate derivatives at key points
     void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
     void getCostDerivs();
     void interpolateDerivatives(std::vector<int> calculatedIndices);
-    std::vector<MatrixXd> generateJerkProfile();
-    std::vector<MatrixXd> generateAccelProfile();
-    std::vector<int> generateKeyPointsIteratively();
-    bool checkOneMatrixError(indexTuple indices);
+
+
+
     void filterMatrices();
     std::vector<double> filterIndividualValue(std::vector<double> unfiltered);
 

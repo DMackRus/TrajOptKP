@@ -11,3 +11,4 @@ robots:
     jointPosCosts: [1, 1, 1, 1, 1, 1, 1, 1]
     jointVelCosts: [10, 10, 10, 10, 10, 10, 10]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
+    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]

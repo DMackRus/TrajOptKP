@@ -40,6 +40,7 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
         vector<double> jointPosCosts;
         vector<double> jointVelCosts;
         vector<double> jointControlCosts;
+        vector<double> jointJerkThresholds;
 
         robotName = robot_it->first.as<string>();
 
@@ -74,6 +75,10 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
             jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
         }
 
+        for(int i = 0; i < robot_it->second["jointJerkThresholds"].size(); i++){
+            jointJerkThresholds.push_back(robot_it->second["jointJerkThresholds"][i].as<double>());
+        }
+
         tempRobot.name = robotName;
         tempRobot.jointNames = jointNames;
         tempRobot.numActuators = numActuators;
@@ -84,6 +89,7 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
         tempRobot.jointPosCosts = jointPosCosts;
         tempRobot.jointVelCosts = jointVelCosts;
         tempRobot.jointControlCosts = jointControlCosts;
+        tempRobot.jointJerkThresholds = jointJerkThresholds;
 
         _robots.push_back(tempRobot);
     }
@@ -102,6 +108,8 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
         double linearVelCosts[3];
         double angularPosCosts[3];
         double angularVelCosts[3];
+        double linearJerkThreshold[3];
+        double angularJerkThreshold[3];
 
         bodyName = body_it->first.as<string>();
 
@@ -145,6 +153,14 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
             angularVelCosts[i] = body_it->second["angularVelCost"][i].as<double>();
         }
 
+        for(int i = 0; i < body_it->second["linearJerkThreshold"].size(); i++){
+            linearJerkThreshold[i] = body_it->second["linearJerkThreshold"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["angularJerkThreshold"].size(); i++){
+            angularJerkThreshold[i] = body_it->second["angularJerkThreshold"][i].as<double>();
+        }
+
         tempBody.name = bodyName;
         for(int i = 0; i < 3; i++){
             tempBody.activeLinearDOF[i] = activeLinearDOF[i];
@@ -157,6 +173,8 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
             tempBody.linearVelCost[i] = linearVelCosts[i];
             tempBody.angularPosCost[i] = angularPosCosts[i];
             tempBody.angularVelCost[i] = angularVelCosts[i];
+            tempBody.linearJerkThreshold[i] = linearJerkThreshold[i];
+            tempBody.angularJerkThreshold[i] = angularJerkThreshold[i];
         }
 
         _bodies.push_back(tempBody);
