@@ -226,7 +226,8 @@ void gradDescent::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
         if(index == horizonLength){
             terminal = true;
         }
-        activeDifferentiator->getDerivatives(A[i], B[i], l_x[i], l_xx, l_u[i], l_uu, false, index, terminal);
+        // TODO fix new method for gradient descent
+//        activeDifferentiator->getDerivatives(A[i], B[i], l_x[i], l_xx, l_u[i], l_uu, false, index, terminal);
 
     }
 

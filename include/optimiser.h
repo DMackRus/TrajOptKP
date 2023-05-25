@@ -89,24 +89,23 @@ protected:
     fileHandler *activeYamlReader;
     differentiator *activeDifferentiator;
 
-
-    std::vector<int> computedKeyPoints;
+    std::vector<std::vector<int>> computedKeyPoints;
 
     // - Top level function - ensures all derivates are calculate over an entire trajectory by some method
     void generateDerivatives();
 
     // Generate keypoints we will calculate derivatives at
-    std::vector<int> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
+    std::vector<std::vector<int>> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
     std::vector<int> generateKeyPointsIteratively();
     bool checkOneMatrixError(indexTuple indices);
-    std::vector<int> generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile);
+    std::vector<std::vector<int>> generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile);
     std::vector<MatrixXd> generateJerkProfile();
     std::vector<MatrixXd> generateAccelProfile();
 
     // Calculate derivatives at key points
-    void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
+    void getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints);
     void getCostDerivs();
-    void interpolateDerivatives(std::vector<int> calculatedIndices);
+    void interpolateDerivatives(std::vector<std::vector<int>> keyPoints);
 
 
 

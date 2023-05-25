@@ -14,7 +14,7 @@ class differentiator{
 public:
     differentiator(modelTranslator *_modelTranslator, MuJoCoHelper *_physicsSimulator);
 
-    void getDerivatives(MatrixXd &A, MatrixXd &B, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal);
+    void getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal);
     void initModelForFiniteDifferencing();
     void resetModelAfterFiniteDifferencing();
 
