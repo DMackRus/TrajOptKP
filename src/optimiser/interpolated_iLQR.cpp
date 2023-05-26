@@ -174,14 +174,21 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         auto bp_start = high_resolution_clock::now();
         while(!validBackwardsPass){
             cout << "lamda is: " << lambda << "\n";
-            validBackwardsPass = backwardsPass_Quu_reg();
+
+//            if(i < 4){
+//                validBackwardsPass = backwardsPass_Quu_reg_parallel();
+//            }
+//            else{
+//                validBackwardsPass = backwardsPass_Quu_reg();
+//            }
+//            validBackwardsPass = backwardsPass_Quu_reg();
 //            K.resize(initControls.size());
 //            k.resize(initControls.size());
 //            activeYamlReader->generalSaveMatrices(K, "K_normal");
 //            activeYamlReader->generalSaveMatrices(k, "k_normal");
 //            K.resize(3000);
 //            k.resize(3000);
-//            validBackwardsPass = backwardsPass_Quu_reg_parallel();
+            validBackwardsPass = backwardsPass_Quu_reg_parallel();
 //            K.resize(initControls.size());
 //            k.resize(initControls.size());
 //            activeYamlReader->generalSaveMatrices(K, "K_parallel");
@@ -279,8 +286,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         }
 
     }
-
-
 
     return optimisedControls;
 }
@@ -466,8 +471,8 @@ bool interpolatediLQR::backwardsPass_Quu_reg_parallel(){
 
 //        V_x[i] = l_x[index];
 //        V_xx[i] = l_xx[index];
-        V_x[i] = l_x[horizonLength];
-        V_xx[i] = l_xx[horizonLength];
+        V_x[i] = l_x[index];
+        V_xx[i] = l_xx[index];
 
         endPoints[i+1] = index;
     }

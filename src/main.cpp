@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(0){
+    if(1){
         generateTestingData();
         return -1;
     }
@@ -149,6 +149,9 @@ int main(int argc, char **argv) {
         yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
     }
+
+    cout << "start state: " << startStateVector.transpose() << endl;
+    cout << "goal state: " << activeModelTranslator->X_desired.transpose() << endl;
 
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
@@ -337,10 +340,10 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<double>> avgTimeForDerivs;
     std::vector<double> avgTimeForDerivsRow;
 
-    std::vector<std::string> methodNames = {"baseline", "setInterval5", "adaptive_jerk", "iterative_error"};
-    int keyPointMethods[4] = {setInterval, setInterval, adaptive_jerk, iterative_error};
-    int interpMethod[4] = {linear, linear, linear, linear};
-    int minN[4] = {1, 5, 5, 0};
+    std::vector<std::string> methodNames = {"baseline", "setInterval5", "adaptive_jerk", "adaptive accel", "iterative_error"};
+    int keyPointMethods[5] = {setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
+    int interpMethod[5] = {linear, linear, linear, linear};
+    int minN[5] = {1, 5, 5, 5,0};
 
     // Loop through saved trajectories
     for(int i = 0; i < 100; i++){
@@ -374,7 +377,7 @@ void onetaskGenerateTestingData(){
 
         std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
 
-        for(int j = 0; j < 4; j++){
+        for(int j = 0; j < 5; j++){
             double optTime;
             double costReduction;
             int avgNumDerivs;

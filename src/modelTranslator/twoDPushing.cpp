@@ -43,14 +43,14 @@ MatrixXd twoDPushing::returnRandomStartState(){
         float randStartAngle = randFloat(0, PI);
         float randStartDist = randFloat(0.05, 0.1);
 
-        float startX = 0.4 + randStartDist * sin(randStartAngle);
-        float startY = 0 + randStartDist * cos(randStartAngle);
+        startX = 0.4 + randStartDist * sin(randStartAngle);
+        startY = 0 + randStartDist * cos(randStartAngle);
 
         float randAngle = randFloat(-PI/4, PI/4);
         float randDist = randFloat(0.2, 0.4);
 
-        float goalX = startX + randDist * cos(randAngle);
-        float goalY = startY + randDist * sin(randAngle);
+        goalX = startX + randDist * cos(randAngle);
+        goalY = startY + randDist * sin(randAngle);
     }
 
     randomGoalX = goalX;
