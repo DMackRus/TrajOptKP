@@ -181,14 +181,14 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 //            else{
 //                validBackwardsPass = backwardsPass_Quu_reg();
 //            }
-//            validBackwardsPass = backwardsPass_Quu_reg();
+            validBackwardsPass = backwardsPass_Quu_reg();
 //            K.resize(initControls.size());
 //            k.resize(initControls.size());
 //            activeYamlReader->generalSaveMatrices(K, "K_normal");
 //            activeYamlReader->generalSaveMatrices(k, "k_normal");
 //            K.resize(3000);
 //            k.resize(3000);
-            validBackwardsPass = backwardsPass_Quu_reg_parallel();
+//            validBackwardsPass = backwardsPass_Quu_reg_parallel();
 //            K.resize(initControls.size());
 //            k.resize(initControls.size());
 //            activeYamlReader->generalSaveMatrices(K, "K_parallel");
