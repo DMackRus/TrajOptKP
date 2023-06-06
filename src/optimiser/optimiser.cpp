@@ -508,146 +508,116 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
 
 void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints){
 
+//    for(int i = 0; i < dof; i++){
+//
+//        int startIndex = 0;
+//        int endIndex = 0;
+//        bool pairFound = false;
+//
+//        // Loop through all the time indices
+//        for(int t = 0; t < horizonLength; t++){
+//            std::vector<int> columns = keyPoints[t];
+//
+//            if(columns.size() == 0){
+//                continue;
+//            }
+//
+//            for(int j = 0; j < columns.size(); j++){
+//                if(i == columns[j]){
+//                    endIndex = t;
+//                    pairFound = true;
+//                }
+//            }
+//
+//            if(pairFound){
+//                pairFound = false;
+//
+//                // Interpolate between start index and endIndex for column i and i + dof
+//                int interpolationSize = endIndex - startIndex;
+//                MatrixXd startA = A[startIndex].replicate(1, 1);
+//                MatrixXd startB = B[startIndex].replicate(1, 1);
+//
+//                MatrixXd endA = A[endIndex].replicate(1, 1);
+//                MatrixXd endB = B[endIndex].replicate(1, 1);
+//
+//                MatrixXd addA = (endA - startA) / interpolationSize;
+//                MatrixXd addB = (endB - startB) / interpolationSize;
+//
+//                for(int k = 0; k < interpolationSize; k++){
+//                    f_x[startIndex + k].block(0, i, 2*dof, 1) = startA.block(0, i, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
+//                    // Same for B
+//                    if(i < num_ctrl){
+//                        f_u[startIndex + k].block(0, i, 2*dof, 1) = startB.block(0, i, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
+//                    }
+//
+//                    f_x[startIndex + k].block(0, i+dof, 2*dof, 1) = startA.block(0, i+dof, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
+//                }
+//
+//                startIndex = endIndex;
+//            }
+//        }
+//    }
+
+
+    // Create an array to track startIndices of next interpolation for each dof
+    int startIndices[dof];
     for(int i = 0; i < dof; i++){
+        startIndices[i] = 0;
+    }
 
-        int startIndex = 0;
-        int endIndex = 0;
-        bool pairFound = false;
-
-        // Loop through all the time indices
-        for(int t = 0; t < horizonLength; t++){
+    // Loop through all the time indices - can skip the first
+    // index as we preload the first index as the start index for all dofs.
+    for(int t = 1; t < horizonLength; t++){
+        // Loop through all the dofs
+        for(int i = 0; i < dof; i++){
+            // Check the current vector at that time segment for the current dof
             std::vector<int> columns = keyPoints[t];
 
+            // If there are no keypoints, continue onto second run of the loop
             if(columns.size() == 0){
                 continue;
             }
 
             for(int j = 0; j < columns.size(); j++){
+
+                MatrixXd startB;
+                MatrixXd endB;
+                MatrixXd addB;
+                // If there is a match, interpolate between the start index and the current index
+                // For the given columns
                 if(i == columns[j]){
-                    endIndex = t;
-                    pairFound = true;
-                }
-            }
+                    MatrixXd startACol1 = A[startIndices[i]].block(dof, i, dof, 1);
+                    MatrixXd endACol1 = A[t].block(dof, i, dof, 1);
+                    MatrixXd addACol1 = (endACol1 - startACol1) / (t - startIndices[i]);
 
-            if(pairFound){
-                pairFound = false;
+                    // Same again for column 2 which is dof + i
+                    MatrixXd startACol2 = A[startIndices[i]].block(dof, i + dof, dof, 1);
+                    MatrixXd endACol2 = A[t].block(dof, i + dof, dof, 1);
+                    MatrixXd addACol2 = (endACol2 - startACol2) / (t - startIndices[i]);
 
-                // Interpolate between start index and endIndex for column i and i + dof
-                int interpolationSize = endIndex - startIndex;
-                MatrixXd startA = A[startIndex].replicate(1, 1);
-                MatrixXd startB = B[startIndex].replicate(1, 1);
 
-                MatrixXd endA = A[endIndex].replicate(1, 1);
-                MatrixXd endB = B[endIndex].replicate(1, 1);
-
-                MatrixXd addA = (endA - startA) / interpolationSize;
-                MatrixXd addB = (endB - startB) / interpolationSize;
-
-                for(int k = 0; k < interpolationSize; k++){
-                    f_x[startIndex + k].block(0, i, 2*dof, 1) = startA.block(0, i, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
-                    // Same for B
                     if(i < num_ctrl){
-                        f_u[startIndex + k].block(0, i, 2*dof, 1) = startB.block(0, i, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
+                        startB = B[startIndices[i]].block(dof, i, dof, 1);
+                        endB = B[t].block(dof, i, dof, 1);
+                        addB = (endB - startB) / (t - startIndices[i]);
                     }
 
-                    f_x[startIndex + k].block(0, i+dof, 2*dof, 1) = startA.block(0, i+dof, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
-                }
+                    for(int k = startIndices[i]; k < t; k++){
+                        f_x[k].block(dof, i, dof, 1) = startACol1 + ((k - startIndices[i]) * addACol1);
 
-                startIndex = endIndex;
+                        if(i < num_ctrl){
+                            f_u[k].block(dof, i, dof, 1) = startB + ((k - startIndices[i]) * addB);
+                        }
+
+                        f_x[k].block(dof, i + dof, dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
+
+                    }
+
+                    startIndices[i] = t;
+                }
             }
         }
     }
-
-//    for(int t = 0; t < horizonLength; t++){
-//        std::vector<int> columns = keyPoints[t];
-//
-//        if(columns.size() == 0){
-//            continue;
-//        }
-//
-//        for(int i = 0; i < columns.size(); i++){
-//
-//        }
-//    }
-
-//    // ------------------------- DYNAMICS DERIVATIVES --------------------------------
-//    // Interpolate all the derivatives that were not calculated via finite differencing
-//    for(int t = 0; t < calculatedIndices.size()-1; t++){
-//
-//        MatrixXd addA(2*dof, 2*dof);
-//        MatrixXd addB(2*dof, num_ctrl);
-//        int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
-//        int startIndex = calculatedIndices[t];
-//        int endIndex = calculatedIndices[t+1];
-//
-//        MatrixXd startA = A[startIndex].replicate(1, 1);
-//        MatrixXd endA = A[endIndex].replicate(1, 1);
-//        MatrixXd diffA = endA - startA;
-//        addA = diffA / nextInterpolationSize;
-//
-//        MatrixXd startB = B[startIndex].replicate(1, 1);
-//        MatrixXd endB = B[endIndex].replicate(1, 1);
-//        MatrixXd diffB = endB - startB;
-//        addB = diffB / nextInterpolationSize;
-//
-//        // Interpolate A and B matrices
-//        for(int i = 0; i < nextInterpolationSize; i++){
-//            f_x[startIndex + i] = A[startIndex].replicate(1,1) + (addA * i);
-//            f_u[startIndex + i] = B[startIndex].replicate(1,1) + (addB * i);
-////            cout << "f_x[" << startIndex + i << "] = " << f_x[startIndex + i] << endl;
-//        }
-//    }
-//
-//    f_x[horizonLength - 1] = f_x[horizonLength - 2].replicate(1,1);
-//    f_u[horizonLength - 1] = f_u[horizonLength - 2].replicate(1,1);
-//
-//    // ------------------------- COST DERIVATIVES --------------------------------
-//    // Interpolate all the derivatives that were not calculated via finite differencing
-//    if(activeYamlReader->costDerivsFD){
-//        for(int t = 0; t < calculatedIndices.size()-1; t++){
-//
-//            MatrixXd addl_x(2*dof, 1);
-//            MatrixXd addl_xx(2*dof, 2*dof);
-//            MatrixXd addl_u(num_ctrl, 1);
-//            MatrixXd addl_uu(num_ctrl, num_ctrl);
-//
-//
-//            int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
-//            int startIndex = calculatedIndices[t];
-//            int endIndex = calculatedIndices[t+1];
-//
-//
-//            MatrixXd startl_x = l_x[startIndex].replicate(1, 1);
-//            MatrixXd endl_x = l_x[endIndex].replicate(1, 1);
-//            MatrixXd diffl_x = endl_x - startl_x;
-//            addl_x = diffl_x / nextInterpolationSize;
-//
-//            MatrixXd startl_xx = l_xx[startIndex].replicate(1, 1);
-//            MatrixXd endl_xx = l_xx[endIndex].replicate(1, 1);
-//            MatrixXd diffl_xx = endl_xx - startl_xx;
-//            addl_xx = diffl_xx / nextInterpolationSize;
-//
-//            MatrixXd startl_u = l_u[startIndex].replicate(1, 1);
-//            MatrixXd endl_u = l_u[endIndex].replicate(1, 1);
-//            MatrixXd diffl_u = endl_u - startl_u;
-//            addl_u = diffl_u / nextInterpolationSize;
-//
-//            MatrixXd startl_uu = l_uu[startIndex].replicate(1, 1);
-//            MatrixXd endl_uu = l_uu[endIndex].replicate(1, 1);
-//            MatrixXd diffl_uu = endl_uu - startl_uu;
-//            addl_uu = diffl_uu / nextInterpolationSize;
-//
-//
-//            // Interpolate A and B matrices
-//            for(int i = 0; i < nextInterpolationSize; i++){
-//                l_x[startIndex + i] = l_x[startIndex].replicate(1,1) + (addl_x * i);
-//                l_u[startIndex + i] = l_u[startIndex].replicate(1,1) + (addl_u * i);
-//                l_xx[startIndex + i] = l_xx[startIndex].replicate(1,1) + (addl_xx * i);
-//                l_uu[startIndex + i] = l_uu[startIndex].replicate(1,1) + (addl_uu * i);
-////            cout << "f_x[" << startIndex + i << "] = " << f_x[startIndex + i] << endl;
-//            }
-//        }
-//    }
 }
 
 std::vector<MatrixXd> optimiser::generateJerkProfile(){
@@ -701,7 +671,6 @@ std::vector<MatrixXd> optimiser::generateAccelProfile(){
     }
 
     return accelProfile;
-
 }
 
 void optimiser::filterMatrices(){

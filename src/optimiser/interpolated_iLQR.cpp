@@ -27,6 +27,11 @@ interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSim
         f_x.push_back(MatrixXd(2*dof, 2*dof));
         f_u.push_back(MatrixXd(2*dof, num_ctrl));
 
+        f_x[i].block(0, 0, dof, dof).setIdentity();
+        f_x[i].block(0, dof, dof, dof).setIdentity();
+        f_x[i].block(0, dof, dof, dof) *= MUJOCO_DT;
+        f_u[i].setZero();
+
         K.push_back(MatrixXd(num_ctrl, 2*dof));
         k.push_back(MatrixXd(num_ctrl, 1));
 

@@ -12,5 +12,5 @@ displayMode: 1
 # Loadmodes can be, "random", "fromCSV", "fromYAML"
 taskInitMode: "fromCSV"
 csvRow: 2
-filtering: true
+filtering: false
 costDerivsFD: false
