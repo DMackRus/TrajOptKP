@@ -150,8 +150,8 @@ int main(int argc, char **argv) {
         activeModelTranslator->X_start = startStateVector;
     }
 
-    cout << "start state: " << startStateVector.transpose() << endl;
-    cout << "goal state: " << activeModelTranslator->X_desired.transpose() << endl;
+//    cout << "start state: " << startStateVector.transpose() << endl;
+//    cout << "goal state: " << activeModelTranslator->X_desired.transpose() << endl;
 
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
@@ -817,8 +817,8 @@ void MPCContinous(){
 }
 
 void MPCUntilComplete(){
-    int setupHorizon = 1000;
-    int optHorizon = 1000;
+    int setupHorizon = 500;
+    int optHorizon = 300;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -896,12 +896,12 @@ void MPCUntilComplete(){
                 taskComplete = true;
             }
             else{
-                if(reInitialiseCounter > 800){
+                if(reInitialiseCounter > 200){
                     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-                    initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+//                    initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
                     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-                    optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+                    optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
                     reInitialiseCounter = 0;
                 }
             }
