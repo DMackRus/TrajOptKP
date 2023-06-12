@@ -43,6 +43,7 @@ public:
     std::string taskInitMode;
     int csvRow = 0;
     bool filtering = false;
+    bool approximate_backwardsPass = false;
     bool costDerivsFD = false;
     ofstream fileOutput;
 

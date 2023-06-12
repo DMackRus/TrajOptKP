@@ -50,7 +50,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = setInterval;
+int keyPointMethod = adaptive_jerk;
 //int keyPointMethod = adaptive_jerk;
 
 void showInitControls();
@@ -337,6 +337,9 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<double>> avgTimeForDerivs;
     std::vector<double> avgTimeForDerivsRow;
 
+    std::vector<std::vector<int>> numIterations;
+    std::vector<int> numIterationsRow;
+
     std::vector<std::string> methodNames = {"baseline", "setInterval5", "adaptive_jerk", "iterative_error"};
     int keyPointMethods[4] = {setInterval, setInterval, adaptive_jerk, iterative_error};
     int interpMethod[4] = {linear, linear, linear, linear};
@@ -351,6 +354,7 @@ void onetaskGenerateTestingData(){
         costReductionsRow.clear();
         avgNumDerivsRow.clear();
         avgTimeForDerivsRow.clear();
+        numIterationsRow.clear();
 
 //        activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
 //        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
@@ -379,6 +383,7 @@ void onetaskGenerateTestingData(){
             double costReduction;
             int avgNumDerivs;
             double avgTimeForDerivs;
+            int numIterationsForConvergence;
 
             // Setup interpolation method
             activeOptimiser->setupTestingExtras(i, interpMethod[j], keyPointMethods[j], minN[j]);
@@ -388,11 +393,12 @@ void onetaskGenerateTestingData(){
             std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
 
             // Return testing data and append appropriately
-            activeOptimiser->returnOptimisationData(optTime, costReduction, avgNumDerivs, avgTimeForDerivs);
+            activeOptimiser->returnOptimisationData(optTime, costReduction, avgNumDerivs, avgTimeForDerivs, numIterationsForConvergence);
             optTimesRow.push_back(optTime);
             costReductionsRow.push_back(costReduction);
             avgNumDerivsRow.push_back(avgNumDerivs);
             avgTimeForDerivsRow.push_back(avgTimeForDerivs);
+            numIterationsRow.push_back(numIterationsForConvergence);
 
             activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
@@ -421,6 +427,7 @@ void onetaskGenerateTestingData(){
         costReductions.push_back(costReductionsRow);
         avgNumDerivs.push_back(avgNumDerivsRow);
         avgTimeForDerivs.push_back(avgTimeForDerivsRow);
+        numIterations.push_back(numIterationsRow);
 
         cout << "row " << i << " done \n";
     }

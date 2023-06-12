@@ -58,6 +58,7 @@ interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSim
     keyPointsMethod = _yamlReader->keyPointMethod;
 
     filteringMatrices = activeYamlReader->filtering;
+    approximate_backwardsPass = activeYamlReader->approximate_backwardsPass;
 
 }
 
@@ -152,7 +153,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     double newCost = 0.0f;
     bool costReducedLastIter = true;
 
-    // Clear data saving variables
+    // ---------------------- Clear data saving variables ----------------------
     costHistory.clear();
     optTime = 0;
     costReduction = 1.0f;
@@ -160,6 +161,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     timeDerivsPerIter.clear();
     avgNumDerivs = 0;
     avgTimePerDerivs = 0.0f;
+    numIterationsForConvergence = 0;
+    // ------------------------------------------------------------------------
 
     oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -179,7 +182,13 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         auto bp_start = high_resolution_clock::now();
         while(!validBackwardsPass){
             cout << "lamda is: " << lambda << "\n";
-            validBackwardsPass = backwardsPass_Quu_reg();
+
+            if(!approximate_backwardsPass){
+                validBackwardsPass = backwardsPass_Quu_reg();
+            }
+            else{
+                validBackwardsPass = backwardsPass_Quu_reg_parallel();
+            }
 //            K.resize(initControls.size());
 //            k.resize(initControls.size());
 //            activeYamlReader->generalSaveMatrices(K, "K_normal");
@@ -252,6 +261,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             cout << "exiting optimisation due to lambda > lambdaMax \n";
             break;
         }
+
+        numIterationsForConvergence++;
     }
 
     costReduction = 1 - (newCost / initialCost);

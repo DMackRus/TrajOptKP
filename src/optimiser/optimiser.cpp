@@ -29,7 +29,7 @@ void optimiser::setupTestingExtras(int _trajecNumber, int _interpMethod, int _ke
     min_interval = minN;
 }
 
-void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, int &_avgNumDerivs, double &_avgTimeGettingDerivs){
+void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, int &_avgNumDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
 
     for(int i = 0; i < numDerivsPerIter.size(); i++){
         avgNumDerivs += numDerivsPerIter[i];
@@ -45,6 +45,7 @@ void optimiser::returnOptimisationData(double &_optTime, double &_costReduction,
     _costReduction = costReduction;
     _avgNumDerivs = avgNumDerivs;
     _avgTimeGettingDerivs = avgTimePerDerivs;
+    _numIterations = numIterationsForConvergence;
 }
 
 // ------------------------------------------- STEP 1 FUNCTIONS (GET DERIVATIVES) ----------------------------------------------
@@ -100,6 +101,14 @@ void optimiser::generateDerivatives(){
     auto testStop = high_resolution_clock::now();
     auto testDuration = duration_cast<microseconds>(testStop - testStart);
     cout << "interpolate took: " << testDuration.count() / 1000000.0f << " s\n";
+
+    int totalNumColumnsDerivs = 0;
+    for(int i = 0; i < keyPoints.size(); i++){
+        totalNumColumnsDerivs += keyPoints[i].size();
+
+    }
+
+    cout << "total number of columns of derivatives: " << totalNumColumnsDerivs << endl;
 
 //    cout << "f_x[0] " << f_x[0] << endl;
 //    cout << "f_x[1] " << f_x[1] << endl;
@@ -205,64 +214,101 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
 
 std::vector<std::vector<int>> optimiser::generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile){
     std::vector<std::vector<int>> evaluationWaypoints;
-    std::vector<int> oneRow(dof, 0);
+
+    std::vector<int> oneRow;
+    for(int i = 0; i < dof; i++){
+        oneRow.push_back(i);
+    }
     evaluationWaypoints.push_back(oneRow);
 
-    int counter = 0;
+    int lastIndices[dof];
+    for(int i = 0; i < dof; i++){
+        lastIndices[i] = 0;
+    }
+
     for(int i = 0; i < trajecProfile.size(); i++){
         std::vector<int> currentRow;
-        counter++;
         int dofCounter = 0;
 
-        if(counter > min_interval){
-            bool addKeyPoint = false;
-            // Loop through all possible robots
-            for(int j = 0; j < activeModelTranslator->myStateVector.robots.size(); j++) {
-                bool breakEarly = false;
-                // Loop through all joints of each robot
-                for(int k = 0; k < activeModelTranslator->myStateVector.robots[j].jointNames.size(); k++) {
+        // Loop through all possible robots
+        for(int j = 0; j < activeModelTranslator->myStateVector.robots.size(); j++) {
+            // Loop through all joints of each robot
+            for(int k = 0; k < activeModelTranslator->myStateVector.robots[j].jointNames.size(); k++) {
+
+                // Check if lastUpdate is above minN
+                if((i - lastIndices[dofCounter]) >= min_interval) {
                     // Check if the jerk is above the threshold
                     if (trajecProfile[i](dofCounter, 0) > activeModelTranslator->myStateVector.robots[j].jointJerkThresholds[k]) {
-                        dofCounter++;
                         currentRow.push_back(dofCounter);
+                        lastIndices[dofCounter] = i;
                     }
+                }
+
+                // Check if lastUpdate is above maxN
+                if((i - lastIndices[dofCounter]) >= max_interval){
+                    currentRow.push_back(dofCounter);
+                    lastIndices[dofCounter] = i;
+                }
+
+                dofCounter++;
+            }
+        }
+
+        // Loop through all bodies in simulation state
+        for(int j = 0; j < activeModelTranslator->myStateVector.bodiesStates.size(); j++) {
+            //Loop through linear states
+            for (int k = 0; k < 3; k++) {
+                // If we are considering this dof in the problem
+                if (activeModelTranslator->myStateVector.bodiesStates[j].activeLinearDOF[k]) {
+
+                    // Check if lastUpdate is above minN
+                    if((i - lastIndices[dofCounter]) >= min_interval){
+                        if (trajecProfile[i](dofCounter, 0) >
+                            activeModelTranslator->myStateVector.bodiesStates[j].linearJerkThreshold[k]) {
+
+                            currentRow.push_back(dofCounter);
+                            lastIndices[dofCounter] = i;
+                        }
+                    }
+
+                    // Check if lastUpdates is above maxN
+                    if((i - lastIndices[dofCounter]) >= max_interval){
+                        currentRow.push_back(dofCounter);
+                        lastIndices[dofCounter] = i;
+                    }
+
+                    dofCounter++;
                 }
             }
 
-            // Loop through all bodies in simulation state
-            for(int j = 0; j < activeModelTranslator->myStateVector.bodiesStates.size(); j++){
-                bool breakEarly = false;
-                //Loop through linear states
-                for(int k = 0; k < 3; k++){
-                    if(activeModelTranslator->myStateVector.bodiesStates[j].activeLinearDOF[k]){
-                        if(trajecProfile[i](dofCounter, 0) > activeModelTranslator->myStateVector.bodiesStates[j].linearJerkThreshold[k]){
-                            dofCounter++;
+            //Loop through angular states
+            for (int k = 0; k < 3; k++) {
+                // Check if we are considering this dof in the problem
+                if (activeModelTranslator->myStateVector.bodiesStates[j].activeAngularDOF[k]) {
+
+                    // Check if lastUpdate is above minN
+                    if((i - lastIndices[dofCounter]) >= min_interval){
+                        if (trajecProfile[i](dofCounter, 0) >
+                            activeModelTranslator->myStateVector.bodiesStates[j].angularJerkThreshold[k]) {
+
                             currentRow.push_back(dofCounter);
+                            lastIndices[dofCounter] = i;
                         }
                     }
-                }
 
-                //Loop through angular states
-                for(int k = 0; k < 3; k++){
-                    if(activeModelTranslator->myStateVector.bodiesStates[j].activeAngularDOF[k]){
-                        if(trajecProfile[i](dofCounter, 0) > activeModelTranslator->myStateVector.bodiesStates[j].angularJerkThreshold[k]){
-                            dofCounter++;
-                            currentRow.push_back(dofCounter);
-                        }
+                    // Check if lastUpdate is above maxN
+                    if((i - lastIndices[dofCounter]) >= max_interval){
+                        currentRow.push_back(dofCounter);
+                        lastIndices[dofCounter] = i;
                     }
-                }
 
+                    dofCounter++;
+                }
             }
-
-            // Always append current row, even if empty.
-            evaluationWaypoints.push_back(currentRow);
-
         }
 
-        if(counter > max_interval){
-            evaluationWaypoints.push_back(currentRow);
-            counter = 0;
-        }
+        // Always append current row, even if empty.
+        evaluationWaypoints.push_back(currentRow);
     }
 
     return evaluationWaypoints;

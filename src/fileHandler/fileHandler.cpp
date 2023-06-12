@@ -221,6 +221,11 @@ void fileHandler::readOptimisationSettingsFile(int optimiser) {
         keyPointMethod = node["keyPointMethod"].as<int>();
         minInterval = node["min_interval"].as<int>();
         maxInterval = node["max_interval"].as<int>();
+
+    }
+
+    if(optimiser == opt_iLQR){
+        approximate_backwardsPass = node["approximate_backwardsPass"].as<bool>();
     }
 }
 
