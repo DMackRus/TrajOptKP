@@ -32,7 +32,7 @@ public:
     virtual double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) = 0;
     virtual std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) = 0;
     virtual bool checkForConvergence(double oldCost, double newCost);
-    void setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod, int minN);
+    void setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod, int minN, bool approxBackwardsPass);
 
     void returnOptimisationData(double &_optTime, double &_costReduction, int &_avgNumDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
@@ -99,8 +99,9 @@ protected:
 
     // Generate keypoints we will calculate derivatives at
     std::vector<std::vector<int>> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
-    std::vector<int> generateKeyPointsIteratively();
+    std::vector<std::vector<int>> generateKeyPointsIteratively();
     bool checkOneMatrixError(indexTuple indices);
+    bool checkDoFColumnError(indexTuple indices, int dof);
     std::vector<std::vector<int>> generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile);
     std::vector<MatrixXd> generateJerkProfile();
     std::vector<MatrixXd> generateAccelProfile();
@@ -114,6 +115,8 @@ protected:
 
     void filterMatrices();
     std::vector<double> filterIndividualValue(std::vector<double> unfiltered);
+
+    bool convergeThisIteration = false;
 
 
 private:

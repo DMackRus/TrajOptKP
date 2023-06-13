@@ -21,12 +21,12 @@ bool optimiser::checkForConvergence(double oldCost, double newCost){
     return false;
 }
 
-void optimiser::setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod, int minN){
+void optimiser::setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod, int _minN, bool _approxBackwardsPass){
     currentTrajecNumber = _trajecNumber;
     interpMethod = _interpMethod;
     keyPointsMethod = _keyPointsMethod;
-
-    min_interval = minN;
+    min_interval = _minN;
+    approximate_backwardsPass = _approxBackwardsPass;
 }
 
 void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, int &_avgNumDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
@@ -129,10 +129,9 @@ void optimiser::generateDerivatives(){
 
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
-    cout << "number of derivatives calculated via fd: " << keyPoints.size() << endl;
     cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
 
-    numDerivsPerIter.push_back(keyPoints.size());
+    numDerivsPerIter.push_back(totalNumColumnsDerivs);
     timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 }
 
@@ -182,7 +181,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
     else if(keyPointsMethod == iterative_error){
         computedKeyPoints.clear();
         activeDifferentiator->initModelForFiniteDifferencing();
-//        evaluationWaypoints = generateKeyPointsIteratively();
+        evaluationWaypoints = generateKeyPointsIteratively();
         activeDifferentiator->resetModelAfterFiniteDifferencing();
 
     }
@@ -314,76 +313,239 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsAdaptive(std::vector<M
     return evaluationWaypoints;
 }
 
-std::vector<int> optimiser::generateKeyPointsIteratively(){
-    std::vector<int> evalPoints;
-    bool binsComplete = false;
+std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
+    std::vector<std::vector<int>> evalPoints;
+    bool binsComplete[dof];
     std::vector<indexTuple> indexTuples;
     int startIndex = 0;
     int endIndex = horizonLength - 1;
 
-    std::vector<indexTuple> listOfIndicesCheck;
-    indexTuple initialTuple;
-    initialTuple.startIndex = startIndex;
-    initialTuple.endIndex = endIndex;
+    // Initialise variables
+    for(int i = 0; i < dof; i++){
+        binsComplete[i] = false;
+    }
 
-    std::vector<indexTuple> subListIndices;
-    std::vector<int> subListWithMidpoints;
+    for(int i = 0; i < horizonLength; i++){
+        computedKeyPoints.push_back(std::vector<int>());
+        evalPoints.push_back(std::vector<int>());
+    }
 
-    listOfIndicesCheck.push_back(initialTuple);
+    // Loop through all dofs in the system
+//    #pragma omp parallel for
+    for(int i = 0; i < dof; i++){
+//        std::cout << "---------------------  Generating key points for dof --------------------------------- " << i << std::endl;
+        std::vector<indexTuple> listOfIndicesCheck;
+        indexTuple initialTuple;
+        initialTuple.startIndex = startIndex;
+        initialTuple.endIndex = endIndex;
+        listOfIndicesCheck.push_back(initialTuple);
 
-    while(!binsComplete){
-        bool allChecksComplete = true;
+        std::vector<indexTuple> subListIndices;
+        std::vector<int> subListWithMidpoints;
 
-        for(int j = 0; j < listOfIndicesCheck.size(); j++) {
+        while(!binsComplete[i]){
+            bool allChecksComplete = true;
 
-            int midIndex = (listOfIndicesCheck[j].startIndex + listOfIndicesCheck[j].endIndex) / 2;
-            bool approximationGood = checkOneMatrixError(listOfIndicesCheck[j]);
+            for(int j = 0; j < listOfIndicesCheck.size(); j++) {
 
-            if (!approximationGood) {
-                allChecksComplete = false;
-                indexTuple tuple1;
-                tuple1.startIndex = listOfIndicesCheck[j].startIndex;
-                tuple1.endIndex = midIndex;
-                indexTuple tuple2;
-                tuple2.startIndex = midIndex;
-                tuple2.endIndex = listOfIndicesCheck[j].endIndex;
-                subListIndices.push_back(tuple1);
-                subListIndices.push_back(tuple2);
-            } else {
-                subListWithMidpoints.push_back(listOfIndicesCheck[j].startIndex);
-                subListWithMidpoints.push_back(midIndex);
-                subListWithMidpoints.push_back(listOfIndicesCheck[j].endIndex);
+                int midIndex = (listOfIndicesCheck[j].startIndex + listOfIndicesCheck[j].endIndex) / 2;
+//                cout << "index tuple: " << listOfIndicesCheck[j].startIndex << " " << listOfIndicesCheck[j].endIndex << endl;
+                bool approximationGood = checkDoFColumnError(listOfIndicesCheck[j], i);
+
+                if (!approximationGood) {
+                    allChecksComplete = false;
+                    indexTuple tuple1;
+                    tuple1.startIndex = listOfIndicesCheck[j].startIndex;
+                    tuple1.endIndex = midIndex;
+                    indexTuple tuple2;
+                    tuple2.startIndex = midIndex;
+                    tuple2.endIndex = listOfIndicesCheck[j].endIndex;
+                    subListIndices.push_back(tuple1);
+                    subListIndices.push_back(tuple2);
+                } else {
+                    subListWithMidpoints.push_back(listOfIndicesCheck[j].startIndex);
+                    subListWithMidpoints.push_back(midIndex);
+                    subListWithMidpoints.push_back(listOfIndicesCheck[j].endIndex);
+                }
             }
-        }
 
-        if(allChecksComplete){
-            binsComplete = true;
-            for(int k = 0; k < subListWithMidpoints.size(); k++){
-                evalPoints.push_back(subListWithMidpoints[k]);
+            if(allChecksComplete){
+                binsComplete[i] = true;
+//                evalPoints.push_back(subListWithMidpoints);
+
+                subListWithMidpoints.clear();
             }
 
-            subListWithMidpoints.clear();
-        }
-
-        listOfIndicesCheck = subListIndices;
+            listOfIndicesCheck = subListIndices;
 //        for(int k = 0; k < listOfIndicesCheck.size(); k++){
 //            cout << listOfIndicesCheck[k].startIndex << " " << listOfIndicesCheck[k].endIndex << "\n";
 //        }
-        subListIndices.clear();
+            subListIndices.clear();
+
+        }
+    }
+
+    // Loop over the horizon
+    for(int i = 0; i < horizonLength; i++){
+        // Loop over the dofs
+        for(int j = 0; j < dof; j++){
+            // Loop over the computed key points per dof
+//            cout << "Computed key points for dof " << j << " are: ";
+            for(int k = 0; k < computedKeyPoints[j].size(); k++){
+                // If the current index is a computed key point
+//                cout << computedKeyPoints[j][k] << " ";
+
+                if(i == computedKeyPoints[j][k]){
+//                    cout << "Adding key point " << i << " to dof " << j << "\n";
+                    evalPoints[i].push_back(j);
+                }
+
+            }
+//            cout << "\n";
+        }
     }
 
     // Sort list into order
-    std::sort(evalPoints.begin(), evalPoints.end());
+    for(int i = 0; i < dof; i++){
+        std::sort(evalPoints[i].begin(), evalPoints[i].end());
+    }
 
     // Remove duplicates
-    evalPoints.erase(std::unique(evalPoints.begin(), evalPoints.end()), evalPoints.end());
+    for(int i = 0; i < dof; i++){
+        evalPoints[i].erase(std::unique(evalPoints[i].begin(), evalPoints[i].end()), evalPoints[i].end());
+    }
+
+
+    // Print the key points
+//    for(int i = 0; i < horizonLength; i++){
+//        cout << "Key points for index " << i << ":";
+//        for(int j = 0; j < evalPoints[i].size(); j++){
+//            cout << " " << evalPoints[i][j];
+//        }
+//        cout << "\n";
 //
-//    for(int i = 0; i < evalPoints.size(); i++){
-//        cout << "evalPoints[" << i << "] = " << evalPoints[i] << "\n";
 //    }
 
     return evalPoints;
+}
 
+bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
+
+    MatrixXd midColumnsApprox[2];
+    for(int i = 0; i < 2; i++){
+        midColumnsApprox[i] = MatrixXd::Zero(activeModelTranslator->stateVectorSize, 1);
+    }
+
+
+    int midIndex = (indices.startIndex + indices.endIndex) / 2;
+    if((indices.endIndex - indices.startIndex) < 5){
+        return true;
+    }
+
+    MatrixXd blank1, blank2, blank3, blank4;
+
+    bool startIndexExists = false;
+    bool midIndexExists = false;
+    bool endIndexExists = false;
+
+    int counterTooSmall = 0;
+    int counterTooLarge = 0;
+
+//    cout << "start index: " << indices.startIndex << " mid index: " << midIndex << " end index: " << indices.endIndex << "\n";
+
+    for(int i = 0; i < computedKeyPoints[dofIndex].size(); i++){
+        if(computedKeyPoints[dofIndex][i] == indices.startIndex){
+            startIndexExists = true;
+        }
+
+        if(computedKeyPoints[dofIndex][i] == midIndex){
+            midIndexExists = true;
+        }
+
+        if(computedKeyPoints[dofIndex][i] == indices.endIndex){
+            endIndexExists = true;
+        }
+    }
+
+    std::vector<int> cols;
+    cols.push_back(dofIndex);
+
+    if(!startIndexExists){
+        activeDifferentiator->getDerivatives(A[indices.startIndex], B[indices.startIndex], cols, blank1, blank2, blank3, blank4, false, indices.startIndex, false);
+        computedKeyPoints[dofIndex].push_back(indices.startIndex);
+    }
+
+    if(!midIndexExists){
+        activeDifferentiator->getDerivatives(A[midIndex], B[midIndex], cols, blank1, blank2, blank3, blank4, false, midIndex, false);
+        computedKeyPoints[dofIndex].push_back(midIndex);
+    }
+
+    if(!endIndexExists){
+        activeDifferentiator->getDerivatives(A[indices.endIndex], B[indices.endIndex], cols, blank1, blank2, blank3, blank4, false, indices.endIndex, false);
+        computedKeyPoints[dofIndex].push_back(indices.endIndex);
+    }
+
+    midColumnsApprox[0] = (A[indices.startIndex].block(0, dofIndex, dof*2, 1) + A[indices.endIndex].block(0, dofIndex, dof*2, 1)) / 2;
+    midColumnsApprox[1] = (A[indices.startIndex].block(0, dofIndex + dof, dof*2, 1) + A[indices.endIndex].block(0, dofIndex + dof, dof*2, 1)) / 2;
+
+//    cout << "matrixMidTrue: \n" << A[midIndex].block(0, dofIndex, dof*2, 1) << "\n";
+//    cout << "matrixMidApprox: \n" << midColumnsApprox[0] << "\n";
+
+    bool approximationGood = false;
+    int dof = activeModelTranslator->dof;
+    double errorSum = 0.0f;
+    int counter = 0;
+
+    for(int i = 0; i < 2; i++){
+        int A_col_indices[2] = {dofIndex, dofIndex + dof};
+        for(int j = dof; j < activeModelTranslator->stateVectorSize; j++){
+            double sqDiff = pow((A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0)),2);
+
+            if(sqDiff > 0.5){
+                sqDiff = 0.0f;
+                counterTooLarge++;
+            }
+            else if(sqDiff < 0.00001){
+                sqDiff = 0.0f;
+                counterTooSmall++;
+            }
+            else{
+
+                counter++;
+            }
+            errorSum += sqDiff;
+
+        }
+//        cout << "errorSum: " << errorSum << "\n";
+    }
+
+    double averageError;
+    if(counter > 0){
+        averageError = errorSum / counter;
+    }
+    else{
+        averageError = 0.0f;
+    }
+
+//    cout << "average error: " << averageError << "\n";
+//    cout << "num valid: " << counter << "\n";
+//    cout << "num too small: " << counterTooSmall << "\n";
+//    cout << "num too large: " << counterTooLarge << "\n";
+    if(averageError < 0.002){
+        approximationGood = true;
+    }
+    else{
+//        cout << "matrix mid approx" << matrixMidApprox << "\n";
+//        cout << "matrix mid true" << A[midIndex] << "\n";
+    }
+
+//    if(counter == 0){
+//        cout << "start index: " << indices.startIndex << " mid index: " << midIndex << " end index: " << indices.endIndex << "\n";
+//        cout << "matrix mid approx" << matrixMidApprox << "\n";
+//        cout << "matrix mid true" << A[midIndex] << "\n";
+//    }
+
+    return approximationGood;
 }
 
 bool optimiser::checkOneMatrixError(indexTuple indices){

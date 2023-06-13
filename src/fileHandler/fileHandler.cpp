@@ -389,7 +389,9 @@ void fileHandler::saveCostHistory(std::vector<double> costHistory, std::string f
     fileOutput.close();
 }
 
-void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> optTimes, std::vector<std::vector<double>> costReduction, std::vector<std::vector<int>> avgNumDerivs, std::vector<std::vector<double>> avgTimeGettingDerivs){
+void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> optTimes,
+                                            std::vector<std::vector<double>> costReduction, std::vector<std::vector<int>> avgNumDerivs,
+                                            std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<int>> numIterations){
     std::string rootPath = projectParentPath;
     std::string filename = rootPath + taskPrefix + "_testingData.csv";
 
@@ -397,6 +399,7 @@ void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
 
     // Make header
     for(int i = 0; i < methodNames.size(); i++){
+        fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
@@ -409,11 +412,11 @@ void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
         fileOutput << "Cost reduction" << ",";
         fileOutput << "avgNumDerivs" << ",";
         fileOutput << "avgTimeDerivs" << ",";
+        fileOutput << "numIterations" << ",";
     }
     fileOutput << std::endl;
 
     int numTrajecs = optTimes.size();
-    cout << "numTrajecs = " << numTrajecs << endl;
 
     for(int i = 0; i < numTrajecs; i++){
         for(int j = 0; j < methodNames.size(); j++){
@@ -421,6 +424,7 @@ void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
             fileOutput << costReduction[i][j] << ",";
             fileOutput << avgNumDerivs[i][j] << ",";
             fileOutput << avgTimeGettingDerivs[i][j] << ",";
+            fileOutput << numIterations[i][j] << ",";
 
         }
         fileOutput << std::endl;

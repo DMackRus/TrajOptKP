@@ -152,10 +152,11 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     double oldCost = 0.0f;
     double newCost = 0.0f;
     bool costReducedLastIter = true;
+    convergeThisIteration = false;
 
     // ---------------------- Clear data saving variables ----------------------
     costHistory.clear();
-    optTime = 0;
+    optTime = 0.0f;
     costReduction = 1.0f;
     numDerivsPerIter.clear();
     timeDerivsPerIter.clear();
@@ -169,6 +170,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
     // Optimise for a set number of iterations
     for(int i = 0; i < maxIter; i++){
+        numIterationsForConvergence++;
 
         //STEP 1 - If forwards pass changed the trajectory, -
         if(costReducedLastIter){
@@ -183,7 +185,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         while(!validBackwardsPass){
             cout << "lamda is: " << lambda << "\n";
 
-            if(!approximate_backwardsPass){
+            if(!approximate_backwardsPass or convergeThisIteration){
                 validBackwardsPass = backwardsPass_Quu_reg();
             }
             else{
@@ -236,7 +238,13 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             costHistory.push_back(newCost);
 
             // STEP 4 - Check for convergence
-            bool converged = checkForConvergence(oldCost, newCost);
+            bool converged;
+            if(convergeThisIteration){
+                converged = true;
+            }
+            else{
+                converged = checkForConvergence(oldCost, newCost);
+            }
 
             if(newCost < oldCost){
                 oldCost = newCost;
@@ -251,18 +259,27 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
                 }
             }
 
-
-            if(converged && (i >= minIter)){
+            if(convergeThisIteration){
                 std::cout << "converged after " << i << " iterations" << std::endl;
                 break;
+            }
+
+            if(converged && (i >= minIter)){
+                if(approximate_backwardsPass){
+                    std::cout << "converged with approximate bp, do one more iteration with normal bp \n";
+                    convergeThisIteration = true;
+                }
+                else{
+                    std::cout << "converged after " << i << " iterations" << std::endl;
+                    break;
+                }
+
             }
         }
         else{
             cout << "exiting optimisation due to lambda > lambdaMax \n";
             break;
         }
-
-        numIterationsForConvergence++;
     }
 
     costReduction = 1 - (newCost / initialCost);
@@ -473,17 +490,23 @@ bool interpolatediLQR::backwardsPass_Quu_reg_parallel(){
     int endPoints[9];
     endPoints[0] = -1;
 
+
+
     for(int i = 0; i < 8; i++){
         V_x[i].resize(2*dof, 1);
         V_xx[i].resize(2*dof, 2*dof);
 
         int index = (i + 1) * (horizonLength / 8);
-        cout << "index: " << index << endl;
 
-//        V_x[i] = l_x[index];
-//        V_xx[i] = l_xx[index];
-        V_x[i] = l_x[horizonLength];
-        V_xx[i] = l_xx[horizonLength];
+        // compute cost derivative at every index
+        activeModelTranslator->costDerivatives(X_old[index], U_old[index], X_old[index], U_old[index],
+                                               l_x[index], l_xx[index], l_u[index], l_uu[index], true);
+//        cout << "index: " << index << endl;
+
+        V_x[i] = l_x[index];
+        V_xx[i] = l_xx[index];
+//        V_x[i] = l_x[horizonLength];
+//        V_xx[i] = l_xx[horizonLength];
 
         endPoints[i+1] = index;
     }

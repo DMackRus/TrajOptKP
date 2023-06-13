@@ -11,6 +11,6 @@ taskNumber: 4
 displayMode: 1
 # Loadmodes can be, "random", "fromCSV", "fromYAML"
 taskInitMode: "fromCSV"
-csvRow: 2
+csvRow: 0
 filtering: false
 costDerivsFD: false
