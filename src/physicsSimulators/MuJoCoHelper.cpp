@@ -7,6 +7,13 @@
 // Empty constructor
 MuJoCoHelper::MuJoCoHelper(vector<robot> _robots, vector<string> _bodies): physicsSimulator(_robots, _bodies) {
     std::cout << "created mujoco helper" << std::endl;
+
+    // Get the number of available cores
+    int numCores = std::thread::hardware_concurrency();
+    for(int i = 0; i < numCores; i++){
+        mjData *d = new(mjData);
+        fd_data.push_back(d);
+    }
 }
 
 // ------------------------------------    ROBOT UTILITY   --------------------------------------------
@@ -160,18 +167,6 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
     }
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < jointControls.size(); i++){
         d->ctrl[startIndex + i] = jointControls[i];
@@ -205,18 +200,6 @@ bool MuJoCoHelper::getRobotJointsPositions(string robotName, vector<double> &joi
     }
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
         jointPositions.push_back(d->qpos[startIndex + i]);
@@ -461,18 +444,6 @@ bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex
     const int qposIndex = model->jnt_qposadr[jointIndex];
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < 3; i++){
         pose.position(i) = d->xpos[(bodyId * 3) + i];
@@ -497,18 +468,6 @@ bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose, int dataInde
     const int qposIndex = model->jnt_qposadr[jointIndex];
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < 3; i++){
         pose.position(i) = d->xpos[(bodyId * 3) + i];
@@ -541,18 +500,6 @@ bool MuJoCoHelper::getBodyVelocity(string bodyName, pose_6 &velocity, int dataIn
     const int qvelIndex = model->jnt_dofadr[jointIndex];
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < 3; i++){
         velocity.position(i) = d->qvel[qvelIndex + i];
@@ -577,18 +524,6 @@ bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration, in
     const int qvelIndex = model->jnt_dofadr[jointIndex];
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     for(int i = 0; i < 3; i++){
         acceleration.position(i) = d->qacc[qvelIndex + i];
@@ -607,14 +542,6 @@ Eigen::MatrixXd MuJoCoHelper::calculateJacobian(std::string bodyName, int dataIn
     Eigen::MatrixXd kinematicJacobian(6, 7);
 
     mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        d = savedSystemStatesList[dataIndex];
-//    }
 
     //mjtNum* J_COMi_temp = mj_stackAlloc(_data, 3*_model->nv);
     Matrix<double, Dynamic, Dynamic, RowMajor> J_p(3, model->nv);
@@ -759,20 +686,7 @@ bool MuJoCoHelper::copySystemState(int dataDestinationIndex, int dataSourceIndex
 
     mjData *dataDestination = returnDesiredDataState(dataDestinationIndex);
 
-//    if(dataDestinationIndex == MAIN_DATA_STATE){
-//        dataDestination = mdata;
-//    }
-//    else{
-//        dataDestination = savedSystemStatesList[dataDestinationIndex];
-//    }
-
     mjData *dataSource = returnDesiredDataState(dataSourceIndex);
-//    if(dataSourceIndex == MAIN_DATA_STATE){
-//        dataSource = mdata;
-//    }
-//    else{
-//        dataSource = savedSystemStatesList[dataSourceIndex];
-//    }
 
     cpMjData(model, dataDestination, dataSource);
 
@@ -812,6 +726,10 @@ mjData* MuJoCoHelper::returnDesiredDataState(int dataIndex){
     }
     else if(dataIndex == MASTER_RESET_DATA){
         return d_master_reset;
+    }
+    else if(dataIndex < MASTER_RESET_DATA){
+        int fd_id = -dataIndex - 3;
+        return fd_data[fd_id];
     }
     else{
         return savedSystemStatesList[dataIndex];
@@ -917,6 +835,18 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     // make data corresponding to model
     mdata = mj_makeData(model);
     d_master_reset = mj_makeData(model);
+
+    for(int i = 0; i < fd_data.size(); i++){
+//        cout << "fd_data size: " << fd_data.size() << endl;
+        fd_data[i] = mj_makeData(model);
+    }
+
+    fd_data[0]->qpos[0] = 1.0;
+    cout << "fd_data->qpos[0]: " << fd_data[0]->qpos[0] << endl;
+    mj_step(model, fd_data[0]);
+    cout << "fd_data->qpos[0]: " << fd_data[0]->qpos[0] << endl;
+    cout << "fd_data[15]->qpos[0]: " << fd_data[15]->qpos[0] << endl;
+    cout << "mehmeh" << endl;
 
     //model->opt.gravity[2] = 0;
 }

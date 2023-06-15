@@ -10,6 +10,8 @@ optimiser::optimiser(modelTranslator *_modelTranslator, physicsSimulator *_physi
 
     dof = activeModelTranslator->dof;
     num_ctrl = activeModelTranslator->num_ctrl;
+
+
 }
 
 bool optimiser::checkForConvergence(double oldCost, double newCost){
@@ -323,15 +325,17 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
     // Initialise variables
     for(int i = 0; i < dof; i++){
         binsComplete[i] = false;
+        computedKeyPoints.push_back(std::vector<int>());
+
     }
 
     for(int i = 0; i < horizonLength; i++){
-        computedKeyPoints.push_back(std::vector<int>());
+
         evalPoints.push_back(std::vector<int>());
     }
 
     // Loop through all dofs in the system
-//    #pragma omp parallel for
+    #pragma omp parallel for
     for(int i = 0; i < dof; i++){
 //        std::cout << "---------------------  Generating key points for dof --------------------------------- " << i << std::endl;
         std::vector<indexTuple> listOfIndicesCheck;
@@ -436,6 +440,10 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
         midColumnsApprox[i] = MatrixXd::Zero(activeModelTranslator->stateVectorSize, 1);
     }
 
+//    if(dofIndex == 0){
+//        cout << "start index: " << indices.startIndex << " mid index: " << " end index: " << indices.endIndex << "\n";
+//    }
+
 
     int midIndex = (indices.startIndex + indices.endIndex) / 2;
     if((indices.endIndex - indices.startIndex) < 5){
@@ -450,8 +458,6 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 
     int counterTooSmall = 0;
     int counterTooLarge = 0;
-
-//    cout << "start index: " << indices.startIndex << " mid index: " << midIndex << " end index: " << indices.endIndex << "\n";
 
     for(int i = 0; i < computedKeyPoints[dofIndex].size(); i++){
         if(computedKeyPoints[dofIndex][i] == indices.startIndex){
@@ -471,16 +477,25 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     cols.push_back(dofIndex);
 
     if(!startIndexExists){
+//        if(dofIndex == 0){
+//            cout << "startIndex is being calced" << "\n";
+//        }
         activeDifferentiator->getDerivatives(A[indices.startIndex], B[indices.startIndex], cols, blank1, blank2, blank3, blank4, false, indices.startIndex, false);
         computedKeyPoints[dofIndex].push_back(indices.startIndex);
     }
 
     if(!midIndexExists){
+//        if(dofIndex == 0){
+//            cout << "midIndex is being calced" << "\n";
+//        }
         activeDifferentiator->getDerivatives(A[midIndex], B[midIndex], cols, blank1, blank2, blank3, blank4, false, midIndex, false);
         computedKeyPoints[dofIndex].push_back(midIndex);
     }
 
     if(!endIndexExists){
+//        if(dofIndex == 0){
+//            cout << "endIndex is being calced" << "\n";
+//        }
         activeDifferentiator->getDerivatives(A[indices.endIndex], B[indices.endIndex], cols, blank1, blank2, blank3, blank4, false, indices.endIndex, false);
         computedKeyPoints[dofIndex].push_back(indices.endIndex);
     }
@@ -488,8 +503,12 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     midColumnsApprox[0] = (A[indices.startIndex].block(0, dofIndex, dof*2, 1) + A[indices.endIndex].block(0, dofIndex, dof*2, 1)) / 2;
     midColumnsApprox[1] = (A[indices.startIndex].block(0, dofIndex + dof, dof*2, 1) + A[indices.endIndex].block(0, dofIndex + dof, dof*2, 1)) / 2;
 
-//    cout << "matrixMidTrue: \n" << A[midIndex].block(0, dofIndex, dof*2, 1) << "\n";
-//    cout << "matrixMidApprox: \n" << midColumnsApprox[0] << "\n";
+//    if(dofIndex == 0){
+//        cout << "matrixMidTrue: \n" << A[midIndex].block(0, dofIndex, dof*2, 1) << "\n";
+////        cout << "matrixMidTrue: \n" << A[midIndex] << "\n";
+//        cout << "matrixMidApprox: \n" << midColumnsApprox[0] << "\n";
+//    }
+
 
     bool approximationGood = false;
     int dof = activeModelTranslator->dof;
@@ -526,6 +545,9 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     else{
         averageError = 0.0f;
     }
+//    if(dofIndex == 0){
+//        cout << "average error: " << averageError << "\n";
+//    }
 
 //    cout << "average error: " << averageError << "\n";
 //    cout << "num valid: " << counter << "\n";

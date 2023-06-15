@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(1){
+    if(0){
         generateTestingData();
         return -1;
     }

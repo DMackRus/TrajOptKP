@@ -16,6 +16,7 @@ interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSim
         l_uu.push_back(MatrixXd(num_ctrl, num_ctrl));
 
         // Dynamics derivatives matrices
+        // TODO - Move this to optimiser constructor
         A.push_back(MatrixXd(2*dof, 2*dof));
         B.push_back(MatrixXd(2*dof, num_ctrl));
 
@@ -268,6 +269,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
                 if(approximate_backwardsPass){
                     std::cout << "converged with approximate bp, do one more iteration with normal bp \n";
                     convergeThisIteration = true;
+                    lambda = 0.1;
                 }
                 else{
                     std::cout << "converged after " << i << " iterations" << std::endl;

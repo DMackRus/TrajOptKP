@@ -70,8 +70,9 @@ public:
 
     vector<mjData*> savedSystemStatesList;
     mjData *d_master_reset;
-    mjData *mdata;                   // main mujcoc data
+    mjData *mdata;                   // main MuJoCo data
     mjModel *model;                  // MuJoCo model
+    std::vector<mjData *> fd_data;   // Finite differencing MuJoCo data - instantiated with the number of cores on the pc
 
 private:
 
