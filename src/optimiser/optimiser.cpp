@@ -10,8 +10,6 @@ optimiser::optimiser(modelTranslator *_modelTranslator, physicsSimulator *_physi
 
     dof = activeModelTranslator->dof;
     num_ctrl = activeModelTranslator->num_ctrl;
-
-
 }
 
 bool optimiser::checkForConvergence(double oldCost, double newCost){
@@ -31,7 +29,7 @@ void optimiser::setupTestingExtras(int _trajecNumber, int _interpMethod, int _ke
     approximate_backwardsPass = _approxBackwardsPass;
 }
 
-void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, int &_avgNumDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
+void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
 
     for(int i = 0; i < numDerivsPerIter.size(); i++){
         avgNumDerivs += numDerivsPerIter[i];
@@ -45,7 +43,7 @@ void optimiser::returnOptimisationData(double &_optTime, double &_costReduction,
 
     _optTime = optTime;
     _costReduction = costReduction;
-    _avgNumDerivs = avgNumDerivs;
+    _avgPercentageDerivs = avgNumDerivs / numberOfTotalDerivs;
     _avgTimeGettingDerivs = avgTimePerDerivs;
     _numIterations = numIterationsForConvergence;
 }

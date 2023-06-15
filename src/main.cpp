@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(0){
+    if(1){
         generateTestingData();
         return -1;
     }
@@ -331,8 +331,8 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<double>> costReductions;
     std::vector<double> costReductionsRow;
 
-    std::vector<std::vector<int>> avgNumDerivs;
-    std::vector<int> avgNumDerivsRow;
+    std::vector<std::vector<int>> avgPercentageDerivs;
+    std::vector<int> avgPercentageDerivsRow;
 
     std::vector<std::vector<double>> avgTimeForDerivs;
     std::vector<double> avgTimeForDerivsRow;
@@ -340,24 +340,24 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<int>> numIterations;
     std::vector<int> numIterationsRow;
 
-//    std::vector<std::string> methodNames = {"baseline", "setInterval5", "setInterval20", "adaptive_jerk", "adaptive_accel", "iterative_error",
-//                                            "setInterval5_bpp", "setInterval20_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
-//    int numMethods = methodNames.size();
-//    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
-//                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
-//    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
-//                           linear, linear, linear, linear, linear};
-//    int minN[11] = {1, 5, 20, 5, 5, 0,
-//                   5, 20, 5, 5, 0};
-//    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
-//                                    true, true, true, true, true};
-
-    std::vector<std::string> methodNames = {"baseline", "setInterval20", "adaptive_jerk_bpp"};
+    std::vector<std::string> methodNames = {"baseline", "setInterval5", "setInterval20", "adaptive_jerk", "adaptive_accel", "iterative_error",
+                                            "setInterval5_bpp", "setInterval20_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
     int numMethods = methodNames.size();
-    int keyPointMethods[3] = {setInterval, setInterval, adaptive_jerk};
-    int interpMethod[3] = {linear, linear, linear};
-    int minN[3] = {1, 20, 5};
-    bool approxBackwardsPass[3] = {false, false, true};
+    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
+                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
+    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
+                           linear, linear, linear, linear, linear};
+    int minN[11] = {1, 5, 20, 5, 5, 0,
+                   5, 20, 5, 5, 0};
+    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
+                                    true, true, true, true, true};
+
+//    std::vector<std::string> methodNames = {"baseline", "setInterval20", "adaptive_jerk_bpp"};
+//    int numMethods = methodNames.size();
+//    int keyPointMethods[3] = {setInterval, setInterval, adaptive_jerk};
+//    int interpMethod[3] = {linear, linear, linear};
+//    int minN[3] = {1, 20, 5};
+//    bool approxBackwardsPass[3] = {false, false, true};
 
     // Loop through saved trajectories
     for(int i = 0; i < 1; i++){
@@ -366,7 +366,7 @@ void onetaskGenerateTestingData(){
         // Loop through our interpolating derivatives methods
         optTimesRow.clear();
         costReductionsRow.clear();
-        avgNumDerivsRow.clear();
+        avgPercentageDerivsRow.clear();
         avgTimeForDerivsRow.clear();
         numIterationsRow.clear();
 
@@ -395,7 +395,7 @@ void onetaskGenerateTestingData(){
         for(int j = 0; j < numMethods; j++){
             double optTime;
             double costReduction;
-            int avgNumDerivs;
+            double avgPercentageDerivs;
             double avgTimeForDerivs;
             int numIterationsForConvergence;
 
@@ -407,10 +407,10 @@ void onetaskGenerateTestingData(){
             std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
 
             // Return testing data and append appropriately
-            activeOptimiser->returnOptimisationData(optTime, costReduction, avgNumDerivs, avgTimeForDerivs, numIterationsForConvergence);
+            activeOptimiser->returnOptimisationData(optTime, costReduction, avgPercentageDerivs, avgTimeForDerivs, numIterationsForConvergence);
             optTimesRow.push_back(optTime);
             costReductionsRow.push_back(costReduction);
-            avgNumDerivsRow.push_back(avgNumDerivs);
+            avgPercentageDerivsRow.push_back(avgPercentageDerivs);
             avgTimeForDerivsRow.push_back(avgTimeForDerivs);
             numIterationsRow.push_back(numIterationsForConvergence);
 
@@ -439,7 +439,7 @@ void onetaskGenerateTestingData(){
         }
         optTimes.push_back(optTimesRow);
         costReductions.push_back(costReductionsRow);
-        avgNumDerivs.push_back(avgNumDerivsRow);
+        avgPercentageDerivs.push_back(avgPercentageDerivsRow);
         avgTimeForDerivs.push_back(avgTimeForDerivsRow);
         numIterations.push_back(numIterationsRow);
 
@@ -448,13 +448,15 @@ void onetaskGenerateTestingData(){
 
     // Save data to file
     cout << "save data to file \n";
-    yamlReader->saveResultsDataForMethods(activeModelTranslator->modelName, methodNames,optTimes, costReductions, avgNumDerivs, avgTimeForDerivs, numIterations);
+    yamlReader->saveResultsDataForMethods(activeModelTranslator->modelName, methodNames,optTimes, costReductions, avgPercentageDerivs, avgTimeForDerivs, numIterations);
 }
 
 void generateTestingData(){
 
     int configs[3] = {noClutter, lowClutter, heavyClutter};
 
+    // start timer here
+    auto startTime = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < 3; i ++){
         twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
         activeModelTranslator = myTwoDPushing;
@@ -475,6 +477,12 @@ void generateTestingData(){
         onetaskGenerateTestingData();
 
     }
+    auto stopTimer = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimer - startTime);
+    double timeForTesting = duration.count() / 1000.0;
+    cout << "time taken: " << timeForTesting << " s" << endl;
+    double predictedTimeFor100Scenes = timeForTesting * (100.0 / 3600.0);
+    cout << "predicted time taken: " << predictedTimeFor100Scenes << " h" << endl;
 }
 
 void generateFilteringData(){

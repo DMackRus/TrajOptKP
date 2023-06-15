@@ -143,6 +143,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     cout << " ---------------- optimisation begins -------------------" << endl;
     cout << "Trajectory Number: " << currentTrajecNumber << endl;
     cout << "minN " << min_interval << "  keypointsMethod: " <<  keyPointsMethodsStrings[keyPointsMethod] << "  interpMethod: " << interpMethodsStrings[interpMethod] << endl;
+    numberOfTotalDerivs = _horizonLength * dof;
+    cout << "total number of derivatives: " << numberOfTotalDerivs << endl;
 
     auto optStart = high_resolution_clock::now();
     

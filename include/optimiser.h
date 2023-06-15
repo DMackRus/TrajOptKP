@@ -34,7 +34,7 @@ public:
     virtual bool checkForConvergence(double oldCost, double newCost);
     void setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod, int minN, bool approxBackwardsPass);
 
-    void returnOptimisationData(double &_optTime, double &_costReduction, int &_avgNumDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
+    void returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
     int currentTrajecNumber = 0;
     int interpMethod = linear;
@@ -49,6 +49,7 @@ public:
 
     std::vector<int> numDerivsPerIter;
     int avgNumDerivs;
+    int numberOfTotalDerivs = 0;
 
     std::vector<double> timeDerivsPerIter;
     double avgTimePerDerivs;
