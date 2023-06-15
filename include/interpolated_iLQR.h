@@ -26,8 +26,8 @@ public:
     std::vector<double> costHistory;
     int numIters = 0;
 
-    bool saveTrajecInfomation = true;
-    bool saveCostHistory = true;
+    bool saveTrajecInfomation = false;
+    bool saveCostHistory = false;
 
 private:
     double lambda = 0.1;

@@ -43,7 +43,10 @@ void optimiser::returnOptimisationData(double &_optTime, double &_costReduction,
 
     _optTime = optTime;
     _costReduction = costReduction;
-    _avgPercentageDerivs = avgNumDerivs / numberOfTotalDerivs;
+    cout << "avg num derivs: " << avgNumDerivs << endl;
+    cout << "number of total derivs: " << numberOfTotalDerivs << endl;
+    _avgPercentageDerivs = ((double) avgNumDerivs / (double)numberOfTotalDerivs) * 100.0f;
+    cout << "avg percentage derivs: " << _avgPercentageDerivs << endl;
     _avgTimeGettingDerivs = avgTimePerDerivs;
     _numIterations = numIterationsForConvergence;
 }

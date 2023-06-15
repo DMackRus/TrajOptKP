@@ -390,7 +390,7 @@ void fileHandler::saveCostHistory(std::vector<double> costHistory, std::string f
 }
 
 void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> optTimes,
-                                            std::vector<std::vector<double>> costReduction, std::vector<std::vector<int>> avgNumDerivs,
+                                            std::vector<std::vector<double>> costReduction, std::vector<std::vector<double>> avgPercentageDerivs,
                                             std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<int>> numIterations){
     std::string rootPath = projectParentPath;
     std::string filename = rootPath + taskPrefix + "_testingData.csv";
@@ -410,7 +410,7 @@ void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
     for(int i = 0; i < methodNames.size(); i++){
         fileOutput << "optTime" << ",";
         fileOutput << "Cost reduction" << ",";
-        fileOutput << "avgNumDerivs" << ",";
+        fileOutput << "avgPercentDerivs" << ",";
         fileOutput << "avgTimeDerivs" << ",";
         fileOutput << "numIterations" << ",";
     }
@@ -422,11 +422,12 @@ void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
         for(int j = 0; j < methodNames.size(); j++){
             fileOutput << optTimes[i][j] << ",";
             fileOutput << costReduction[i][j] << ",";
-            fileOutput << avgNumDerivs[i][j] << ",";
+            fileOutput << avgPercentageDerivs[i][j] << ",";
             fileOutput << avgTimeGettingDerivs[i][j] << ",";
             fileOutput << numIterations[i][j] << ",";
 
         }
         fileOutput << std::endl;
     }
+    fileOutput.close();
 }

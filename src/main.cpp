@@ -331,8 +331,8 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<double>> costReductions;
     std::vector<double> costReductionsRow;
 
-    std::vector<std::vector<int>> avgPercentageDerivs;
-    std::vector<int> avgPercentageDerivsRow;
+    std::vector<std::vector<double>> avgPercentageDerivs;
+    std::vector<double> avgPercentageDerivsRow;
 
     std::vector<std::vector<double>> avgTimeForDerivs;
     std::vector<double> avgTimeForDerivsRow;
@@ -340,24 +340,24 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<int>> numIterations;
     std::vector<int> numIterationsRow;
 
-    std::vector<std::string> methodNames = {"baseline", "setInterval5", "setInterval20", "adaptive_jerk", "adaptive_accel", "iterative_error",
-                                            "setInterval5_bpp", "setInterval20_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
-    int numMethods = methodNames.size();
-    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
-                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
-    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
-                           linear, linear, linear, linear, linear};
-    int minN[11] = {1, 5, 20, 5, 5, 0,
-                   5, 20, 5, 5, 0};
-    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
-                                    true, true, true, true, true};
-
-//    std::vector<std::string> methodNames = {"baseline", "setInterval20", "adaptive_jerk_bpp"};
+//    std::vector<std::string> methodNames = {"baseline", "setInterval5", "setInterval20", "adaptive_jerk", "adaptive_accel", "iterative_error",
+//                                            "setInterval5_bpp", "setInterval20_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
 //    int numMethods = methodNames.size();
-//    int keyPointMethods[3] = {setInterval, setInterval, adaptive_jerk};
-//    int interpMethod[3] = {linear, linear, linear};
-//    int minN[3] = {1, 20, 5};
-//    bool approxBackwardsPass[3] = {false, false, true};
+//    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
+//                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
+//    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
+//                           linear, linear, linear, linear, linear};
+//    int minN[11] = {1, 5, 20, 5, 5, 0,
+//                   5, 20, 5, 5, 0};
+//    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
+//                                    true, true, true, true, true};
+
+    std::vector<std::string> methodNames = {"baseline", "setInterval20", "adaptive_jerk_bpp"};
+    int numMethods = methodNames.size();
+    int keyPointMethods[3] = {setInterval, setInterval, adaptive_jerk};
+    int interpMethod[3] = {linear, linear, linear};
+    int minN[3] = {1, 20, 5};
+    bool approxBackwardsPass[3] = {false, false, true};
 
     // Loop through saved trajectories
     for(int i = 0; i < 1; i++){
@@ -443,6 +443,7 @@ void onetaskGenerateTestingData(){
         avgTimeForDerivs.push_back(avgTimeForDerivsRow);
         numIterations.push_back(numIterationsRow);
 
+        cout << "average percent derivs: " << avgPercentageDerivsRow[0] << endl;
         cout << "row " << i << " done \n";
     }
 

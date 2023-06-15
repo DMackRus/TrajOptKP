@@ -36,7 +36,7 @@ public:
     void saveCostHistory(std::vector<double> costHistory, std::string filePrefix, int trajecNumber);
 
     void saveResultsDataForMethods(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> optTimes,
-                                   std::vector<std::vector<double>> costReduction, std::vector<std::vector<int>> avgNumDerivs,
+                                   std::vector<std::vector<double>> costReduction, std::vector<std::vector<double>> avgPercentageDerivs,
                                    std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<int>> numIterations);
 
     int project_display_mode;
