@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(1){
+    if(0){
         generateTestingData();
         return -1;
     }
@@ -148,7 +148,11 @@ int main(int argc, char **argv) {
     else if(taskInitMode == "fromCSV"){
         yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
+        cout << "start state " << activeModelTranslator->X_start << endl;
+        cout << "desired state " << activeModelTranslator->X_desired << endl;
     }
+
+    cout << "start state " << activeModelTranslator->X_start << endl;
 
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);

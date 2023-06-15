@@ -5,4 +5,4 @@ maxHorizon: 3000
 keyPointMethod: 0
 min_interval: 5
 max_interval: 100
-approximate_backwardsPass: true
+approximate_backwardsPass: false

@@ -43,12 +43,14 @@ MatrixXd boxFlick::returnRandomStartState(){
     objectCurrentPose.position(0) = startX;
     objectCurrentPose.position(1) = startY;
     activePhysicsSimulator->setBodyPose_angle("goal", objectCurrentPose, MAIN_DATA_STATE);
+    activePhysicsSimulator->setBodyPose_angle("goal", objectCurrentPose, MASTER_RESET_DATA);
 
     activePhysicsSimulator->getBodyPose_angle("mainObstacle", objectCurrentPose, MASTER_RESET_DATA);
     objectCurrentPose.position(0) = startX;
     objectCurrentPose.position(1) = startY;
     objectCurrentPose.position(2) = 0.2;
     activePhysicsSimulator->setBodyPose_angle("mainObstacle", objectCurrentPose, MAIN_DATA_STATE);
+    activePhysicsSimulator->setBodyPose_angle("mainObstacle", objectCurrentPose, MASTER_RESET_DATA);
 
 
     if(clutterLevel == noClutter){
