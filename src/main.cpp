@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(1){
+    if(0){
         generateTestingData();
         return -1;
     }
@@ -463,8 +463,9 @@ void generateTestingData(){
     // start timer here
     auto startTime = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < 3; i ++){
-        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
-        activeModelTranslator = myTwoDPushing;
+//        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
+        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
+        activeModelTranslator = myBoxFlicking;
         activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
         MatrixXd startStateVector;
