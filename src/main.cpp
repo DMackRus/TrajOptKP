@@ -493,12 +493,12 @@ void generateTestingData(){
 
 void generateFilteringData(){
     int setupHorizon = 1000;
-    int optHorizon = 1500;
+    int optHorizon = 2200;
 
     MatrixXd startStateVector;
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
-    for(int i = 0; i < 50; i++) {
+    for(int i = 0; i < 100; i++) {
         // Load a task from saved tasks
 
         yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector,
