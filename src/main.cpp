@@ -344,27 +344,27 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<int>> numIterations;
     std::vector<int> numIterationsRow;
 
-//    std::vector<std::string> methodNames = {"baseline", "setInterval5", "setInterval20", "adaptive_jerk", "adaptive_accel", "iterative_error",
-//                                            "setInterval5_bpp", "setInterval20_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
-//    int numMethods = methodNames.size();
-//    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
-//                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
-//    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
-//                           linear, linear, linear, linear, linear};
-//    int minN[11] = {1, 5, 20, 5, 5, 0,
-//                   5, 20, 5, 5, 0};
-//    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
-//                                    true, true, true, true, true};
-
-    std::vector<std::string> methodNames = {"baseline", "setInterval20", "adaptive_jerk_bpp"};
+    std::vector<std::string> methodNames = {"baseline", "setInterval5", "setInterval20", "adaptive_jerk", "adaptive_accel", "iterative_error",
+                                            "setInterval5_bpp", "setInterval20_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
     int numMethods = methodNames.size();
-    int keyPointMethods[3] = {setInterval, setInterval, adaptive_jerk};
-    int interpMethod[3] = {linear, linear, linear};
-    int minN[3] = {1, 20, 5};
-    bool approxBackwardsPass[3] = {false, false, true};
+    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
+                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
+    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
+                           linear, linear, linear, linear, linear};
+    int minN[11] = {1, 5, 20, 5, 5, 0,
+                   5, 20, 5, 5, 0};
+    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
+                                    true, true, true, true, true};
+
+//    std::vector<std::string> methodNames = {"baseline", "setInterval20", "adaptive_jerk_bpp"};
+//    int numMethods = methodNames.size();
+//    int keyPointMethods[3] = {setInterval, setInterval, adaptive_jerk};
+//    int interpMethod[3] = {linear, linear, linear};
+//    int minN[3] = {1, 20, 5};
+//    bool approxBackwardsPass[3] = {false, false, true};
 
     // Loop through saved trajectories
-    for(int i = 0; i < 1; i++){
+    for(int i = 0; i < 100; i++){
         cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
 
         // Loop through our interpolating derivatives methods
@@ -463,8 +463,9 @@ void generateTestingData(){
     // start timer here
     auto startTime = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < 3; i ++){
-        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
-        activeModelTranslator = myTwoDPushing;
+//        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
+        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
+        activeModelTranslator = myBoxFlicking;
         activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
         MatrixXd startStateVector;
