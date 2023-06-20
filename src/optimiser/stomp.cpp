@@ -27,8 +27,11 @@ stomp::stomp(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimula
 
 double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
     double cost = 0.0f;
-
-    activePhysicsSimulator->copySystemState(initialDataIndex, MAIN_DATA_STATE);
+//
+//    if(initialDataIndex != MAIN_DATA_STATE){
+//        activePhysicsSimulator->copySystemState(initialDataIndex, 0);
+//    }
+    activePhysicsSimulator->copySystemState(initialDataIndex, 0);
 
     MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
     MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
@@ -36,7 +39,7 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
     Xt = activeModelTranslator->returnStateVector(initialDataIndex);
-    //cout << "X_start:" << Xt << endl;
+//    cout << "X_start:" << Xt << endl;
 
     for(int i = 0; i < initControls.size(); i++){
         // set controls
@@ -61,7 +64,7 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
 
     }
 
-    //cout << "cost at index: " << initialDataIndex << ": " << cost << endl;
+//    cout << "cost at index: " << initialDataIndex << ": " << cost << endl;
 
     return cost;
 }
@@ -75,7 +78,11 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
     for(int i = 0; i < initControls.size(); i++){
         U_best[i] = initControls[i];
     }
-    bestCost = rolloutTrajectory(0, false, U_best);
+    activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    MatrixXd testStart = activeModelTranslator->returnStateVector(0);
+    cout << "test start: " << testStart << endl;
+    bestCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
+//    activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     cout << "cost of initial trajectory: " << bestCost << endl;
 
     for(int i = 0; i < maxIter; i++) {
@@ -98,6 +105,8 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
         }
 
         bool converged = checkForConvergence(bestCost, bestCostThisIter);
+
+        cout << "best cost this iteration: " << bestCostThisIter << endl;
 
         // reupdate U_best with new best trajectory if a better trajectory found
         if(bestCostThisIter < bestCost){

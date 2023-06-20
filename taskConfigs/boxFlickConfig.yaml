@@ -1,5 +1,5 @@
 modelFile: "/Franka-emika-panda-arm/V1/boxFlick.xml"
-modelName: "/panda_pushing"
+modelName: "/panda_box_flick"
 robots:
   panda:
     jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]

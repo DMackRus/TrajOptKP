@@ -566,6 +566,7 @@ void generateTestScenes(){
         MatrixXd startStateVector = activeModelTranslator->returnRandomStartState();
         activeModelTranslator->X_start = startStateVector;
         activeModelTranslator->X_desired = activeModelTranslator->returnRandomGoalState(startStateVector);
+        cout << "model name: " << activeModelTranslator->modelName << endl;
         yamlReader->saveTaskToFile(activeModelTranslator->modelName, i, activeModelTranslator->X_start, activeModelTranslator->X_desired);
     }
 }
@@ -637,17 +638,21 @@ void iLQROnce(){
     std::vector<MatrixXd> finalControls;
 
     activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+    MatrixXd testStart = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//    cout << "test start 1: " << testStart << endl;
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
     activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
 
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    testStart = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//    cout << "test start 2: " << testStart << endl;
     auto start = high_resolution_clock::now();
     std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
-    cout << "iLQR once took: " << linDuration.count() / 1000000.0f << " ms\n";
+    cout << "optimisation took: " << linDuration.count() / 1000000.0f << " ms\n";
 
     // Stitch together setup controls with init control + optimised controls
     initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
