@@ -11,7 +11,7 @@ robots:
     jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
     jointVelCosts: [0, 0, 0, 0, 0, 0, 0]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
-    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
+    jointJerkThresholds: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
 bodies:
   blueTin:
     activeLinearDOF: [true, true, false]
@@ -24,8 +24,8 @@ bodies:
     linearVelCost: [0.1, 0.1, 0]
     angularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
-    linearJerkThreshold: [ 0.002, 0.002, 0.002 ]
-    angularJerkThreshold: [ 0.002, 0.002, 0.002 ]
+    linearJerkThreshold: [ 0.01, 0.01, 0.01 ]
+    angularJerkThreshold: [ 0.01, 0.01, 0.01 ]
   bigBox:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
@@ -37,8 +37,8 @@ bodies:
     linearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
-    linearJerkThreshold: [ 0.002, 0.002, 0.002 ]
-    angularJerkThreshold: [ 0.002, 0.002, 0.002 ]
+    linearJerkThreshold: [ 0.02, 0.02, 0.02 ]
+    angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
   tallCylinder:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -50,8 +50,8 @@ bodies:
     linearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
     angularVelCost: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.002, 0.002, 0.002 ]
-    angularJerkThreshold: [ 0.002, 0.002, 0.002 ]
+    linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
   smallBox:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -63,5 +63,5 @@ bodies:
     linearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
     angularVelCost: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.002, 0.002, 0.002 ]
-    angularJerkThreshold: [ 0.002, 0.002, 0.002 ]
+    linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    angularJerkThreshold: [ 0.02, 0.02, 0.02  ]

@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(0){
+    if(1){
         generateTestingData();
         return -1;
     }
@@ -344,15 +344,15 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<int>> numIterations;
     std::vector<int> numIterationsRow;
 
-    std::vector<std::string> methodNames = {"baseline", "setInterval5", "setInterval20", "adaptive_jerk", "adaptive_accel", "iterative_error",
-                                            "setInterval5_bpp", "setInterval20_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
+    std::vector<std::string> methodNames = {"baseline", "setInterval20", "setInterval100", "adaptive_jerk", "adaptive_accel", "iterative_error",
+                                            "setInterval20_bpp", "setInterval100_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
     int numMethods = methodNames.size();
     int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
                                setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
     int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
                            linear, linear, linear, linear, linear};
-    int minN[11] = {1, 5, 20, 5, 5, 0,
-                   5, 20, 5, 5, 0};
+    int minN[11] = {1, 20, 100, 20, 20, 20,
+                   20, 100, 20, 20, 20};
     bool approxBackwardsPass[11] = {false, false, false, false, false, false,
                                     true, true, true, true, true};
 
@@ -463,9 +463,9 @@ void generateTestingData(){
     // start timer here
     auto startTime = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < 3; i ++){
-//        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
-        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
-        activeModelTranslator = myBoxFlicking;
+        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
+//        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
+        activeModelTranslator = myTwoDPushing;
         activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
         MatrixXd startStateVector;
@@ -486,9 +486,10 @@ void generateTestingData(){
     auto stopTimer = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimer - startTime);
     double timeForTesting = duration.count() / 1000.0;
-    cout << "time taken: " << timeForTesting << " s" << endl;
-    double predictedTimeFor100Scenes = timeForTesting * (100.0 / 3600.0);
-    cout << "predicted time taken: " << predictedTimeFor100Scenes << " h" << endl;
+    timeForTesting = timeForTesting / 3600.0;
+    cout << "time taken: " << timeForTesting << " h" << endl;
+//    double predictedTimeFor100Scenes = timeForTesting * (100.0 / 3600.0);
+//    cout << "predicted time taken: " << predictedTimeFor100Scenes << " h" << endl;
 }
 
 void generateFilteringData(){

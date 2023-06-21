@@ -288,7 +288,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         }
     }
 
-    costReduction = 1 - (newCost / initialCost);
+//    costReduction = 1 - (newCost / initialCost);
+    costReduction = newCost;
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
     optTime = optDuration.count() / 1000000.0f;

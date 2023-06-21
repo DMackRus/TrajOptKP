@@ -43,10 +43,7 @@ void optimiser::returnOptimisationData(double &_optTime, double &_costReduction,
 
     _optTime = optTime;
     _costReduction = costReduction;
-    cout << "avg num derivs: " << avgNumDerivs << endl;
-    cout << "number of total derivs: " << numberOfTotalDerivs << endl;
     _avgPercentageDerivs = ((double) avgNumDerivs / (double)numberOfTotalDerivs) * 100.0f;
-    cout << "avg percentage derivs: " << _avgPercentageDerivs << endl;
     _avgTimeGettingDerivs = avgTimePerDerivs;
     _numIterations = numIterationsForConvergence;
 }
@@ -447,7 +444,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 
 
     int midIndex = (indices.startIndex + indices.endIndex) / 2;
-    if((indices.endIndex - indices.startIndex) < 5){
+    if((indices.endIndex - indices.startIndex) < min_interval){
         return true;
     }
 
@@ -554,7 +551,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 //    cout << "num valid: " << counter << "\n";
 //    cout << "num too small: " << counterTooSmall << "\n";
 //    cout << "num too large: " << counterTooLarge << "\n";
-    if(averageError < 0.002){
+    if(averageError < 0.005){
         approximationGood = true;
     }
     else{
