@@ -344,15 +344,15 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<int>> numIterations;
     std::vector<int> numIterationsRow;
 
-    std::vector<std::string> methodNames = {"baseline", "setInterval20", "setInterval100", "adaptive_jerk", "adaptive_accel", "iterative_error",
+    std::vector<std::string> methodNames = {"baseline", "setInterval100", "setInterval200", "adaptive_jerk", "adaptive_accel", "iterative_error",
                                             "setInterval20_bpp", "setInterval100_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
     int numMethods = methodNames.size();
     int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
                                setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
     int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
                            linear, linear, linear, linear, linear};
-    int minN[11] = {1, 20, 100, 20, 20, 20,
-                   20, 100, 20, 20, 20};
+    int minN[11] = {1, 100, 200, 50, 50, 50,
+                   100, 200, 50, 50, 50};
     bool approxBackwardsPass[11] = {false, false, false, false, false, false,
                                     true, true, true, true, true};
 
@@ -464,7 +464,6 @@ void generateTestingData(){
     auto startTime = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < 3; i ++){
         twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
-//        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
         activeModelTranslator = myTwoDPushing;
         activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
@@ -483,6 +482,33 @@ void generateTestingData(){
         onetaskGenerateTestingData();
 
     }
+
+    for(int i = 0; i < 3; i ++){
+        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
+        activeModelTranslator = myBoxFlicking;
+        activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
+
+        MatrixXd startStateVector;
+        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+        startStateVector = activeModelTranslator->X_start;
+        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+
+        activeVisualiser = new visualizer(activeModelTranslator);
+        yamlReader->readOptimisationSettingsFile(opt_iLQR);
+        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
+        activeOptimiser = iLQROptimiser;
+
+        onetaskGenerateTestingData();
+
+    }
+
+
+
+
+
+
     auto stopTimer = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimer - startTime);
     double timeForTesting = duration.count() / 1000.0;
