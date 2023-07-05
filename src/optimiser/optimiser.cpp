@@ -59,11 +59,16 @@ void optimiser::generateDerivatives(){
 //        cout << "col " << j << ": " << keyPoints[j].size() << endl;
 //    }
 
-//    cout << "keypoints size: " << keyPoints.size() << endl;
+
+    cout << "keypoints size: " << keyPoints.size() << endl;
 
     // Calculate derivatives via finite differnecing / analytically for cost functions if available
     if(keyPointsMethod != iterative_error){
+        auto start_fd_time = high_resolution_clock::now();
         getDerivativesAtSpecifiedIndices(keyPoints);
+        auto stop_fd_time = high_resolution_clock::now();
+        auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
+        cout << "finite differencing took: " << duration_fd_time.count() / 1000000.0f << " s\n";
     }
     else{
         getCostDerivs();
@@ -110,22 +115,32 @@ void optimiser::generateDerivatives(){
 
     cout << "total number of columns of derivatives: " << totalNumColumnsDerivs << endl;
 
-//    cout << "f_x[0] " << f_x[0] << endl;
-//    cout << "f_x[1] " << f_x[1] << endl;
+//    cout << "A[0] " << A[0] << endl;
+//    cout << "A[1] " << A[1] << endl;
 //
-//    cout << "f_u[0] " << f_u[0] << endl;
+//    cout << "B[0] " << B[0] << endl;
+//    cout << "B[1] " << B[1] << endl;
+//    cout << "B[2] " << B[2] << endl;
+//    cout << "B[horizon - 1] " << B[horizonLength - 1] << endl;
+//    cout << "B[hori] " << B[horizonLength] << endl;
 //
-//    cout << "f_x[horizonLength - 1] " << f_x[horizonLength - 1] << endl;
+//    // Same for A
+//    cout << "A[0] " << A[0] << endl;
+//    cout << "A[1] " << A[1] << endl;
+//    cout << "A[2] " << A[2] << endl;
+//    cout << "A[horizon - 1] " << A[horizonLength - 1] << endl;
+//    cout << "A[hori] " << A[horizonLength] << endl;
 
-//        f_x.resize(initControls.size());
-//        activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 1);
+
+//        A.resize(initControls.size());
+//        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 1);
 
     if(filteringMatrices){
         filterMatrices();
     }
 
-//        f_x.resize(initControls.size());
-//        activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 2);
+//        A.resize(initControls.size());
+//        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 2);
 
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
@@ -735,58 +750,6 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
 }
 
 void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints){
-
-//    for(int i = 0; i < dof; i++){
-//
-//        int startIndex = 0;
-//        int endIndex = 0;
-//        bool pairFound = false;
-//
-//        // Loop through all the time indices
-//        for(int t = 0; t < horizonLength; t++){
-//            std::vector<int> columns = keyPoints[t];
-//
-//            if(columns.size() == 0){
-//                continue;
-//            }
-//
-//            for(int j = 0; j < columns.size(); j++){
-//                if(i == columns[j]){
-//                    endIndex = t;
-//                    pairFound = true;
-//                }
-//            }
-//
-//            if(pairFound){
-//                pairFound = false;
-//
-//                // Interpolate between start index and endIndex for column i and i + dof
-//                int interpolationSize = endIndex - startIndex;
-//                MatrixXd startA = A[startIndex].replicate(1, 1);
-//                MatrixXd startB = B[startIndex].replicate(1, 1);
-//
-//                MatrixXd endA = A[endIndex].replicate(1, 1);
-//                MatrixXd endB = B[endIndex].replicate(1, 1);
-//
-//                MatrixXd addA = (endA - startA) / interpolationSize;
-//                MatrixXd addB = (endB - startB) / interpolationSize;
-//
-//                for(int k = 0; k < interpolationSize; k++){
-//                    f_x[startIndex + k].block(0, i, 2*dof, 1) = startA.block(0, i, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
-//                    // Same for B
-//                    if(i < num_ctrl){
-//                        f_u[startIndex + k].block(0, i, 2*dof, 1) = startB.block(0, i, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
-//                    }
-//
-//                    f_x[startIndex + k].block(0, i+dof, 2*dof, 1) = startA.block(0, i+dof, 2*dof, 1) + (k * addA.block(0, i, 2*dof, 1));
-//                }
-//
-//                startIndex = endIndex;
-//            }
-//        }
-//    }
-
-
     // Create an array to track startIndices of next interpolation for each dof
     int startIndices[dof];
     for(int i = 0; i < dof; i++){
@@ -831,13 +794,13 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints){
                     }
 
                     for(int k = startIndices[i]; k < t; k++){
-                        f_x[k].block(dof, i, dof, 1) = startACol1 + ((k - startIndices[i]) * addACol1);
+                        A[k].block(dof, i, dof, 1) = startACol1 + ((k - startIndices[i]) * addACol1);
 
                         if(i < num_ctrl){
-                            f_u[k].block(dof, i, dof, 1) = startB + ((k - startIndices[i]) * addB);
+                            B[k].block(dof, i, dof, 1) = startB + ((k - startIndices[i]) * addB);
                         }
 
-                        f_x[k].block(dof, i + dof, dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
+                        A[k].block(dof, i + dof, dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
 
                     }
 
@@ -909,11 +872,11 @@ void optimiser::filterMatrices(){
             std::vector<double> filtered;
 
             for(int k = 0; k < horizonLength; k++){
-                unfiltered.push_back(f_x[k](i, j));
+                unfiltered.push_back(A[k](i, j));
             }
             filtered = filterIndividualValue(unfiltered);
             for(int k = 0; k < horizonLength; k++){
-                f_x[k](i, j) = filtered[k];
+                A[k](i, j) = filtered[k];
             }
         }
     }

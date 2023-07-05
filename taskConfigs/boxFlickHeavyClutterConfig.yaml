@@ -11,7 +11,7 @@ robots:
     jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
     jointVelCosts: [0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.05]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
-    jointJerkThresholds: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+    jointJerkThresholds: [0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005]
 bodies:
   goal:
     activeLinearDOF: [true, true, false]
@@ -24,7 +24,7 @@ bodies:
     linearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
-    linearJerkThreshold:  [ 0.01, 0.01, 0.01 ]
+    linearJerkThreshold:  [ 0.003, 0.003, 0.003 ]
     angularJerkThreshold:  [ 0.01, 0.01, 0.01 ]
   mainObstacle:
     activeLinearDOF: [ true, true, true ]

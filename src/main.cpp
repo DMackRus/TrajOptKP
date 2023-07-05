@@ -50,11 +50,11 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-//int keyPointMethod = adaptive_jerk;
-int keyPointMethod = iterative_error;
+int keyPointMethod = setInterval;
+//int keyPointMethod = setInterval;
 
 void showInitControls();
-void iLQROnce();
+void optimiseOnceandShow();
 void MPCUntilComplete();
 void MPCContinous();
 void generateTestScenes();
@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(1){
+    if(0){
         generateTestingData();
         return -1;
     }
@@ -188,7 +188,7 @@ int main(int argc, char **argv) {
     }
     else if(mode == ILQR_ONCE){
         cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
-        iLQROnce();
+        optimiseOnceandShow();
     }
     else if(mode == MPC_CONTINOUS){
         cout << "CONTINOUS MPC MODE \n";
@@ -324,7 +324,7 @@ void genericTesting(){
 
 void onetaskGenerateTestingData(){
     int setupHorizon = 1000;
-    int optHorizon = 2200;
+    int optHorizon = 2500;
 
     MatrixXd startStateVector;
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
@@ -344,24 +344,24 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<int>> numIterations;
     std::vector<int> numIterationsRow;
 
-    std::vector<std::string> methodNames = {"baseline", "setInterval100", "setInterval200", "adaptive_jerk", "adaptive_accel", "iterative_error",
-                                            "setInterval20_bpp", "setInterval100_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
-    int numMethods = methodNames.size();
-    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
-                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
-    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
-                           linear, linear, linear, linear, linear};
-    int minN[11] = {1, 100, 200, 50, 50, 50,
-                   100, 200, 50, 50, 50};
-    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
-                                    true, true, true, true, true};
-
-//    std::vector<std::string> methodNames = {"baseline", "setInterval20", "adaptive_jerk_bpp"};
+//    std::vector<std::string> methodNames = {"baseline", "setInterval100", "setInterval200", "adaptive_jerk", "adaptive_accel", "iterative_error",
+//                                            "setInterval20_bpp", "setInterval100_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
 //    int numMethods = methodNames.size();
-//    int keyPointMethods[3] = {setInterval, setInterval, adaptive_jerk};
-//    int interpMethod[3] = {linear, linear, linear};
-//    int minN[3] = {1, 20, 5};
-//    bool approxBackwardsPass[3] = {false, false, true};
+//    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
+//                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
+//    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
+//                           linear, linear, linear, linear, linear};
+//    int minN[11] = {1, 100, 200, 50, 50, 50,
+//                   100, 200, 50, 50, 50};
+//    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
+//                                    true, true, true, true, true};
+
+    std::vector<std::string> methodNames = {"baseline", "setInterval20", "adaptive_jerk_bpp"};
+    int numMethods = methodNames.size();
+    int keyPointMethods[3] = {setInterval, setInterval, adaptive_jerk};
+    int interpMethod[3] = {linear, linear, linear};
+    int minN[3] = {1, 20, 5};
+    bool approxBackwardsPass[3] = {false, false, true};
 
     // Loop through saved trajectories
     for(int i = 0; i < 100; i++){
@@ -374,27 +374,17 @@ void onetaskGenerateTestingData(){
         avgTimeForDerivsRow.clear();
         numIterationsRow.clear();
 
-//        activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-//        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-//        activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-//        std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
-//        activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval);
-//
-//        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-
-        // Load a task from saved tasks
         yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
-        cout << "starting state: " << startStateVector << endl;
-        cout << "desired state: " << activeModelTranslator->X_desired << endl;
         activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
         activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
 
         std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+
+        // Load a task from saved tasks
 
         for(int j = 0; j < numMethods; j++){
             double optTime;
@@ -403,12 +393,16 @@ void onetaskGenerateTestingData(){
             double avgTimeForDerivs;
             int numIterationsForConvergence;
 
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+
+
+
             // Setup interpolation method
             activeOptimiser->setupTestingExtras(i, interpMethod[j], keyPointMethods[j], minN[j], approxBackwardsPass[j]);
             // Setup initial state of the problem
 
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
 
             // Return testing data and append appropriately
             activeOptimiser->returnOptimisationData(optTime, costReduction, avgPercentageDerivs, avgTimeForDerivs, numIterationsForConvergence);
@@ -418,7 +412,7 @@ void onetaskGenerateTestingData(){
             avgTimeForDerivsRow.push_back(avgTimeForDerivs);
             numIterationsRow.push_back(numIterationsForConvergence);
 
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
 //            int controlCounter = 0;
 //            int visualCounter = 0;
@@ -458,11 +452,13 @@ void onetaskGenerateTestingData(){
 
 void generateTestingData(){
 
-    int configs[3] = {noClutter, lowClutter, heavyClutter};
+//    int configs[3] = {noClutter, lowClutter, heavyClutter};
+    int configs[1] = {heavyClutter};
+
 
     // start timer here
     auto startTime = std::chrono::high_resolution_clock::now();
-    for(int i = 0; i < 3; i ++){
+    for(int i = 0; i < 1; i ++){
         twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
         activeModelTranslator = myTwoDPushing;
         activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
@@ -483,26 +479,26 @@ void generateTestingData(){
 
     }
 
-    for(int i = 0; i < 3; i ++){
-        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
-        activeModelTranslator = myBoxFlicking;
-        activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
-
-        MatrixXd startStateVector;
-        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-        startStateVector = activeModelTranslator->X_start;
-        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-
-        activeVisualiser = new visualizer(activeModelTranslator);
-        yamlReader->readOptimisationSettingsFile(opt_iLQR);
-        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
-        activeOptimiser = iLQROptimiser;
-
-        onetaskGenerateTestingData();
-
-    }
+//    for(int i = 0; i < 3; i ++){
+//        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
+//        activeModelTranslator = myBoxFlicking;
+//        activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
+//
+//        MatrixXd startStateVector;
+//        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+//        startStateVector = activeModelTranslator->X_start;
+//        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+//        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+//
+//        activeVisualiser = new visualizer(activeModelTranslator);
+//        yamlReader->readOptimisationSettingsFile(opt_iLQR);
+//        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
+//        activeOptimiser = iLQROptimiser;
+//
+//        onetaskGenerateTestingData();
+//
+//    }
 
 
 
@@ -601,28 +597,28 @@ void generateTestScenes(){
 
 void showInitControls(){
     int setupHorizon = 1000;
-    int optHorizon = 2200;
+    int optHorizon = 2500;
     int controlCounter = 0;
     int visualCounter = 0;
 
     std::vector<MatrixXd> initControls;
 
     activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+//    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+//    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
 
-    //Stitch setup and optimisation controls together
-    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
-    initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
 
+    //Stitch setup and optimisation controls together
+//    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
+    initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
 
     while(activeVisualiser->windowOpen()){
 
         activeModelTranslator->setControlVector(initControls[controlCounter], MAIN_DATA_STATE);
-
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
 
         controlCounter++;
         visualCounter++;
@@ -654,9 +650,9 @@ void showInitControls(){
     }
 }
 
-void iLQROnce(){
-    int setupHorizon = 1000;
-    int optHorizon = 2200;
+void optimiseOnceandShow(){
+//    int setupHorizon = 1000;
+    int optHorizon = 2500;
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
@@ -666,26 +662,27 @@ void iLQROnce(){
     std::vector<MatrixXd> finalControls;
 
     activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-    MatrixXd testStart = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//    cout << "test start 1: " << testStart << endl;
-    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+//    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    MatrixXd test = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    cout << "test: " << test << endl;
+
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+//    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    test = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    cout << "test 2: " << test << endl;
     activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
 
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-    testStart = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//    cout << "test start 2: " << testStart << endl;
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "optimisation took: " << linDuration.count() / 1000000.0f << " ms\n";
 
     // Stitch together setup controls with init control + optimised controls
-    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
+//    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
     initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
-    finalControls.insert(finalControls.end(), initSetupControls.begin(), initSetupControls.end());
+//    finalControls.insert(finalControls.end(), initSetupControls.begin(), initSetupControls.end());
     finalControls.insert(finalControls.end(), optimisedControls.begin(), optimisedControls.end());
 
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
@@ -703,26 +700,6 @@ void iLQROnce(){
 
         controlCounter++;
         visualCounter++;
-
-        if(controlCounter == setupHorizon){
-            int a = 1;
-
-        }
-
-        if(controlCounter == setupHorizon + optHorizon/3){
-            int a = 1;
-
-        }
-
-        if(controlCounter == setupHorizon + (2*optHorizon/3)){
-            int a = 1;
-
-        }
-
-        if(controlCounter == setupHorizon + optHorizon){
-            int a = 1;
-
-        }
 
         if(controlCounter >= finalControls.size()){
             controlCounter = 0;

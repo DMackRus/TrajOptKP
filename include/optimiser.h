@@ -73,8 +73,8 @@ protected:
 
     // -------------- Vectors of matrices for gradient information about the trajectory -------------
     // First order dynamics
-    vector<MatrixXd> f_x;
-    vector<MatrixXd> f_u;
+//    vector<MatrixXd> f_x;
+//    vector<MatrixXd> f_u;
     vector<MatrixXd> A;
     vector<MatrixXd> B;
 

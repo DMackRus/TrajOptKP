@@ -25,14 +25,6 @@ interpolatediLQR::interpolatediLQR(modelTranslator *_modelTranslator, physicsSim
         A[i].block(0, dof, dof, dof) *= MUJOCO_DT;
         B[i].setZero();
 
-        f_x.push_back(MatrixXd(2*dof, 2*dof));
-        f_u.push_back(MatrixXd(2*dof, num_ctrl));
-
-        f_x[i].block(0, 0, dof, dof).setIdentity();
-        f_x[i].block(0, dof, dof, dof).setIdentity();
-        f_x[i].block(0, dof, dof, dof) *= MUJOCO_DT;
-        f_u[i].setZero();
-
         K.push_back(MatrixXd(num_ctrl, 2*dof));
         k.push_back(MatrixXd(num_ctrl, 1));
 
@@ -168,7 +160,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     numIterationsForConvergence = 0;
     // ------------------------------------------------------------------------
 
-    oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
+    oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     MatrixXd testStart = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 //    cout << "test start: " << testStart << endl;
@@ -188,7 +180,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
         auto bp_start = high_resolution_clock::now();
         while(!validBackwardsPass){
-            cout << "lamda is: " << lambda << "\n";
+//            cout << "lamda is: " << lambda << "\n";
 
             if(!approximate_backwardsPass or convergeThisIteration){
                 validBackwardsPass = backwardsPass_Quu_reg();
@@ -305,8 +297,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
     if(saveTrajecInfomation){
         //remove std vector elements after size of init controls
-        f_x.resize(initControls.size());
-        activeYamlReader->saveTrajecInfomation(f_x, f_u, X_old, U_old, activeModelTranslator->modelName, 0);
+        A.resize(initControls.size());
+        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 0);
     }
 
     if(saveCostHistory){
@@ -346,15 +338,15 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
 
         Quu_pd_check_counter++;
 
-        Q_u = l_u[t] + (f_u[t].transpose() * V_x);
+        Q_u = l_u[t] + (B[t].transpose() * V_x);
 
-        Q_x = l_x[t] + (f_x[t].transpose() * V_x);
+        Q_x = l_x[t] + (A[t].transpose() * V_x);
 
-        Q_ux = (f_u[t].transpose() * (V_xx * f_x[t]));
+        Q_ux = (B[t].transpose() * (V_xx * A[t]));
 
-        Q_uu = l_uu[t] + (f_u[t].transpose() * (V_xx * f_u[t]));
+        Q_uu = l_uu[t] + (B[t].transpose() * (V_xx * B[t]));
 
-        Q_xx = l_xx[t] + (f_x[t].transpose() * (V_xx * f_x[t]));
+        Q_xx = l_xx[t] + (A[t].transpose() * (V_xx * A[t]));
 
         MatrixXd Q_uu_reg = Q_uu.replicate(1, 1);
 
@@ -365,12 +357,6 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
         if(Quu_pd_check_counter >= number_steps_between_pd_checks){
             if(!isMatrixPD(Q_uu_reg)){
                 cout << "non PD matrix encountered at t = " << t << endl;
-//                cout << "iteration " << t << endl;
-//                cout << "f_x[t - 3] " << f_x[t - 3] << endl;
-//                cout << "f_x[t - 2] " << f_x[t - 2] << endl;
-//                cout << "f_x[t - 1] " << f_x[t - 1] << endl;
-//                cout << "f_x[t] " << f_x[t] << endl;
-//                cout << "Q_uu_reg " << Q_uu_reg << endl;
                 return false;
             }
             Quu_pd_check_counter = 0;
@@ -387,7 +373,6 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
         auto timeEnd = std::chrono::high_resolution_clock::now();
         auto timeTaken = std::chrono::duration_cast<std::chrono::microseconds>(timeEnd - timeStart);
         timeInverse += timeTaken.count()/ 1000000.0f;
-//        cout << "time taken for inverse: " << timeTaken.count()/ 1000000.0f << endl;
 
         k[t] = -Q_uu_inv * Q_u;
         K[t] = -Q_uu_inv * Q_ux;
@@ -416,8 +401,6 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
        
     }
 
-    cout << "time taken for inverse: " << timeInverse << endl;
-
     return true;
 }
 
@@ -440,15 +423,15 @@ bool interpolatediLQR::backwardsPass_Quu_skips(){
 
         Quu_pd_check_counter ++;
 
-        Q_u = l_u[t] + (f_u[t].transpose() * V_x);
+        Q_u = l_u[t] + (B[t].transpose() * V_x);
 
-        Q_x = l_x[t] + (f_x[t].transpose() * V_x);
+        Q_x = l_x[t] + (A[t].transpose() * V_x);
 
-        Q_ux = (f_u[t].transpose() * (V_xx * f_x[t]));
+        Q_ux = (B[t].transpose() * (V_xx * A[t]));
 
-        Q_uu = l_uu[t] + (f_u[t].transpose() * (V_xx * f_u[t]));
+        Q_uu = l_uu[t] + (B[t].transpose() * (V_xx * B[t]));
 
-        Q_xx = l_xx[t] + (f_x[t].transpose() * (V_xx * f_x[t]));
+        Q_xx = l_xx[t] + (A[t].transpose() * (V_xx * A[t]));
 
         MatrixXd Q_uu_reg = Q_uu.replicate(1, 1);
 
@@ -459,11 +442,6 @@ bool interpolatediLQR::backwardsPass_Quu_skips(){
         if(Quu_pd_check_counter >= number_steps_between_pd_checks){
             if(!isMatrixPD(Q_uu_reg)){
                 cout << "iteration " << t << endl;
-                cout << "f_x[t - 3] " << f_x[t - 3] << endl;
-                cout << "f_x[t - 2] " << f_x[t - 2] << endl;
-                cout << "f_x[t - 1] " << f_x[t - 1] << endl;
-                cout << "f_x[t] " << f_x[t] << endl;
-                cout << "Q_uu_reg " << Q_uu_reg << endl;
                 return false;
             }
             Quu_pd_check_counter = 0;
@@ -473,8 +451,6 @@ bool interpolatediLQR::backwardsPass_Quu_skips(){
         MatrixXd I(num_ctrl, num_ctrl);
         I.setIdentity();
         MatrixXd Q_uu_inv = temp.solve(I);
-
-//        cout << "time taken for inverse: " << timeTaken.count()/ 1000000.0f << endl;
 
         k[t] = -Q_uu_inv * Q_u;
         K[t] = -Q_uu_inv * Q_ux;
@@ -530,15 +506,15 @@ bool interpolatediLQR::backwardsPass_Quu_reg_parallel(){
 
         for(int t = endPoints[i+1]; t > endPoints[i]; t--){
 //            cout << "t: " << t << endl;
-            Q_u = l_u[t] + (f_u[t].transpose() * V_x[i]);
+            Q_u = l_u[t] + (B[t].transpose() * V_x[i]);
 
-            Q_x = l_x[t] + (f_x[t].transpose() * V_x[i]);
+            Q_x = l_x[t] + (A[t].transpose() * V_x[i]);
 
-            Q_ux = (f_u[t].transpose() * (V_xx[i] * f_x[t]));
+            Q_ux = (B[t].transpose() * (V_xx[i] * A[t]));
 
-            Q_uu = l_uu[t] + (f_u[t].transpose() * (V_xx[i] * f_u[t]));
+            Q_uu = l_uu[t] + (B[t].transpose() * (V_xx[i] * B[t]));
 
-            Q_xx = l_xx[t] + (f_x[t].transpose() * (V_xx[i] * f_x[t]));
+            Q_xx = l_xx[t] + (A[t].transpose() * (V_xx[i] * A[t]));
 
             MatrixXd Q_uu_reg = Q_uu.replicate(1, 1);
 

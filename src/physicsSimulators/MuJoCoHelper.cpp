@@ -641,7 +641,8 @@ bool MuJoCoHelper::checkBodyForCollisions(string bodyName, int dataIndex){
     mj_forward(model, d);
 
     int numContacts = d->ncon;
-    int numCollisions = 0;
+    // id to name
+//    std::string name = mj_id2name(model, mjOBJ_BODY, 10);
 
     int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
     bool objectCollisionFound = false;
@@ -747,6 +748,16 @@ bool MuJoCoHelper::stepSimulator(int steps, int dataIndex){
     return true;
 }
 
+// TODO - this is a bit hardcoded, make it less so
+bool MuJoCoHelper::forwardSimulator(int dataIndex){
+
+    mjData *d = returnDesiredDataState(dataIndex);
+
+    mj_forwardSkip(model, d, mjSTAGE_NONE, 1);
+
+    return true;
+}
+
 // --------------------------------- Visualization Functions ---------------------------------------
 void MuJoCoHelper::initVisualisation() {
 
@@ -823,12 +834,10 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
     // cout << "fileName in init: " << fileName << endl;
     model = mj_loadXML(fileName, NULL, error, 1000);
-    cout << "any errors? " << error << endl;
 
     model->opt.timestep = timestep;
 
     if( !model ) {
-
         printf("%s\n", error);
     }
 
@@ -840,13 +849,5 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
 //        cout << "fd_data size: " << fd_data.size() << endl;
         fd_data[i] = mj_makeData(model);
     }
-
-    fd_data[0]->qpos[0] = 1.0;
-    cout << "fd_data->qpos[0]: " << fd_data[0]->qpos[0] << endl;
-    mj_step(model, fd_data[0]);
-    cout << "fd_data->qpos[0]: " << fd_data[0]->qpos[0] << endl;
-    cout << "fd_data[15]->qpos[0]: " << fd_data[15]->qpos[0] << endl;
-    cout << "mehmeh" << endl;
-
     //model->opt.gravity[2] = 0;
 }

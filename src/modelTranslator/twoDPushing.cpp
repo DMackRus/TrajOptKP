@@ -40,18 +40,29 @@ MatrixXd twoDPushing::returnRandomStartState(){
 
     }
     else{
-        float randStartAngle = randFloat(0, PI);
-        float randStartDist = randFloat(0.05, 0.1);
+//        float randStartAngle = randFloat(0, PI);
+//        float randStartDist = randFloat(0.05, 0.1);
 
-        startX = 0.4 + randStartDist * sin(randStartAngle);
-        startY = 0 + randStartDist * cos(randStartAngle);
+        startX = 0.5;
+        startY = randFloat(-0.15, 0.15);
 
         float randAngle = randFloat(-PI/4, PI/4);
-        float randDist = randFloat(0.2, 0.4);
+        float randDist = randFloat(0.2, 0.3);
 
         goalX = startX + randDist * cos(randAngle);
         goalY = startY + randDist * sin(randAngle);
     }
+
+    // Set start position of pushed object
+    pose_6 pushedObjectStartPose;
+    activePhysicsSimulator->getBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
+    pushedObjectStartPose.position(0) = startX;
+    pushedObjectStartPose.position(1) = startY;
+    pushedObjectStartPose.position(2) = 0.032;
+    activePhysicsSimulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MAIN_DATA_STATE);
+    activePhysicsSimulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
+    activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
+
 
     randomGoalX = goalX;
     randomGoalY = goalY;
@@ -63,6 +74,7 @@ MatrixXd twoDPushing::returnRandomStartState(){
     activePhysicsSimulator->getBodyPose_angle("goal", objectCurrentPose, MASTER_RESET_DATA);
     objectCurrentPose.position(0) = startX;
     objectCurrentPose.position(1) = startY;
+    objectCurrentPose.position(2) = 0.032;
     activePhysicsSimulator->setBodyPose_angle("goal", objectCurrentPose, MAIN_DATA_STATE);
     activePhysicsSimulator->setBodyPose_angle("goal", objectCurrentPose, MASTER_RESET_DATA);
 
@@ -123,10 +135,39 @@ MatrixXd twoDPushing::returnRandomStartState(){
     }
     else if(clutterLevel == heavyClutter){
 
-        std::string objectNames[6] = {"obstacle1", "bigBox", "obstacle2", "obstacle3", "obstacle4", "obstacle5"};
-        int validObjectCounter = 0;
+        std::string objectNames[6] = {"mediumCylinder", "bigBox","obstacle2", "obstacle3", "obstacle4", "obstacle5"};
 
-        for(int i = 0; i < 6; i++){
+        // Place two objects inbetween end-effector and goal object start
+        for(int i = 0; i < 2; i++) {
+            bool validPlacement = false;
+            float size = 0.08;
+            while(!validPlacement){
+                size += 0.001;
+
+                float randX = randFloat(startX - size, startX);
+                float randY = randFloat(startY - size, startY + size);
+
+                pose_6 objectCurrentPose;
+                pose_6 newObjectPose;
+
+                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                newObjectPose = objectCurrentPose;
+                newObjectPose.position(0) = randX;
+                newObjectPose.position(1) = randY;
+                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+
+                if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                    cout << "invalid placement object: " << i << " : " << randX << ", " << randY << endl;
+                }
+                else{
+                    validPlacement = true;
+                    objectXPos.push_back(randX);
+                    objectYPos.push_back(randY);
+                }
+            }
+        }
+
+        for(int i = 2; i < 6; i++){
             bool validPlacement = false;
             float size = 0.08;
             while(!validPlacement){
@@ -142,6 +183,7 @@ MatrixXd twoDPushing::returnRandomStartState(){
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
+                newObjectPose.position(2) = 0;
                 activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
 
                 if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
@@ -153,13 +195,12 @@ MatrixXd twoDPushing::returnRandomStartState(){
                     objectYPos.push_back(randY);
                 }
             }
-            validObjectCounter++;
         }
 
         pose_6 stackedCylinderPose;
         stackedCylinderPose.position(0) = objectXPos[1];
         stackedCylinderPose.position(1) = objectYPos[1];
-        stackedCylinderPose.position(2) = 0.2;
+        stackedCylinderPose.position(2) = 0.1;
 
         randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
                 startX, startY, objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
@@ -297,7 +338,7 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
     displayBodyPose.position[2] = 0.0f;
     activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 
-    // Pushing create init controls borken into three main steps
+    // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
     m_point goalPos;
     std::vector<m_point> mainWayPoints;
@@ -306,8 +347,7 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
     goalPos(0) = X_desired(7);
     goalPos(1) = X_desired(8);
     initControls_mainWayPoints_optimisation(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
-    cout << "mainwaypoint 0: " << mainWayPoints[0] << endl;
-    cout << "mainWayPoint " << mainWayPoints[1] << endl;
+    cout << mainWayPoints.size() << " waypoints created" << endl;
 
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = initControls_createAllWayPoints(mainWayPoints, mainWayPointsTimings);
@@ -316,7 +356,6 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
     initControls = generate_initControls_fromWayPoints(allWayPoints);
 
     return initControls;
-
 }
 
 void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
@@ -362,8 +401,14 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
     float intermediatePointX = goalobj_startPose.position(0);
 
     // // Setting this up so we can visualise where the intermediate point is located
-    // intermediatePoint(0) = intermediatePointX;
-    // intermediatePoint(1) = intermediatePointY;
+//     intermediatePoint(0) = intermediatePointX;
+//     intermediatePoint(1) = intermediatePointY;
+
+    mainWayPoint(0) = intermediatePointX;
+    mainWayPoint(1) = intermediatePointY;
+    mainWayPoint(2) = 0.25f;
+    mainWayPoints.push_back(mainWayPoint);
+    wayPointsTiming.push_back(horizon / 2.5);
 
     float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
@@ -382,7 +427,7 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 
     mainWayPoint(0) = endPointX;
     mainWayPoint(1) = endPointY;
-    mainWayPoint(2) = 0.27f;
+    mainWayPoint(2) = 0.25f;
 
     mainWayPoints.push_back(mainWayPoint);
     wayPointsTiming.push_back(horizon - 1);

@@ -257,9 +257,7 @@ add_executable(${PROJECT_NAME} src/main.cpp
                 src/optimiser/optimiser.cpp
                 src/optimiser/interpolated_iLQR.cpp
                 src/optimiser/stomp.cpp
-                src/modelTranslator/twoDPushingClutter.cpp
-                src/modelTranslator/twoDPushingHeavyClutter.cpp
-                src/modelTranslator/boxFlick.cpp
+        src/modelTranslator/boxFlick.cpp
                 src/fileHandler/fileHandler.cpp
                 src/optimiser/gradDescent.cpp)
 
