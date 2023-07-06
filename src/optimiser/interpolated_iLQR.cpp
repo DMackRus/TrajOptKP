@@ -151,9 +151,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     costHistory.clear();
     optTime = 0.0f;
     costReduction = 1.0f;
-    numDerivsPerIter.clear();
+    percentDerivsPerIter.clear();
     timeDerivsPerIter.clear();
-    avgNumDerivs = 0;
+    avgPercentDerivs = 0;
     avgTimePerDerivs = 0.0f;
     numIterationsForConvergence = 0;
     // ------------------------------------------------------------------------

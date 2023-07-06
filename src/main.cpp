@@ -55,10 +55,12 @@ int keyPointMethod = setInterval;
 
 void showInitControls();
 void optimiseOnceandShow();
-void MPCUntilComplete();
+void MPCUntilComplete(bool &sucess, double &totalOptimisationTime, double &totalExecutionTime, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP);
 void MPCContinous();
 void generateTestScenes();
 void keyboardControl();
+
+void generateTestingData_MPC();
 void generateTestingData();
 void generateFilteringData();
 
@@ -81,6 +83,7 @@ int main(int argc, char **argv) {
     MatrixXd startStateVector(1, 1);
 
     if(0){
+        generateTestingData_MPC();
         generateTestingData();
         return -1;
     }
@@ -201,7 +204,9 @@ int main(int argc, char **argv) {
     }
     else if(mode == MPC_UNTIL_COMPLETE){
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
-        MPCUntilComplete();
+        bool _;
+        double __, ___, ____, _____, ______, _7;
+        MPCUntilComplete(_, __, ___, ____, _____, ______, _7);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -806,8 +811,10 @@ void MPCContinous(){
     }
 }
 
-void MPCUntilComplete(){
-    int optHorizon = 200;
+// Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
+// optimiser settings. This function can then return necessary testing data for us to store
+void MPCUntilComplete(bool &sucess, double &totalOptimisationTime, double &totalExecutionTime, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP){
+    int optHorizon = 300;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -816,6 +823,14 @@ void MPCUntilComplete(){
     const char* label = "MPC until complete";
     bool applyingSetupControls = false;
     const int MAX_TASK_TIME = 2000;
+
+    totalOptimisationTime = 0.0f;
+    totalExecutionTime = 0.0f;
+    std::vector<double> timeGettingDerivs;
+    std::vector<double> timeBackwardsPass;
+    std::vector<double> timeForwardsPass;
+    std::vector<double> percentagesDerivsCalculated;
+
 
     std::vector<MatrixXd> setupControls;
     std::vector<MatrixXd> optimisedControls;
@@ -853,9 +868,11 @@ void MPCUntilComplete(){
 
         if(activeModelTranslator->taskComplete(MAIN_DATA_STATE)){
             taskComplete = true;
+            sucess = true;
+            cout << "Task finished sucessfully \n";
         }
         else{
-            if(reInitialiseCounter > 10){
+            if(reInitialiseCounter > 50){
                 activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
 //                initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
 //                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -864,6 +881,14 @@ void MPCUntilComplete(){
 //                optimisedControls = initOptimisationControls;
                 optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, optHorizon);
                 reInitialiseCounter = 0;
+
+                totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
+                // These all currently assume only one iteration of optimisation
+                timeGettingDerivs.push_back(activeOptimiser->time_getDerivs_ms);
+                timeBackwardsPass.push_back(activeOptimiser->time_backwardsPass_ms);
+                timeForwardsPass.push_back(activeOptimiser->time_forwardsPass_ms);
+                percentagesDerivsCalculated.push_back(activeOptimiser->percentDerivsPerIter[0]);
+
             }
         }
 
@@ -876,12 +901,35 @@ void MPCUntilComplete(){
 
         if(overallTaskCounter > MAX_TASK_TIME){
             taskComplete = true;
+            sucess = false;
             cout << "task timeout" << endl;
         }
     }
 
-//    }
-    cout << "finished \n";
+    // Print some useful information about the task
+    avgTimeGettingDerivs = 0.0f;
+    avgTimeBP = 0.0f;
+    avgTimeFP = 0.0f;
+    avgPercentDerivs = 0.0f;
+    totalExecutionTime = activeVisualiser->replayControls.size() * MUJOCO_DT;
+
+    for(int i = 0; i < timeGettingDerivs.size(); i++){
+        avgTimeGettingDerivs += timeGettingDerivs[i];
+        avgTimeBP += timeBackwardsPass[i];
+        avgTimeFP += timeForwardsPass[i];
+        avgPercentDerivs += percentagesDerivsCalculated[i];
+    }
+    avgTimeGettingDerivs /= timeGettingDerivs.size();
+    avgTimeBP /= timeBackwardsPass.size();
+    avgTimeFP /= timeForwardsPass.size();
+    avgPercentDerivs /= percentagesDerivsCalculated.size();
+
+    cout << "------------------------------------------------------------------------ \n";
+    cout << "| Execution time: " << totalExecutionTime << " seconds |\n";
+    cout << "| Optimisation time: " << totalOptimisationTime << " seconds |\n";
+    cout << "| Avg percentage of derivatives calculated: " << avgPercentDerivs << "\n";
+    cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
+
 
     while(activeVisualiser->windowOpen()){
         if(activeVisualiser->replayTriggered){
@@ -902,10 +950,12 @@ void MPCUntilComplete(){
                     activeVisualiser->render("replaying");
                 }
             }
-
         }
         activeVisualiser->render("replay_mode");
     }
+}
+
+void generateTestingData_MPC(){
 
 }
 

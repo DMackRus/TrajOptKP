@@ -47,8 +47,8 @@ public:
     double initialCost;
     double costReduction = 1.0f;
 
-    std::vector<int> numDerivsPerIter;
-    int avgNumDerivs;
+    std::vector<double> percentDerivsPerIter;
+    double avgPercentDerivs;
     int numberOfTotalDerivs = 0;
 
     std::vector<double> timeDerivsPerIter;
@@ -61,6 +61,10 @@ public:
 
     bool filteringMatrices = true;
     bool approximate_backwardsPass = false;
+
+    double time_getDerivs_ms = 0.0f;
+    double time_backwardsPass_ms = 0.0f;
+    double time_forwardsPass_ms = 0.0f;
 
 
 protected:
@@ -118,10 +122,6 @@ protected:
     std::vector<double> filterIndividualValue(std::vector<double> unfiltered);
 
     bool convergeThisIteration = false;
-
-    double time_getDerivs_ms = 0.0f;
-    double time_backwardsPass_ms = 0.0f;
-    double time_forwardsPass_ms = 0.0f;
 
 
 private:

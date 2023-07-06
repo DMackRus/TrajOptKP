@@ -43,11 +43,11 @@ MatrixXd twoDPushing::returnRandomStartState(){
 //        float randStartAngle = randFloat(0, PI);
 //        float randStartDist = randFloat(0.05, 0.1);
 
-        startX = 0.45;
+        startX = 0.4;
         startY = randFloat(-0.1, 0.1);
 
         float randAngle = randFloat(-PI/4, PI/4);
-        float randDist = randFloat(0.2, 0.25);
+        float randDist = randFloat(0.28, 0.3);
 
         goalX = startX + randDist * cos(randAngle);
         goalY = startY + randDist * sin(randAngle);
@@ -161,12 +161,14 @@ MatrixXd twoDPushing::returnRandomStartState(){
 
         for(int i = 0; i < 7; i++){
             bool validPlacement = false;
-            float size = 0.08;
+            float sizeX = 0.08;
+            float sizeY = 0.08;
             while(!validPlacement){
-                size += 0.001;
+                sizeX += 0.001;
+                sizeY += 0.0005;
 
-                float randX = randFloat(goalX - size, goalX);
-                float randY = randFloat(goalY - size, goalY + size);
+                float randX = randFloat(goalX - sizeX, goalX);
+                float randY = randFloat(goalY - sizeY, goalY + sizeY);
 
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;

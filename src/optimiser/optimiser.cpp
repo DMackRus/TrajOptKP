@@ -31,10 +31,10 @@ void optimiser::setupTestingExtras(int _trajecNumber, int _interpMethod, int _ke
 
 void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
 
-    for(int i = 0; i < numDerivsPerIter.size(); i++){
-        avgNumDerivs += numDerivsPerIter[i];
+    for(int i = 0; i < percentDerivsPerIter.size(); i++){
+        avgPercentDerivs += percentDerivsPerIter[i];
     }
-    avgNumDerivs = avgNumDerivs/numDerivsPerIter.size();
+    avgPercentDerivs = avgPercentDerivs/percentDerivsPerIter.size();
 
     for(int i = 0; i < timeDerivsPerIter.size(); i++){
         avgTimePerDerivs += timeDerivsPerIter[i];
@@ -43,7 +43,7 @@ void optimiser::returnOptimisationData(double &_optTime, double &_costReduction,
 
     _optTime = optTime;
     _costReduction = costReduction;
-    _avgPercentageDerivs = ((double) avgNumDerivs / (double)numberOfTotalDerivs) * 100.0f;
+    _avgPercentageDerivs = avgPercentDerivs;
     _avgTimeGettingDerivs = avgTimePerDerivs;
     _numIterations = numIterationsForConvergence;
 }
@@ -92,11 +92,7 @@ void optimiser::generateDerivatives(){
 //        interpolateDerivatives(keyPoints);
 //    }
 
-    // time how long it takes to inteprolate
-    auto testStart = high_resolution_clock::now();
     interpolateDerivatives(keyPoints);
-    auto testStop = high_resolution_clock::now();
-    auto testDuration = duration_cast<microseconds>(testStop - testStart);
 
     int totalNumColumnsDerivs = 0;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -104,23 +100,8 @@ void optimiser::generateDerivatives(){
 
     }
 
-    cout << "percentage of derivs calculated: " << (totalNumColumnsDerivs / numberOfTotalDerivs) * 100.0f << endl;
-
-//    cout << "A[0] " << A[0] << endl;
-//    cout << "A[1] " << A[1] << endl;
-//
-//    cout << "B[0] " << B[0] << endl;
-//    cout << "B[1] " << B[1] << endl;
-//    cout << "B[2] " << B[2] << endl;
-//    cout << "B[horizon - 1] " << B[horizonLength - 1] << endl;
-//    cout << "B[hori] " << B[horizonLength] << endl;
-//
-//    // Same for A
-//    cout << "A[0] " << A[0] << endl;
-//    cout << "A[1] " << A[1] << endl;
-//    cout << "A[2] " << A[2] << endl;
-//    cout << "A[horizon - 1] " << A[horizonLength - 1] << endl;
-//    cout << "A[hori] " << A[horizonLength] << endl;
+    double percentDerivsCalculated = ((double) totalNumColumnsDerivs / (double)numberOfTotalDerivs) * 100.0f;
+    cout << "percentage of derivs calculated: " << percentDerivsCalculated << endl;
 
 
 //        A.resize(initControls.size());
@@ -137,7 +118,7 @@ void optimiser::generateDerivatives(){
     auto linDuration = duration_cast<microseconds>(stop - start);
     time_getDerivs_ms = linDuration.count() / 1000.0f;
 
-    numDerivsPerIter.push_back(totalNumColumnsDerivs);
+    percentDerivsPerIter.push_back(percentDerivsCalculated);
     timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 }
 
