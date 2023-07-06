@@ -55,20 +55,12 @@ void optimiser::generateDerivatives(){
     // generate the dynamics evaluation waypoints
     std::vector<std::vector<int>> keyPoints = generateKeyPoints(X_old, U_old);
 
-//    for(int j = 0; j < keyPoints.size(); j++){
-//        cout << "col " << j << ": " << keyPoints[j].size() << endl;
-//    }
-
-
-    cout << "keypoints size: " << keyPoints.size() << endl;
-
     // Calculate derivatives via finite differnecing / analytically for cost functions if available
     if(keyPointsMethod != iterative_error){
         auto start_fd_time = high_resolution_clock::now();
         getDerivativesAtSpecifiedIndices(keyPoints);
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
-        cout << "finite differencing took: " << duration_fd_time.count() / 1000000.0f << " s\n";
     }
     else{
         getCostDerivs();
@@ -105,7 +97,6 @@ void optimiser::generateDerivatives(){
     interpolateDerivatives(keyPoints);
     auto testStop = high_resolution_clock::now();
     auto testDuration = duration_cast<microseconds>(testStop - testStart);
-    cout << "interpolate took: " << testDuration.count() / 1000000.0f << " s\n";
 
     int totalNumColumnsDerivs = 0;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -113,7 +104,7 @@ void optimiser::generateDerivatives(){
 
     }
 
-    cout << "total number of columns of derivatives: " << totalNumColumnsDerivs << endl;
+    cout << "percentage of derivs calculated: " << (totalNumColumnsDerivs / numberOfTotalDerivs) * 100.0f << endl;
 
 //    cout << "A[0] " << A[0] << endl;
 //    cout << "A[1] " << A[1] << endl;
@@ -144,7 +135,7 @@ void optimiser::generateDerivatives(){
 
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
-    cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
+    time_getDerivs_ms = linDuration.count() / 1000.0f;
 
     numDerivsPerIter.push_back(totalNumColumnsDerivs);
     timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);

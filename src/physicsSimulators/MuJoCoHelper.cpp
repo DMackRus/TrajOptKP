@@ -585,9 +585,11 @@ int MuJoCoHelper::checkSystemForCollisions(int dataIndex){
         string bodyName1 = mj_id2name(model, mjOBJ_BODY, bodyInContact1);
         string bodyName2 = mj_id2name(model, mjOBJ_BODY, bodyInContact2);
 
-
-
         if(bodyInContact1 == 0 || bodyInContact2 == 0){
+
+        }
+        else if(bodyInContact1 == bodyInContact2){
+
         }
         else{
             cout << "bodies in contact: " << bodyName1 << " " << bodyName2 << endl;
@@ -768,8 +770,9 @@ void MuJoCoHelper::initVisualisation() {
     mjr_defaultContext(&con);
     mjv_defaultScene(&scn);
 
-    cam.distance = 1.66269;
+//    cam.distance = 1.66269;
     cam.azimuth = -118.7;
+    cam.elevation = 3;
     cam.elevation = -34.7;
     cam.lookat[0] = 0.4027;
     cam.lookat[1] = 0.0169;

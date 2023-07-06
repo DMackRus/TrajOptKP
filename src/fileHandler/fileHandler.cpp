@@ -257,9 +257,8 @@ void fileHandler::generalSaveMatrices(std::vector<MatrixXd> matrices, std::strin
 
 }
 
-void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber){
-    int size = A_matrices.size();
-    cout << "trajectory size: " << size << endl;
+void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength){
+    cout << "trajectory size: " << horizonLength << endl;
     std::string rootPath = projectParentPath + "/savedTrajecInfo" + filePrefix + "/" + std::to_string(trajecNumber);
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/A_matrices.csv";
@@ -268,7 +267,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     int num_ctrl = B_matrices[0].cols();
 
     // trajectory length
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength; i++){
         // Row
         for(int j = 0; j < (dof); j++){
             // Column
@@ -284,7 +283,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     filename = rootPath + "/B_matrices.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength; i++){
         for(int j = 0; j < (dof); j++){
             for(int k = 0; k < num_ctrl; k++){
                 fileOutput << B_matrices[i](j + dof, k) << ",";
@@ -297,7 +296,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
 
     filename = rootPath + "/states.csv";
     fileOutput.open(filename);
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength; i++){
         for(int j = 0; j < (dof * 2); j++)
         {
             fileOutput << states[i](j) << ",";
@@ -310,7 +309,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     filename = rootPath + "/controls.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength; i++){
         for(int j = 0; j < num_ctrl; j++) {
             fileOutput << controls[i](j) << ",";
         }

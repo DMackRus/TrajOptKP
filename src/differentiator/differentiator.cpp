@@ -31,15 +31,15 @@ void differentiator::resetModelAfterFiniteDifferencing(){
 }
 
 void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal){
-    double epsControls = 1e-6;
-    double epsVelocities = 1e-6;
-    double epsPositions = 1e-6;
+    double epsControls = 1e-5;
+    double epsVelocities = 1e-5;
+    double epsPositions = 1e-5;
 
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
 
     int tid = omp_get_thread_num();
-    // This seems random, in optimiser we define -1 = "mainData", -2 = "masterData", 0 -> horizon Length = "stored trajectroy data"
+    // This seems random, in optimiser we define -1 = "mainData", -2 = "masterData", 0 -> horizon Length = "stored trajectory data"
     // So we need values below -2 for finite-differencing data
     int physicsHelperId = -3 - tid;
 //    cout << "Thread " << tid << " is doing this task" << endl;
@@ -432,16 +432,16 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     // need to set this as zero when reaching but not when pendulum????
     //dqaccdq.setZero();
     if(USE_DQACC_DQ){
-//        for(int i = 0; i < dof; i++){
-//            for(int j = 0; j < dof; j++){
-//                if(dqaccdq(i, j) > DQACCDQ_MAX){
-//                    dqaccdq(i, j) = DQACCDQ_MAX;
-//                }
-//                if(dqaccdq(i, j)< -DQACCDQ_MAX){
-//                    dqaccdq(i, j) = -DQACCDQ_MAX;
-//                }
-//            }
-//        }
+        for(int i = 0; i < dof; i++){
+            for(int j = 0; j < dof; j++){
+                if(dqaccdq(i, j) > DQACCDQ_MAX){
+                    dqaccdq(i, j) = DQACCDQ_MAX;
+                }
+                if(dqaccdq(i, j)< -DQACCDQ_MAX){
+                    dqaccdq(i, j) = -DQACCDQ_MAX;
+                }
+            }
+        }
     }
     else {
         for (int i = 0; i < dof; i++) {

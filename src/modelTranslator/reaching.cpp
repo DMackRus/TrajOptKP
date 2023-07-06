@@ -16,7 +16,7 @@ bool pandaReaching::taskComplete(int dataIndex){
         cumError += diff;
     }
 
-    if(cumError < 0.01){
+    if(cumError < 0.05){
         return true;
     }
     else{
@@ -27,7 +27,34 @@ bool pandaReaching::taskComplete(int dataIndex){
 MatrixXd pandaReaching::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
-    randomStartState << -1, 0.5, 0, -1, 0, 0.6, 1,
+    bool validStartState = false;
+    vector<double> jointPositions;
+
+    for(int i = 0; i < 7; i++){
+        jointPositions.push_back(0.0f);
+    }
+
+    while(!validStartState){
+        // Generate a random robot configuration
+        std::string robotName = "panda";
+        for(int i = 0; i < 7; i++){
+            double randomJoint = randFloat(jointLimsMin[i], jointLimsMax[i]);
+            jointPositions[i] = randomJoint;
+        }
+
+        activePhysicsSimulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+
+        // Check if current configuration is valid
+        if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+            cout << "invalid robot position \n";
+        }
+        else{
+            validStartState = true;
+        }
+
+    }
+
+    randomStartState << jointPositions[0], jointPositions[1], jointPositions[2], jointPositions[3], jointPositions[4], jointPositions[5], jointPositions[6],
                         0, 0, 0, 0, 0, 0, 0;
 
     return randomStartState;
@@ -36,17 +63,46 @@ MatrixXd pandaReaching::returnRandomStartState(){
 MatrixXd pandaReaching::returnRandomGoalState(MatrixXd X0){
     MatrixXd randomGoalState(stateVectorSize, 1);
 
-    float randomNum = randFloat(0, 1);
-    // stable down position
-    if(randomNum > 0.5){
-        randomGoalState << 0, 0, 0, -1, 0, 0, 0,
-                            0, 0, 0, 0, 0, 0, 0;
+    double jointOffsets[7] = {0.5, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8};
+    double jointOffsetNoise[7] = {0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2};
+
+    bool validStartState = false;
+    vector<double> jointPositions;
+
+    for(int i = 0; i < 7; i++){
+        jointPositions.push_back(0.0f);
     }
-    // Unstable up position
-    else{
-        randomGoalState << 0, 0, 0, -1, 0, 0, 0, 
-                            0, 0, 0, 0, 0, 0, 0;
+
+    while(!validStartState){
+        // Generate a random robot configuration
+        std::string robotName = "panda";
+        for(int i = 0; i < 7; i++){
+            double targetJointVal;
+            if(X0(i) - jointOffsets[i] > jointLimsMin[i]){
+                targetJointVal = X0(i) - jointOffsets[i];
+            }
+            else{
+                targetJointVal = X0(i) + jointOffsets[i];
+            }
+
+            double randomJoint = randFloat(targetJointVal - jointOffsetNoise[i], targetJointVal + jointOffsetNoise[i]);
+            jointPositions[i] = randomJoint;
+        }
+
+        activePhysicsSimulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+
+        // Check if current configuration is valid
+        if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+            cout << "invalid robot position \n";
+        }
+        else{
+            validStartState = true;
+        }
+
     }
+
+    randomGoalState << jointPositions[0], jointPositions[1], jointPositions[2], jointPositions[3], jointPositions[4], jointPositions[5], jointPositions[6],
+            0, 0, 0, 0, 0, 0, 0;
 
     return randomGoalState;
 }
@@ -82,8 +138,6 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
         MatrixXd goalState = X_desired.replicate(1, 1);
         MatrixXd difference = goalState - startState;
 
-        cout << "start state: " << startState << endl;
-        cout << "goal state: " << goalState << endl;
 
         MatrixXd controlDiff(num_ctrl, 1);
 
@@ -100,7 +154,6 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
             //cout << "control: " << control << endl;
         }
 
-        cout << "final control: " << initControls[initControls.size() - 1];
     }
 
     

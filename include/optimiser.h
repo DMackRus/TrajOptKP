@@ -119,6 +119,10 @@ protected:
 
     bool convergeThisIteration = false;
 
+    double time_getDerivs_ms = 0.0f;
+    double time_backwardsPass_ms = 0.0f;
+    double time_forwardsPass_ms = 0.0f;
+
 
 private:
     double epsConverge = 0.02;
