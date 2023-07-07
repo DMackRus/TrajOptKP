@@ -22,7 +22,6 @@ public:
     double forwardsPass(double oldCost, bool &costReduced);
     double forwardsPassParallel(double oldCost, bool &costReduced);
 
-
     std::vector<double> costHistory;
     int numIters = 0;
 

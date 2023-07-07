@@ -73,9 +73,11 @@ public:
     virtual void initSimulator(double timeStep, const char* fileName) = 0;
 
     virtual bool stepSimulator(int steps, int dataIndex) = 0;
+    virtual bool forwardSimulator(int dataIndex) = 0;
 
 
-protected:
+
+        protected:
     vector<robot> robots;
     vector<string> bodies;
 

@@ -37,7 +37,7 @@ public:
     // - Optional override functions, have default implementations but can be overwritten
     virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal);
     virtual void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
-    virtual bool taskComplete(int dataIndex);
+    virtual bool taskComplete(int dataIndex, double &dist);
     virtual std::vector<MatrixXd> createInitSetupControls(int horizonLength);
 
     // - Pure virtual functions that HAVE to be overwritten

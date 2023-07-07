@@ -8,7 +8,7 @@
 #include "MuJoCoHelper.h"
 #include "mujoco.h"
 
-#define DQACCDQ_MAX 250
+#define DQACCDQ_MAX 100
 
 class differentiator{
 public:

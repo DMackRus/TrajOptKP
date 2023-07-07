@@ -9,6 +9,6 @@ robots:
     startPos: [-1, 0.5, 0, -1, 0, 0.6, 1]
     goalPos: [1, 0.5, 2, -1.4, 0, 0.6, 1]
     jointPosCosts: [1, 1, 1, 1, 1, 1, 1, 1]
-    jointVelCosts: [10, 10, 10, 10, 10, 10, 10]
+    jointVelCosts: [1, 1, 1, 1, 1, 1, 1, 1]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
-    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
+    jointJerkThresholds: [0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005]

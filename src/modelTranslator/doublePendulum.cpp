@@ -9,7 +9,7 @@ doublePendulum::doublePendulum(): modelTranslator(){
     initModelTranslator(yamlFilePath);
 }
 
-bool doublePendulum::taskComplete(int dataIndex){
+bool doublePendulum::taskComplete(int dataIndex, double &dist){
     double diff = 0.0f;
 
     MatrixXd Xt = returnStateVector(dataIndex);
@@ -17,6 +17,8 @@ bool doublePendulum::taskComplete(int dataIndex){
     for(int i = 0; i < dof; i++){
         diff += abs(X_desired(i) - Xt(i));
     }
+
+    dist = diff;
 
     if(diff < 0.01){
         return true;

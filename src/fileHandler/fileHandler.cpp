@@ -257,9 +257,8 @@ void fileHandler::generalSaveMatrices(std::vector<MatrixXd> matrices, std::strin
 
 }
 
-void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber){
-    int size = A_matrices.size();
-    cout << "trajectory size: " << size << endl;
+void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength){
+    cout << "trajectory size: " << horizonLength << endl;
     std::string rootPath = projectParentPath + "/savedTrajecInfo" + filePrefix + "/" + std::to_string(trajecNumber);
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/A_matrices.csv";
@@ -268,7 +267,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     int num_ctrl = B_matrices[0].cols();
 
     // trajectory length
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength; i++){
         // Row
         for(int j = 0; j < (dof); j++){
             // Column
@@ -284,7 +283,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     filename = rootPath + "/B_matrices.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength; i++){
         for(int j = 0; j < (dof); j++){
             for(int k = 0; k < num_ctrl; k++){
                 fileOutput << B_matrices[i](j + dof, k) << ",";
@@ -297,7 +296,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
 
     filename = rootPath + "/states.csv";
     fileOutput.open(filename);
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength; i++){
         for(int j = 0; j < (dof * 2); j++)
         {
             fileOutput << states[i](j) << ",";
@@ -310,7 +309,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     filename = rootPath + "/controls.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength; i++){
         for(int j = 0; j < num_ctrl; j++) {
             fileOutput << controls[i](j) << ",";
         }
@@ -346,8 +345,6 @@ void fileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, MatrixXd
     std::string rootPath = projectParentPath + "/testTasks" + taskPrefix;
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
-
-    cout << "start state size: " << startState.size() << endl;
 
     fstream fin;
 
@@ -425,6 +422,56 @@ void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
             fileOutput << avgPercentageDerivs[i][j] << ",";
             fileOutput << avgTimeGettingDerivs[i][j] << ",";
             fileOutput << numIterations[i][j] << ",";
+
+        }
+        fileOutput << std::endl;
+    }
+    fileOutput.close();
+}
+
+void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<bool>> sucesses,
+                         std::vector<std::vector<double>> finalDist, std::vector<std::vector<double>> executionTimes, std::vector<std::vector<double>> optimisationTimes,
+                         std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<double>> avgPercentDerivs){
+    std::string rootPath = projectParentPath;
+    std::string filename = rootPath + taskPrefix + "_testingData.csv";
+
+    fileOutput.open(filename);
+
+    // Make header
+    for(int i = 0; i < methodNames.size(); i++){
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+    }
+    fileOutput << std::endl;
+
+    for(int i = 0; i < methodNames.size(); i++){
+        fileOutput << "sucess" << ",";
+        fileOutput << "final dist" << ",";
+        fileOutput << "execution time" << ",";
+        fileOutput << "optimisation time" << ",";
+        fileOutput << "avgTimeDerivs" << ",";
+        fileOutput << "avgpercent derivs" << ",";
+    }
+    fileOutput << std::endl;
+
+    int numTrajecs = executionTimes.size();
+
+    for(int i = 0; i < numTrajecs; i++){
+        for(int j = 0; j < methodNames.size(); j++){
+            if(sucesses[i][j]){
+                fileOutput << "True" << ",";
+            }
+            else{
+                fileOutput << "False" << ",";
+            }
+            fileOutput << finalDist[i][j] << ",";
+            fileOutput << executionTimes[i][j] << ",";
+            fileOutput << optimisationTimes[i][j] << ",";
+            fileOutput << avgPercentDerivs[i][j] << ",";
+            fileOutput << avgTimeGettingDerivs[i][j] << ",";
 
         }
         fileOutput << std::endl;

@@ -593,7 +593,7 @@ std::vector<MatrixXd> boxFlick::generate_initControls_fromWayPoints(std::vector<
     return initControls;
 }
 
-bool boxFlick::taskComplete(int dataIndex){
+bool boxFlick::taskComplete(int dataIndex, double &dist){
     bool taskComplete = false;
 
     MatrixXd currentState = returnStateVector(dataIndex);
@@ -601,10 +601,10 @@ bool boxFlick::taskComplete(int dataIndex){
     float x_diff = currentState(9) - currentState(7);
     float y_diff = currentState(10) - currentState(8);
 
-    float distance = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
-    std::cout << "distance is: " << distance << std::endl;
+    dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
+    std::cout << "distance is: " << dist << std::endl;
 
-    if(distance > 0.1){
+    if(dist > 0.1){
         taskComplete = true;
     }
 

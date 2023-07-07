@@ -50,15 +50,18 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-//int keyPointMethod = adaptive_jerk;
-int keyPointMethod = iterative_error;
+int keyPointMethod = adaptive_jerk;
+//int keyPointMethod = setInterval;
 
 void showInitControls();
-void iLQROnce();
-void MPCUntilComplete();
+void optimiseOnceandShow();
+void MPCUntilComplete(bool &sucess, double &finalDist, double &totalOptimisationTime, double &totalExecutionTime, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
+                      int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON);
 void MPCContinous();
 void generateTestScenes();
 void keyboardControl();
+
+void generateTestingData_MPC();
 void generateTestingData();
 void generateFilteringData();
 
@@ -80,9 +83,10 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(0){
-        generateTestingData();
-        return -1;
+    if(mode == GENERATE_TESTING_DATA){
+        generateTestingData_MPC();
+//        generateTestingData();
+        return 1;
     }
 
     if(task == pendulum){
@@ -152,15 +156,18 @@ int main(int argc, char **argv) {
         cout << "desired state " << activeModelTranslator->X_desired << endl;
     }
 
-    cout << "start state " << activeModelTranslator->X_start << endl;
-
     activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
-    activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
-    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+    activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
+    activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
+    activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
 
     //Instantiate my optimiser
     activeVisualiser = new visualizer(activeModelTranslator);
+//    activeVisualiser->render("test");
+//
+//    activeModelTranslator->setStateVector(activeModelTranslator->X_desired, MAIN_DATA_STATE);
+//    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//    activeVisualiser->render("test");
 
     if(optimiser == "interpolated_iLQR"){
         yamlReader->readOptimisationSettingsFile(opt_iLQR);
@@ -188,15 +195,21 @@ int main(int argc, char **argv) {
     }
     else if(mode == ILQR_ONCE){
         cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
-        iLQROnce();
+        optimiseOnceandShow();
     }
     else if(mode == MPC_CONTINOUS){
         cout << "CONTINOUS MPC MODE \n";
-        MPCContinous();
+        cout << "mode is disabled for now \n";
+        return 0;
+//        MPCContinous();
     }
     else if(mode == MPC_UNTIL_COMPLETE){
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
-        MPCUntilComplete();
+        bool _;
+        double __, ___, ____, _____, ______, _7;
+        double finalDist;
+        activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1500, 150, 400);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -324,7 +337,7 @@ void genericTesting(){
 
 void onetaskGenerateTestingData(){
     int setupHorizon = 1000;
-    int optHorizon = 2200;
+    int optHorizon = 2500;
 
     MatrixXd startStateVector;
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
@@ -344,18 +357,24 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<int>> numIterations;
     std::vector<int> numIterationsRow;
 
-    std::vector<std::string> methodNames = {"baseline", "setInterval100", "setInterval200", "adaptive_jerk", "adaptive_accel", "iterative_error",
-                                            "setInterval20_bpp", "setInterval100_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
-    int numMethods = methodNames.size();
-    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
-                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
-    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
-                           linear, linear, linear, linear, linear};
-    int minN[11] = {1, 100, 200, 50, 50, 50,
-                   100, 200, 50, 50, 50};
-    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
-                                    true, true, true, true, true};
+//    std::vector<std::string> methodNames = {"baseline", "setInterval100", "setInterval200", "adaptive_jerk", "adaptive_accel", "iterative_error",
+//                                            "setInterval20_bpp", "setInterval100_bpp", "adaptive_jerk_bpp", "adaptive_accel_bpp", "iterative_error_bpp"};
+//    int numMethods = methodNames.size();
+//    int keyPointMethods[11] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error,
+//                               setInterval, setInterval, adaptive_jerk, adaptive_accel, iterative_error};
+//    int interpMethod[11] = {linear, linear, linear, linear, linear, linear,
+//                           linear, linear, linear, linear, linear};
+//    int minN[11] = {1, 100, 1000, 50, 50, 50,
+//                   100, 200, 50, 50, 50};
+//    bool approxBackwardsPass[11] = {false, false, false, false, false, false,
+//                                    true, true, true, true, true};
 
+    std::vector<std::string> methodNames = {"baseline", "setInterval100", "setInterval1000", "adaptive_jerk_50", "adaptive_accel_50", "iterative_error_50"};
+    int numMethods = methodNames.size();
+    int keyPointMethods[6] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,iterative_error};
+    int interpMethod[6] = {linear, linear, linear, linear, linear, linear};
+    int minN[6] = {1, 100, 1000, 50, 50, 50};
+    bool approxBackwardsPass[6] = {false, false, false, false, false, false};
 //    std::vector<std::string> methodNames = {"baseline", "setInterval20", "adaptive_jerk_bpp"};
 //    int numMethods = methodNames.size();
 //    int keyPointMethods[3] = {setInterval, setInterval, adaptive_jerk};
@@ -374,27 +393,17 @@ void onetaskGenerateTestingData(){
         avgTimeForDerivsRow.clear();
         numIterationsRow.clear();
 
-//        activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-//        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-//        activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-//        std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
-//        activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval);
-//
-//        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-
-        // Load a task from saved tasks
         yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
-        cout << "starting state: " << startStateVector << endl;
-        cout << "desired state: " << activeModelTranslator->X_desired << endl;
         activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
         activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
 
         std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+
+        // Load a task from saved tasks
 
         for(int j = 0; j < numMethods; j++){
             double optTime;
@@ -403,12 +412,16 @@ void onetaskGenerateTestingData(){
             double avgTimeForDerivs;
             int numIterationsForConvergence;
 
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+
+
+
             // Setup interpolation method
             activeOptimiser->setupTestingExtras(i, interpMethod[j], keyPointMethods[j], minN[j], approxBackwardsPass[j]);
             // Setup initial state of the problem
 
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
 
             // Return testing data and append appropriately
             activeOptimiser->returnOptimisationData(optTime, costReduction, avgPercentageDerivs, avgTimeForDerivs, numIterationsForConvergence);
@@ -418,7 +431,7 @@ void onetaskGenerateTestingData(){
             avgTimeForDerivsRow.push_back(avgTimeForDerivs);
             numIterationsRow.push_back(numIterationsForConvergence);
 
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
 //            int controlCounter = 0;
 //            int visualCounter = 0;
@@ -458,13 +471,16 @@ void onetaskGenerateTestingData(){
 
 void generateTestingData(){
 
-    int configs[3] = {noClutter, lowClutter, heavyClutter};
+//    int configs[3] = {noClutter, lowClutter, heavyClutter};
+    int configs[1] = {heavyClutter};
+
 
     // start timer here
     auto startTime = std::chrono::high_resolution_clock::now();
-    for(int i = 0; i < 3; i ++){
-        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
-        activeModelTranslator = myTwoDPushing;
+
+    for(int i = 0; i < 1; i ++){
+        pandaReaching* myPandaReaching = new pandaReaching();
+        activeModelTranslator = myPandaReaching;
         activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
         MatrixXd startStateVector;
@@ -483,26 +499,48 @@ void generateTestingData(){
 
     }
 
-    for(int i = 0; i < 3; i ++){
-        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
-        activeModelTranslator = myBoxFlicking;
-        activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
-        MatrixXd startStateVector;
-        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-        startStateVector = activeModelTranslator->X_start;
-        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+//    for(int i = 0; i < 1; i ++){
+//        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
+//        activeModelTranslator = myTwoDPushing;
+//        activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
+//
+//        MatrixXd startStateVector;
+//        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+//        startStateVector = activeModelTranslator->X_start;
+//        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+//        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+//
+//        activeVisualiser = new visualizer(activeModelTranslator);
+//        yamlReader->readOptimisationSettingsFile(opt_iLQR);
+//        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
+//        activeOptimiser = iLQROptimiser;
+//
+//        onetaskGenerateTestingData();
+//
+//    }
 
-        activeVisualiser = new visualizer(activeModelTranslator);
-        yamlReader->readOptimisationSettingsFile(opt_iLQR);
-        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
-        activeOptimiser = iLQROptimiser;
-
-        onetaskGenerateTestingData();
-
-    }
+//    for(int i = 0; i < 3; i ++){
+//        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
+//        activeModelTranslator = myBoxFlicking;
+//        activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
+//
+//        MatrixXd startStateVector;
+//        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+//        startStateVector = activeModelTranslator->X_start;
+//        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+//        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+//
+//        activeVisualiser = new visualizer(activeModelTranslator);
+//        yamlReader->readOptimisationSettingsFile(opt_iLQR);
+//        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
+//        activeOptimiser = iLQROptimiser;
+//
+//        onetaskGenerateTestingData();
+//
+//    }
 
 
 
@@ -594,6 +632,11 @@ void generateTestScenes(){
         MatrixXd startStateVector = activeModelTranslator->returnRandomStartState();
         activeModelTranslator->X_start = startStateVector;
         activeModelTranslator->X_desired = activeModelTranslator->returnRandomGoalState(startStateVector);
+        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+        activeVisualiser->render("init state");
+        cout << "starting state: " << startStateVector << endl;
+
+
         cout << "model name: " << activeModelTranslator->modelName << endl;
         yamlReader->saveTaskToFile(activeModelTranslator->modelName, i, activeModelTranslator->X_start, activeModelTranslator->X_desired);
     }
@@ -601,28 +644,28 @@ void generateTestScenes(){
 
 void showInitControls(){
     int setupHorizon = 1000;
-    int optHorizon = 2200;
+    int optHorizon = 2500;
     int controlCounter = 0;
     int visualCounter = 0;
 
     std::vector<MatrixXd> initControls;
 
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+//    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+//    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+//    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
 
-    //Stitch setup and optimisation controls together
-    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
-    initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
 
+    //Stitch setup and optimisation controls together
+//    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
+    initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
 
     while(activeVisualiser->windowOpen()){
 
         activeModelTranslator->setControlVector(initControls[controlCounter], MAIN_DATA_STATE);
-
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
 
         controlCounter++;
         visualCounter++;
@@ -654,9 +697,9 @@ void showInitControls(){
     }
 }
 
-void iLQROnce(){
-    int setupHorizon = 1000;
-    int optHorizon = 2200;
+void optimiseOnceandShow(){
+//    int setupHorizon = 1000;
+    int optHorizon = 2900;
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
@@ -665,27 +708,26 @@ void iLQROnce(){
     std::vector<MatrixXd> initControls;
     std::vector<MatrixXd> finalControls;
 
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-    MatrixXd testStart = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//    cout << "test start 1: " << testStart << endl;
-    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+//    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+//    MatrixXd test = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//    cout << "test: " << test << endl;
+
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
+//    test = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//    cout << "test 2: " << test << endl;
     activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
 
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-    testStart = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//    cout << "test start 2: " << testStart << endl;
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "optimisation took: " << linDuration.count() / 1000000.0f << " ms\n";
 
     // Stitch together setup controls with init control + optimised controls
-    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
+//    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
     initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
-    finalControls.insert(finalControls.end(), initSetupControls.begin(), initSetupControls.end());
+//    finalControls.insert(finalControls.end(), initSetupControls.begin(), initSetupControls.end());
     finalControls.insert(finalControls.end(), optimisedControls.begin(), optimisedControls.end());
 
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
@@ -703,26 +745,6 @@ void iLQROnce(){
 
         controlCounter++;
         visualCounter++;
-
-        if(controlCounter == setupHorizon){
-            int a = 1;
-
-        }
-
-        if(controlCounter == setupHorizon + optHorizon/3){
-            int a = 1;
-
-        }
-
-        if(controlCounter == setupHorizon + (2*optHorizon/3)){
-            int a = 1;
-
-        }
-
-        if(controlCounter == setupHorizon + optHorizon){
-            int a = 1;
-
-        }
 
         if(controlCounter >= finalControls.size()){
             controlCounter = 0;
@@ -744,7 +766,7 @@ void iLQROnce(){
 }
 
 void MPCContinous(){
-    int horizon = 500;
+    int horizon = 200;
     bool taskComplete = false;
     int currentControlCounter = 0;
     int visualCounter = 0;
@@ -775,7 +797,7 @@ void MPCContinous(){
         reInitialiseCounter++;
         visualCounter++;
 
-        if(reInitialiseCounter > 50){
+        if(reInitialiseCounter > 10){
             //initControls = activeModelTranslator->createInitControls(horizon);
             optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader->maxIter, yamlReader->minIter, horizon);
             //initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
@@ -788,220 +810,292 @@ void MPCContinous(){
             visualCounter = 0;
         }
     }
-    //finalControls = optimiser->optimise(d_init, initControls, 2, MUJ_STEPS_HORIZON_LENGTH, 5, predicted_States, K_feedback);
-
-
-
-    // Initialise optimiser - creates all the data objects
-    // cout << "X desired: " << modelTranslator->X_desired << endl;
-    // optimiser->updateNumStepsPerDeriv(5);
-    
-
-    // cpMjData(model, mdata, d_init);
-    // cpMjData(model, d_init_master, d_init);
-
-    // auto MPCStart = high_resolution_clock::now();
-
-    // while(!taskComplete){
-
-    //     if(movingToStart){
-
-    //     }
-    //     else{
-
-    //     }
-
-    //     m_ctrl nextControl = finalControls.at(0);
-    //     // Delete control we have applied
-    //     finalControls.erase(finalControls.begin());
-    //     // add control to back - replicate last control for now
-    //     finalControls.push_back(finalControls.at(finalControls.size() - 1));
-
-    //     // Store applied control in a std::vector for re-playability
-    //     MPCControls.push_back(nextControl);
-    //     modelTranslator->setControls(mdata, nextControl, false);
-    //     modelTranslator->stepModel(mdata, 1);
-    //     currentControlCounter++;
-    //     overallTaskCounter++;
-    //     reInitialiseCounter++;
-
-    //     // check if problem is solved?
-    //     if(modelTranslator->taskCompleted(mdata)){
-    //         cout << "task completed" << endl;
-    //         taskComplete = true;
-    //     }
-
-    //     // timeout of problem solution
-    //     if(overallTaskCounter > 3000){
-    //         cout << "task timeout" << endl;
-    //         taskComplete = true;
-    //     }
-
-    //     // State we predicted we would be at at this point. TODO - always true at the moment as no noise in system
-    //     m_state predictedState = modelTranslator->returnState(mdata);
-    //     //Check states mismatched
-    //     bool replanNeeded = false;
-    //     // todo - fix this!!!!!!!!!!!!!!!!!
-    //     if(modelTranslator->predictiveStateMismatch(mdata, mdata)){
-    //         replanNeeded = true;
-    //     }
-
-    //     if(currentControlCounter > 300){
-    //         replanNeeded = true;
-    //         currentControlCounter = 0;
-
-    //     }
-
-    //     if(replanNeeded){
-    //         cpMjData(model, d_init, mdata);
-    //         if(modelTranslator->newControlInitialisationNeeded(d_init, reInitialiseCounter)){
-    //             cout << "re initialise needed" << endl;
-    //             reInitialiseCounter = 0;
-    //             initControls = modelTranslator->initOptimisationControls(mdata, d_init);
-    //             finalControls = optimiser->optimise(d_init, initControls, 2, MUJ_STEPS_HORIZON_LENGTH, 5, predicted_States, K_feedback);
-    //         }
-    //         else{
-    //             finalControls = optimiser->optimise(d_init, finalControls, 2, MUJ_STEPS_HORIZON_LENGTH, 5, predicted_States, K_feedback);
-    //         }
-    //     }
-
-    //     visualCounter++;
-    //     if(visualCounter >= 20){
-    //         renderOnce(mdata);
-    //         visualCounter = 0;
-    //     }
-    // }
-
-    // auto MPCStop = high_resolution_clock::now();
-    // auto MPCDuration = duration_cast<microseconds>(MPCStop - MPCStart);
-    // float trajecTime = MPCControls.size() * MUJOCO_DT;
-    // cout << "duration of MPC was: " << MPCDuration.count()/1000 << " ms. Trajec length of " << trajecTime << " s" << endl;
-
-    // renderMPCAfter();
 }
 
-void MPCUntilComplete(){
-    int setupHorizon = 1000;
-    int optHorizon = 1000;
+// Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
+// optimiser settings. This function can then return necessary testing data for us to store
+void MPCUntilComplete(bool &sucess, double &finalDist, double &totalOptimisationTime, double &totalExecutionTime, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
+                      int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
     bool taskComplete = false;
-    int currentControlCounter = 0;
     int visualCounter = 0;
     int overallTaskCounter = 0;
     int reInitialiseCounter = 0;
     const char* label = "MPC until complete";
-    bool applyingSetupControls = false;
+//    const int MAX_TASK_TIME = 2000;
+//    const int REPLAN_TIME = 150;
+//    const int OPT_HORIZON = 400;
+
+    activeVisualiser->replayControls.clear();
+
+    totalOptimisationTime = 0.0f;
+    totalExecutionTime = 0.0f;
+    std::vector<double> timeGettingDerivs;
+    std::vector<double> timeBackwardsPass;
+    std::vector<double> timeForwardsPass;
+    std::vector<double> percentagesDerivsCalculated;
 
     std::vector<MatrixXd> setupControls;
     std::vector<MatrixXd> optimisedControls;
 
     // Instantiate init controls
     std::vector<MatrixXd> initOptimisationControls;
-    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-    setupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-    if(setupControls.size() > 0){
-        applyingSetupControls = true;
-    }
-    else{
-        activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-        initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
-        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-        cout << "init controls: " << initOptimisationControls.size() << endl;
-        optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
-        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-    }
+//    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+//    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+//    activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
+
+//    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+    initOptimisationControls = activeModelTranslator->createInitOptimisationControls(OPT_HORIZON);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
+//    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+
+//    cout << "first control: " << initOptimisationControls[1] << endl;
+//    MatrixXd testStartState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//    cout << "test start state: " << testStartState << endl;
+//    cout << "desired state: " << activeModelTranslator->X_desired << endl;
+
+    optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 1, 1, OPT_HORIZON);
 
     while(!taskComplete){
-        if(applyingSetupControls){
-            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-            std::vector<MatrixXd> setupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
+        activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
 
-            while(setupControls.size() > 0){
-                MatrixXd nextControl = setupControls[0].replicate(1, 1);
-                activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
-                setupControls.erase(setupControls.begin());
-                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
-                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-                visualCounter++;
-                if(visualCounter >= 20){
-                    activeVisualiser->render("MPC Until Complete");
-                    visualCounter = 0;
-                }
-            }
-            applyingSetupControls = false;
-            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-            initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        optimisedControls.erase(optimisedControls.begin());
 
-            cout << "init controls: " << initOptimisationControls[0] << endl;
-            optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
 
+        activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+        reInitialiseCounter++;
+        visualCounter++;
+
+        if(activeModelTranslator->taskComplete(MAIN_DATA_STATE, finalDist)){
+            taskComplete = true;
+            sucess = true;
         }
         else{
-            MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
-            activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
+            if(reInitialiseCounter > REPLAN_TIME){
+                activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+//                initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+//                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+//
+//
+//                optimisedControls = initOptimisationControls;
+                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 4, 2, OPT_HORIZON);
+                reInitialiseCounter = 0;
 
-            optimisedControls.erase(optimisedControls.begin());
+                totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
+                // These all currently assume only one iteration of optimisation
+                timeGettingDerivs.push_back(activeOptimiser->time_getDerivs_ms);
+                timeBackwardsPass.push_back(activeOptimiser->time_backwardsPass_ms);
+                timeForwardsPass.push_back(activeOptimiser->time_forwardsPass_ms);
+                percentagesDerivsCalculated.push_back(activeOptimiser->percentDerivsPerIter[0]);
 
-            optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
-
-            activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
-
-            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-
-            reInitialiseCounter++;
-            visualCounter++;
-
-            if(activeModelTranslator->taskComplete(MAIN_DATA_STATE)){
-                taskComplete = true;
-            }
-            else{
-                if(reInitialiseCounter > 800){
-                    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-                    initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
-                    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-
-                    optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
-                    reInitialiseCounter = 0;
-                }
-            }
-
-            if(visualCounter > 5){
-                activeVisualiser->render(label);
-                visualCounter = 0;
             }
         }
 
+//        if(visualCounter > 10){
+//            activeVisualiser->render(label);
+//            visualCounter = 0;
+//        }
+
+        overallTaskCounter++;
+
+        if(overallTaskCounter > MAX_TASK_TIME){
+            taskComplete = true;
+            sucess = false;
+        }
     }
-    cout << "finished \n";
 
-    while(activeVisualiser->windowOpen()){
-        if(activeVisualiser->replayTriggered){
-            activeVisualiser->replayTriggered = false;
+    // Print some useful information about the task
+    avgTimeGettingDerivs = 0.0f;
+    avgTimeBP = 0.0f;
+    avgTimeFP = 0.0f;
+    avgPercentDerivs = 0.0f;
+    totalExecutionTime = activeVisualiser->replayControls.size() * MUJOCO_DT;
 
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-            int controlCounter = 0;
-            while(controlCounter < activeVisualiser->replayControls.size()){
-                MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
+    for(int i = 0; i < timeGettingDerivs.size(); i++){
+        avgTimeGettingDerivs += timeGettingDerivs[i];
+        avgTimeBP += timeBackwardsPass[i];
+        avgTimeFP += timeForwardsPass[i];
+        avgPercentDerivs += percentagesDerivsCalculated[i];
+    }
+    avgTimeGettingDerivs /= timeGettingDerivs.size();
+    avgTimeBP /= timeBackwardsPass.size();
+    avgTimeFP /= timeForwardsPass.size();
+    avgPercentDerivs /= percentagesDerivsCalculated.size();
 
-                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+    if(sucess){
+        cout << "| Task sucessful |\n";
+    }
+    else{
+        cout << "| Task failed |\n";
+    }
+    cout << "| Distance to goal: " << finalDist << " |\n";
+    cout << "| Execution time: " << totalExecutionTime << " seconds |\n";
+    cout << "| Optimisation time: " << totalOptimisationTime << " seconds |\n";
+    cout << "| Avg percentage of derivatives calculated: " << avgPercentDerivs << "\n";
+    cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
 
-                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//    while(activeVisualiser->windowOpen()){
+//        if(activeVisualiser->replayTriggered){
+//            activeVisualiser->replayTriggered = false;
+//
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+//            int controlCounter = 0;
+//            while(controlCounter < activeVisualiser->replayControls.size()){
+//                MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
+//
+//                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+//
+//                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//
+//                controlCounter++;
+//
+//                if(controlCounter % 5 == 0){
+//                    activeVisualiser->render("replaying");
+//                }
+//            }
+//        }
+//        activeVisualiser->render("replay_mode");
+//    }
+}
 
-                controlCounter++;
+void generateTestingData_MPC(){
+    //    int configs[3] = {noClutter, lowClutter, heavyClutter};
+    int configs[1] = {heavyClutter};
 
-                if(controlCounter % 5 == 0){
-                    activeVisualiser->render("replaying");
-                }
+
+    // start timer here
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    for(int k = 0; k < 1; k ++) {
+        twoDPushing *myBoxPushing = new twoDPushing(noClutter);
+        activeModelTranslator = myBoxPushing;
+        activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
+
+//        MatrixXd startStateVector;
+//        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+//        startStateVector = activeModelTranslator->X_start;
+//        activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
+//        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MASTER_RESET_DATA);
+//        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
+
+        activeVisualiser = new visualizer(activeModelTranslator);
+        yamlReader->readOptimisationSettingsFile(opt_iLQR);
+        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
+                                             activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
+                                             yamlReader);
+        activeOptimiser = iLQROptimiser;
+
+
+//        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+        // ------------------------- data storage -------------------------------------
+        std::vector<std::vector<bool>> sucesses;
+        std::vector<bool> sucessesRow;
+
+        std::vector<std::vector<double>> finalDistances;
+        std::vector<double> finalDistancesRow;
+
+        std::vector<std::vector<double>> executionTime;
+        std::vector<double> executionTimeRow;
+
+        std::vector<std::vector<double>> optimisationTime;
+        std::vector<double> optimisationTimeRow;
+
+        std::vector<std::vector<double>> avgTimeForDerivs;
+        std::vector<double> avgTimeForDerivsRow;
+
+        std::vector<std::vector<double>> avgPercentDerivs;
+        std::vector<double> avgPercentDerivsRow;
+
+        std::vector<std::string> methodNames = {"baseline", "setInterval10", "setInterval200", "adaptive_jerk_10",
+                                                "adaptive_accel_10", "iterative_error_10"};
+        int numMethods = methodNames.size();
+        int keyPointMethods[6] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,
+                                  iterative_error};
+        int interpMethod[6] = {linear, linear, linear, linear, linear, linear};
+        int minN[6] = {1, 10, 200, 10, 10, 10};
+        bool approxBackwardsPass[6] = {false, false, false, false, false, false};
+
+        auto startTimer = std::chrono::high_resolution_clock::now();
+
+        for (int i = 0; i < 100; i++) {
+            cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
+
+            // Loop through our interpolating derivatives methods
+            sucessesRow.clear();
+            executionTimeRow.clear();
+            optimisationTimeRow.clear();
+            avgTimeForDerivsRow.clear();
+            avgPercentDerivsRow.clear();
+
+            MatrixXd startStateVector;
+            startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+
+            yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector,
+                                         activeModelTranslator->X_desired);
+            activeModelTranslator->X_start = startStateVector;
+            activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
+            activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
+            if(activeModelTranslator->activePhysicsSimulator->checkIfDataIndexExists(0) == false){
+                activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
             }
 
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
+
+            for (int j = 0; j < numMethods; j++) {
+                bool sucess;
+                double finalDistance = 0.0f;
+                double executionTime = 0.0f;
+                double optimisationTime = 0.0f;
+                double avgPercentageDerivs = 0.0f;
+                double avgTimeForDerivs = 0.0f;
+                double avgTimeBP = 0.0f;
+                double avgTimeFP = 0.0f;
+                cout << "--------------------------------------------------------------------------------\n";
+                cout << "current method: " << methodNames[j] << "\n";
+
+                activeOptimiser->setupTestingExtras(i, interpMethod[j], keyPointMethods[j], minN[j],
+                                                    approxBackwardsPass[j]);
+                activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
+                MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgPercentageDerivs, avgTimeForDerivs,
+                                 avgTimeBP, avgTimeFP, 1500, 150, 400);
+
+                sucessesRow.push_back(sucess);
+                finalDistancesRow.push_back(finalDistance);
+                executionTimeRow.push_back(executionTime);
+                optimisationTimeRow.push_back(optimisationTime);
+                avgTimeForDerivsRow.push_back(avgTimeForDerivs);
+                avgPercentDerivsRow.push_back(avgPercentageDerivs);
+
+            }
+            // New row of data added
+            sucesses.push_back(sucessesRow);
+            finalDistances.push_back(finalDistancesRow);
+            executionTime.push_back(executionTimeRow);
+            optimisationTime.push_back(optimisationTimeRow);
+            avgTimeForDerivs.push_back(avgTimeForDerivsRow);
+            avgPercentDerivs.push_back(avgPercentDerivsRow);
+
+            auto currentTime = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTimer).count();
+
+
+            cout << "Time taken so far: " << duration << "ms" << endl;
         }
-        activeVisualiser->render("replay_mode");
+
+        // Save data to csv
+        yamlReader->saveResultsData_MPC(activeModelTranslator->modelName, methodNames, sucesses, finalDistances, executionTime,
+                                        optimisationTime, avgTimeForDerivs, avgPercentDerivs);
     }
+
+
+
 
 }
 

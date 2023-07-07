@@ -27,7 +27,7 @@ public:
     void readSettingsFile(std::string settingsFilePath);
     void readOptimisationSettingsFile(int optimiser);
 
-    void saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber);
+    void saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength);
     void generalSaveMatrices(std::vector<MatrixXd> matrices, std::string fileName);
 
     void saveTaskToFile(std::string filePrefix, int fileNum, MatrixXd startState, MatrixXd goalState);
@@ -38,6 +38,10 @@ public:
     void saveResultsDataForMethods(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> optTimes,
                                    std::vector<std::vector<double>> costReduction, std::vector<std::vector<double>> avgPercentageDerivs,
                                    std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<int>> numIterations);
+
+    void saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<bool>> sucesses,
+                                   std::vector<std::vector<double>> finalDist, std::vector<std::vector<double>> executionTimes, std::vector<std::vector<double>> optimisationTimes,
+                                   std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<double>> avgPercentDerivs);
 
     int project_display_mode;
     int taskNumber;

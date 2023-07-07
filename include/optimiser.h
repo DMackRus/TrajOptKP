@@ -47,8 +47,8 @@ public:
     double initialCost;
     double costReduction = 1.0f;
 
-    std::vector<int> numDerivsPerIter;
-    int avgNumDerivs;
+    std::vector<double> percentDerivsPerIter;
+    double avgPercentDerivs;
     int numberOfTotalDerivs = 0;
 
     std::vector<double> timeDerivsPerIter;
@@ -62,6 +62,11 @@ public:
     bool filteringMatrices = true;
     bool approximate_backwardsPass = false;
 
+    double time_getDerivs_ms = 0.0f;
+    double time_backwardsPass_ms = 0.0f;
+    double time_forwardsPass_ms = 0.0f;
+    bool verboseOutput = false;
+
 
 protected:
     modelTranslator *activeModelTranslator;
@@ -73,8 +78,8 @@ protected:
 
     // -------------- Vectors of matrices for gradient information about the trajectory -------------
     // First order dynamics
-    vector<MatrixXd> f_x;
-    vector<MatrixXd> f_u;
+//    vector<MatrixXd> f_x;
+//    vector<MatrixXd> f_u;
     vector<MatrixXd> A;
     vector<MatrixXd> B;
 

@@ -585,9 +585,11 @@ int MuJoCoHelper::checkSystemForCollisions(int dataIndex){
         string bodyName1 = mj_id2name(model, mjOBJ_BODY, bodyInContact1);
         string bodyName2 = mj_id2name(model, mjOBJ_BODY, bodyInContact2);
 
-
-
         if(bodyInContact1 == 0 || bodyInContact2 == 0){
+
+        }
+        else if(bodyInContact1 == bodyInContact2){
+
         }
         else{
             cout << "bodies in contact: " << bodyName1 << " " << bodyName2 << endl;
@@ -641,7 +643,8 @@ bool MuJoCoHelper::checkBodyForCollisions(string bodyName, int dataIndex){
     mj_forward(model, d);
 
     int numContacts = d->ncon;
-    int numCollisions = 0;
+    // id to name
+//    std::string name = mj_id2name(model, mjOBJ_BODY, 10);
 
     int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
     bool objectCollisionFound = false;
@@ -747,6 +750,16 @@ bool MuJoCoHelper::stepSimulator(int steps, int dataIndex){
     return true;
 }
 
+// TODO - this is a bit hardcoded, make it less so
+bool MuJoCoHelper::forwardSimulator(int dataIndex){
+
+    mjData *d = returnDesiredDataState(dataIndex);
+
+    mj_forwardSkip(model, d, mjSTAGE_NONE, 1);
+
+    return true;
+}
+
 // --------------------------------- Visualization Functions ---------------------------------------
 void MuJoCoHelper::initVisualisation() {
 
@@ -757,8 +770,9 @@ void MuJoCoHelper::initVisualisation() {
     mjr_defaultContext(&con);
     mjv_defaultScene(&scn);
 
-    cam.distance = 1.66269;
+//    cam.distance = 1.66269;
     cam.azimuth = -118.7;
+    cam.elevation = 3;
     cam.elevation = -34.7;
     cam.lookat[0] = 0.4027;
     cam.lookat[1] = 0.0169;
@@ -823,12 +837,10 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
     // cout << "fileName in init: " << fileName << endl;
     model = mj_loadXML(fileName, NULL, error, 1000);
-    cout << "any errors? " << error << endl;
 
     model->opt.timestep = timestep;
 
     if( !model ) {
-
         printf("%s\n", error);
     }
 
@@ -840,13 +852,5 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
 //        cout << "fd_data size: " << fd_data.size() << endl;
         fd_data[i] = mj_makeData(model);
     }
-
-    fd_data[0]->qpos[0] = 1.0;
-    cout << "fd_data->qpos[0]: " << fd_data[0]->qpos[0] << endl;
-    mj_step(model, fd_data[0]);
-    cout << "fd_data->qpos[0]: " << fd_data[0]->qpos[0] << endl;
-    cout << "fd_data[15]->qpos[0]: " << fd_data[15]->qpos[0] << endl;
-    cout << "mehmeh" << endl;
-
     //model->opt.gravity[2] = 0;
 }

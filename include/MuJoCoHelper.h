@@ -64,6 +64,8 @@ public:
 
     void initSimulator(double timestep, const char* fileName) override;
     bool stepSimulator(int steps, int dataIndex) override;
+    bool forwardSimulator(int dataIndex) override;
+
     void setupMuJoCoWorld(double timestep, const char* fileName);
 
     bool setBodyPosition(string bodyName, m_point position);
