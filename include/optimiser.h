@@ -65,6 +65,7 @@ public:
     double time_getDerivs_ms = 0.0f;
     double time_backwardsPass_ms = 0.0f;
     double time_forwardsPass_ms = 0.0f;
+    bool verboseOutput = false;
 
 
 protected:

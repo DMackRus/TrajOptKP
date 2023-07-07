@@ -21,7 +21,7 @@ public:
     std::vector<m_point> initControls_createAllWayPoints(std::vector<m_point> mainWayPoints, std::vector<int> wayPointsTiming);
     std::vector<MatrixXd> generate_initControls_fromWayPoints(std::vector<m_point> initPath);
 
-    bool taskComplete(int dataIndex) override;
+    bool taskComplete(int dataIndex, double &dist) override;
 
 
 

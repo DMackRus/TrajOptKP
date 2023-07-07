@@ -155,7 +155,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     Q_terminal.resize(stateVectorSize);
     Q_terminal.setZero();
     for(int i = 0; i < dof; i++){
-        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 1000;
+        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 10;
     }
 
    cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
@@ -202,7 +202,7 @@ void modelTranslator::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last,
     l_uu = 2 * R;
 }
 
-bool modelTranslator::taskComplete(int dataIndex){
+bool modelTranslator::taskComplete(int dataIndex, double &dist){
     return false;
 }
 

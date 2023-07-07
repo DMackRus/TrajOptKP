@@ -2,7 +2,6 @@
 #include "optimiser.h"
 
 optimiser::optimiser(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, fileHandler *_yamlReader, differentiator *_differentiator){
-    std::cout << "initialised optimiser \n";
     activeModelTranslator = _modelTranslator;
     activePhysicsSimulator = _physicsSimulator;
     activeYamlReader = _yamlReader;
@@ -101,7 +100,9 @@ void optimiser::generateDerivatives(){
     }
 
     double percentDerivsCalculated = ((double) totalNumColumnsDerivs / (double)numberOfTotalDerivs) * 100.0f;
-    cout << "percentage of derivs calculated: " << percentDerivsCalculated << endl;
+    if(verboseOutput){
+        cout << "percentage of derivs calculated: " << percentDerivsCalculated << endl;
+    }
 
 
 //        A.resize(initControls.size());

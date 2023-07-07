@@ -7,7 +7,7 @@ pandaReaching::pandaReaching(): modelTranslator(){
 
 }
 
-bool pandaReaching::taskComplete(int dataIndex){
+bool pandaReaching::taskComplete(int dataIndex, double &dist){
     double cumError = 0.0f;
     MatrixXd X = returnStateVector(dataIndex);
 
@@ -15,6 +15,8 @@ bool pandaReaching::taskComplete(int dataIndex){
         double diff = X_desired(i) - X(i);
         cumError += diff;
     }
+
+    dist = cumError;
 
     if(cumError < 0.05){
         return true;

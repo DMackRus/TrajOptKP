@@ -132,8 +132,11 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 //
 // -------------------------------------------------------------------------------------------------------
 std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
-    cout << " ---------------- optimisation begins -------------------" << endl;
-    cout << "minN " << min_interval << "  keypointsMethod: " <<  keyPointsMethodsStrings[keyPointsMethod] << "  interpMethod: " << interpMethodsStrings[interpMethod] << endl;
+    if(verboseOutput) {
+        cout << " ---------------- optimisation begins -------------------" << endl;
+        cout << "minN " << min_interval << "  keypointsMethod: " << keyPointsMethodsStrings[keyPointsMethod]
+             << "  interpMethod: " << interpMethodsStrings[interpMethod] << endl;
+    }
     numberOfTotalDerivs = _horizonLength * dof;
 
     auto optStart = high_resolution_clock::now();
@@ -229,8 +232,11 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
             time_forwardsPass_ms = fpDuration.count() / 1000.0f;
 
-            cout << "| derivs: " << time_getDerivs_ms << " | backwardsPass: " << time_backwardsPass_ms << " | forwardsPass: " << time_forwardsPass_ms << " ms |\n";
-            cout << "| Cost went from " << oldCost << " ---> " << newCost << " | \n";
+            if(verboseOutput){
+                cout << "| derivs: " << time_getDerivs_ms << " | backwardsPass: " << time_backwardsPass_ms << " | forwardsPass: " << time_forwardsPass_ms << " ms |\n";
+                cout << "| Cost went from " << oldCost << " ---> " << newCost << " | \n";
+            }
+
 
             costHistory.push_back(newCost);
 
@@ -257,18 +263,18 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             }
 
             if(convergeThisIteration){
-                std::cout << "converged after " << i << " iterations" << std::endl;
+//                std::cout << "converged after " << i << " iterations" << std::endl;
                 break;
             }
 
             if(converged && (i >= minIter)){
                 if(approximate_backwardsPass){
-                    std::cout << "converged with approximate bp, do one more iteration with normal bp \n";
+//                    std::cout << "converged with approximate bp, do one more iteration with normal bp \n";
                     convergeThisIteration = true;
                     lambda = 0.1;
                 }
                 else{
-                    std::cout << "converged after " << i << " iterations" << std::endl;
+//                    std::cout << "converged after " << i << " iterations" << std::endl;
                     break;
                 }
 
@@ -285,8 +291,10 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
     optTime = optDuration.count() / 1000.0f;
-    cout << "optimisation took: " << optTime<< " ms\n";
-    cout << " ---------------- optimisation complete -------------------" << endl;
+    if(verboseOutput){
+        cout << "optimisation took: " << optTime<< " ms\n";
+        cout << " ---------------- optimisation complete -------------------" << endl;
+    }
 
     // Load the initial data back into main data
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
