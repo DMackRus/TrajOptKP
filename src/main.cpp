@@ -897,10 +897,10 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalOptimisation
             }
         }
 
-//        if(visualCounter > 10){
-//            activeVisualiser->render(label);
-//            visualCounter = 0;
-//        }
+        if(visualCounter > 10){
+            activeVisualiser->render(label);
+            visualCounter = 0;
+        }
 
         overallTaskCounter++;
 
@@ -940,28 +940,28 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalOptimisation
     cout << "| Avg percentage of derivatives calculated: " << avgPercentDerivs << "\n";
     cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
 
-//    while(activeVisualiser->windowOpen()){
-//        if(activeVisualiser->replayTriggered){
-//            activeVisualiser->replayTriggered = false;
-//
-//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-//            int controlCounter = 0;
-//            while(controlCounter < activeVisualiser->replayControls.size()){
-//                MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
-//
-//                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
-//
-//                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-//
-//                controlCounter++;
-//
-//                if(controlCounter % 5 == 0){
-//                    activeVisualiser->render("replaying");
-//                }
-//            }
-//        }
-//        activeVisualiser->render("replay_mode");
-//    }
+    while(activeVisualiser->windowOpen()){
+        if(activeVisualiser->replayTriggered){
+            activeVisualiser->replayTriggered = false;
+
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+            int controlCounter = 0;
+            while(controlCounter < activeVisualiser->replayControls.size()){
+                MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
+
+                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+
+                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+                controlCounter++;
+
+                if(controlCounter % 5 == 0){
+                    activeVisualiser->render("replaying");
+                }
+            }
+        }
+        activeVisualiser->render("replay_mode");
+    }
 }
 
 void generateTestingData_MPC(){
