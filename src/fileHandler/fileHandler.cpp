@@ -431,7 +431,7 @@ void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
 
 void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<bool>> sucesses,
                          std::vector<std::vector<double>> finalDist, std::vector<std::vector<double>> executionTimes, std::vector<std::vector<double>> optimisationTimes,
-                         std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<double>> avgPercentDerivs){
+                         std::vector<std::vector<double>> avgTimeGettingDerivs,std::vector<std::vector<double>> avgTimeBP, std::vector<std::vector<double>> avgTimeFP, std::vector<std::vector<double>> avgPercentDerivs){
     std::string rootPath = projectParentPath;
     std::string filename = rootPath + taskPrefix + "_testingData.csv";
 
@@ -439,6 +439,9 @@ void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::s
 
     // Make header
     for(int i = 0; i < methodNames.size(); i++){
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
@@ -453,6 +456,8 @@ void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::s
         fileOutput << "execution time" << ",";
         fileOutput << "optimisation time" << ",";
         fileOutput << "avgTimeDerivs" << ",";
+        fileOutput << "avgTimeBP" << ",";
+        fileOutput << "avgTimeFP" << ",";
         fileOutput << "avgpercent derivs" << ",";
     }
     fileOutput << std::endl;
@@ -462,17 +467,18 @@ void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::s
     for(int i = 0; i < numTrajecs; i++){
         for(int j = 0; j < methodNames.size(); j++){
             if(sucesses[i][j]){
-                fileOutput << "True" << ",";
+                fileOutput << 1 << ",";
             }
             else{
-                fileOutput << "False" << ",";
+                fileOutput << 0 << ",";
             }
             fileOutput << finalDist[i][j] << ",";
             fileOutput << executionTimes[i][j] << ",";
             fileOutput << optimisationTimes[i][j] << ",";
-            fileOutput << avgPercentDerivs[i][j] << ",";
             fileOutput << avgTimeGettingDerivs[i][j] << ",";
-
+            fileOutput << avgTimeBP[i][j] << ",";
+            fileOutput << avgTimeFP[i][j] << ",";
+            fileOutput << avgPercentDerivs[i][j] << ",";
         }
         fileOutput << std::endl;
     }

@@ -50,7 +50,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = adaptive_jerk;
+int keyPointMethod = setInterval;
 //int keyPointMethod = setInterval;
 
 void showInitControls();
@@ -209,7 +209,7 @@ int main(int argc, char **argv) {
         double __, ___, ____, _____, ______, _7;
         double finalDist;
         activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1500, 150, 400);
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1800, 150, 400);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -814,37 +814,29 @@ void MPCContinous(){
 
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
 // optimiser settings. This function can then return necessary testing data for us to store
-void MPCUntilComplete(bool &sucess, double &finalDist, double &totalOptimisationTime, double &totalExecutionTime, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
+void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTime, double &totalOptimisationTime, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
     bool taskComplete = false;
     int visualCounter = 0;
     int overallTaskCounter = 0;
     int reInitialiseCounter = 0;
     const char* label = "MPC until complete";
-//    const int MAX_TASK_TIME = 2000;
-//    const int REPLAN_TIME = 150;
-//    const int OPT_HORIZON = 400;
 
     activeVisualiser->replayControls.clear();
 
     totalOptimisationTime = 0.0f;
     totalExecutionTime = 0.0f;
+    finalDist = 0.0f;
     std::vector<double> timeGettingDerivs;
     std::vector<double> timeBackwardsPass;
     std::vector<double> timeForwardsPass;
     std::vector<double> percentagesDerivsCalculated;
 
-    std::vector<MatrixXd> setupControls;
     std::vector<MatrixXd> optimisedControls;
 
     // Instantiate init controls
     std::vector<MatrixXd> initOptimisationControls;
 
-//    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-//    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-//    activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
-
-//    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
     initOptimisationControls = activeModelTranslator->createInitOptimisationControls(OPT_HORIZON);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
@@ -884,7 +876,7 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalOptimisation
 //
 //
 //                optimisedControls = initOptimisationControls;
-                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 4, 2, OPT_HORIZON);
+                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 3, 1, OPT_HORIZON);
                 reInitialiseCounter = 0;
 
                 totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
@@ -940,28 +932,28 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalOptimisation
     cout << "| Avg percentage of derivatives calculated: " << avgPercentDerivs << "\n";
     cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
 
-    while(activeVisualiser->windowOpen()){
-        if(activeVisualiser->replayTriggered){
-            activeVisualiser->replayTriggered = false;
-
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-            int controlCounter = 0;
-            while(controlCounter < activeVisualiser->replayControls.size()){
-                MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
-
-                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
-
-                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-
-                controlCounter++;
-
-                if(controlCounter % 5 == 0){
-                    activeVisualiser->render("replaying");
-                }
-            }
-        }
-        activeVisualiser->render("replay_mode");
-    }
+//    while(activeVisualiser->windowOpen()){
+//        if(activeVisualiser->replayTriggered){
+//            activeVisualiser->replayTriggered = false;
+//
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+//            int controlCounter = 0;
+//            while(controlCounter < activeVisualiser->replayControls.size()){
+//                MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
+//
+//                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+//
+//                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//
+//                controlCounter++;
+//
+//                if(controlCounter % 5 == 0){
+//                    activeVisualiser->render("replaying");
+//                }
+//            }
+//        }
+//        activeVisualiser->render("replay_mode");
+//    }
 }
 
 void generateTestingData_MPC(){
@@ -973,7 +965,7 @@ void generateTestingData_MPC(){
     auto startTime = std::chrono::high_resolution_clock::now();
 
     for(int k = 0; k < 1; k ++) {
-        twoDPushing *myBoxPushing = new twoDPushing(heavyClutter);
+        twoDPushing *myBoxPushing = new twoDPushing(noClutter);
         activeModelTranslator = myBoxPushing;
         activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
@@ -1009,28 +1001,44 @@ void generateTestingData_MPC(){
         std::vector<std::vector<double>> avgTimeForDerivs;
         std::vector<double> avgTimeForDerivsRow;
 
+        std::vector<std::vector<double>> avgTimeBP;
+        std::vector<double> avgTimeBPRow;
+
+        std::vector<std::vector<double>> avgTimeFP;
+        std::vector<double> avgTimeFPRow;
+
         std::vector<std::vector<double>> avgPercentDerivs;
         std::vector<double> avgPercentDerivsRow;
 
-        std::vector<std::string> methodNames = {"baseline", "setInterval10", "setInterval200", "adaptive_jerk_10",
-                                                "adaptive_accel_10", "iterative_error_10"};
+//        std::vector<std::string> methodNames = {"baseline", "setInterval10", "setInterval200", "adaptive_jerk_10",
+//                                                "adaptive_accel_10", "iterative_error_10"};
+//        int numMethods = methodNames.size();
+//        int keyPointMethods[6] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,
+//                                  iterative_error};
+//        int interpMethod[6] = {linear, linear, linear, linear, linear, linear};
+//        int minN[6] = {1, 10, 200, 10, 10, 10};
+//        bool approxBackwardsPass[6] = {false, false, false, false, false, false};
+
+        std::vector<std::string> methodNames = {"setInterval10"};
         int numMethods = methodNames.size();
-        int keyPointMethods[6] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,
-                                  iterative_error};
-        int interpMethod[6] = {linear, linear, linear, linear, linear, linear};
-        int minN[6] = {1, 10, 200, 10, 10, 10};
-        bool approxBackwardsPass[6] = {false, false, false, false, false, false};
+        int keyPointMethods[1] = {setInterval};
+        int interpMethod[1] = {linear};
+        int minN[1] = {10};
+        bool approxBackwardsPass[1] = {false};
 
         auto startTimer = std::chrono::high_resolution_clock::now();
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 2; i++) {
             cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
 
             // Loop through our interpolating derivatives methods
             sucessesRow.clear();
+            finalDistancesRow.clear();
             executionTimeRow.clear();
             optimisationTimeRow.clear();
             avgTimeForDerivsRow.clear();
+            avgTimeBPRow.clear();
+            avgTimeFPRow.clear();
             avgPercentDerivsRow.clear();
 
             MatrixXd startStateVector;
@@ -1066,11 +1074,15 @@ void generateTestingData_MPC(){
                 MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgPercentageDerivs, avgTimeForDerivs,
                                  avgTimeBP, avgTimeFP, 1800, 150, 400);
 
+                cout << "FINAL DIST: " << finalDistance << "\n";
+
                 sucessesRow.push_back(sucess);
                 finalDistancesRow.push_back(finalDistance);
                 executionTimeRow.push_back(executionTime);
                 optimisationTimeRow.push_back(optimisationTime);
                 avgTimeForDerivsRow.push_back(avgTimeForDerivs);
+                avgTimeBPRow.push_back(avgTimeBP);
+                avgTimeFPRow.push_back(avgTimeFP);
                 avgPercentDerivsRow.push_back(avgPercentageDerivs);
 
             }
@@ -1080,6 +1092,8 @@ void generateTestingData_MPC(){
             executionTime.push_back(executionTimeRow);
             optimisationTime.push_back(optimisationTimeRow);
             avgTimeForDerivs.push_back(avgTimeForDerivsRow);
+            avgTimeBP.push_back(avgTimeBPRow);
+            avgTimeFP.push_back(avgTimeFPRow);
             avgPercentDerivs.push_back(avgPercentDerivsRow);
 
             auto currentTime = std::chrono::high_resolution_clock::now();

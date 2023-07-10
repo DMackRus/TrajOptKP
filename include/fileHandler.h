@@ -41,7 +41,7 @@ public:
 
     void saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<bool>> sucesses,
                                    std::vector<std::vector<double>> finalDist, std::vector<std::vector<double>> executionTimes, std::vector<std::vector<double>> optimisationTimes,
-                                   std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<double>> avgPercentDerivs);
+                                   std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<double>> avgTimeBP, std::vector<std::vector<double>> avgTimeFP, std::vector<std::vector<double>> avgPercentDerivs);
 
     int project_display_mode;
     int taskNumber;
