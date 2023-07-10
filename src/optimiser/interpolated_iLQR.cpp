@@ -160,6 +160,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     avgTimePerDerivs = 0.0f;
     numIterationsForConvergence = 0;
 
+    avgTime_getDerivs_ms = 0.0f;
+    avgTime_forwardsPass_ms = 0.0f;
+    avgTime_backwardsPass_ms = 0.0f;
     percentDerivsPerIter.clear();
     time_backwardsPass_ms.clear();
     time_forwardsPass_ms.clear();

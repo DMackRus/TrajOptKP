@@ -49,7 +49,6 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
         }
     }
 
-    cout << "state vector size: " << stateVectorSize << endl;
     dof = stateVectorSize / 2;
     X_desired.resize(stateVectorSize, 1);
     X_start.resize(stateVectorSize, 1);
@@ -155,10 +154,10 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     Q_terminal.resize(stateVectorSize);
     Q_terminal.setZero();
     for(int i = 0; i < dof; i++){
-        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 10;
+        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 100;
     }
 
-   cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
+//   cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
 }
 
 double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal){

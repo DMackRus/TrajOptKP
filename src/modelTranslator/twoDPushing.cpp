@@ -129,9 +129,9 @@ MatrixXd twoDPushing::returnRandomStartState(){
     }
     else if(clutterLevel == heavyClutter){
 
-        std::string objectNames[7] = {"mediumCylinder", "bigBox", "obstacle1","obstacle2", "obstacle3", "obstacle4", "obstacle5"};
+        std::string objectNames[6] = {"mediumCylinder", "bigBox", "obstacle1","obstacle2", "obstacle3", "obstacle4"};
 
-        for(int i = 0; i < 7; i++){
+        for(int i = 0; i < 6; i++){
             bool validPlacement = false;
             float sizeX = 0.08;
             float sizeY = 0.08;
@@ -160,6 +160,36 @@ MatrixXd twoDPushing::returnRandomStartState(){
                     objectXPos.push_back(randX);
                     objectYPos.push_back(randY);
                 }
+            }
+        }
+
+        bool validPlacement = false;
+        float sizeX = 0.08;
+        float sizeY = 0.08;
+        while(!validPlacement){
+            sizeX += 0.001;
+            sizeY += 0.0005;
+
+            float randX = randFloat(goalX, goalX + sizeX);
+            float randY = randFloat(goalY - sizeY, goalY + sizeY);
+
+            pose_6 objectCurrentPose;
+            pose_6 newObjectPose;
+
+            activePhysicsSimulator->getBodyPose_angle("obstacle5", objectCurrentPose, MASTER_RESET_DATA);
+            newObjectPose = objectCurrentPose;
+            newObjectPose.position(0) = randX;
+            newObjectPose.position(1) = randY;
+            newObjectPose.position(2) = objectCurrentPose.position(2);
+            activePhysicsSimulator->setBodyPose_angle("obstacle5", newObjectPose, MAIN_DATA_STATE);
+
+            if(activePhysicsSimulator->checkBodyForCollisions("obstacle5", MAIN_DATA_STATE)){
+                cout << "invalid placement at : " << randX << ", " << randY << endl;
+            }
+            else{
+                validPlacement = true;
+                objectXPos.push_back(randX);
+                objectYPos.push_back(randY);
             }
         }
 
@@ -210,6 +240,9 @@ MatrixXd twoDPushing::returnRandomGoalState(MatrixXd X0){
 std::vector<MatrixXd> twoDPushing::createInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
 
+    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
+
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
     m_point goalPos;
@@ -219,8 +252,8 @@ std::vector<MatrixXd> twoDPushing::createInitSetupControls(int horizonLength){
     goalPos(0) = X_desired(7);
     goalPos(1) = X_desired(8);
     initControls_mainWayPoints_setup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
-//    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
-//    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
+    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
+    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
 
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = initControls_createAllWayPoints(mainWayPoints, mainWayPointsTimings);
@@ -239,6 +272,9 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
     pose_6 goalobj_startPose;
     activePhysicsSimulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
     activePhysicsSimulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+    MatrixXd test = returnStateVector(MAIN_DATA_STATE);
+    cout << "start state should be!!!: " << test << endl;
+    cout << "goalobj_startPose: " << goalobj_startPose.position(0) << ", " << goalobj_startPose.position(1) << endl;
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -254,7 +290,7 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
 
     // TODO hard coded - get it programmatically? - also made it slightly bigger so trajectory has room to improve
 //    float cylinder_radius = 0.08;
-    float cylinder_radius = 0.1;
+    float cylinder_radius = 0.05;
     float x_cylinder0ffset = cylinder_radius * cos(angle_EE_push);
     float y_cylinder0ffset = cylinder_radius * sin(angle_EE_push);
 
@@ -263,8 +299,8 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
     float intermediatePointY = goalobj_startPose.position(1);
     float intermediatePointX = goalobj_startPose.position(0);
 
-    intermediatePointX = intermediatePointX - 0.15*cos(angle_EE_push);
-    intermediatePointY = intermediatePointY - 0.15*sin(angle_EE_push);
+    intermediatePointX = intermediatePointX - 0.05*cos(angle_EE_push);
+    intermediatePointY = intermediatePointY - 0.05*sin(angle_EE_push);
 //    if(desiredObjectEnd(1) - goalobj_startPose.position(1) > 0){
 //        intermediatePointY = intermediatePointY + y_cylinder0ffset;
 //    }
@@ -278,11 +314,11 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
 //    displayBodyPose.position[1] = intermediatePointY;
     displayBodyPose.position[1] = 100.0f;
     displayBodyPose.position[2] = 0.0f;
-    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MAIN_DATA_STATE);
 
     mainWayPoint(0) = intermediatePointX;
     mainWayPoint(1) = intermediatePointY;
-    mainWayPoint(2) = 0.27f;
+    mainWayPoint(2) = 0.25f;
     mainWayPoints.push_back(mainWayPoint);
     wayPointsTiming.push_back(horizon - 1);
 
@@ -327,8 +363,8 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    activePhysicsSimulator->getBodyPose_angle(EE_name, EE_startPose, MASTER_RESET_DATA);
-    activePhysicsSimulator->getBodyPose_angle(goalObject, goalobj_startPose, MASTER_RESET_DATA);
+    activePhysicsSimulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
+    activePhysicsSimulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -367,11 +403,11 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 //     intermediatePoint(0) = intermediatePointX;
 //     intermediatePoint(1) = intermediatePointY;
 
-    mainWayPoint(0) = intermediatePointX;
-    mainWayPoint(1) = intermediatePointY;
-    mainWayPoint(2) = 0.25f;
-    mainWayPoints.push_back(mainWayPoint);
-    wayPointsTiming.push_back(3 * horizon / 4);
+//    mainWayPoint(0) = intermediatePointX;
+//    mainWayPoint(1) = intermediatePointY;
+//    mainWayPoint(2) = 0.25f;
+//    mainWayPoints.push_back(mainWayPoint);
+//    wayPointsTiming.push_back(3 * horizon / 4);
 
     float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
@@ -429,8 +465,8 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
     pose_7 EE_start_pose;
     pose_6 goalobj_startPose;
-    activePhysicsSimulator->getBodyPose_quat(EEName, EE_start_pose, MASTER_RESET_DATA);
-    activePhysicsSimulator->getBodyPose_angle(goalObjName, goalobj_startPose, MASTER_RESET_DATA);
+    activePhysicsSimulator->getBodyPose_quat(EEName, EE_start_pose, MAIN_DATA_STATE);
+    activePhysicsSimulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
 
     float angle_EE_push;
     float x_diff = X_desired(7) - goalobj_startPose.position(0);
@@ -462,13 +498,11 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
     MatrixXd currentControl(num_ctrl, 1);
     if(myStateVector.robots[0].torqueControlled){
-        MatrixXd robotPos = returnPositionVector(MASTER_RESET_DATA);
+        MatrixXd robotPos = returnPositionVector(MAIN_DATA_STATE);
         for(int i = 0; i < num_ctrl; i++){
             currentControl(i) = robotPos(i);
         }
     }
-
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
 
     for(int i = 0; i < initPath.size(); i++){
         pose_7 currentEEPose;
@@ -484,7 +518,7 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
         
         m_point axisDiff = quat2Axis(quatDiff);
         MatrixXd differenceFromPath(6, 1);
-        float gainsTorque[6] = {100, 100, 100, 500, 500, 500};
+        float gainsTorque[6] = {100, 100, 200, 100, 100, 100};
         float gainsPositionControl[6] = {10000, 10000, 30000, 5000, 5000, 5000};
 
         for(int j = 0; j < 3; j++){
