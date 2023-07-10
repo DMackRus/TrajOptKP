@@ -62,9 +62,12 @@ public:
     bool filteringMatrices = true;
     bool approximate_backwardsPass = false;
 
-    double time_getDerivs_ms = 0.0f;
-    double time_backwardsPass_ms = 0.0f;
-    double time_forwardsPass_ms = 0.0f;
+    std::vector<double> time_getDerivs_ms;
+    double avgTime_getDerivs_ms = 0.0f;
+    std::vector<double> time_backwardsPass_ms;
+    double avgTime_backwardsPass_ms = 0.0f;
+    std::vector<double> time_forwardsPass_ms;
+    double avgTime_forwardsPass_ms = 0.0f;
     bool verboseOutput = true;
 
 

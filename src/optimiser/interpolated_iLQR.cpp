@@ -159,6 +159,11 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     avgPercentDerivs = 0;
     avgTimePerDerivs = 0.0f;
     numIterationsForConvergence = 0;
+
+    percentDerivsPerIter.clear();
+    time_backwardsPass_ms.clear();
+    time_forwardsPass_ms.clear();
+    time_getDerivs_ms.clear();
     // ------------------------------------------------------------------------
 
     oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
@@ -219,7 +224,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         }
         auto bp_stop = high_resolution_clock::now();
         auto bpDuration = duration_cast<microseconds>(bp_stop - bp_start);
-        time_backwardsPass_ms = bpDuration.count() / 1000.0f;
+
+        time_backwardsPass_ms.push_back(bpDuration.count() / 1000.0f);
 //        cout << "K[1000] " << K[1000] << endl;
 
         if(!lambdaExit){
@@ -230,10 +236,10 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             newCost = forwardsPassParallel(oldCost, costReduced);
             auto fp_stop = high_resolution_clock::now();
             auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
-            time_forwardsPass_ms = fpDuration.count() / 1000.0f;
+            time_forwardsPass_ms.push_back(fpDuration.count() / 1000.0f);
 
             if(verboseOutput){
-                cout << "| derivs: " << time_getDerivs_ms << " | backwardsPass: " << time_backwardsPass_ms << " | forwardsPass: " << time_forwardsPass_ms << " ms |\n";
+                cout << "| derivs: " << time_getDerivs_ms[i] << " | backwardsPass: " << time_backwardsPass_ms[i] << " | forwardsPass: " << time_forwardsPass_ms[i] << " ms |\n";
                 cout << "| Cost went from " << oldCost << " ---> " << newCost << " | \n";
             }
 
@@ -296,6 +302,18 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         cout << " ---------------- optimisation complete -------------------" << endl;
     }
 
+    for(int i = 0; i < time_getDerivs_ms.size(); i++){
+        avgTime_getDerivs_ms += time_getDerivs_ms[i];
+        avgTime_backwardsPass_ms += time_backwardsPass_ms[i];
+        avgTime_forwardsPass_ms += time_forwardsPass_ms[i];
+        avgPercentDerivs += percentDerivsPerIter[i];
+    }
+
+    avgTime_getDerivs_ms /= time_getDerivs_ms.size();
+    avgTime_backwardsPass_ms /= time_backwardsPass_ms.size();
+    avgTime_forwardsPass_ms /= time_forwardsPass_ms.size();
+    avgPercentDerivs /= percentDerivsPerIter.size();
+
     // Load the initial data back into main data
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
@@ -318,8 +336,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         }
 
     }
-
-
 
     return optimisedControls;
 }

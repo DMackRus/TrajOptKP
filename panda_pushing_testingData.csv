@@ -1,4 +1,4 @@
-setInterval10,setInterval10,setInterval10,setInterval10,setInterval10,setInterval10,
-sucess,final dist,execution time,optimisation time,avgTimeDerivs,avgpercent derivs,
-False,0.124132,7.204,6.06133,44.9541,10.25,
-False,0.149315,7.204,5.63093,45.4002,10.25,
+setInterval10,setInterval10,setInterval10,setInterval10,setInterval10,setInterval10,setInterval10,setInterval10,
+sucess,final dist,execution time,optimisation time,avgTimeDerivs,avgTimeBP,avgTimeFP,avgpercent derivs,
+0,0.124132,7.204,4.73709,82.5098,175.126,73.6006,10.25,
+0,0.149315,7.204,4.73129,128.48,187.465,80.4619,10.25,

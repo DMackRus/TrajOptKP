@@ -874,17 +874,16 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
 //                initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
 //                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 //
-//
 //                optimisedControls = initOptimisationControls;
                 optimisedControls = activeOptimiser->optimise(0, optimisedControls, 3, 1, OPT_HORIZON);
                 reInitialiseCounter = 0;
 
                 totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
                 // These all currently assume only one iteration of optimisation
-                timeGettingDerivs.push_back(activeOptimiser->time_getDerivs_ms);
-                timeBackwardsPass.push_back(activeOptimiser->time_backwardsPass_ms);
-                timeForwardsPass.push_back(activeOptimiser->time_forwardsPass_ms);
-                percentagesDerivsCalculated.push_back(activeOptimiser->percentDerivsPerIter[0]);
+                timeGettingDerivs.push_back(activeOptimiser->avgTime_getDerivs_ms);
+                timeBackwardsPass.push_back(activeOptimiser->avgTime_backwardsPass_ms);
+                timeForwardsPass.push_back(activeOptimiser->avgTime_forwardsPass_ms);
+                percentagesDerivsCalculated.push_back(activeOptimiser->avgPercentDerivs);
 
             }
         }
@@ -1071,10 +1070,8 @@ void generateTestingData_MPC(){
                 activeOptimiser->setupTestingExtras(i, interpMethod[j], keyPointMethods[j], minN[j],
                                                     approxBackwardsPass[j]);
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
-                MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgPercentageDerivs, avgTimeForDerivs,
+                MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgTimeForDerivs, avgPercentageDerivs,
                                  avgTimeBP, avgTimeFP, 1800, 150, 400);
-
-                cout << "FINAL DIST: " << finalDistance << "\n";
 
                 sucessesRow.push_back(sucess);
                 finalDistancesRow.push_back(finalDistance);
@@ -1100,17 +1097,12 @@ void generateTestingData_MPC(){
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTimer).count();
 
 
-            cout << "Time taken so far: " << duration << "ms" << endl;
+            cout << "Time taken so far: " << duration/ 1000.0f << " s" << endl;
         }
-
         // Save data to csv
         yamlReader->saveResultsData_MPC(activeModelTranslator->modelName, methodNames, sucesses, finalDistances, executionTime,
-                                        optimisationTime, avgTimeForDerivs, avgPercentDerivs);
+                                        optimisationTime, avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
     }
-
-
-
-
 }
 
 void keyboardControl(){

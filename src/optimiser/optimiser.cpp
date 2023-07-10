@@ -117,7 +117,7 @@ void optimiser::generateDerivatives(){
 
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
-    time_getDerivs_ms = linDuration.count() / 1000.0f;
+    time_getDerivs_ms.push_back(linDuration.count() / 1000.0f);
 
     percentDerivsPerIter.push_back(percentDerivsCalculated);
     timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
