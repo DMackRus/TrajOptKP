@@ -50,7 +50,7 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = adaptive_jerk;
+int keyPointMethod = setInterval;
 //int keyPointMethod = setInterval;
 
 void showInitControls();
@@ -211,7 +211,10 @@ int main(int argc, char **argv) {
         activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1800, 100, 800);
+
+        // No clutter - 1800, 20, 1000
+        // Heavy clutter - 1800, 100, 800
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1800, 20, 1000);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
