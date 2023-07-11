@@ -10,6 +10,6 @@ robots:
     startPos: [2, 0]
     goalPos: [3.1415, 3.1415]
     jointPosCosts: [0.2, 0.4]
-    jointVelCosts: [0.001, 0.001]
+    jointVelCosts: [0, 0]
     jointControlCosts: [0.1, 0.1]
     jointJerkThresholds: [0.002, 0.002]

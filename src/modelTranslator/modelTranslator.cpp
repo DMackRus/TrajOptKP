@@ -154,7 +154,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     Q_terminal.resize(stateVectorSize);
     Q_terminal.setZero();
     for(int i = 0; i < dof; i++){
-        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 100;
+        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 10;
     }
 
 //   cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
@@ -207,6 +207,7 @@ bool modelTranslator::taskComplete(int dataIndex, double &dist){
 
 std::vector<MatrixXd> modelTranslator::createInitSetupControls(int horizonLength){
     std::vector<MatrixXd> emptyInitSetupControls;
+    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     return emptyInitSetupControls;
 }
 

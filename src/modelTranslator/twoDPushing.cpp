@@ -308,14 +308,6 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
 //        intermediatePointY = intermediatePointY - y_cylinder0ffset;
 //    }
 
-    std::string goalMarkerName = "display_intermediate";
-    pose_6 displayBodyPose;
-    displayBodyPose.position[0] = intermediatePointX;
-//    displayBodyPose.position[1] = intermediatePointY;
-    displayBodyPose.position[1] = 100.0f;
-    displayBodyPose.position[2] = 0.0f;
-    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MAIN_DATA_STATE);
-
     mainWayPoint(0) = intermediatePointX;
     mainWayPoint(1) = intermediatePointY;
     mainWayPoint(2) = 0.25f;
@@ -328,12 +320,12 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
     std::vector<MatrixXd> initControls;
 
     // Set the goal position so that we can see where we are pushing to
-    std::string goalMarkerName = "display_goal";
-    pose_6 displayBodyPose;
-    displayBodyPose.position[0] = X_desired(7);
-    displayBodyPose.position[1] = X_desired(8);
-    displayBodyPose.position[2] = 0.0f;
-    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+//    std::string goalMarkerName = "display_goal";
+//    pose_6 displayBodyPose;
+//    displayBodyPose.position[0] = X_desired(7);
+//    displayBodyPose.position[1] = X_desired(8);
+//    displayBodyPose.position[2] = 0.0f;
+//    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through

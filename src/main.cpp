@@ -273,30 +273,8 @@ void genericTesting(){
     MatrixXd Q_uu(num_ctrl, num_ctrl);
     MatrixXd Q_ux(num_ctrl, 2*dof);
 
-    //set threads to 1
-    Eigen::setNbThreads(1);
-    int n  = Eigen::nbThreads( );
-    cout << "number of threads: " << n << endl;
-
     // Simulate a backwards pass for arbitrary state vector size and time it
     auto timeStart = std::chrono::high_resolution_clock::now();
-
-//    int bigNum = 1000;
-//
-//    MatrixXd test1(bigNum, bigNum);
-//    test1.setOnes();
-//    MatrixXd test2(bigNum, bigNum);
-//    test2.setOnes();
-//
-//    MatrixXd result(bigNum, bigNum);
-//
-//
-//    for(int i = 0; i < 10; i++){
-//        result = test1 * test2;
-//        cout << "done 1" << endl;
-//
-//    }
-
 
     for(int t = 1500; t > 0; t--){
 
@@ -717,6 +695,9 @@ void optimiseOnceandShow(){
 //    MatrixXd test = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 //    cout << "test: " << test << endl;
 
+    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
 //    test = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
@@ -880,7 +861,7 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
 //                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 //
 //                optimisedControls = initOptimisationControls;
-                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 2, 0, OPT_HORIZON);
+                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 4, 1, OPT_HORIZON);
                 reInitialiseCounter = 0;
 
                 totalOptimisationTime += activeOptimiser->optTime / 1000.0f;

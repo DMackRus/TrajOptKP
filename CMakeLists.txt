@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.0.2)
 project(automaticTOTaskSpecification)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O1")
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O1")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
 get_filename_component(PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
@@ -225,6 +225,10 @@ if (TARGET Eigen3::Eigen)
 else()
     message(STATUS "could not find eigen library")
 endif (TARGET Eigen3::Eigen)
+
+# speed up eigen
+#add_definitions(-DEIGEN_NO_DEBUG)
+#add_definitions(-DEIGEN_DONT_PARALLELIZE)
 
 set(Mujoco_INCLUDE_DIRS ${PARENT_DIR}/mujocoLib/include)
 file(GLOB LIB_MUJOCO ${PARENT_DIR}/mujocoLib/lib/libmujoco.so.2.3.2)

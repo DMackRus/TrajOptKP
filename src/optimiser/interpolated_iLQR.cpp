@@ -355,12 +355,13 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
 
     double timeInverse = 0.0f;
 
+    MatrixXd Q_x(2*dof, 1);
+    MatrixXd Q_u(num_ctrl, 1);
+    MatrixXd Q_xx(2*dof, 2*dof);
+    MatrixXd Q_uu(num_ctrl, num_ctrl);
+    MatrixXd Q_ux(num_ctrl, 2*dof);
+
     for(int t = horizonLength - 1; t > -1; t--){
-        MatrixXd Q_x(2*dof, 1);
-        MatrixXd Q_u(num_ctrl, 1);
-        MatrixXd Q_xx(2*dof, 2*dof);
-        MatrixXd Q_uu(num_ctrl, num_ctrl);
-        MatrixXd Q_ux(num_ctrl, 2*dof);
 
 //        cout << "t: " << t << endl;
 //        cout << "f_x[t] " << A[t] << endl;
@@ -368,15 +369,15 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
 
         Quu_pd_check_counter++;
 
-        Q_u = l_u[t] + (B[t].transpose() * V_x);
-
         Q_x = l_x[t] + (A[t].transpose() * V_x);
 
-        Q_ux = (B[t].transpose() * (V_xx * A[t]));
+        Q_u = l_u[t] + (B[t].transpose() * V_x);
+
+        Q_xx = l_xx[t] + (A[t].transpose() * (V_xx * A[t]));
 
         Q_uu = l_uu[t] + (B[t].transpose() * (V_xx * B[t]));
 
-        Q_xx = l_xx[t] + (A[t].transpose() * (V_xx * A[t]));
+        Q_ux = (B[t].transpose() * (V_xx * A[t]));
 
         MatrixXd Q_uu_reg = Q_uu.replicate(1, 1);
 
@@ -393,19 +394,26 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
         }
 
         //  time this using chrono
-        auto timeStart = std::chrono::high_resolution_clock::now();
+//        auto timeStart = std::chrono::high_resolution_clock::now();
 
         auto temp = (Q_uu_reg).ldlt();
         MatrixXd I(num_ctrl, num_ctrl);
         I.setIdentity();
         MatrixXd Q_uu_inv = temp.solve(I);
 
-        auto timeEnd = std::chrono::high_resolution_clock::now();
-        auto timeTaken = std::chrono::duration_cast<std::chrono::microseconds>(timeEnd - timeStart);
-        timeInverse += timeTaken.count()/ 1000000.0f;
+//        auto timeEnd = std::chrono::high_resolution_clock::now();
+//        auto timeTaken = std::chrono::duration_cast<std::chrono::microseconds>(timeEnd - timeStart);
+//        timeInverse += timeTaken.count()/ 1000000.0f;
 
         k[t] = -Q_uu_inv * Q_u;
         K[t] = -Q_uu_inv * Q_ux;
+
+//        auto temp1 = Q_u.transpose() * Q_uu_inv * Q_ux;
+//        cout << "temp1: " << temp1 << endl;
+//        cout << "Q_x: " << Q_x << endl;
+
+//        V_x = Q_x - (Q_u.transpose() * Q_uu_inv * Q_ux).transpose();
+//        V_xx = Q_xx - (Q_ux.transpose() * Q_uu_inv * Q_ux);
 
         V_x = Q_x + (K[t].transpose() * (Q_uu * k[t])) + (K[t].transpose() * Q_u) + (Q_ux.transpose() * k[t]);
         V_xx = Q_xx + (K[t].transpose() * (Q_uu * K[t])) + (K[t].transpose() * Q_ux) + (Q_ux.transpose() * K[t]);

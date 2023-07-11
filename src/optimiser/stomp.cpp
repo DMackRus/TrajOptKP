@@ -6,7 +6,7 @@ stomp::stomp(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimula
 
     noiseProfile.resize(num_ctrl, 1);
     for(int i = 0; i < num_ctrl; i++){
-        noiseProfile(i) = 0.1;
+        noiseProfile(i) = 0.1f;
     }
 
     for(int i = 0; i < maxHorizon; i++){
@@ -31,7 +31,10 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
 //    if(initialDataIndex != MAIN_DATA_STATE){
 //        activePhysicsSimulator->copySystemState(initialDataIndex, 0);
 //    }
-    activePhysicsSimulator->copySystemState(initialDataIndex, 0);
+    activePhysicsSimulator->copySystemState(initialDataIndex, MAIN_DATA_STATE);
+
+//    MatrixXd testStart = activeModelTranslator->returnStateVector(initialDataIndex);
+//    cout << "init state: " << testStart << endl;
 
     MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
     MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
@@ -41,7 +44,7 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
     Xt = activeModelTranslator->returnStateVector(initialDataIndex);
 //    cout << "X_start:" << Xt << endl;
 
-    for(int i = 0; i < initControls.size(); i++){
+    for(int i = 0; i < horizonLength; i++){
         // set controls
         activeModelTranslator->setControlVector(initControls[i], initialDataIndex);
 
@@ -64,8 +67,6 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
 
     }
 
-//    cout << "cost at index: " << initialDataIndex << ": " << cost << endl;
-
     return cost;
 }
 
@@ -78,10 +79,9 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
     for(int i = 0; i < initControls.size(); i++){
         U_best[i] = initControls[i];
     }
-    activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     MatrixXd testStart = activeModelTranslator->returnStateVector(0);
-    cout << "test start: " << testStart << endl;
-    bestCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
+    bestCost = rolloutTrajectory(0, true, initControls);
 //    activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     cout << "cost of initial trajectory: " << bestCost << endl;
 
@@ -146,7 +146,7 @@ MatrixXd stomp::returnNoisyControl(MatrixXd Ut, MatrixXd noise){
 std::vector<MatrixXd> stomp::createNoisyTrajec(std::vector<MatrixXd> nominalTrajectory){
     std::vector<MatrixXd> noisyTrajec;
 
-    for(int i = 0; i < nominalTrajectory.size(); i++){
+    for(int i = 0; i < horizonLength; i++){
         MatrixXd newControl = returnNoisyControl(nominalTrajectory[i], noiseProfile);
         noisyTrajec.push_back(newControl);
     }
