@@ -658,7 +658,7 @@ bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 
     std::unique_ptr<mjData> test;
 
-    mj_forward(model.get(), d_unique.get());
+//    mj_forward(model.get(), d_unique.get());
     savedSystemStatesList.push_back(d_unique);
 
     return true;
@@ -675,7 +675,7 @@ bool MuJoCoHelper::copySystemState(int dataDestinationIndex, int dataSourceIndex
     std::shared_ptr<mjData> dataSource = returnDesiredDataState(dataSourceIndex);
 
     cpMjData(model, dataDestination, dataSource);
-    mj_forward(model.get(), dataDestination.get());
+//    mj_forward(model.get(), dataDestination.get());
 
     return true;
 }

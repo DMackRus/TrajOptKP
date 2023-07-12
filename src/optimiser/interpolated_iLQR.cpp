@@ -68,6 +68,10 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
     X_old[0] = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    cout << "start state: " << X_old[0].transpose() << endl;
+    cout << "initial controls: " << initControls[0].transpose() << endl;
+    cout << "final controls: " << initControls[horizonLength - 1].transpose() << endl;
+
     if(activePhysicsSimulator->checkIfDataIndexExists(0)){
         activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     }
@@ -75,7 +79,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
     }
 
-    for(int i = 0; i < initControls.size(); i++){
+    for(int i = 0; i < horizonLength; i++){
         // set controls
         activeModelTranslator->setControlVector(initControls[i], MAIN_DATA_STATE);
 
@@ -112,8 +116,9 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 //        activeVisualizer->render("gah");
         cost += (stateCost * MUJOCO_DT);
     }
+    cout << "final state: " << Xt.transpose() << endl;
 
-//    cout << "cost of initial trajectory was: " << cost << endl;
+    cout << "cost of initial trajectory was: " << cost << endl;
     initialCost = cost;
     costHistory.push_back(cost);
 
@@ -137,15 +142,15 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     if(verboseOutput) {
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << "minN " << min_interval << "  keypointsMethod: " << keyPointsMethodsStrings[keyPointsMethod]
-             << "  interpMethod: " << interpMethodsStrings[interpMethod] << endl;
+        << "  interpMethod: " << interpMethodsStrings[interpMethod] << endl;
     }
-    numberOfTotalDerivs = _horizonLength * dof;
 
     auto optStart = high_resolution_clock::now();
     
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls;
     horizonLength = _horizonLength;
+    numberOfTotalDerivs = _horizonLength * dof;
     lambda = 0.1;
     double oldCost = 0.0f;
     double newCost = 0.0f;

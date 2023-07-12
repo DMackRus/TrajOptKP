@@ -817,17 +817,23 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
     // Instantiate init controls
     std::vector<MatrixXd> initOptimisationControls;
 
-    initOptimisationControls = activeModelTranslator->createInitOptimisationControls(OPT_HORIZON);
+    int maxHorizon = MAX_TASK_TIME - overallTaskCounter;
+    int horizon = OPT_HORIZON;
+    if(maxHorizon < OPT_HORIZON){
+        horizon = maxHorizon;
+    }
+
+    initOptimisationControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
 //    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
 //    cout << "first control: " << initOptimisationControls[1] << endl;
-//    MatrixXd testStartState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//    MatrixXd testStartState = activeModelTranslator->returnStateVector(0);
 //    cout << "test start state: " << testStartState << endl;
 //    cout << "desired state: " << activeModelTranslator->X_desired << endl;
 
-    optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 3, 3, OPT_HORIZON);
+    optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 3, 2, OPT_HORIZON);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
@@ -855,11 +861,13 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
 //                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 //
 //                optimisedControls = initOptimisationControls;
-                int maxHorizon = MAX_TASK_TIME - overallTaskCounter;
-                int horizon = OPT_HORIZON;
+
+                maxHorizon = MAX_TASK_TIME - overallTaskCounter;
+                horizon = OPT_HORIZON;
                 if(maxHorizon < OPT_HORIZON){
                     horizon = maxHorizon;
                 }
+
                 optimisedControls = activeOptimiser->optimise(0, optimisedControls, 5, 1, horizon);
                 reInitialiseCounter = 0;
 
