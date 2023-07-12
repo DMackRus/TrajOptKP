@@ -212,9 +212,8 @@ int main(int argc, char **argv) {
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
 
-        // No clutter - 1800, 20, 1000
-        // Heavy clutter - 1800, 100, 800
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1800, 20, 1000);
+        // No clutter - 1800 - 500 - 1800
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1800, 500, 1800);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -378,7 +377,7 @@ void onetaskGenerateTestingData(){
 
         yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
-        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+        activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
@@ -469,7 +468,7 @@ void generateTestingData(){
         MatrixXd startStateVector;
         startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
         startStateVector = activeModelTranslator->X_start;
-        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+        activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
         activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 
@@ -481,7 +480,6 @@ void generateTestingData(){
         onetaskGenerateTestingData();
 
     }
-
 
 //    for(int i = 0; i < 1; i ++){
 //        twoDPushing *myTwoDPushing = new twoDPushing(configs[i]);
@@ -524,11 +522,6 @@ void generateTestingData(){
 //        onetaskGenerateTestingData();
 //
 //    }
-
-
-
-
-
 
     auto stopTimer = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimer - startTime);
@@ -699,6 +692,7 @@ void optimiseOnceandShow(){
     activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
 
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
 //    test = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 //    cout << "test 2: " << test << endl;
@@ -861,7 +855,12 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
 //                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 //
 //                optimisedControls = initOptimisationControls;
-                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 4, 1, OPT_HORIZON);
+                int maxHorizon = MAX_TASK_TIME - overallTaskCounter;
+                int horizon = OPT_HORIZON;
+                if(maxHorizon < OPT_HORIZON){
+                    horizon = maxHorizon;
+                }
+                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 5, 1, horizon);
                 reInitialiseCounter = 0;
 
                 totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
@@ -878,6 +877,7 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
             activeVisualiser->render(label);
             visualCounter = 0;
         }
+
 
         overallTaskCounter++;
 
@@ -954,13 +954,6 @@ void generateTestingData_MPC(){
         activeModelTranslator = myBoxPushing;
         activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
-//        MatrixXd startStateVector;
-//        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-//        startStateVector = activeModelTranslator->X_start;
-//        activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
-//        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MASTER_RESET_DATA);
-//        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
-
         activeVisualiser = new visualizer(activeModelTranslator);
         yamlReader->readOptimisationSettingsFile(opt_iLQR);
         iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
@@ -968,8 +961,6 @@ void generateTestingData_MPC(){
                                              yamlReader);
         activeOptimiser = iLQROptimiser;
 
-
-//        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
         // ------------------------- data storage -------------------------------------
         std::vector<std::vector<bool>> sucesses;
         std::vector<bool> sucessesRow;
@@ -995,25 +986,25 @@ void generateTestingData_MPC(){
         std::vector<std::vector<double>> avgPercentDerivs;
         std::vector<double> avgPercentDerivsRow;
 
-//        std::vector<std::string> methodNames = {"baseline", "setInterval10", "setInterval200", "adaptive_jerk_10",
-//                                                "adaptive_accel_10", "iterative_error_10"};
-//        int numMethods = methodNames.size();
-//        int keyPointMethods[6] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,
-//                                  iterative_error};
-//        int interpMethod[6] = {linear, linear, linear, linear, linear, linear};
-//        int minN[6] = {1, 10, 200, 10, 10, 10};
-//        bool approxBackwardsPass[6] = {false, false, false, false, false, false};
-
-        std::vector<std::string> methodNames = {"setInterval10"};
+        std::vector<std::string> methodNames = {"baseline", "setInterval10", "setInterval200", "adaptive_jerk_10",
+                                                "adaptive_accel_10", "iterative_error_10"};
         int numMethods = methodNames.size();
-        int keyPointMethods[1] = {setInterval};
-        int interpMethod[1] = {linear};
-        int minN[1] = {10};
-        bool approxBackwardsPass[1] = {false};
+        int keyPointMethods[6] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,
+                                  iterative_error};
+        int interpMethod[6] = {linear, linear, linear, linear, linear, linear};
+        int minN[6] = {1, 10, 200, 10, 10, 10};
+        bool approxBackwardsPass[6] = {false, false, false, false, false, false};
+
+//        std::vector<std::string> methodNames = {"setInterval10"};
+//        int numMethods = methodNames.size();
+//        int keyPointMethods[1] = {setInterval};
+//        int interpMethod[1] = {linear};
+//        int minN[1] = {10};
+//        bool approxBackwardsPass[1] = {false};
 
         auto startTimer = std::chrono::high_resolution_clock::now();
 
-        for (int i = 0; i < 2; i++) {
+        for (int i = 0; i < 100; i++) {
             cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
 
             // Loop through our interpolating derivatives methods
@@ -1064,7 +1055,7 @@ void generateTestingData_MPC(){
                                                     approxBackwardsPass[j]);
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
                 MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgTimeForDerivs, avgPercentageDerivs,
-                                 avgTimeBP, avgTimeFP, 1800, 150, 400);
+                                 avgTimeBP, avgTimeFP, 1800, 500, 1800);
 
                 sucessesRow.push_back(sucess);
                 finalDistancesRow.push_back(finalDistance);

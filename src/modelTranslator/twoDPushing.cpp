@@ -252,8 +252,8 @@ std::vector<MatrixXd> twoDPushing::createInitSetupControls(int horizonLength){
     goalPos(0) = X_desired(7);
     goalPos(1) = X_desired(8);
     initControls_mainWayPoints_setup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
-    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
-    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
+//    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
+//    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
 
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = initControls_createAllWayPoints(mainWayPoints, mainWayPointsTimings);
@@ -272,9 +272,7 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
     pose_6 goalobj_startPose;
     activePhysicsSimulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
     activePhysicsSimulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
-    MatrixXd test = returnStateVector(MAIN_DATA_STATE);
-    cout << "start state should be!!!: " << test << endl;
-    cout << "goalobj_startPose: " << goalobj_startPose.position(0) << ", " << goalobj_startPose.position(1) << endl;
+//    cout << "goalobj_startPose: " << goalobj_startPose.position(0) << ", " << goalobj_startPose.position(1) << endl;
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -320,12 +318,12 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
     std::vector<MatrixXd> initControls;
 
     // Set the goal position so that we can see where we are pushing to
-//    std::string goalMarkerName = "display_goal";
-//    pose_6 displayBodyPose;
-//    displayBodyPose.position[0] = X_desired(7);
-//    displayBodyPose.position[1] = X_desired(8);
-//    displayBodyPose.position[2] = 0.0f;
-//    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+    std::string goalMarkerName = "display_goal";
+    pose_6 displayBodyPose;
+    displayBodyPose.position[0] = X_desired(7);
+    displayBodyPose.position[1] = X_desired(8);
+    displayBodyPose.position[2] = 0.0f;
+    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through

@@ -21,7 +21,7 @@ bodies:
     goalLinearPos: [0.7, 0.4, 0.0]
     goalAngularPos: [0, 0, 0]
     linearPosCost: [2, 2, 0]
-    linearVelCost: [0.2, 0.2, 0]
+    linearVelCost: [1, 1, 0]
     angularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.01, 0.01, 0.01 ]

@@ -48,6 +48,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
 
     MatrixXd currentState = activeModelTranslator->returnStateVector(physicsHelperId);
     MatrixXd currentControls = activeModelTranslator->returnControlVector(physicsHelperId);
+//    cout << "dataIndex: " << dataIndex << endl;
+//    cout << "current state: " << endl << currentState << endl;
 
     // Initialise sub matrices of A and B matrix
     // ------------ dof x dof ----------------
@@ -80,39 +82,24 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     double costInc = 0.0f;
     double costDec = 0.0f;
 
-    // create a copy of the data ------  TO DO - FIX MUJOCO SPECIFNESS
-//    mjData *saveData;
-//    saveData = mj_makeData(m);
-//    activePhysicsSimulator->cpMjData(m, activePhysicsSimulator->fd_data[tid], activePhysicsSimulator->savedSystemStatesList[dataIndex]);
-
-
-//    if(cols[0] == 0){
-//        MatrixXd testState = activeModelTranslator->returnStateVector(physicsHelperId);
-//        cout << "testState: " << testState << endl;
-//    }
-//    MatrixXd testStateDataIndex = activeModelTranslator->returnStateVector(dataIndex);
-//    cout << "testStateDataIndex: " << testStateDataIndex << endl;
-
 
     // Allocate memory for variables
-//    mjtNum* warmstart = mj_stackAlloc(saveData, dof);
+//    mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->savedSystemStatesList[dataIndex].get(), dof);
+//    mju_copy(warmstart, activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
 
-//    cout << "accel before: " << saveData->qacc[0] << endl;
+
+
 //    // Compute mj_forward once with no skips
-    mj_forward(m, activePhysicsSimulator->fd_data[tid]);
-//    cout << "accel before: " << saveData->qacc[0] << endl;
+//    mj_forward(m, activePhysicsSimulator->savedSystemStatesList[dataIndex].get());
 
     // Compute mj_forward a few times to allow optimiser to get a more accurate value for qacc
     // skips position and velocity stages (TODO LOOK INTO IF THIS IS NEEDED FOR MY METHOD)
-//    cout << "tid: " << tid  << " start"<< endl;
-//    cout << "fd_data size: " << activePhysicsSimulator->fd_data.size() << endl;
 
-    for( int rep=1; rep<5; rep++ )
-        mj_forwardSkip(m, activePhysicsSimulator->fd_data[tid], mjSTAGE_VEL, 1);
+//    for( int rep=1; rep<5; rep++ )
+//        mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex].get(), mjSTAGE_VEL, 1);
 
     // save output for center point and warmstart (needed in forward only)
-//    mju_copy(warmstart, saveData->qacc_warmstart, dof);
-//    cout << "dof: " << m->nv << endl;
+
 
     MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(physicsHelperId);
 
@@ -132,7 +119,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
             activeModelTranslator->setControlVector(perturbedControls, physicsHelperId);
 
             // Integrate the simulator
-//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
 
             // return the  new velcoity vector
@@ -152,7 +139,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
             perturbedControls(i) -= epsControls;
 
             // integrate simulator
-//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
 
             // return the new velocity vector
@@ -198,7 +185,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
             activeModelTranslator->setVelocityVector(perturbedVelocities, physicsHelperId);
 
             // Integrate the simulator
-//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
 
             // return the new velocity vector
@@ -221,7 +208,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
             activeModelTranslator->setVelocityVector(perturbedVelocities, physicsHelperId);
 
             // Integrate the simulatormodel
-//        mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
 
             // Return the new velocity vector
@@ -310,13 +297,15 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
                 MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
                 perturbedPositions(i) += epsPositions;
                 activeModelTranslator->setPositionVector(perturbedPositions, physicsHelperId);
+//                cout << "Perturbed positions positive " << perturbedPositions << endl;cout << "Perturbed positions positive " << perturbedPositions << endl;
 
                 // Integrate the simulator
-//         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//                mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
                 activePhysicsSimulator->stepSimulator(1, physicsHelperId);
 
                 // return the new velocity vector
                 velocityInc = activeModelTranslator->returnVelocityVector(physicsHelperId);
+//                cout << "Velocity positive " << velocityInc << endl;
 
                 if(costDerivs){
                     // Calculate cost
@@ -334,11 +323,12 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
                 activeModelTranslator->setPositionVector(perturbedPositions, physicsHelperId);
 
                 // Integrate the simulator
-//         mju_copy(activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, warmstart, m->nv);
+//                mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
                 activePhysicsSimulator->stepSimulator(1, physicsHelperId);
 
                 // Return the new velocity vector
                 velocityDec = activeModelTranslator->returnVelocityVector(physicsHelperId);
+//                cout << "velocity dec " << velocityDec << endl;
 
                 if(costDerivs){
                     // Calculate cost
@@ -361,9 +351,6 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
             }
         }
     }
-
-
-
 
     if(costDerivs) {
         l_x.block(0, 0, dof, 1) = dqcostdq;
@@ -444,16 +431,16 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
         }
     }
     else {
-//        for (int i = 0; i < dof; i++) {
-//            for (int j = 0; j < dof; j++) {
-//                if (dqveldq(i, j) > 2) {
-//                    dqveldq(i, j) = 2;
-//                }
-//                if (dqveldq(i, j) < -2) {
-//                    dqveldq(i, j) = -2;
-//                }
-//            }
-//        }
+        for (int i = 0; i < dof; i++) {
+            for (int j = 0; j < dof; j++) {
+                if (dqveldq(i, j) > 2) {
+                    dqveldq(i, j) = 2;
+                }
+                if (dqveldq(i, j) < -2) {
+                    dqveldq(i, j) = -2;
+                }
+            }
+        }
     }
 
     // ------------ A -----------------
@@ -475,6 +462,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
             A.block(dof, cols[i] + dof, dof, 1) = dqveldqvel.block(0, cols[i], dof, 1);
         }
     }
+
+//    cout << "A: " << endl << A << endl;
 
 //    A.block(dof, dof, dof, dof) = dqveldqvel;
 //    A.block(dof, 0, dof, dof) = (dqaccdq * MUJOCO_DT);

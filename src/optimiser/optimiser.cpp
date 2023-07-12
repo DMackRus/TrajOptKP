@@ -506,14 +506,14 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
         for(int j = dof; j < activeModelTranslator->stateVectorSize; j++){
             double sqDiff = pow((A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0)),2);
 
-            if(sqDiff > 0.5){
+            if(sqDiff > 0.1){
                 sqDiff = 0.0f;
                 counterTooLarge++;
             }
-            else if(sqDiff < 0.00001){
-                sqDiff = 0.0f;
-                counterTooSmall++;
-            }
+//            else if(sqDiff < 0.00001){
+//                sqDiff = 0.0f;
+//                counterTooSmall++;
+//            }
             else{
 
                 counter++;
@@ -539,7 +539,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 //    cout << "num valid: " << counter << "\n";
 //    cout << "num too small: " << counterTooSmall << "\n";
 //    cout << "num too large: " << counterTooLarge << "\n";
-    if(averageError < 0.005){
+    if(averageError < 0.003){
         approximationGood = true;
     }
     else{
