@@ -68,9 +68,6 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
     X_old[0] = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-    cout << "start state: " << X_old[0].transpose() << endl;
-    cout << "initial controls: " << initControls[0].transpose() << endl;
-    cout << "final controls: " << initControls[horizonLength - 1].transpose() << endl;
 
     if(activePhysicsSimulator->checkIfDataIndexExists(0)){
         activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
@@ -116,9 +113,8 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 //        activeVisualizer->render("gah");
         cost += (stateCost * MUJOCO_DT);
     }
-    cout << "final state: " << Xt.transpose() << endl;
 
-    cout << "cost of initial trajectory was: " << cost << endl;
+//    cout << "cost of initial trajectory was: " << cost << endl;
     initialCost = cost;
     costHistory.push_back(cost);
 
@@ -188,6 +184,11 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             generateDerivatives();
         }
 
+        if(saveTrajecInfomation){
+
+            activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, activeYamlReader->csvRow, horizonLength);
+        }
+
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
         bool validBackwardsPass = false;
         bool lambdaExit = false;
@@ -240,8 +241,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             bool costReduced;
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
             auto fp_start = high_resolution_clock::now();
-            newCost = forwardsPass(oldCost, costReduced);
-//            newCost = forwardsPassParallel(oldCost, costReduced);
+//            newCost = forwardsPass(oldCost, costReduced);
+            newCost = forwardsPassParallel(oldCost, costReduced);
             auto fp_stop = high_resolution_clock::now();
             auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
             time_forwardsPass_ms.push_back(fpDuration.count() / 1000.0f);
@@ -266,7 +267,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             if(newCost < oldCost){
                 oldCost = newCost;
                 costReducedLastIter = true;
-
             }
             else{
                 costReducedLastIter = false;
@@ -417,11 +417,11 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
 //        cout << "temp1: " << temp1 << endl;
 //        cout << "Q_x: " << Q_x << endl;
 
-        V_x = Q_x - (Q_u.transpose() * Q_uu_inv * Q_ux).transpose();
-        V_xx = Q_xx - (Q_ux.transpose() * Q_uu_inv * Q_ux);
+//        V_x = Q_x - (Q_u.transpose() * Q_uu_inv * Q_ux).transpose();
+//        V_xx = Q_xx - (Q_ux.transpose() * Q_uu_inv * Q_ux);
 
-//        V_x = Q_x + (K[t].transpose() * (Q_uu * k[t])) + (K[t].transpose() * Q_u) + (Q_ux.transpose() * k[t]);
-//        V_xx = Q_xx + (K[t].transpose() * (Q_uu * K[t])) + (K[t].transpose() * Q_ux) + (Q_ux.transpose() * K[t]);
+        V_x = Q_x + (K[t].transpose() * (Q_uu * k[t])) + (K[t].transpose() * Q_u) + (Q_ux.transpose() * k[t]);
+        V_xx = Q_xx + (K[t].transpose() * (Q_uu * K[t])) + (K[t].transpose() * Q_ux) + (Q_ux.transpose() * K[t]);
 
         V_xx = (V_xx + V_xx.transpose()) / 2;
 

@@ -25,7 +25,7 @@ public:
     std::vector<double> costHistory;
     int numIters = 0;
 
-    bool saveTrajecInfomation = false;
+    bool saveTrajecInfomation = true;
     bool saveCostHistory = false;
 
 private:

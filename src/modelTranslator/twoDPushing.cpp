@@ -62,6 +62,7 @@ MatrixXd twoDPushing::returnRandomStartState(){
     activePhysicsSimulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MAIN_DATA_STATE);
     activePhysicsSimulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
     activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
+    activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
 
 
     randomGoalX = goalX;
@@ -103,11 +104,12 @@ MatrixXd twoDPushing::returnRandomStartState(){
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MAIN_DATA_STATE);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
                 activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
 
                 if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
@@ -129,48 +131,15 @@ MatrixXd twoDPushing::returnRandomStartState(){
     }
     else if(clutterLevel == heavyClutter){
 
-        std::string objectNames[6] = {"mediumCylinder", "bigBox", "obstacle1","obstacle2", "obstacle3", "obstacle4"};
-
-        for(int i = 0; i < 6; i++){
-            bool validPlacement = false;
-            float sizeX = 0.08;
-            float sizeY = 0.08;
-            while(!validPlacement){
-                sizeX += 0.001;
-                sizeY += 0.0005;
-
-                float randX = randFloat(goalX - sizeX, goalX);
-                float randY = randFloat(goalY - sizeY, goalY + sizeY);
-
-                pose_6 objectCurrentPose;
-                pose_6 newObjectPose;
-
-                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
-                newObjectPose = objectCurrentPose;
-                newObjectPose.position(0) = randX;
-                newObjectPose.position(1) = randY;
-                newObjectPose.position(2) = objectCurrentPose.position(2);
-                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
-
-                if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
-                    cout << "invalid placement at : " << randX << ", " << randY << endl;
-                }
-                else{
-                    validPlacement = true;
-                    objectXPos.push_back(randX);
-                    objectYPos.push_back(randY);
-                }
-            }
-        }
-
         bool validPlacement = false;
         float sizeX = 0.08;
-        float sizeY = 0.08;
+        float sizeY = 0.04;
+        cout << "goal position: " << goalX << ", " << goalY << endl;
         while(!validPlacement){
             sizeX += 0.001;
             sizeY += 0.0005;
 
-            float randX = randFloat(goalX, goalX + sizeX);
+            float randX = randFloat(goalX + 0.1, goalX +  + 0.1 + sizeX);
             float randY = randFloat(goalY - sizeY, goalY + sizeY);
 
             pose_6 objectCurrentPose;
@@ -182,14 +151,54 @@ MatrixXd twoDPushing::returnRandomStartState(){
             newObjectPose.position(1) = randY;
             newObjectPose.position(2) = objectCurrentPose.position(2);
             activePhysicsSimulator->setBodyPose_angle("obstacle5", newObjectPose, MAIN_DATA_STATE);
+            activePhysicsSimulator->setBodyPose_angle("obstacle5", newObjectPose, MASTER_RESET_DATA);
 
             if(activePhysicsSimulator->checkBodyForCollisions("obstacle5", MAIN_DATA_STATE)){
-                cout << "invalid placement at : " << randX << ", " << randY << endl;
+                cout << "first object invalid placement : " << randX << ", " << randY << endl;
             }
             else{
+                activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
+                activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
                 validPlacement = true;
                 objectXPos.push_back(randX);
                 objectYPos.push_back(randY);
+            }
+        }
+
+        std::string objectNames[6] = {"mediumCylinder", "bigBox", "obstacle1","obstacle2", "obstacle3", "obstacle4"};
+
+        for(int i = 0; i < 6; i++){
+            bool validPlacement = false;
+            float sizeX = 0.08;
+            float sizeY = 0.04;
+            while(!validPlacement){
+                sizeX += 0.001;
+                sizeY += 0.0005;
+
+                float randX = randFloat(goalX - sizeX, goalX + (0.5 * sizeX));
+                float randY = randFloat(goalY - sizeY, goalY + sizeY);
+
+                pose_6 objectCurrentPose;
+                pose_6 newObjectPose;
+
+                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                newObjectPose = objectCurrentPose;
+                newObjectPose.position(0) = randX;
+                newObjectPose.position(1) = randY;
+                newObjectPose.position(2) = objectCurrentPose.position(2);
+                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
+
+                if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                    cout << "invalid placement at : " << randX << ", " << randY << endl;
+                }
+                else{
+                    activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
+                    activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
+                    validPlacement = true;
+                    objectXPos.push_back(randX);
+                    objectYPos.push_back(randY);
+                }
             }
         }
 

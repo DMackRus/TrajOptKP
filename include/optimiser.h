@@ -68,7 +68,7 @@ public:
     double avgTime_backwardsPass_ms = 0.0f;
     std::vector<double> time_forwardsPass_ms;
     double avgTime_forwardsPass_ms = 0.0f;
-    bool verboseOutput = true;
+    bool verboseOutput = false;
 
 
 protected:

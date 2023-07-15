@@ -53,7 +53,6 @@ MatrixXd pandaReaching::returnRandomStartState(){
         else{
             validStartState = true;
         }
-
     }
 
     randomStartState << jointPositions[0], jointPositions[1], jointPositions[2], jointPositions[3], jointPositions[4], jointPositions[5], jointPositions[6],
@@ -124,10 +123,10 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
 
             Xt = returnStateVector(MAIN_DATA_STATE);
 
-            for(int i = 0; i < num_ctrl; i++){
-                control(i) = gravCompensation[i];
-                double diff = X_desired(i) - Xt(i);
-                control(i) += diff * gains[i];
+            for(int j = 0; j < num_ctrl; j++){
+                control(j) = gravCompensation[j];
+//                double diff = X_desired(j) - Xt(j);
+//                control(j) += diff * gains[j];
             }
 
             setControlVector(control, MAIN_DATA_STATE);

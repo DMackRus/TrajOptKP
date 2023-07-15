@@ -491,8 +491,10 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 
 //    if(dofIndex == 0){
 //        cout << "matrixMidTrue: \n" << A[midIndex].block(0, dofIndex, dof*2, 1) << "\n";
-////        cout << "matrixMidTrue: \n" << A[midIndex] << "\n";
 //        cout << "matrixMidApprox: \n" << midColumnsApprox[0] << "\n";
+//
+//        cout << "matrixMidTrue: \n" << A[midIndex].block(0, dofIndex + dof, dof*2, 1) << "\n";
+//        cout << "matrixMidApprox: \n" << midColumnsApprox[1] << "\n";
 //    }
 
 
@@ -504,21 +506,23 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     for(int i = 0; i < 2; i++){
         int A_col_indices[2] = {dofIndex, dofIndex + dof};
         for(int j = dof; j < activeModelTranslator->stateVectorSize; j++){
-            double sqDiff = pow((A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0)),2);
+//            double sqDiff = pow((A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0)),2);
 
-            if(sqDiff > 0.1){
-                sqDiff = 0.0f;
-                counterTooLarge++;
-            }
-//            else if(sqDiff < 0.00001){
+            double absdiff = abs(A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0));
+//            if(sqDiff > 0.1){
 //                sqDiff = 0.0f;
-//                counterTooSmall++;
+//                counterTooLarge++;
 //            }
-            else{
-
-                counter++;
-            }
-            errorSum += sqDiff;
+////            else if(sqDiff < 0.00001){
+////                sqDiff = 0.0f;
+////                counterTooSmall++;
+////            }
+//            else{
+//
+//                counter++;
+//            }
+            counter++;
+            errorSum += absdiff;
 
         }
 //        cout << "errorSum: " << errorSum << "\n";

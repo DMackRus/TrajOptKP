@@ -31,9 +31,9 @@ void differentiator::resetModelAfterFiniteDifferencing(){
 }
 
 void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal){
-    double epsControls = 1e-5;
-    double epsVelocities = 1e-5;
-    double epsPositions = 1e-5;
+    double epsControls = 1e-6;
+    double epsVelocities = 1e-6;
+    double epsPositions = 1e-6;
 
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
@@ -45,6 +45,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
 //    cout << "Thread " << tid << " is doing this task" << endl;
 
     activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+    activePhysicsSimulator->forwardSimulator(physicsHelperId);
 
     MatrixXd currentState = activeModelTranslator->returnStateVector(physicsHelperId);
     MatrixXd currentControls = activeModelTranslator->returnControlVector(physicsHelperId);
@@ -420,14 +421,14 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     //dqaccdq.setZero();
     if(USE_DQACC_DQ){
         for(int i = 0; i < dof; i++){
-            for(int j = 0; j < dof; j++){
-                if(dqaccdq(i, j) > DQACCDQ_MAX){
-                    dqaccdq(i, j) = DQACCDQ_MAX;
-                }
-                if(dqaccdq(i, j)< -DQACCDQ_MAX){
-                    dqaccdq(i, j) = -DQACCDQ_MAX;
-                }
-            }
+//            for(int j = 0; j < dof; j++){
+//                if(dqaccdq(i, j) > DQACCDQ_MAX){
+//                    dqaccdq(i, j) = DQACCDQ_MAX;
+//                }
+//                if(dqaccdq(i, j)< -DQACCDQ_MAX){
+//                    dqaccdq(i, j) = -DQACCDQ_MAX;
+//                }
+//            }
         }
     }
     else {

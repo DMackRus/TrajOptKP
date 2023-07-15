@@ -50,8 +50,10 @@ visualizer *activeVisualiser;
 fileHandler *yamlReader;
 
 int interpolationMethod = linear;
-int keyPointMethod = setInterval;
+int keyPointMethod = iterative_error;
 //int keyPointMethod = setInterval;
+
+bool mpcVisualise = false;
 
 void showInitControls();
 void optimiseOnceandShow();
@@ -195,6 +197,7 @@ int main(int argc, char **argv) {
     }
     else if(mode == ILQR_ONCE){
         cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
+        activeOptimiser->verboseOutput = true;
         optimiseOnceandShow();
     }
     else if(mode == MPC_CONTINOUS){
@@ -211,9 +214,11 @@ int main(int argc, char **argv) {
         activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+        activeOptimiser->verboseOutput = true;
+        mpcVisualise = true;
 
         // No clutter - 1800 - 500 - 1800
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1800, 500, 1800);
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2500, 500, 1800);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -881,11 +886,12 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
             }
         }
 
-        if(visualCounter > 10){
-            activeVisualiser->render(label);
-            visualCounter = 0;
+        if(mpcVisualise){
+            if(visualCounter > 10){
+                activeVisualiser->render(label);
+                visualCounter = 0;
+            }
         }
-
 
         overallTaskCounter++;
 
@@ -925,27 +931,29 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
     cout << "| Avg percentage of derivatives calculated: " << avgPercentDerivs << "\n";
     cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
 
-    while(activeVisualiser->windowOpen()){
-        if(activeVisualiser->replayTriggered){
-            activeVisualiser->replayTriggered = false;
+    if(mpcVisualise){
+        while(activeVisualiser->windowOpen()){
+            if(activeVisualiser->replayTriggered){
+                activeVisualiser->replayTriggered = false;
 
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-            int controlCounter = 0;
-            while(controlCounter < activeVisualiser->replayControls.size()){
-                MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
+                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+                int controlCounter = 0;
+                while(controlCounter < activeVisualiser->replayControls.size()){
+                    MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
 
-                activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+                    activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
 
-                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+                    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-                controlCounter++;
+                    controlCounter++;
 
-                if(controlCounter % 5 == 0){
-                    activeVisualiser->render("replaying");
+                    if(controlCounter % 5 == 0){
+                        activeVisualiser->render("replaying");
+                    }
                 }
             }
+            activeVisualiser->render("replay_mode");
         }
-        activeVisualiser->render("replay_mode");
     }
 }
 
@@ -958,7 +966,7 @@ void generateTestingData_MPC(){
     auto startTime = std::chrono::high_resolution_clock::now();
 
     for(int k = 0; k < 1; k ++) {
-        twoDPushing *myBoxPushing = new twoDPushing(noClutter);
+        twoDPushing *myBoxPushing = new twoDPushing(heavyClutter);
         activeModelTranslator = myBoxPushing;
         activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
 
@@ -1063,7 +1071,7 @@ void generateTestingData_MPC(){
                                                     approxBackwardsPass[j]);
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
                 MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgTimeForDerivs, avgPercentageDerivs,
-                                 avgTimeBP, avgTimeFP, 1800, 500, 1800);
+                                 avgTimeBP, avgTimeFP, 2500, 500, 1800);
 
                 sucessesRow.push_back(sucess);
                 finalDistancesRow.push_back(finalDistance);

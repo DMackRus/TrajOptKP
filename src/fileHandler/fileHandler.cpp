@@ -267,7 +267,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     int num_ctrl = B_matrices[0].cols();
 
     // trajectory length
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizonLength - 1; i++){
         // Row
         for(int j = 0; j < (dof); j++){
             // Column
@@ -283,7 +283,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     filename = rootPath + "/B_matrices.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizonLength - 1; i++){
         for(int j = 0; j < (dof); j++){
             for(int k = 0; k < num_ctrl; k++){
                 fileOutput << B_matrices[i](j + dof, k) << ",";
@@ -296,7 +296,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
 
     filename = rootPath + "/states.csv";
     fileOutput.open(filename);
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizonLength - 1; i++){
         for(int j = 0; j < (dof * 2); j++)
         {
             fileOutput << states[i](j) << ",";
@@ -309,7 +309,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     filename = rootPath + "/controls.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizonLength - 1; i++){
         for(int j = 0; j < num_ctrl; j++) {
             fileOutput << controls[i](j) << ",";
         }

@@ -308,6 +308,7 @@ bool MuJoCoHelper::getRobotJointsGravityCompensaionControls(string robotName, ve
     }
 
     std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+    mj_forward(model.get(), d.get());
 
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
         jointsControls.push_back(d->qfrc_bias[startIndex + i]);
@@ -658,7 +659,7 @@ bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 
     std::unique_ptr<mjData> test;
 
-//    mj_forward(model.get(), d_unique.get());
+    mj_forward(model.get(), d_unique.get());
     savedSystemStatesList.push_back(d_unique);
 
     return true;
