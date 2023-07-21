@@ -123,6 +123,7 @@ MatrixXd twoDPushing::returnRandomStartState(){
             validObjectCounter++;
         }
 
+        //1, -0.07, 0, -3, 0.232, 1.34, 3, 0.232,
         randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
                 startX, startY, objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1], objectXPos[2], objectYPos[2],
                 0, 0, 0, 0, 0, 0, 0,
@@ -276,6 +277,7 @@ std::vector<MatrixXd> twoDPushing::createInitSetupControls(int horizonLength){
 void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
     const std::string goalObject = "blueTin";
     const std::string EE_name = "franka_gripper";
+//    const std::string EE_name = "hand";
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
@@ -359,6 +361,7 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
 void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
     const std::string goalObject = "blueTin";
     const std::string EE_name = "franka_gripper";
+//    const std::string EE_name = "hand";
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;

@@ -8,13 +8,6 @@
 MuJoCoHelper::MuJoCoHelper(vector<robot> _robots, vector<string> _bodies): physicsSimulator(_robots, _bodies) {
     std::cout << "created mujoco helper" << std::endl;
 
-    // Get the number of available cores
-    int numCores = std::thread::hardware_concurrency();
-    for(int i = 0; i < numCores; i++){
-        mjData *d = new(mjData);
-        std::shared_ptr<mjData> shared_d(d);
-        fd_data.push_back(shared_d);
-    }
 }
 
 // ------------------------------------    ROBOT UTILITY   --------------------------------------------
@@ -431,6 +424,13 @@ bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex
     for(int i = 0; i < 4; i++){
         pose.quat(i) = d->xquat[(bodyId * 4) + i];
     }
+//    for(int i = 0; i < 3; i++){
+//        pose.position(i) = d->qpos[qposIndex + i];
+//    }
+//
+//    for(int i = 0; i < 4; i++){
+//        pose.quat(i) = d->qpos[qposIndex + 3 + i];
+//    }
 
     return true;
 }
@@ -451,12 +451,18 @@ bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose, int dataInde
     for(int i = 0; i < 3; i++){
         pose.position(i) = d->xpos[(bodyId * 3) + i];
     }
+//    for(int i = 0; i < 3; i++){
+//        pose.position(i) = d->qpos[qposIndex + i];
+//    }
 
     m_quat tempQuat;
 
     for(int i = 0; i < 4; i++){
         tempQuat(i) = d->xquat[(bodyId * 4) + i];
     }
+//    for(int i = 0; i < 4; i++){
+//        tempQuat(i) = d->qpos[qposIndex + 3 + i];
+//    }
 
     m_point euler = quat2Eul(tempQuat);
 
@@ -652,15 +658,14 @@ bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 
     auto saveData = returnDesiredDataState(dataIndex);
 
-    mjData *d = mj_makeData(model.get());
-    auto d_unique = std::shared_ptr<mjData>(d);
+//    mjData *d = mj_makeData(model.get());
+//    auto d_unique = std::shared_ptr<mjData>(d);
 
-    cpMjData(model, d_unique, saveData);
+//    cpMjData(model, d_unique, saveData);
 
-    std::unique_ptr<mjData> test;
-
-    mj_forward(model.get(), d_unique.get());
-    savedSystemStatesList.push_back(d_unique);
+//    mj_forward(model.get(), d_unique.get());
+    savedSystemStatesList.push_back(std::shared_ptr<mjData>(mj_makeData(model.get())));
+    cpMjData(model, savedSystemStatesList.back(), saveData);
 
     return true;
 }
@@ -823,17 +828,36 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     // cout << "fileName in init: " << fileName << endl;
     model = shared_ptr<mjModel>(mj_loadXML(fileName, NULL, error, 1000));
 
-    model->opt.timestep = timestep;
-
     if( !model ) {
         printf("%s\n", error);
     }
+
+    model->opt.timestep = timestep;
+//    model->opt.iterations = 30;
+//    model->opt.tolerance = 1e-1;
+//    cout << "model iterations: " << model->opt.iterations << endl;
+//    cout << "model tolerance : " << model->opt.tolerance << endl;
 
     // make data corresponding to model.get()
     mdata = shared_ptr<mjData>(mj_makeData(model.get()));
     d_master_reset = shared_ptr<mjData>(mj_makeData(model.get()));
 
-    for(int i = 0; i < fd_data.size(); i++){
-        fd_data[i] = shared_ptr<mjData>(mj_makeData(model.get()));
+    // Get the number of available cores
+    int numCores = std::thread::hardware_concurrency();
+    for(int i = 0; i < numCores; i++){
+        fd_data.push_back(shared_ptr<mjData>(mj_makeData(model.get())));
     }
+}
+
+void MuJoCoHelper::initModelForFiniteDifferencing(){
+    save_iterations = model->opt.iterations;
+    save_tolerance = model->opt.tolerance;
+    model->opt.iterations = 30;
+    model->opt.tolerance = 0;
+}
+
+void MuJoCoHelper::resetModelAfterFiniteDifferencing(){
+    model->opt.iterations = save_iterations;
+    model->opt.tolerance = save_tolerance;
+
 }

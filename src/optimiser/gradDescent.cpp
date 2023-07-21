@@ -4,8 +4,8 @@
 
 #include "gradDescent.h"
 
-gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler *_yamlReader) : optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
-    activeDifferentiator = _differentiator;
+gradDescent::gradDescent(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, std::shared_ptr<visualizer> _visualizer, int _maxHorizon, std::shared_ptr<fileHandler> _yamlReader) : optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+//    activeDifferentiator = _differentiator;
     activeVisualizer = _visualizer;
 
     maxHorizon = _maxHorizon;
@@ -214,7 +214,7 @@ std::vector<int> gradDescent::generateEvalWaypoints(std::vector<MatrixXd> trajec
 }
 
 void gradDescent::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
-    activeDifferentiator->initModelForFiniteDifferencing();
+    activePhysicsSimulator->initModelForFiniteDifferencing();
 
     #pragma omp parallel for
     for(int i = 0; i < indices.size(); i++){
@@ -231,7 +231,7 @@ void gradDescent::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
 
     }
 
-    activeDifferentiator->resetModelAfterFiniteDifferencing();
+    activePhysicsSimulator->resetModelAfterFiniteDifferencing();
 
     #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){

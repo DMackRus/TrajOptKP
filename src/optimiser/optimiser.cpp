@@ -1,7 +1,7 @@
 
 #include "optimiser.h"
 
-optimiser::optimiser(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, fileHandler *_yamlReader, differentiator *_differentiator){
+optimiser::optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator){
     activeModelTranslator = _modelTranslator;
     activePhysicsSimulator = _physicsSimulator;
     activeYamlReader = _yamlReader;
@@ -28,22 +28,12 @@ void optimiser::setupTestingExtras(int _trajecNumber, int _interpMethod, int _ke
     approximate_backwardsPass = _approxBackwardsPass;
 }
 
-void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
-
-    for(int i = 0; i < percentDerivsPerIter.size(); i++){
-        avgPercentDerivs += percentDerivsPerIter[i];
-    }
-    avgPercentDerivs = avgPercentDerivs/percentDerivsPerIter.size();
-
-    for(int i = 0; i < timeDerivsPerIter.size(); i++){
-        avgTimePerDerivs += timeDerivsPerIter[i];
-    }
-    avgTimePerDerivs = avgTimePerDerivs/timeDerivsPerIter.size();
+void optimiser::returnOptimisationData(double &_optTime, double &_finalCost, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
 
     _optTime = optTime;
-    _costReduction = costReduction;
+    _finalCost = finalCost;
     _avgPercentageDerivs = avgPercentDerivs;
-    _avgTimeGettingDerivs = avgTimePerDerivs;
+    _avgTimeGettingDerivs = avgTime_getDerivs_ms;
     _numIterations = numIterationsForConvergence;
 }
 
@@ -168,9 +158,9 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
     }
     else if(keyPointsMethod == iterative_error){
         computedKeyPoints.clear();
-        activeDifferentiator->initModelForFiniteDifferencing();
+        activePhysicsSimulator->initModelForFiniteDifferencing();
         evaluationWaypoints = generateKeyPointsIteratively();
-        activeDifferentiator->resetModelAfterFiniteDifferencing();
+        activePhysicsSimulator->resetModelAfterFiniteDifferencing();
 
     }
     else{
@@ -506,9 +496,9 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     for(int i = 0; i < 2; i++){
         int A_col_indices[2] = {dofIndex, dofIndex + dof};
         for(int j = dof; j < activeModelTranslator->stateVectorSize; j++){
-//            double sqDiff = pow((A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0)),2);
+            double sqDiff = pow((A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0)),2);
 
-            double absdiff = abs(A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0));
+//            double absdiff = abs(A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0));
 //            if(sqDiff > 0.1){
 //                sqDiff = 0.0f;
 //                counterTooLarge++;
@@ -522,7 +512,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 //                counter++;
 //            }
             counter++;
-            errorSum += absdiff;
+            errorSum += sqDiff;
 
         }
 //        cout << "errorSum: " << errorSum << "\n";
@@ -543,7 +533,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 //    cout << "num valid: " << counter << "\n";
 //    cout << "num too small: " << counterTooSmall << "\n";
 //    cout << "num too large: " << counterTooLarge << "\n";
-    if(averageError < 0.003){
+    if(averageError < 0.00005){
         approximationGood = true;
     }
     else{
@@ -685,7 +675,7 @@ void optimiser::getCostDerivs(){
 
 void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
 
-    activeDifferentiator->initModelForFiniteDifferencing();
+    activePhysicsSimulator->initModelForFiniteDifferencing();
 
     #pragma omp parallel for
     for(int i = 0; i < keyPoints.size(); i++){
@@ -708,7 +698,7 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
 //    activeYamlReader->generalSaveMatrices(l_x, "l_x_fd");
 //    activeYamlReader->generalSaveMatrices(l_xx, "l_xx_fd");
 
-    activeDifferentiator->resetModelAfterFiniteDifferencing();
+    activePhysicsSimulator->resetModelAfterFiniteDifferencing();
 
     if(!activeYamlReader->costDerivsFD){
         #pragma omp parallel for

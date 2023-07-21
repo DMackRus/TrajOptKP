@@ -27,14 +27,14 @@ struct indexTuple{
 
 class optimiser{
 public:
-    optimiser(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, fileHandler *_yamlReader, differentiator *_differentiator);
+    optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
 
     virtual double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) = 0;
     virtual std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) = 0;
     virtual bool checkForConvergence(double oldCost, double newCost);
     void setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod, int minN, bool approxBackwardsPass);
 
-    void returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
+    void returnOptimisationData(double &_optTime, double &_finalCost, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
     int currentTrajecNumber = 0;
     int interpMethod = linear;
@@ -45,14 +45,13 @@ public:
     double optTime;
 
     double initialCost;
-    double costReduction = 1.0f;
+    double finalCost = 1.0f;
 
     std::vector<double> percentDerivsPerIter;
     double avgPercentDerivs;
     int numberOfTotalDerivs = 0;
 
     std::vector<double> timeDerivsPerIter;
-    double avgTimePerDerivs;
 
     int numIterationsForConvergence;
 
@@ -68,21 +67,13 @@ public:
     double avgTime_backwardsPass_ms = 0.0f;
     std::vector<double> time_forwardsPass_ms;
     double avgTime_forwardsPass_ms = 0.0f;
-    bool verboseOutput = false;
+    bool verboseOutput = true;
 
-
-protected:
-    modelTranslator *activeModelTranslator;
-    physicsSimulator *activePhysicsSimulator;
-
-    int dof;
-    int num_ctrl;
-    int horizonLength;
+    // - Top level function - ensures all derivates are calculate over an entire trajectory by some method
+    void generateDerivatives();
 
     // -------------- Vectors of matrices for gradient information about the trajectory -------------
     // First order dynamics
-//    vector<MatrixXd> f_x;
-//    vector<MatrixXd> f_u;
     vector<MatrixXd> A;
     vector<MatrixXd> B;
 
@@ -98,13 +89,22 @@ protected:
     vector<MatrixXd> X_new;
     vector<MatrixXd> X_old;
 
-    fileHandler *activeYamlReader;
-    differentiator *activeDifferentiator;
+    int horizonLength;
+
+
+protected:
+    std::shared_ptr<modelTranslator> activeModelTranslator;
+    std::shared_ptr<physicsSimulator> activePhysicsSimulator;
+
+    int dof;
+    int num_ctrl;
+
+    std::shared_ptr<fileHandler> activeYamlReader;
+    std::shared_ptr<differentiator> activeDifferentiator;
 
     std::vector<std::vector<int>> computedKeyPoints;
 
-    // - Top level function - ensures all derivates are calculate over an entire trajectory by some method
-    void generateDerivatives();
+
 
     // Generate keypoints we will calculate derivatives at
     std::vector<std::vector<int>> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);

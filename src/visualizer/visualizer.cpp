@@ -4,7 +4,7 @@
 
 #include "visualizer.h"
 
-visualizer::visualizer(modelTranslator *_modelTranslator){
+visualizer::visualizer(std::shared_ptr<modelTranslator> _modelTranslator){
 
     activePhysicsSimulator = _modelTranslator->activePhysicsSimulator;
     activeModelTranslator = _modelTranslator;

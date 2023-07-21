@@ -15,7 +15,7 @@
 
 class visualizer {
 public:
-    visualizer(modelTranslator *_modelTranslator);
+    visualizer(std::shared_ptr<modelTranslator> _modelTranslator);
     void init();
     void update();
     void draw();
@@ -59,8 +59,8 @@ public:
     bool replayTriggered = false;
 
 private:
-    physicsSimulator *activePhysicsSimulator;
-    modelTranslator *activeModelTranslator;
+    std::shared_ptr<physicsSimulator> activePhysicsSimulator;
+    std::shared_ptr<modelTranslator> activeModelTranslator;
 };
 
 #endif //PHYSICSSIMSWITCHING_VISUALIZER_H

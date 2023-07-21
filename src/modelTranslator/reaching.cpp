@@ -128,6 +128,8 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
 //                double diff = X_desired(j) - Xt(j);
 //                control(j) += diff * gains[j];
             }
+            cout << "grav compensation: " << control << endl;
+            cout << "current state: " << Xt << endl;
 
             setControlVector(control, MAIN_DATA_STATE);
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);

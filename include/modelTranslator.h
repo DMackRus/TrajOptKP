@@ -52,8 +52,8 @@ public:
     MatrixXd X_desired;
     MatrixXd X_start;
 
-    physicsSimulator *activePhysicsSimulator;
-    MuJoCoHelper *myHelper;
+    std::shared_ptr<physicsSimulator> activePhysicsSimulator;
+    std::shared_ptr<MuJoCoHelper> myHelper;
     std::string modelFilePath;
     std::string modelName;
 

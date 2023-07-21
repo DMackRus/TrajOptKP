@@ -70,13 +70,20 @@ public:
 
     bool setBodyPosition(string bodyName, m_point position);
 
+    void initModelForFiniteDifferencing() override;
+    void resetModelAfterFiniteDifferencing() override;
+
     vector<std::shared_ptr<mjData>> savedSystemStatesList;      // List of saved system states
     std::shared_ptr<mjData> d_master_reset;                     // Master reset mujoco data
     std::shared_ptr<mjData> mdata;                              // main MuJoCo data
     std::shared_ptr<mjModel> model;                             // MuJoCo model
     std::vector<std::shared_ptr<mjData>> fd_data;               // Finite differencing MuJoCo data - instantiated with the number of cores on the pc
 
+
+
 private:
+    int save_iterations;
+    mjtNum save_tolerance;
 
 };
 

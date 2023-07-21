@@ -258,7 +258,6 @@ void fileHandler::generalSaveMatrices(std::vector<MatrixXd> matrices, std::strin
 }
 
 void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength){
-    cout << "trajectory size: " << horizonLength << endl;
     std::string rootPath = projectParentPath + "/savedTrajecInfo" + filePrefix + "/" + std::to_string(trajecNumber);
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/A_matrices.csv";

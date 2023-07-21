@@ -77,7 +77,12 @@ public:
 
 
 
-        protected:
+    virtual void initModelForFiniteDifferencing() = 0;
+    virtual void resetModelAfterFiniteDifferencing() = 0;
+
+
+
+protected:
     vector<robot> robots;
     vector<string> bodies;
 

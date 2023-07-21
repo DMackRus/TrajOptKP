@@ -25,7 +25,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
         cout << "body names: " << bodies[i].name << endl;
     }
     
-    myHelper = new MuJoCoHelper(robots, bodyNames);
+    myHelper = std::make_shared<MuJoCoHelper>(robots, bodyNames);
     activePhysicsSimulator = myHelper;
     activePhysicsSimulator->initSimulator(0.004, _modelPath);
 
@@ -154,7 +154,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     Q_terminal.resize(stateVectorSize);
     Q_terminal.setZero();
     for(int i = 0; i < dof; i++){
-        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 10000;
+        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 1000;
     }
 
 //   cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
@@ -213,6 +213,7 @@ std::vector<MatrixXd> modelTranslator::createInitSetupControls(int horizonLength
 
 MatrixXd modelTranslator::returnStateVector(int dataIndex){
     MatrixXd stateVector(stateVectorSize, 1);
+    activePhysicsSimulator->forwardSimulator(dataIndex);
 
     int currentStateIndex = 0;
 
@@ -371,6 +372,7 @@ bool modelTranslator::setControlVector(MatrixXd _controlVector, int dataIndex){
 
 MatrixXd modelTranslator::returnPositionVector(int dataIndex){
     MatrixXd posVector(dof, 1);
+    activePhysicsSimulator->forwardSimulator(dataIndex);
 
     int currentStateIndex = 0;
 
@@ -406,8 +408,7 @@ MatrixXd modelTranslator::returnPositionVector(int dataIndex){
                 posVector(currentStateIndex, 0) = bodyPose.orientation[j];
                 currentStateIndex++;
             }
-        }bool setPositionVector(MatrixXd _positionVector, int dataIndex);
-    bool setVelocityVector(MatrixXd _velocityVector, int dataIndex);
+        }
     }
 
     return posVector;
@@ -415,6 +416,7 @@ MatrixXd modelTranslator::returnPositionVector(int dataIndex){
 
 MatrixXd modelTranslator::returnVelocityVector(int dataIndex){
     MatrixXd velVector(dof, 1);
+    activePhysicsSimulator->forwardSimulator(dataIndex);
 
     int currentStateIndex = 0;
 
@@ -459,6 +461,7 @@ MatrixXd modelTranslator::returnVelocityVector(int dataIndex){
 
 MatrixXd modelTranslator::returnAccelerationVector(int dataIndex){
     MatrixXd accelVector(dof, 1);
+    activePhysicsSimulator->forwardSimulator(dataIndex);
 
     int currentStateIndex = 0;
 
