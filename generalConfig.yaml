@@ -14,4 +14,4 @@ displayMode: 1
 taskInitMode: "fromYAML"
 csvRow: 0
 filtering: false
-costDerivsFD: false
+costDerivsFD: true

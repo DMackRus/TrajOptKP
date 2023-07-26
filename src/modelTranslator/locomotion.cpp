@@ -9,45 +9,45 @@ locomotion_anymal::locomotion_anymal(): modelTranslator(){
 }
 
 double locomotion_anymal::costFunction(int dataIndex, bool terminal){
-//    double cost = 0.0f;
-//
+    double cost = 0.0f;
+
 //    MatrixXd Ut = returnControlVector(dataIndex);
 //    for(int i = 0; i < num_ctrl; i++){
 //        cost += 1e-1 * pow(Ut(i), 2);
 //    }
-//
-//    double height = activePhysicsSimulator->sensorState(dataIndex, "torso_position")[2];
-//    cost += 10.0 * pow((height - 1.3), 2);
-//
-//    // ---------- Residual (2) ----------
-//    double torso_up = activePhysicsSimulator->sensorState(dataIndex, "torso_zaxis")[2];
-//    cost += 1.0 * pow((torso_up - 1.0), 2);
-//
-//    double com_vel = activePhysicsSimulator->sensorState(dataIndex, "torso_subtreelinvel")[0];
-//    cost += 0.1 * pow((com_vel - 1.0), 2);
-//
-////    cout << "height: " << height << " torso_up: " << torso_up << " com_vel: " << com_vel << "cost: " << cost << endl;
 
-    MatrixXd Xt = returnStateVector(dataIndex);
-    MatrixXd Ut = returnControlVector(dataIndex);
-    MatrixXd X_diff = Xt - X_desired;
+    double height = activePhysicsSimulator->sensorState(dataIndex, "torso_position")[2];
+    cost += 1.0 * pow((height - 1.3), 2);
 
-    MatrixXd result = X_diff.transpose() * Q * X_diff + Ut.transpose() * R * Ut;
-    double cost = result(0);
+    // ---------- Residual (2) ----------
+    double torso_up = activePhysicsSimulator->sensorState(dataIndex, "torso_zaxis")[2];
+    cost += 1.0 * pow((torso_up - 1.0), 2);
+
+    double com_vel = activePhysicsSimulator->sensorState(dataIndex, "torso_subtreelinvel")[0];
+    cost += 1.0 * pow((com_vel - 1.0), 2);
+
+//    cout << "height: " << height << " torso_up: " << torso_up << " com_vel: " << com_vel << "cost: " << cost << endl;
+
+//    MatrixXd Xt = returnStateVector(dataIndex);
+//    MatrixXd Ut = returnControlVector(dataIndex);
+//    MatrixXd X_diff = Xt - X_desired;
+//
+//    MatrixXd result = X_diff.transpose() * Q * X_diff + Ut.transpose() * R * Ut;
+//    double cost = result(0);
 
     return cost;
 }
 
 void locomotion_anymal::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-    MatrixXd Xt = returnStateVector(dataIndex);
-    MatrixXd Ut = returnControlVector(dataIndex);
-    MatrixXd X_diff = Xt - X_desired;
-
-    l_x = 2 * Q * X_diff;
-    l_xx = 2 * Q;
-
-    l_u = 2 * R * Ut;
-    l_uu = 2 * R;
+//    MatrixXd Xt = returnStateVector(dataIndex);
+//    MatrixXd Ut = returnControlVector(dataIndex);
+//    MatrixXd X_diff = Xt - X_desired;
+//
+//    l_x = 2 * Q * X_diff;
+//    l_xx = 2 * Q;
+//
+//    l_u = 2 * R * Ut;
+//    l_uu = 2 * R;
 }
 
 bool locomotion_anymal::taskComplete(int dataIndex, double &dist){

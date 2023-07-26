@@ -845,7 +845,7 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     }
 
     model->opt.timestep = timestep;
-    model->opt.gravity[2] = 0;
+//    model->opt.gravity[2] = -2;
 //    model->opt.iterations = 30;
 //    model->opt.tolerance = 1e-1;
 //    cout << "model iterations: " << model->opt.iterations << endl;

@@ -27,7 +27,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     
     myHelper = std::make_shared<MuJoCoHelper>(robots, bodyNames);
     activePhysicsSimulator = myHelper;
-    activePhysicsSimulator->initSimulator(0.004, _modelPath);
+    activePhysicsSimulator->initSimulator(0.002, _modelPath);
 
     myStateVector.robots = robots;
     myStateVector.bodiesStates = bodies;

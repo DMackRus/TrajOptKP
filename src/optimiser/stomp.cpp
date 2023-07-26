@@ -6,7 +6,7 @@ stomp::stomp(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<
 
     noiseProfile.resize(num_ctrl, 1);
     for(int i = 0; i < num_ctrl; i++){
-        noiseProfile(i) = 0.1f;
+        noiseProfile(i) = 0.5f;
     }
 
     for(int i = 0; i < maxHorizon; i++){
@@ -106,7 +106,7 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
 
         bool converged = checkForConvergence(bestCost, bestCostThisIter);
 
-        cout << "best cost this iteration: " << bestCostThisIter << endl;
+//        cout << "best cost this iteration: " << bestCostThisIter << endl;
 
         // reupdate U_best with new best trajectory if a better trajectory found
         if(bestCostThisIter < bestCost){

@@ -106,12 +106,12 @@ void optimiser::generateDerivatives(){
 //        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 2);
 
 
-    cout << "l_xx[horizonLength - 1]: " << l_xx[horizonLength - 1] << endl;
-    cout << "l_xx[horizonLength]: " << l_xx[horizonLength] << endl;
-    cout << "l_x[horizonLength]: " << l_x[horizonLength] << endl;
-    cout << "l_u[horizonLength - 1]: " << l_u[horizonLength - 1] << endl;
+//    cout << "l_xx[horizonLength - 1]: " << l_xx[horizonLength - 1] << endl;
+//    cout << "l_xx[horizonLength]: " << l_xx[horizonLength] << endl;
+//    cout << "l_x[horizonLength]: " << l_x[horizonLength] << endl;
+//    cout << "l_u[horizonLength - 1]: " << l_u[horizonLength - 1] << endl;
     cout << "A[horizonLength - 1]: " << A[horizonLength - 1] << endl;
-    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
+//    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
 
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);

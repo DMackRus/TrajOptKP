@@ -225,7 +225,7 @@ int main(int argc, char **argv) {
         mpcVisualise = true;
 
         // No clutter - 1800 - 500 - 1800
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2500, 5, 100);
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2500, 1, 50);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -862,14 +862,14 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
                     horizon = maxHorizon;
                 }
 
-                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 5, 1, horizon);
+                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 0, horizon);
                 reInitialiseCounter = 0;
 
-                totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
-                timeGettingDerivs.push_back(activeOptimiser->avgTime_getDerivs_ms);
-                timeBackwardsPass.push_back(activeOptimiser->avgTime_backwardsPass_ms);
-                timeForwardsPass.push_back(activeOptimiser->avgTime_forwardsPass_ms);
-                percentagesDerivsCalculated.push_back(activeOptimiser->avgPercentDerivs);
+//                totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
+//                timeGettingDerivs.push_back(activeOptimiser->avgTime_getDerivs_ms);
+//                timeBackwardsPass.push_back(activeOptimiser->avgTime_backwardsPass_ms);
+//                timeForwardsPass.push_back(activeOptimiser->avgTime_forwardsPass_ms);
+//                percentagesDerivsCalculated.push_back(activeOptimiser->avgPercentDerivs);
 
             }
         }

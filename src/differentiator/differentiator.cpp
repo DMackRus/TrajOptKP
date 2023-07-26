@@ -53,8 +53,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     if(USE_DQACC){
         dqaccdctrl = calc_dqaccdctrl(cols, dataIndex, physicsHelperId, dcostdctrl, costDerivs, terminal);
 
-//        dqaccdqvel = calc_dqaccdqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
-        dqveldqvel = calc_dqveldqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
+        dqaccdqvel = calc_dqaccdqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
+//        dqveldqvel = calc_dqveldqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
 
         dqaccdq = calc_dqaccdqpos(cols, dataIndex, physicsHelperId, dcostdpos, costDerivs, terminal);
     }
@@ -248,21 +248,22 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     // --------------------------------
 //    cout << "dqveldq " << dqveldq << endl;
 //    cout << "dqveldqvel " << dqveldqvel << endl;
+//    cout << "test: " << endl << dqaccdqvel << endl;
 
     // TODO - check if this code is completely correct
     for(int i = 0; i < cols.size(); i++){
         if(USE_DQACC){
             A.block(dof, cols[i], dof, 1) = dqaccdq.block(0, cols[i], dof, 1) * MUJOCO_DT;
-//            for(int j = 0; j < dof; j ++){
-//                if(j == cols[i]){
-//                    A(dof + j, cols[i] + dof) = 1 + (dqaccdqvel(j, cols[i]) * MUJOCO_DT);
-//                }
-//                else{
-//                    A(dof + j, cols[i] + dof) = dqaccdqvel(j, cols[i]) * MUJOCO_DT;
-//                }
-//
-//            }
-            A.block(dof, cols[i] + dof, dof, 1) = dqveldqvel.block(0, cols[i], dof, 1);
+            for(int j = 0; j < dof; j ++){
+                if(j == cols[i]){
+                    A(dof + j, cols[i] + dof) = 1 + (dqaccdqvel(j, cols[i]) * MUJOCO_DT);
+                }
+                else{
+                    A(dof + j, cols[i] + dof) = dqaccdqvel(j, cols[i]) * MUJOCO_DT;
+                }
+
+            }
+//            A.block(dof, cols[i] + dof, dof, 1) = dqveldqvel.block(0, cols[i], dof, 1);
         }
         else{
             A.block(dof, cols[i], dof, 1) = dqveldq.block(0, cols[i], dof, 1);

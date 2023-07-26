@@ -5,7 +5,7 @@
 #define DIFFERENTIATOR_H
 
 #define USE_DQACC 1
-#define HESSIAN_APPROXIMATION 0
+#define HESSIAN_APPROXIMATION 1
 
 #include "modelTranslator.h"
 #include "MuJoCoHelper.h"

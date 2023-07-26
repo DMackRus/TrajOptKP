@@ -15,7 +15,7 @@
 #include <random>
 
 #define POSE_DOFS       6
-#define MUJOCO_DT   0.004
+#define MUJOCO_DT   0.002
 #define PI          3.14152
 
 struct robot{
