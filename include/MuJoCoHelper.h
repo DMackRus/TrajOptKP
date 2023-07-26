@@ -65,6 +65,7 @@ public:
     void initSimulator(double timestep, const char* fileName) override;
     bool stepSimulator(int steps, int dataIndex) override;
     bool forwardSimulator(int dataIndex) override;
+    bool forwardSimulatorWithSkip(int dataIndex, int skipStage, int skipSensor) override;
 
     void setupMuJoCoWorld(double timestep, const char* fileName);
 
@@ -73,13 +74,13 @@ public:
     void initModelForFiniteDifferencing() override;
     void resetModelAfterFiniteDifferencing() override;
 
+    double* sensorState(int dataIndex, std::string sensorName) override;
+
     vector<std::shared_ptr<mjData>> savedSystemStatesList;      // List of saved system states
     std::shared_ptr<mjData> d_master_reset;                     // Master reset mujoco data
     std::shared_ptr<mjData> mdata;                              // main MuJoCo data
     std::shared_ptr<mjModel> model;                             // MuJoCo model
     std::vector<std::shared_ptr<mjData>> fd_data;               // Finite differencing MuJoCo data - instantiated with the number of cores on the pc
-
-
 
 private:
     int save_iterations;

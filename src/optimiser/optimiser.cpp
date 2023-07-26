@@ -81,7 +81,7 @@ void optimiser::generateDerivatives(){
 //        interpolateDerivatives(keyPoints);
 //    }
 
-    interpolateDerivatives(keyPoints);
+    interpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
 
     int totalNumColumnsDerivs = 0;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -104,6 +104,14 @@ void optimiser::generateDerivatives(){
 
 //        A.resize(initControls.size());
 //        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 2);
+
+
+    cout << "l_xx[horizonLength - 1]: " << l_xx[horizonLength - 1] << endl;
+    cout << "l_xx[horizonLength]: " << l_xx[horizonLength] << endl;
+    cout << "l_x[horizonLength]: " << l_x[horizonLength] << endl;
+    cout << "l_u[horizonLength - 1]: " << l_u[horizonLength - 1] << endl;
+    cout << "A[horizonLength - 1]: " << A[horizonLength - 1] << endl;
+    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
 
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
@@ -550,126 +558,19 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     return approximationGood;
 }
 
-bool optimiser::checkOneMatrixError(indexTuple indices){
-//    MatrixXd matrixMidApprox(activeModelTranslator->stateVectorSize, activeModelTranslator->stateVectorSize);
-//
-//    int midIndex = (indices.startIndex + indices.endIndex) / 2;
-//    if((indices.endIndex - indices.startIndex) < 5){
-//        return true;
-//    }
-//
-//    MatrixXd blank1, blank2, blank3, blank4;
-//
-//    bool startIndexExists;
-//    bool midIndexExists;
-//    bool endIndexExists;
-//
-//    int counterTooSmall = 0;
-//    int counterTooLarge = 0;
-//
-////    cout << "start index: " << indices.startIndex << " mid index: " << midIndex << " end index: " << indices.endIndex << "\n";
-//
-//    for(int i = 0; i < computedKeyPoints.size(); i++){
-//        if(computedKeyPoints[i] == indices.startIndex){
-//            startIndexExists = true;
-//        }
-//
-//        if(computedKeyPoints[i] == midIndex){
-//            midIndexExists = true;
-//        }
-//
-//        if(computedKeyPoints[i] == indices.endIndex){
-//            endIndexExists = true;
-//        }
-//    }
-//
-//    if(!startIndexExists){
-//        activeDifferentiator->getDerivatives(A[indices.startIndex], B[indices.startIndex], blank1, blank2, blank3, blank4, false, indices.startIndex, false);
-//        computedKeyPoints.push_back(indices.startIndex);
-//    }
-//
-//    if(!midIndexExists){
-//        activeDifferentiator->getDerivatives(A[midIndex], B[midIndex], blank1, blank2, blank3, blank4, false, midIndex, false);
-//        computedKeyPoints.push_back(midIndex);
-//    }
-//
-//    if(!endIndexExists){
-//        activeDifferentiator->getDerivatives(A[indices.endIndex], B[indices.endIndex], blank1, blank2, blank3, blank4, false, indices.endIndex, false);
-//        computedKeyPoints.push_back(indices.endIndex);
-//    }
-//
-//    matrixMidApprox = (A[indices.startIndex] + A[indices.endIndex]) / 2;
-//
-////    cout << "matrixMidTrue: \n" << matrixMidTrue << "\n";
-////    cout << "matrixMidApprox: \n" << matrixMidApprox << "\n";
-//
-//    bool approximationGood = false;
-//    int dof = activeModelTranslator->dof;
-//    double errorSum = 0.0f;
-//    int counter = 0;
-//
-//    for(int i = dof; i < activeModelTranslator->stateVectorSize; i++){
-//        for(int j = 0; j < activeModelTranslator->stateVectorSize; j++){
-//            double sqDiff = pow((A[midIndex](i, j) - matrixMidApprox(i, j)),2);
-//
-//            if(sqDiff > 0.5){
-//                sqDiff = 0.0f;
-//                counterTooLarge++;
-//            }
-//            else if(sqDiff < 0.00001){
-//                sqDiff = 0.0f;
-//                counterTooSmall++;
-//            }
-//            else{
-//
-//                counter++;
-//            }
-//            errorSum += sqDiff;
-//        }
-//    }
-//
-//    double averageError;
-//    if(counter > 0){
-//        averageError = errorSum / counter;
-//    }
-//    else{
-//        averageError = 0.0f;
-//    }
-//
-////    cout << "average error: " << averageError << "\n";
-////    cout << "num valid: " << counter << "\n";
-////    cout << "num too small: " << counterTooSmall << "\n";
-////    cout << "num too large: " << counterTooLarge << "\n";
-//    if(averageError < 0.002){
-//        approximationGood = true;
-//    }
-//    else{
-////        cout << "matrix mid approx" << matrixMidApprox << "\n";
-////        cout << "matrix mid true" << A[midIndex] << "\n";
-//    }
-//
-////    if(counter == 0){
-////        cout << "start index: " << indices.startIndex << " mid index: " << midIndex << " end index: " << indices.endIndex << "\n";
-////        cout << "matrix mid approx" << matrixMidApprox << "\n";
-////        cout << "matrix mid true" << A[midIndex] << "\n";
-////    }
-//
-//    return approximationGood;
-}
-
 void optimiser::getCostDerivs(){
-#pragma omp parallel for
+    #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
         if(i == 0){
-            activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+            activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
         }
         else{
-            activeModelTranslator->costDerivatives(X_old[i], U_old[i], X_old[i-1], U_old[i-1], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+            activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
         }
 
     }
 
-    activeModelTranslator->costDerivatives(X_old[horizonLength], U_old[horizonLength - 1], X_old[horizonLength - 1], U_old[horizonLength - 1],
+    activeModelTranslator->costDerivatives(horizonLength-1,
                                            l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength], true);
 }
 
@@ -695,6 +596,9 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
 
     }
 
+//    cout << "A[0]: \n" << A[0] << "\n";
+//    cout << "B[0]: \n" << B[0] << "\n";
+
 //    activeYamlReader->generalSaveMatrices(l_x, "l_x_fd");
 //    activeYamlReader->generalSaveMatrices(l_xx, "l_xx_fd");
 
@@ -704,19 +608,38 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         #pragma omp parallel for
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
-                activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
             else{
-                activeModelTranslator->costDerivatives(X_old[i], U_old[i], X_old[i-1], U_old[i-1], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
         }
-    }
+        //    #TODO - check if this should be horizon length
+        activeModelTranslator->costDerivatives(horizonLength - 1,
+                                               l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength], true);
 
-    activeModelTranslator->costDerivatives(X_old[horizonLength], U_old[horizonLength - 1], X_old[horizonLength - 1], U_old[horizonLength - 1],
-                                           l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength], true);
+    }
 }
 
-void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints){
+void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs){
+    MatrixXd startB;
+    MatrixXd endB;
+    MatrixXd addB;
+
+    double start_l_x_col1;
+    double end_l_x_col1;
+    double add_l_x_col1;
+    double start_l_x_col2;
+    double end_l_x_col2;
+    double add_l_x_col2;
+
+    MatrixXd start_l_xx_col1;
+    MatrixXd end_l_xx_col1;
+    MatrixXd add_l_xx_col1;
+    MatrixXd start_l_xx_col2;
+    MatrixXd end_l_xx_col2;
+    MatrixXd add_l_xx_col2;
+
     // Create an array to track startIndices of next interpolation for each dof
     int startIndices[dof];
     for(int i = 0; i < dof; i++){
@@ -738,9 +661,6 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints){
 
             for(int j = 0; j < columns.size(); j++){
 
-                MatrixXd startB;
-                MatrixXd endB;
-                MatrixXd addB;
                 // If there is a match, interpolate between the start index and the current index
                 // For the given columns
                 if(i == columns[j]){
@@ -753,6 +673,23 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints){
                     MatrixXd endACol2 = A[t].block(dof, i + dof, dof, 1);
                     MatrixXd addACol2 = (endACol2 - startACol2) / (t - startIndices[i]);
 
+                    if(costDerivs){
+                        start_l_x_col1 = l_x[startIndices[i]](i, 0);
+                        end_l_x_col1 = l_x[t](i, 0);
+                        add_l_x_col1 = (end_l_x_col1 - start_l_x_col1) / (t - startIndices[i]);
+
+                        start_l_x_col2 = l_x[startIndices[i]](i + dof, 0);
+                        end_l_x_col2 = l_x[t](i + dof, 0);
+                        add_l_x_col2 = (end_l_x_col2 - start_l_x_col2) / (t - startIndices[i]);
+
+                        start_l_xx_col1 = l_xx[startIndices[i]].block(i, 0, 1, dof);
+                        end_l_xx_col1 = l_xx[t].block(i, 0, 1, dof);
+                        add_l_xx_col1 = (end_l_xx_col1 - start_l_xx_col1) / (t - startIndices[i]);
+
+                        start_l_xx_col2 = l_xx[startIndices[i]].block(i + dof, 0, 1, dof);
+                        end_l_xx_col2 = l_xx[t].block(i + dof, 0, 1, dof);
+                        add_l_xx_col2 = (end_l_xx_col2 - start_l_xx_col2) / (t - startIndices[i]);
+                    }
 
                     if(i < num_ctrl){
                         startB = B[startIndices[i]].block(dof, i, dof, 1);
@@ -763,19 +700,27 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints){
                     for(int k = startIndices[i]; k < t; k++){
                         A[k].block(dof, i, dof, 1) = startACol1 + ((k - startIndices[i]) * addACol1);
 
+                        A[k].block(dof, i + dof, dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
+
+                        if(costDerivs){
+                            l_x[k](i) = start_l_x_col1 + ((k - startIndices[i]) * add_l_x_col1);
+                            l_x[k](i + dof) = start_l_x_col2 + ((k - startIndices[i]) * add_l_x_col2);
+
+                            l_xx[k].block(i, 0, 1, dof) = start_l_xx_col1 + ((k - startIndices[i]) * add_l_xx_col1);
+                            l_xx[k].block(i + dof, 0, 1, dof) = start_l_xx_col2 + ((k - startIndices[i]) * add_l_xx_col2);
+                        }
+
                         if(i < num_ctrl){
                             B[k].block(dof, i, dof, 1) = startB + ((k - startIndices[i]) * addB);
                         }
-
-                        A[k].block(dof, i + dof, dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
-
                     }
-
                     startIndices[i] = t;
                 }
             }
         }
     }
+    l_xx[horizonLength] = l_xx[horizonLength - 1].replicate(1, 1);
+    l_x[horizonLength] = l_x[horizonLength - 1].replicate(1, 1);
 }
 
 std::vector<MatrixXd> optimiser::generateJerkProfile(){

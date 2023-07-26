@@ -18,9 +18,9 @@ public:
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
 
-    std::vector<int> generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
-    void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
-    void interpolateDerivatives(std::vector<int> calculatedIndices);
+//    std::vector<int> generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
+//    void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
+//    void interpolateDerivatives(std::vector<int> calculatedIndices);
 
     void backwardsPass();
 

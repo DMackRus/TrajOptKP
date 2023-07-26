@@ -35,8 +35,8 @@ public:
     bool setVelocityVector(MatrixXd _velocityVector, int dataIndex);
 
     // - Optional override functions, have default implementations but can be overwritten
-    virtual double costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal);
-    virtual void costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
+    virtual double costFunction(int dataIndex, bool terminal);
+    virtual void costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
     virtual bool taskComplete(int dataIndex, double &dist);
     virtual std::vector<MatrixXd> createInitSetupControls(int horizonLength);
 

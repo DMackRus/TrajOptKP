@@ -59,12 +59,12 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
         Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
         X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+        double cost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
         std::cout << "cost: " << cost << std::endl;
 
 
         MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu, false);
+        activeModelTranslator->costDerivatives(MAIN_DATA_STATE, l_x, l_xx, l_u, l_uu, false);
         cout << "l_x: " << l_x << endl;
         cout << "l_xx:" << l_xx << endl;
 
@@ -81,6 +81,8 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
         MatrixXd controlVec;
+//        SensorByName(model, data, "torso_position")[2];
+        activePhysicsSimulator->sensorState(MAIN_DATA_STATE, "torso_position");
         controlVec = activeModelTranslator->returnControlVector(0);
         cout << "control vec: " << controlVec << endl;
 
@@ -103,13 +105,13 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
         Xt = activeModelTranslator->returnStateVector(dataIndex);
         X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+        double cost = activeModelTranslator->costFunction(dataIndex, false);
         cout << "------------------------------------------------- \n";
         std::cout << "cost: " << cost << std::endl;
 
 
         MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->costDerivatives(Xt, Ut, X_last, U_last, l_x, l_xx, l_u, l_uu, false);
+        activeModelTranslator->costDerivatives(dataIndex, l_x, l_xx, l_u, l_uu, false);
         cout << "l_x: " << l_x << endl;
         cout << "l_xx:" << l_xx << endl;
 

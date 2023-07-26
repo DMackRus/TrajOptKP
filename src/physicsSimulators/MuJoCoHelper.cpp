@@ -124,7 +124,7 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
     }
 
     // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
+    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
 
     if(jointId == -1){
         cout << "Base link of robot not found\n";
@@ -254,7 +254,7 @@ bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &join
     }
 
     // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
+    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
 
     if(jointId == -1){
         cout << "Base link of robot not found\n";
@@ -745,9 +745,21 @@ bool MuJoCoHelper::forwardSimulator(int dataIndex){
 
     std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
-    mj_forwardSkip(model.get(), d.get(), mjSTAGE_NONE, 1);
+//    mj_forwardSkip(model.get(), d.get(), mjSTAGE_NONE, 1);
+    mj_forward(model.get(), d.get());
 
     return true;
+}
+
+bool MuJoCoHelper::forwardSimulatorWithSkip(int dataIndex, int skipStage, int skipSensor){
+
+        std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+
+        mjtNum skipStages[3] = {mjSTAGE_NONE, mjSTAGE_VEL, mjSTAGE_POS};
+
+        mj_forwardSkip(model.get(), d.get(), skipStages[skipStage], skipSensor);
+
+        return true;
 }
 
 // --------------------------------- Visualization Functions ---------------------------------------
@@ -833,10 +845,29 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     }
 
     model->opt.timestep = timestep;
+    model->opt.gravity[2] = 0;
 //    model->opt.iterations = 30;
 //    model->opt.tolerance = 1e-1;
 //    cout << "model iterations: " << model->opt.iterations << endl;
 //    cout << "model tolerance : " << model->opt.tolerance << endl;
+
+    cout << "model nq: " << model->nq << endl;
+    cout << "model nv: " << model->nv << endl;
+    cout << "model nu: " << model->nu << endl;
+    cout << "model nbody: " << model->nbody << endl;
+
+    for(int i = 0; i < model->nu; i++){
+        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i] << endl;
+        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i+1] << endl;
+    }
+
+    std::string names[6] = {"right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"};
+
+//    int id = mj_name2id(model.get(), mjOBJ_BODY, "right_hip");
+    for(int i = 0; i < 6; i++){
+        int id = mj_name2id(model.get(), mjOBJ_ACTUATOR, names[i].c_str());
+        cout << "actuator id: " << id << endl;
+    }
 
     // make data corresponding to model.get()
     mdata = shared_ptr<mjData>(mj_makeData(model.get()));
@@ -860,4 +891,16 @@ void MuJoCoHelper::resetModelAfterFiniteDifferencing(){
     model->opt.iterations = save_iterations;
     model->opt.tolerance = save_tolerance;
 
+}
+
+double* MuJoCoHelper::sensorState(int dataIndex, std::string sensorName){
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+
+    int id = mj_name2id(model.get(), mjOBJ_SENSOR, sensorName.c_str());
+    if (id == -1) {
+        std::cerr << "sensor \"" << sensorName << "\" not found.\n";
+        return nullptr;
+    } else {
+        return d->sensordata + model->sensor_adr[id];
+    }
 }

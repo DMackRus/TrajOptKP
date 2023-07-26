@@ -32,7 +32,7 @@
 *.app
 
 # Other git repositories
-/Franka-emika-panda-arm
+/mujoco_models
 /cmake-build-debug
 /.vscode
 /.idea

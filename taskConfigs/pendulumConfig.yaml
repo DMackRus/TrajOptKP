@@ -1,4 +1,4 @@
-modelFile: "/Franka-emika-panda-arm/Acrobot.xml"
+modelFile: "/mujoco_models/Acrobot/Acrobot.xml"
 modelName: "/doublePendulum"
 # stable down pos [3.1415, 0], half up unstable pos [3.14, 3.14], full up unstable pos [0, 0]
 robots:

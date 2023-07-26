@@ -57,10 +57,10 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
         double stateCost;
         
         if(i == initControls.size() - 1){
-            stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, true);
+            stateCost = activeModelTranslator->costFunction(initialDataIndex, true);
         }
         else{
-            stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+            stateCost = activeModelTranslator->costFunction(initialDataIndex, false);
         }
 
         cost += (stateCost * MUJOCO_DT);

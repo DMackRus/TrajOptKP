@@ -1,4 +1,4 @@
-modelFile: "/Franka-emika-panda-arm/V1/cylinder_pushing_lowClutterConstrained.xml"
+modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing_lowClutterConstrained.xml"
 modelName: "/panda_pushing_constrained_clutter"
 robots:
   panda:

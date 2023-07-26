@@ -74,6 +74,9 @@ public:
 
     virtual bool stepSimulator(int steps, int dataIndex) = 0;
     virtual bool forwardSimulator(int dataIndex) = 0;
+    virtual bool forwardSimulatorWithSkip(int dataIndex, int skipStage, int skipSensor) = 0;
+
+    virtual double* sensorState(int dataIndex, std::string sensorName) = 0;
 
 
 

@@ -194,8 +194,10 @@ MatrixXd boxFlick::returnRandomGoalState(MatrixXd X0){
     return randomGoalState;
 }
 
-double boxFlick::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal){
+double boxFlick::costFunction(int dataIndex, bool terminal){
     double cost = 0.0f;
+    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Ut = returnControlVector(dataIndex);
 
     MatrixXd X_diff = Xt - X_desired;
     MatrixXd temp;
@@ -227,7 +229,9 @@ double boxFlick::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixX
     return cost;
 }
 
-void boxFlick::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+void boxFlick::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Ut = returnControlVector(dataIndex);
     MatrixXd X_diff = Xt - X_desired;
 
     // Special elemetns for gaussian distance of obstacle1 to goal

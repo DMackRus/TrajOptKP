@@ -160,8 +160,10 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 //   cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
 }
 
-double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal){
+double modelTranslator::costFunction(int dataIndex, bool terminal){
     double cost = 0.0f;
+    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Ut = returnControlVector(dataIndex);
 
     MatrixXd X_diff = Xt - X_desired;
     MatrixXd temp;
@@ -178,7 +180,10 @@ double modelTranslator::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, 
     return cost;
 }
 
-void modelTranslator::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+void modelTranslator::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Ut = returnControlVector(dataIndex);
+
     MatrixXd X_diff = Xt - X_desired;
 
     // Size cost derivatives appropriately

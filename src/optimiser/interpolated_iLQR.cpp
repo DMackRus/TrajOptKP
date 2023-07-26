@@ -5,7 +5,7 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTransl
 
 //    activeDifferentiator = _differentiator;
     maxHorizon = _maxHorizon;
-//    activeVisualizer = _visualizer;
+    activeVisualizer = _visualizer;
 //    activeYamlReader = _yamlReader;
 
     // initialise all vectors of matrices
@@ -90,10 +90,10 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         double stateCost;
         
         if(i == initControls.size() - 1){
-            stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, true);
+            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
         }
         else{
-            stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
         }
 
 //        cout << "state cost: " << stateCost << endl;
@@ -108,7 +108,6 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
             else{
                 activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
             }
-            
         }
 
 //        activeVisualizer->render("gah");
@@ -319,8 +318,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
 
 // ------------------------------------------- STEP 2 FUNCTIONS (BACKWARDS PASS) ----------------------------------------------
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
 bool interpolatediLQR::backwardsPass_Quu_reg(){
     MatrixXd V_x(2*dof, 2*dof);
     V_x = l_x[horizonLength];
@@ -417,7 +414,6 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
 
     return true;
 }
-#pragma GCC pop_options
 
 bool interpolatediLQR::backwardsPass_Quu_skips(){
     MatrixXd V_x(2*dof, 2*dof);
@@ -477,81 +473,6 @@ bool interpolatediLQR::backwardsPass_Quu_skips(){
 
     }
 
-    return true;
-}
-
-bool interpolatediLQR::backwardsPass_Quu_reg_parallel(){
-
-    MatrixXd V_x[8];
-    MatrixXd V_xx[8];
-
-    int endPoints[9];
-    endPoints[0] = -1;
-
-
-
-    for(int i = 0; i < 8; i++){
-        V_x[i].resize(2*dof, 1);
-        V_xx[i].resize(2*dof, 2*dof);
-
-        int index = (i + 1) * (horizonLength / 8);
-
-        // compute cost derivative at every index
-        activeModelTranslator->costDerivatives(X_old[index], U_old[index], X_old[index], U_old[index],
-                                               l_x[index], l_xx[index], l_u[index], l_uu[index], true);
-//        cout << "index: " << index << endl;
-
-        V_x[i] = l_x[index];
-        V_xx[i] = l_xx[index];
-//        V_x[i] = l_x[horizonLength];
-//        V_xx[i] = l_xx[horizonLength];
-
-        endPoints[i+1] = index;
-    }
-
-//    cout << "endPoints: " << endPoints[0] << " " << endPoints[1] << " " << endPoints[2] << " " << endPoints[3] << " " << endPoints[4] << " " << endPoints[5] << " " << endPoints[6] << " " << endPoints[7] << " " << endPoints[8] << endl;
-
-#pragma omp parallel for
-    for(int i = 0; i < 8; i++){
-        MatrixXd Q_x(2 * dof, 1);
-        MatrixXd Q_u(num_ctrl, 1);
-        MatrixXd Q_xx(2 * dof, 2 * dof);
-        MatrixXd Q_uu(num_ctrl, num_ctrl);
-        MatrixXd Q_ux(num_ctrl, 2 * dof);
-
-        for(int t = endPoints[i+1]; t > endPoints[i]; t--){
-//            cout << "t: " << t << endl;
-            Q_u = l_u[t] + (B[t].transpose() * V_x[i]);
-
-            Q_x = l_x[t] + (A[t].transpose() * V_x[i]);
-
-            Q_ux = (B[t].transpose() * (V_xx[i] * A[t]));
-
-            Q_uu = l_uu[t] + (B[t].transpose() * (V_xx[i] * B[t]));
-
-            Q_xx = l_xx[t] + (A[t].transpose() * (V_xx[i] * A[t]));
-
-            MatrixXd Q_uu_reg = Q_uu.replicate(1, 1);
-
-            for (int i = 0; i < Q_uu.rows(); i++) {
-                Q_uu_reg(i, i) += lambda;
-            }
-
-            auto temp = (Q_uu_reg).ldlt();
-            MatrixXd I(num_ctrl, num_ctrl);
-            I.setIdentity();
-            MatrixXd Q_uu_inv = temp.solve(I);
-
-            k[t] = -Q_uu_inv * Q_u;
-            K[t] = -Q_uu_inv * Q_ux;
-
-            V_x[i] = Q_x + (K[t].transpose() * (Q_uu * k[t])) + (K[t].transpose() * Q_u) + (Q_ux.transpose() * k[t]);
-            V_xx[i] = Q_xx + (K[t].transpose() * (Q_uu * K[t])) + (K[t].transpose() * Q_ux) + (Q_ux.transpose() * K[t]);
-
-            V_xx[i] = (V_xx[i] + V_xx[i].transpose()) / 2;
-
-        }
-    }
     return true;
 }
 
@@ -628,20 +549,20 @@ double interpolatediLQR::forwardsPass(double oldCost){
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(X_new, Ut, X_last, U_last, true);
+                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(X_new, Ut, X_last, U_last, false);
+                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
             }
 
             newCost += (newStateCost * MUJOCO_DT);
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-//             if(t % 5 == 0){
-//                 const char* fplabel = "fp";
-//                 activeVisualizer->render(fplabel);
-//             }
+             if(t % 5 == 0){
+                 const char* fplabel = "fp";
+                 activeVisualizer->render(fplabel);
+             }
 
             X_last = X_new.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
@@ -747,10 +668,10 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(X_new, Ut, X_last, U_last, true);
+                newStateCost = activeModelTranslator->costFunction(i+1, true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(X_new, Ut, X_last, U_last, false);
+                newStateCost = activeModelTranslator->costFunction(i+1, false);
             }
 
             newCosts[i] += (newStateCost * MUJOCO_DT);

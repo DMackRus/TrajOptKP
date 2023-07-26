@@ -29,7 +29,7 @@ public:
     double lastx = 0;
     double lasty = 0;
 
-    GLFWwindow *window;
+    GLFWwindow* window;
     // Internal variables
 
     // ------------------------------- Functions -------------------------------------------

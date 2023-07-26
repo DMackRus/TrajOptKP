@@ -1,0 +1,26 @@
+#modelFile: "/mujoco_models/anyMal/scene.xml"
+modelFile: "/mujoco_models/walker.xml"
+modelName: "/anymal_locomotion"
+robots:
+#  anymal:
+#    jointNames: ["LF_HAA", "LF_HFE", "LF_KFE", "RF_HAA", "RF_HFE", "RF_KFE", "LH_HAA", "LH_HFE", "LH_KFE", "RH_HAA", "RH_HFE", "RH_KFE"]
+#    numActuators: 12
+#    torqueControl: false
+#    torqueLimits: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100]
+#    startPos: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+#    goalPos: [1 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0, 0, 0, 0]
+#    jointPosCosts: [1, 1, 1, 1, 1, 1, 1, 1]
+#    jointVelCosts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+#    jointControlCosts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+#    jointJerkThresholds: [0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005]
+  walker:
+    jointNames: ["right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"]
+    numActuators: 6
+    torqueControl: true
+    torqueLimits: [1, 1, 1, 1, 1, 1]
+    startPos: [1, -1, 0.2, 0, 0, 0]
+    goalPos: [0.3, 0, -0.3, -0.3, 0, -0.3]
+    jointPosCosts: [1, 1, 1, 1, 1, 1]
+    jointVelCosts: [1, 1, 1, 1, 1, 1]
+    jointControlCosts: [0, 0, 0, 0, 0, 0]
+    jointJerkThresholds: [0.005, 0.005, 0.005, 0.005, 0.005, 0.005]

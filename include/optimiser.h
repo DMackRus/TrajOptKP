@@ -118,7 +118,7 @@ protected:
     // Calculate derivatives at key points
     void getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints);
     void getCostDerivs();
-    void interpolateDerivatives(std::vector<std::vector<int>> keyPoints);
+    void interpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs);
 
 
 

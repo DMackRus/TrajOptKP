@@ -2,15 +2,16 @@ optimiser: "interpolated_iLQR"
 #optimiser: "stomp"
 #optimiser: "gradDescent"
 # pendulum = 0, reaching = 1,
-# pushing cylinder = 2, pushing cylinder into mild clutter = 3, pushing cylinder heavy clutter = 4, pushing cylinder medium clutter contrained = 5
+# pushing cylinder = 2, pushing cylinder into mild clutter = 3, pushing cylinder heavy clutter = 4, pushing cylinder medium clutter constrained = 5
 # pushing box with toppling = 6
 # boxFlick = 7, boxFlickLowClutter = 8, boxFlickHeavyClutter = 9
-taskNumber: 4
+# locomotion = 10
+taskNumber: 10
 # init control = 0, optimise once = 1, MPCContinous = 2, MPC_until_completion = 3, generateTestScenes = 4, generateTestingData = 5, generateFilteringData = 6
 # generic testing = 9
 displayMode: 1
 # Loadmodes can be, "random", "fromCSV", "fromYAML"
-taskInitMode: "fromCSV"
-csvRow: 3
+taskInitMode: "fromYAML"
+csvRow: 0
 filtering: false
 costDerivsFD: false
