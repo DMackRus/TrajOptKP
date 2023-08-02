@@ -51,7 +51,6 @@ std::shared_ptr<gradDescent> gradDescentOptimiser;
 std::shared_ptr<visualizer> activeVisualiser;
 std::shared_ptr<fileHandler> yamlReader;
 
-int interpolationMethod = linear;
 int keyPointMethod = setInterval;
 //int keyPointMethod = setInterval;
 
@@ -73,6 +72,7 @@ void genericTesting();
 
 int main(int argc, char **argv) {
     cout << "program started \n";
+    omp_set_dynamic(0);     // Explicitly disable dynamic teams
     std::string optimiser;
     int mode;
     int task;
@@ -185,7 +185,7 @@ int main(int argc, char **argv) {
     }
     else if(optimiser == "stomp"){
         yamlReader->readOptimisationSettingsFile(opt_stomp);
-        stompOptimiser = std::make_shared<stomp>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader, activeDifferentiator, yamlReader->maxHorizon, 50);
+        stompOptimiser = std::make_shared<stomp>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader, activeDifferentiator, yamlReader->maxHorizon, 8);
         activeOptimiser = stompOptimiser;
     }
     else if(optimiser == "gradDescent"){
@@ -218,14 +218,14 @@ int main(int argc, char **argv) {
         bool _;
         double __, ___, ____, _____, ______, _7;
         double finalDist;
-        activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
+        activeOptimiser->setupTestingExtras(1000, keyPointMethod, activeOptimiser->min_interval);
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
         activeOptimiser->verboseOutput = true;
         mpcVisualise = true;
 
         // No clutter - 1800 - 500 - 1800
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2500, 1, 50);
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1000, 1, 200);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -338,15 +338,13 @@ void onetaskGenerateTestingData(){
 //    int minN[6] = {1, 100, 1000, 50, 50, 50};
 //    bool approxBackwardsPass[6] = {false, false, false, false, false, false};
 
-    std::vector<std::string> methodNames = {"baseline", "setInterval_5", "setInterval_100", "setInterval_1000", "adaptive_jerk_5"};
+    std::vector<std::string> methodNames = {"baseline", "setInterval_5", "setInterval_100", "setInterval_1000", "adaptive_jerk_5", "iterative_error_5"};
     int numMethods = methodNames.size();
-    std::vector<int> keyPointMethods = {setInterval, setInterval, setInterval, setInterval, adaptive_jerk};
-    std::vector<int> interpMethod = {linear, linear, linear, linear, linear};
-    std::vector<int> minN = {1, 5, 100, 1000, 5};
-    std::vector<bool> approxBackwardsPass = {false, false, false, false, false};
+    std::vector<int> keyPointMethods = {setInterval, setInterval, setInterval, setInterval, adaptive_jerk, iterative_error};
+    std::vector<int> minN = {1, 5, 100, 1000, 5, 5};
 
     // Loop through saved trajectories
-    for(int i = 0; i < 100; i++){
+    for(int i = 0; i < 2; i++){
         cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
 
         // Loop through our interpolating derivatives methods
@@ -387,7 +385,7 @@ void onetaskGenerateTestingData(){
 
 
             // Setup interpolation method
-            activeOptimiser->setupTestingExtras(i, interpMethod[j], keyPointMethods[j], minN[j], approxBackwardsPass[j]);
+            activeOptimiser->setupTestingExtras(i, keyPointMethods[j], minN[j]);
             // Setup initial state of the problem
 
 //            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -473,7 +471,7 @@ void generateTestingData(){
 
     for(int i = 0; i < 1; i ++){
 //        twoDPushing *myTwoDPushing = new twoDPushing(heavyClutter);
-        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(heavyClutter);
+        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(noClutter);
         activeModelTranslator = myTwoDPushing;
         activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 
@@ -544,7 +542,7 @@ void generateFilteringData(){
         // Load optimiser
 
         // Reset optimisers variables as required
-        activeOptimiser->setupTestingExtras(i, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, false);
+        activeOptimiser->setupTestingExtras(i, keyPointMethod, activeOptimiser->min_interval);
 
         // Generate init controls
         std::vector<MatrixXd> initControls;
@@ -669,7 +667,7 @@ void showInitControls(){
 
 void optimiseOnceandShow(){
 //    int setupHorizon = 1000;
-    int optHorizon = 1500;
+    int optHorizon = 3000;
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
@@ -690,7 +688,7 @@ void optimiseOnceandShow(){
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
 //    test = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 //    cout << "test 2: " << test << endl;
-    activeOptimiser->setupTestingExtras(1000, interpolationMethod, keyPointMethod, activeOptimiser->min_interval, activeOptimiser->approximate_backwardsPass);
+    activeOptimiser->setupTestingExtras(1000, keyPointMethod, activeOptimiser->min_interval);
 
     auto start = high_resolution_clock::now();
     std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
@@ -827,7 +825,7 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
 //    cout << "test start state: " << testStartState << endl;
 //    cout << "desired state: " << activeModelTranslator->X_desired << endl;
 
-    optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 3, 2, OPT_HORIZON);
+    optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 5, 4, OPT_HORIZON);
 
     while(!taskComplete){
         MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
@@ -849,7 +847,7 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
             sucess = true;
         }
         else{
-            if(reInitialiseCounter > REPLAN_TIME){
+            if(reInitialiseCounter >= REPLAN_TIME){
                 activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
 //                initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
 //                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -862,7 +860,7 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
                     horizon = maxHorizon;
                 }
 
-                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 0, horizon);
+                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 2, 1, horizon);
                 reInitialiseCounter = 0;
 
 //                totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
@@ -882,8 +880,10 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
         }
 
         overallTaskCounter++;
+        cout << "overall task counter: " << overallTaskCounter << endl;
 
-        if(overallTaskCounter > MAX_TASK_TIME){
+        if(overallTaskCounter >= MAX_TASK_TIME){
+            cout << "task time out" << endl;
             taskComplete = true;
             sucess = false;
         }
@@ -1055,8 +1055,7 @@ void generateTestingData_MPC(){
                 cout << "--------------------------------------------------------------------------------\n";
                 cout << "current method: " << methodNames[j] << "\n";
 
-                activeOptimiser->setupTestingExtras(i, interpMethod[j], keyPointMethods[j], minN[j],
-                                                    approxBackwardsPass[j]);
+                activeOptimiser->setupTestingExtras(i, keyPointMethods[j], minN[j]);
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
                 MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgTimeForDerivs, avgPercentageDerivs,
                                  avgTimeBP, avgTimeFP, 2500, 500, 1800);
@@ -1129,7 +1128,7 @@ void keyboardControl(){
         MatrixXd control(activeModelTranslator->num_ctrl, 1);
         int testIndex = 0;
         startStateVector = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-        cout << "state: " << startStateVector << endl;
+//        cout << "state: " << startStateVector << endl;
 //
 //        for(int i = 0; i < dof; i++){
 //            if ( i != testIndex){
@@ -1147,6 +1146,8 @@ void keyboardControl(){
 
 //        control(testIndex) = 0.1;
 //        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+        double cost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+        cout << "cost: " << cost << endl;
 
 
 //        cout << "control: " << control << endl;

@@ -32,20 +32,19 @@ public:
     virtual double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) = 0;
     virtual std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) = 0;
     virtual bool checkForConvergence(double oldCost, double newCost);
-    void setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod, int minN, bool approxBackwardsPass);
+    void setupTestingExtras(int _trajecNumber, int _keyPointsMethod, int minN);
 
-    void returnOptimisationData(double &_optTime, double &_finalCost, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
+    void returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
     int currentTrajecNumber = 0;
     int interpMethod = linear;
     int keyPointsMethod = setInterval;
-    std::string interpMethodsStrings[3] = {"linear", "quadratic", "cubic"};
     std::string keyPointsMethodsStrings[4] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error"};
 
     double optTime;
 
     double initialCost;
-    double finalCost = 1.0f;
+    double costReduction = 1.0f;
 
     std::vector<double> percentDerivsPerIter;
     double avgPercentDerivs;
@@ -119,8 +118,6 @@ protected:
     void getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints);
     void getCostDerivs();
     void interpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs);
-
-
 
     void filterMatrices();
     std::vector<double> filterIndividualValue(std::vector<double> unfiltered);

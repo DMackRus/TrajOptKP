@@ -74,6 +74,8 @@ public:
     void initModelForFiniteDifferencing() override;
     void resetModelAfterFiniteDifferencing() override;
 
+    double returnModelTimeStep() override;
+
     double* sensorState(int dataIndex, std::string sensorName) override;
 
     vector<std::shared_ptr<mjData>> savedSystemStatesList;      // List of saved system states

@@ -22,7 +22,7 @@ gradDescent::gradDescent(std::shared_ptr<modelTranslator> _modelTranslator, std:
 
         A[i].block(0, 0, dof, dof).setIdentity();
         A[i].block(0, dof, dof, dof).setIdentity();
-        A[i].block(0, dof, dof, dof) *= MUJOCO_DT;
+        A[i].block(0, dof, dof, dof) *= activePhysicsSimulator->returnModelTimeStep();
         B[i].setZero();
 
         f_x.push_back(MatrixXd(2*dof, 2*dof));
@@ -103,7 +103,7 @@ double gradDescent::rolloutTrajectory(int initialDataIndex, bool saveStates, std
 
         }
 
-        cost += (stateCost * MUJOCO_DT);
+        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
     }
 
     cout << "cost of trajectory was: " << cost << endl;
@@ -273,7 +273,7 @@ double gradDescent::forwardsPass(double oldCost, bool &costReduced){
                 newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
             }
 
-            newCost += (newStateCost * MUJOCO_DT);
+            newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
@@ -382,7 +382,7 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
                 newStateCost = activeModelTranslator->costFunction(i+1, false);
             }
 
-            newCosts[i] += (newStateCost * MUJOCO_DT);
+            newCosts[i] += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
 
             activePhysicsSimulator->stepSimulator(1, i+1);
 

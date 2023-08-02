@@ -4,9 +4,13 @@ stomp::stomp(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<
     maxHorizon = _maxHorizon;
     rolloutsPerIter = _rolloutsPerIter;
 
+//    double tempNoiseProfile[6] = {2.0, 1.0, 0.1, 2.0, 1.0, 0.1};
+    double tempNoiseProfile[2] = {1.0, 1.0};
+
+
     noiseProfile.resize(num_ctrl, 1);
     for(int i = 0; i < num_ctrl; i++){
-        noiseProfile(i) = 0.5f;
+        noiseProfile(i) = tempNoiseProfile[i] / 2;
     }
 
     for(int i = 0; i < maxHorizon; i++){
@@ -63,7 +67,7 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
             stateCost = activeModelTranslator->costFunction(initialDataIndex, false);
         }
 
-        cost += (stateCost * MUJOCO_DT);
+        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
 
     }
 
@@ -84,6 +88,7 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
     bestCost = rolloutTrajectory(0, true, initControls);
 //    activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
     cout << "cost of initial trajectory: " << bestCost << endl;
+    cout << "min iter: " << minIter << endl;
 
     for(int i = 0; i < maxIter; i++) {
         double costs[rolloutsPerIter];
@@ -138,6 +143,13 @@ MatrixXd stomp::returnNoisyControl(MatrixXd Ut, MatrixXd noise){
         std::normal_distribution<double> dist(0.0, noise(i));
         double noiseVal = dist(generator);
         noisyControl(i) = Ut(i) + noiseVal;
+
+        if(noisyControl(i) > 1.0f){
+            noisyControl(i) = 1.0f;
+        }
+        else if(noisyControl(i) < -1.0f){
+            noisyControl(i) = -1.0f;
+        }
     }
 
     return noisyControl;

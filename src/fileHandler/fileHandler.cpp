@@ -21,11 +21,12 @@ fileHandler::fileHandler(){
 }
 
 
-void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies, std::string &modelFilePath, std::string &_modelName){
+void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfig){
     YAML::Node node = YAML::LoadFile(projectParentPath + yamlFilePath);
 
-    modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
-    _modelName = node["modelName"].as<std::string>();
+    _taskConfig.modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
+    _taskConfig.modelName = node["modelName"].as<std::string>();
+    _taskConfig.modelTimeStep = node["timeStep"].as<double>();
 
     // Loop through robots
     for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){
@@ -91,7 +92,7 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
         tempRobot.jointControlCosts = jointControlCosts;
         tempRobot.jointJerkThresholds = jointJerkThresholds;
 
-        _robots.push_back(tempRobot);
+        _taskConfig.robots.push_back(tempRobot);
     }
 
     // Loop through bodies
@@ -177,7 +178,7 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
             tempBody.angularJerkThreshold[i] = angularJerkThreshold[i];
         }
 
-        _bodies.push_back(tempBody);
+        _taskConfig.bodiesStates.push_back(tempBody);
     }
 }
 

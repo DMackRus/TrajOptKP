@@ -851,23 +851,23 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
 //    cout << "model iterations: " << model->opt.iterations << endl;
 //    cout << "model tolerance : " << model->opt.tolerance << endl;
 
-    cout << "model nq: " << model->nq << endl;
-    cout << "model nv: " << model->nv << endl;
-    cout << "model nu: " << model->nu << endl;
-    cout << "model nbody: " << model->nbody << endl;
-
-    for(int i = 0; i < model->nu; i++){
-        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i] << endl;
-        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i+1] << endl;
-    }
-
-    std::string names[6] = {"right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"};
-
-//    int id = mj_name2id(model.get(), mjOBJ_BODY, "right_hip");
-    for(int i = 0; i < 6; i++){
-        int id = mj_name2id(model.get(), mjOBJ_ACTUATOR, names[i].c_str());
-        cout << "actuator id: " << id << endl;
-    }
+//    cout << "model nq: " << model->nq << endl;
+//    cout << "model nv: " << model->nv << endl;
+//    cout << "model nu: " << model->nu << endl;
+//    cout << "model nbody: " << model->nbody << endl;
+//
+//    for(int i = 0; i < model->nu; i++){
+//        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i] << endl;
+//        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i+1] << endl;
+//    }
+//
+//    std::string names[6] = {"right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"};
+//
+////    int id = mj_name2id(model.get(), mjOBJ_BODY, "right_hip");
+//    for(int i = 0; i < 6; i++){
+//        int id = mj_name2id(model.get(), mjOBJ_ACTUATOR, names[i].c_str());
+//        cout << "actuator id: " << id << endl;
+//    }
 
     // make data corresponding to model.get()
     mdata = shared_ptr<mjData>(mj_makeData(model.get()));
@@ -891,6 +891,10 @@ void MuJoCoHelper::resetModelAfterFiniteDifferencing(){
     model->opt.iterations = save_iterations;
     model->opt.tolerance = save_tolerance;
 
+}
+
+double MuJoCoHelper::returnModelTimeStep() {
+    return model->opt.timestep;
 }
 
 double* MuJoCoHelper::sensorState(int dataIndex, std::string sensorName){

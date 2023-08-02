@@ -17,14 +17,15 @@ double locomotion_anymal::costFunction(int dataIndex, bool terminal){
 //    }
 
     double height = activePhysicsSimulator->sensorState(dataIndex, "torso_position")[2];
-    cost += 1.0 * pow((height - 1.3), 2);
+    cost += 10.0 * pow((height - 1.3), 2);
+//    cout << "height: " << height << endl;
 
     // ---------- Residual (2) ----------
     double torso_up = activePhysicsSimulator->sensorState(dataIndex, "torso_zaxis")[2];
-    cost += 1.0 * pow((torso_up - 1.0), 2);
+    cost += 3.0 * pow((torso_up - 1.0), 2);
 
     double com_vel = activePhysicsSimulator->sensorState(dataIndex, "torso_subtreelinvel")[0];
-    cost += 1.0 * pow((com_vel - 1.0), 2);
+    cost += 0.0 * pow((com_vel - 2.0), 2);
 
 //    cout << "height: " << height << " torso_up: " << torso_up << " com_vel: " << com_vel << "cost: " << cost << endl;
 

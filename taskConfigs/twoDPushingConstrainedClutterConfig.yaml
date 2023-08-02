@@ -1,5 +1,6 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing_lowClutterConstrained.xml"
 modelName: "/panda_pushing_constrained_clutter"
+timeStep: 0.004
 robots:
   panda:
     jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]

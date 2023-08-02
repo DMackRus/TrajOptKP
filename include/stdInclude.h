@@ -14,8 +14,6 @@
 #include <chrono>
 #include <random>
 
-#define POSE_DOFS       6
-#define MUJOCO_DT   0.002
 #define PI          3.14152
 
 struct robot{
@@ -46,6 +44,15 @@ struct bodyStateVec{
     double angularVelCost[3];
     double linearJerkThreshold[3];
     double angularJerkThreshold[3];
+};
+
+struct task{
+    std::vector<robot> robots;
+    std::vector<bodyStateVec> bodiesStates;
+    double modelTimeStep;
+    std::string modelName;
+    std::string modelFilePath;
+
 };
 
 struct stateVectorList{

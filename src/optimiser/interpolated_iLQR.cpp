@@ -23,7 +23,7 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTransl
 
         A[i].block(0, 0, dof, dof).setIdentity();
         A[i].block(0, dof, dof, dof).setIdentity();
-        A[i].block(0, dof, dof, dof) *= MUJOCO_DT;
+        A[i].block(0, dof, dof, dof) *= activePhysicsSimulator->returnModelTimeStep();
         B[i].setZero();
 
         K.push_back(MatrixXd(num_ctrl, 2*dof));
@@ -111,7 +111,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         }
 
 //        activeVisualizer->render("gah");
-        cost += (stateCost * MUJOCO_DT);
+        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
     }
 
 //    cout << "cost of initial trajectory was: " << cost << endl;
@@ -137,8 +137,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
     if(verboseOutput) {
         cout << " ---------------- optimisation begins -------------------" << endl;
-        cout << "minN " << min_interval << "  keypointsMethod: " << keyPointsMethodsStrings[keyPointsMethod]
-        << "  interpMethod: " << interpMethodsStrings[interpMethod] << endl;
+        cout << "minN " << min_interval << "  keypointsMethod: " << keyPointsMethodsStrings[keyPointsMethod] << endl;
     }
 
     auto optStart = high_resolution_clock::now();
@@ -171,6 +170,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     // ------------------------------------------------------------------------
 
     oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
+    initialCost = oldCost;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     // Optimise for a set number of iterations
@@ -207,7 +207,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
                 else{
                     lambdaExit = true;
                     break;
-
                 }
             }
             else{
@@ -220,7 +219,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         auto bpDuration = duration_cast<microseconds>(bp_stop - bp_start);
 
         time_backwardsPass_ms.push_back(bpDuration.count() / 1000.0f);
-//        cout << "K[1000] " << K[1000] << endl;
 
         if(!lambdaExit){
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
@@ -269,7 +267,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         }
     }
 
-    finalCost = newCost;
+    costReduction = 1 - (newCost / initialCost);
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
     optTime = optDuration.count() / 1000.0f;
@@ -555,7 +553,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
                 newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
             }
 
-            newCost += (newStateCost * MUJOCO_DT);
+            newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
@@ -674,7 +672,7 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
                 newStateCost = activeModelTranslator->costFunction(i+1, false);
             }
 
-            newCosts[i] += (newStateCost * MUJOCO_DT);
+            newCosts[i] += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
 
             activePhysicsSimulator->stepSimulator(1, i+1);
 

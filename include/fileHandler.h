@@ -23,7 +23,7 @@ enum optimisers{
 class fileHandler{
 public:
     fileHandler();
-    void readModelConfigFile(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies, std::string &modelFilePath, std::string &_modelName);
+    void readModelConfigFile(std::string yamlFilePath, task &_taskConfig);
     void readSettingsFile(std::string settingsFilePath);
     void readOptimisationSettingsFile(int optimiser);
 

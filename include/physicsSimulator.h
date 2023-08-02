@@ -83,6 +83,8 @@ public:
     virtual void initModelForFiniteDifferencing() = 0;
     virtual void resetModelAfterFiniteDifferencing() = 0;
 
+    virtual double returnModelTimeStep() = 0;
+
 
 
 protected:

@@ -20,18 +20,16 @@ bool optimiser::checkForConvergence(double oldCost, double newCost){
     return false;
 }
 
-void optimiser::setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod, int _minN, bool _approxBackwardsPass){
+void optimiser::setupTestingExtras(int _trajecNumber, int _keyPointsMethod, int _minN){
     currentTrajecNumber = _trajecNumber;
-    interpMethod = _interpMethod;
     keyPointsMethod = _keyPointsMethod;
     min_interval = _minN;
-    approximate_backwardsPass = _approxBackwardsPass;
 }
 
-void optimiser::returnOptimisationData(double &_optTime, double &_finalCost, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
+void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
 
     _optTime = optTime;
-    _finalCost = finalCost;
+    _costReduction = costReduction;
     _avgPercentageDerivs = avgPercentDerivs;
     _avgTimeGettingDerivs = avgTime_getDerivs_ms;
     _numIterations = numIterationsForConvergence;
@@ -94,7 +92,6 @@ void optimiser::generateDerivatives(){
         cout << "percentage of derivs calculated: " << percentDerivsCalculated << endl;
     }
 
-
 //        A.resize(initControls.size());
 //        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 1);
 
@@ -105,13 +102,13 @@ void optimiser::generateDerivatives(){
 //        A.resize(initControls.size());
 //        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 2);
 
-
-//    cout << "l_xx[horizonLength - 1]: " << l_xx[horizonLength - 1] << endl;
-//    cout << "l_xx[horizonLength]: " << l_xx[horizonLength] << endl;
-//    cout << "l_x[horizonLength]: " << l_x[horizonLength] << endl;
-//    cout << "l_u[horizonLength - 1]: " << l_u[horizonLength - 1] << endl;
+    cout << "l_xx[horizonLength - 1]: " << l_xx[horizonLength - 1] << endl;
+    cout << "l_xx[horizonLength]: " << l_xx[horizonLength] << endl;
+    cout << "l_x[horizonLength]: " << l_x[horizonLength] << endl;
+    cout << "l_u[horizonLength - 1]: " << l_u[horizonLength - 1] << endl;
+    cout << "l_uu[horizonLength - 1]: " << l_uu[horizonLength - 1] << endl;
     cout << "A[horizonLength - 1]: " << A[horizonLength - 1] << endl;
-//    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
+    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
 
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
@@ -314,7 +311,6 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
     }
 
     for(int i = 0; i < horizonLength; i++){
-
         evalPoints.push_back(std::vector<int>());
     }
 
@@ -360,7 +356,6 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
             if(allChecksComplete){
                 binsComplete[i] = true;
 //                evalPoints.push_back(subListWithMidpoints);
-
                 subListWithMidpoints.clear();
             }
 
@@ -387,9 +382,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
 //                    cout << "Adding key point " << i << " to dof " << j << "\n";
                     evalPoints[i].push_back(j);
                 }
-
             }
-//            cout << "\n";
         }
     }
 

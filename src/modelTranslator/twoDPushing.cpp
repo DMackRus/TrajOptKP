@@ -411,7 +411,7 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 //    mainWayPoints.push_back(mainWayPoint);
 //    wayPointsTiming.push_back(3 * horizon / 4);
 
-    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
+    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * activePhysicsSimulator->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));

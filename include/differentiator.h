@@ -4,8 +4,8 @@
 #ifndef DIFFERENTIATOR_H
 #define DIFFERENTIATOR_H
 
-#define USE_DQACC 1
-#define HESSIAN_APPROXIMATION 1
+#define USE_DQACC 0
+#define HESSIAN_APPROXIMATION 0
 
 #include "modelTranslator.h"
 #include "MuJoCoHelper.h"
