@@ -1,6 +1,6 @@
 #include "stomp.h"
 
-stomp::stomp(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, int _rolloutsPerIter): optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+stomp::stomp(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _mujocoHelper, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, int _rolloutsPerIter): optimiser(_modelTranslator, _mujocoHelper, _yamlReader, _differentiator){
     maxHorizon = _maxHorizon;
     rolloutsPerIter = _rolloutsPerIter;
 
@@ -25,7 +25,7 @@ stomp::stomp(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<
     }
 
     for(int i = 0; i < rolloutsPerIter; i++){
-        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+        mujocoHelper->appendSystemStateToEnd(mujocoHelper->mjDataMain);
     }
 }
 
@@ -33,9 +33,9 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
     double cost = 0.0f;
 //
 //    if(initialDataIndex != MAIN_DATA_STATE){
-//        activePhysicsSimulator->copySystemState(initialDataIndex, 0);
+//        mujocoHelper->copySystemState(initialDataIndex, 0);
 //    }
-    activePhysicsSimulator->copySystemState(initialDataIndex, MAIN_DATA_STATE);
+    mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[initialDataIndex], mujocoHelper->mjDataMain);
 
 //    MatrixXd testStart = activeModelTranslator->returnStateVector(initialDataIndex);
 //    cout << "init state: " << testStart << endl;
@@ -45,29 +45,29 @@ double stomp::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vect
     MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
-    Xt = activeModelTranslator->returnStateVector(initialDataIndex);
+    Xt = activeModelTranslator->returnStateVector(mujocoHelper->mjDataTrajectory[initialDataIndex]);
 //    cout << "X_start:" << Xt << endl;
 
     for(int i = 0; i < horizonLength; i++){
         // set controls
-        activeModelTranslator->setControlVector(initControls[i], initialDataIndex);
+        activeModelTranslator->setControlVector(initControls[i], mujocoHelper->mjDataTrajectory[initialDataIndex]);
 
         // Integrate simulator
-        activePhysicsSimulator->stepSimulator(1, initialDataIndex);
+        mujocoHelper->stepSimulator(1, mujocoHelper->mjDataTrajectory[initialDataIndex]);
 
         // return cost for this state
-        Xt = activeModelTranslator->returnStateVector(initialDataIndex);
-        Ut = activeModelTranslator->returnControlVector(initialDataIndex);
+        Xt = activeModelTranslator->returnStateVector(mujocoHelper->mjDataTrajectory[initialDataIndex]);
+        Ut = activeModelTranslator->returnControlVector(mujocoHelper->mjDataTrajectory[initialDataIndex]);
         double stateCost;
         
         if(i == initControls.size() - 1){
-            stateCost = activeModelTranslator->costFunction(initialDataIndex, true);
+            stateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataTrajectory[initialDataIndex], true);
         }
         else{
-            stateCost = activeModelTranslator->costFunction(initialDataIndex, false);
+            stateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataTrajectory[initialDataIndex], false);
         }
 
-        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
+        cost += (stateCost * mujocoHelper->returnModelTimeStep());
 
     }
 
@@ -83,10 +83,11 @@ std::vector<MatrixXd> stomp::optimise(int initialDataIndex, std::vector<MatrixXd
     for(int i = 0; i < initControls.size(); i++){
         U_best[i] = initControls[i];
     }
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+
+    mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
     MatrixXd testStart = activeModelTranslator->returnStateVector(0);
     bestCost = rolloutTrajectory(0, true, initControls);
-//    activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+//    mujocoHelper->copySystemState(0, MAIN_DATA_STATE);
     cout << "cost of initial trajectory: " << bestCost << endl;
     cout << "min iter: " << minIter << endl;
 

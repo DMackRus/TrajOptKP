@@ -6,7 +6,6 @@
 #define PHYSICSSIMSWITCHING_FILEHANDLER_H
 
 #include "stdInclude.h"
-#include "physicsSimulator.h"
 #include <yaml-cpp/yaml.h>
 #include <sys/types.h>
 #include <sys/stat.h>

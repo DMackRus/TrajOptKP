@@ -7,8 +7,8 @@ class boxFlick: public modelTranslator{
 public:
     boxFlick(int _clutterLevel);
 
-    double costFunction(int dataIndex, bool terminal) override;
-    void costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
+    double costFunction(std::shared_ptr <mjData> d, bool terminal) override;
+    void costDerivatives(std::shared_ptr <mjData> d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
 
     MatrixXd returnRandomStartState() override;
     MatrixXd returnRandomGoalState(MatrixXd X0) override;
@@ -21,7 +21,7 @@ public:
     std::vector<m_point> initControls_createAllWayPoints(std::vector<m_point> mainWayPoints, std::vector<int> wayPointsTiming);
     std::vector<MatrixXd> generate_initControls_fromWayPoints(std::vector<m_point> initPath);
 
-    bool taskComplete(int dataIndex, double &dist) override;
+    bool taskComplete(std::shared_ptr <mjData> d, double &dist) override;
 
 
 

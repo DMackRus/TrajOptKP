@@ -23,21 +23,21 @@ public:
     // - Functions that work for all tasks in base class
     void initModelTranslator(std::string filePath);
 
-    MatrixXd returnStateVector(int dataIndex);
-    bool setStateVector(MatrixXd _stateVector, int dataIndex);
-    MatrixXd returnControlVector(int dataIndex);
-    bool setControlVector(MatrixXd _controlVector, int dataIndex);
+    MatrixXd returnStateVector(std::shared_ptr<mjData> d);
+    bool setStateVector(MatrixXd _stateVector, std::shared_ptr<mjData> d);
+    MatrixXd returnControlVector(std::shared_ptr<mjData> d);
+    bool setControlVector(MatrixXd _controlVector, std::shared_ptr<mjData> d);
 
-    MatrixXd returnPositionVector(int dataIndex);
-    MatrixXd returnVelocityVector(int dataIndex);
-    MatrixXd returnAccelerationVector(int dataIndex);
-    bool setPositionVector(MatrixXd _positionVector, int dataIndex);
-    bool setVelocityVector(MatrixXd _velocityVector, int dataIndex);
+    MatrixXd returnPositionVector(std::shared_ptr<mjData> d);
+    MatrixXd returnVelocityVector(std::shared_ptr<mjData> d);
+    MatrixXd returnAccelerationVector(std::shared_ptr<mjData> d);
+    bool setPositionVector(MatrixXd _positionVector, std::shared_ptr<mjData> d);
+    bool setVelocityVector(MatrixXd _velocityVector, std::shared_ptr<mjData> d);
 
     // - Optional override functions, have default implementations but can be overwritten
-    virtual double costFunction(int dataIndex, bool terminal);
-    virtual void costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
-    virtual bool taskComplete(int dataIndex, double &dist);
+    virtual double costFunction(std::shared_ptr<mjData> d, bool terminal);
+    virtual void costDerivatives(std::shared_ptr<mjData> d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
+    virtual bool taskComplete(std::shared_ptr<mjData> d, double &dist);
     virtual std::vector<MatrixXd> createInitSetupControls(int horizonLength);
 
     // - Pure virtual functions that HAVE to be overwritten
@@ -52,8 +52,7 @@ public:
     MatrixXd X_desired;
     MatrixXd X_start;
 
-    std::shared_ptr<physicsSimulator> activePhysicsSimulator;
-    std::shared_ptr<MuJoCoHelper> myHelper;
+    std::shared_ptr<MuJoCoHelper> mujocoHelper;
     std::string modelFilePath;
     std::string modelName;
 

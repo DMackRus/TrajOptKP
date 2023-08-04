@@ -5,7 +5,6 @@
 #ifndef PHYSICSSIMSWITCHING_VISUALIZER_H
 #define PHYSICSSIMSWITCHING_VISUALIZER_H
 
-#include "physicsSimulator.h"
 #include "MuJoCoHelper.h"
 #include <GLFW/glfw3.h>
 #include "stdInclude.h"
@@ -59,7 +58,7 @@ public:
     bool replayTriggered = false;
 
 private:
-    std::shared_ptr<physicsSimulator> activePhysicsSimulator;
+    std::shared_ptr<MuJoCoHelper> mujocoHelper;
     std::shared_ptr<modelTranslator> activeModelTranslator;
 };
 

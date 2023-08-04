@@ -1,9 +1,9 @@
 
 #include "optimiser.h"
 
-optimiser::optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator){
+optimiser::optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _mujocoHelper, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator){
     activeModelTranslator = _modelTranslator;
-    activePhysicsSimulator = _physicsSimulator;
+    mujocoHelper = _mujocoHelper;
     activeYamlReader = _yamlReader;
     activeDifferentiator = _differentiator;
 
@@ -164,9 +164,9 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
     }
     else if(keyPointsMethod == iterative_error){
         computedKeyPoints.clear();
-        activePhysicsSimulator->initModelForFiniteDifferencing();
+        mujocoHelper->initModelForFiniteDifferencing();
         evaluationWaypoints = generateKeyPointsIteratively();
-        activePhysicsSimulator->resetModelAfterFiniteDifferencing();
+        mujocoHelper->resetModelAfterFiniteDifferencing();
 
     }
     else{
@@ -458,7 +458,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 //        if(dofIndex == 0){
 //            cout << "startIndex is being calced" << "\n";
 //        }
-        activeDifferentiator->getDerivatives(A[indices.startIndex], B[indices.startIndex], cols, blank1, blank2, blank3, blank4, false, indices.startIndex, false);
+        activeDifferentiator->getDerivatives(A[indices.startIndex], B[indices.startIndex], cols, blank1, blank2, blank3, blank4, false, mujocoHelper->mjDataTrajectory[indices.startIndex], false);
         computedKeyPoints[dofIndex].push_back(indices.startIndex);
     }
 
@@ -466,7 +466,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 //        if(dofIndex == 0){
 //            cout << "midIndex is being calced" << "\n";
 //        }
-        activeDifferentiator->getDerivatives(A[midIndex], B[midIndex], cols, blank1, blank2, blank3, blank4, false, midIndex, false);
+        activeDifferentiator->getDerivatives(A[midIndex], B[midIndex], cols, blank1, blank2, blank3, blank4, false, mujocoHelper->mjDataTrajectory[midIndex], false);
         computedKeyPoints[dofIndex].push_back(midIndex);
     }
 
@@ -474,7 +474,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 //        if(dofIndex == 0){
 //            cout << "endIndex is being calced" << "\n";
 //        }
-        activeDifferentiator->getDerivatives(A[indices.endIndex], B[indices.endIndex], cols, blank1, blank2, blank3, blank4, false, indices.endIndex, false);
+        activeDifferentiator->getDerivatives(A[indices.endIndex], B[indices.endIndex], cols, blank1, blank2, blank3, blank4, false, mujocoHelper->mjDataTrajectory[indices.endIndex], false);
         computedKeyPoints[dofIndex].push_back(indices.endIndex);
     }
 
@@ -556,21 +556,21 @@ void optimiser::getCostDerivs(){
     #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
         if(i == 0){
-            activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+            activeModelTranslator->costDerivatives(mujocoHelper->mjDataTrajectory[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
         }
         else{
-            activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+            activeModelTranslator->costDerivatives(mujocoHelper->mjDataTrajectory[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
         }
 
     }
 
-    activeModelTranslator->costDerivatives(horizonLength-1,
+    activeModelTranslator->costDerivatives(mujocoHelper->mjDataTrajectory[horizonLength-1],
                                            l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength], true);
 }
 
 void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
 
-    activePhysicsSimulator->initModelForFiniteDifferencing();
+    mujocoHelper->initModelForFiniteDifferencing();
 
     #pragma omp parallel for
     for(int i = 0; i < keyPoints.size(); i++){
@@ -586,7 +586,7 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         if(timeIndex == horizonLength - 1){
             terminal = true;
         }
-        activeDifferentiator->getDerivatives(A[timeIndex], B[timeIndex], columns, l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex], activeYamlReader->costDerivsFD, timeIndex, terminal);
+        activeDifferentiator->getDerivatives(A[timeIndex], B[timeIndex], columns, l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex], activeYamlReader->costDerivsFD, mujocoHelper->mjDataTrajectory[timeIndex], terminal);
 
     }
 
@@ -596,20 +596,20 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
 //    activeYamlReader->generalSaveMatrices(l_x, "l_x_fd");
 //    activeYamlReader->generalSaveMatrices(l_xx, "l_xx_fd");
 
-    activePhysicsSimulator->resetModelAfterFiniteDifferencing();
+    mujocoHelper->resetModelAfterFiniteDifferencing();
 
     if(!activeYamlReader->costDerivsFD){
         #pragma omp parallel for
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
-                activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->costDerivatives(mujocoHelper->mjDataTrajectory[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
             else{
-                activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->costDerivatives(mujocoHelper->mjDataTrajectory[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
         }
         //    #TODO - check if this should be horizon length
-        activeModelTranslator->costDerivatives(horizonLength - 1,
+        activeModelTranslator->costDerivatives(mujocoHelper->mjDataTrajectory[horizonLength - 1],
                                                l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength], true);
 
     }

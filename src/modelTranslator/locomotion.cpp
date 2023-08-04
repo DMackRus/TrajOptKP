@@ -51,7 +51,7 @@ locomotion_anymal::locomotion_anymal(): modelTranslator(){
 ////    l_uu = 2 * R;
 //}
 
-bool locomotion_anymal::taskComplete(int dataIndex, double &dist){
+bool locomotion_anymal::taskComplete(std::shared_ptr<mjData> d, double &dist){
     return false;
 }
 

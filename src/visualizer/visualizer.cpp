@@ -6,7 +6,7 @@
 
 visualizer::visualizer(std::shared_ptr<modelTranslator> _modelTranslator){
 
-    activePhysicsSimulator = _modelTranslator->activePhysicsSimulator;
+    mujocoHelper = _modelTranslator->mujocoHelper;
     activeModelTranslator = _modelTranslator;
 
     if (!glfwInit())
@@ -15,7 +15,7 @@ visualizer::visualizer(std::shared_ptr<modelTranslator> _modelTranslator){
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
-    activePhysicsSimulator->initVisualisation();
+    mujocoHelper->initVisualisation();
 
     // Set window pointer to this class
     glfwSetWindowUserPointer(window, this);
@@ -42,90 +42,18 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         replayTriggered = true;
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_P){
-
-        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_O){
-
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
-
-        std::cout << "before ut " << std::endl;
-        MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
-        MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
-        MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
-        MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
-
-        Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-        X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
-        std::cout << "cost: " << cost << std::endl;
-
-
-        MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->costDerivatives(MAIN_DATA_STATE, l_x, l_xx, l_u, l_uu, false);
-        cout << "l_x: " << l_x << endl;
-        cout << "l_xx:" << l_xx << endl;
-
-        MatrixXd posVector, velVector, accelVec, stateVector;
-        posVector = activeModelTranslator->returnPositionVector(MAIN_DATA_STATE);
-        velVector = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
-        stateVector = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-        accelVec = activeModelTranslator->returnAccelerationVector(MAIN_DATA_STATE);
-        cout << "pos Vector: " << posVector << endl;
-        cout << "vel vector: " << velVector << endl;
-        cout << "stateVector: " << stateVector << endl;
-        cout << "accel vector: " << accelVec << endl;
         
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
-        MatrixXd controlVec;
-//        SensorByName(model, data, "torso_position")[2];
-        activePhysicsSimulator->sensorState(MAIN_DATA_STATE, "torso_position");
-        controlVec = activeModelTranslator->returnControlVector(0);
-        cout << "control vec: " << controlVec << endl;
 
     }
         // left arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_A){
         // Analyse a specific stored system state
-
-
-        int dataIndex = 1;
-
-        MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
-        MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
-        MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
-        MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
-
-
-        Ut = activeModelTranslator->returnControlVector(dataIndex);
-        U_last = activeModelTranslator->returnControlVector(dataIndex);
-
-        Xt = activeModelTranslator->returnStateVector(dataIndex);
-        X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->costFunction(dataIndex, false);
-        cout << "------------------------------------------------- \n";
-        std::cout << "cost: " << cost << std::endl;
-
-
-        MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->costDerivatives(dataIndex, l_x, l_xx, l_u, l_uu, false);
-        cout << "l_x: " << l_x << endl;
-        cout << "l_xx:" << l_xx << endl;
-
-        MatrixXd posVector, velVector, accelVec, stateVector;
-        posVector = activeModelTranslator->returnPositionVector(dataIndex);
-        velVector = activeModelTranslator->returnVelocityVector(dataIndex);
-        stateVector = activeModelTranslator->returnStateVector(dataIndex);
-        accelVec = activeModelTranslator->returnAccelerationVector(dataIndex);
-        cout << "pos Vector: " << posVector << endl;
-        cout << "vel vector: " << velVector << endl;
-        cout << "stateVector: " << stateVector << endl;
-        cout << "accel vector: " << accelVec << endl;
-        cout << "------------------------------------------------- \n";
-
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_S){
@@ -151,34 +79,18 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
 //     if up arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_UP){
-        for(int i = 0; i < 10; i++){
-            MatrixXd vel = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
-            vel(0) = testVel;
-            cout << "vel: " << vel << endl;
-            activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-        }
-        
+
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_DOWN){
 
     }
         // left arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_LEFT){
-        MatrixXd vel = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
-        vel(0) -= 0.1;
-        testVel = vel(0);
-        cout << testVel << endl;
-        activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
+
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_RIGHT){
-        MatrixXd vel = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
-        vel(0) += 0.1;
-        testVel = vel(0);
-        cout << "vel(0) " << vel(0) << endl;
-        cout << "testVel " << testVel << endl;
-        activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
+
 
     }
 
@@ -222,7 +134,7 @@ void visualizer::mouse_move(GLFWwindow* window, double xpos, double ypos){
     lastx = xpos;
     lasty = ypos;
 
-    activePhysicsSimulator->mouseMove(dx, dy, button_left, button_right, window);
+    mujocoHelper->mouseMove(dx, dy, button_left, button_right, window);
 }
 // -----------------------------------------------------------------------------------------------------
 
@@ -234,7 +146,7 @@ void visualizer::scrollCallbackWrapper(GLFWwindow* window, double xoffset, doubl
 // scroll callback
 void visualizer::scroll(GLFWwindow* window, double xoffset, double yoffset){
     // emulate vertical mouse motion = 5% of window height
-    activePhysicsSimulator->scroll(yoffset);
+    mujocoHelper->scroll(yoffset);
 }
 // -----------------------------------------------------------------------------------------------------
 
@@ -265,7 +177,7 @@ bool visualizer::windowOpen(){
 
 void visualizer::render(const char* label) {
 
-    activePhysicsSimulator->updateScene(window, label);
+    mujocoHelper->updateScene(window, label);
     glfwSwapBuffers(window);
     glfwPollEvents();
 }

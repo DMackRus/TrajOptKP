@@ -14,7 +14,7 @@ public:
 //    double costFunction(int dataIndex, bool terminal) override;
 //    void costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
 
-    bool taskComplete(int dataIndex, double &dist) override;
+    bool taskComplete(std::shared_ptr<mjData> d, double &dist) override;
     MatrixXd returnRandomStartState() override;
     MatrixXd returnRandomGoalState(MatrixXd X0) override;
 

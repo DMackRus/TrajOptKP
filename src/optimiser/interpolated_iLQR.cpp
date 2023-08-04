@@ -1,9 +1,8 @@
 #include "interpolated_iLQR.h"
 
-interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, std::shared_ptr<visualizer> _visualizer, std::shared_ptr<fileHandler> _yamlReader) :
-                                    optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _mujocoHelper, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, std::shared_ptr<visualizer> _visualizer, std::shared_ptr<fileHandler> _yamlReader) :
+                                    optimiser(_modelTranslator, _mujocoHelper, _yamlReader, _differentiator){
 
-//    activeDifferentiator = _differentiator;
     maxHorizon = _maxHorizon;
     activeVisualizer = _visualizer;
 //    activeYamlReader = _yamlReader;
@@ -23,7 +22,7 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTransl
 
         A[i].block(0, 0, dof, dof).setIdentity();
         A[i].block(0, dof, dof, dof).setIdentity();
-        A[i].block(0, dof, dof, dof) *= activePhysicsSimulator->returnModelTimeStep();
+        A[i].block(0, dof, dof, dof) *= mujocoHelper->returnModelTimeStep();
         B[i].setZero();
 
         K.push_back(MatrixXd(num_ctrl, 2*dof));
@@ -52,15 +51,14 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTransl
     keyPointsMethod = _yamlReader->keyPointMethod;
 
     filteringMatrices = activeYamlReader->filtering;
-    approximate_backwardsPass = activeYamlReader->approximate_backwardsPass;
 
 }
 
 double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
     double cost = 0.0f;
 
-    if(initialDataIndex != MAIN_DATA_STATE){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, initialDataIndex);
+    if(initialDataIndex != -1){
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[initialDataIndex]);
     }
 
     MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
@@ -68,32 +66,32 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
-    X_old[0] = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    X_old[0] = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
 
-    if(activePhysicsSimulator->checkIfDataIndexExists(0)){
-        activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    if(mujocoHelper->checkIfDataIndexExists(0)){
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[0], mujocoHelper->mjDataMain);
     }
     else{
-        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+        mujocoHelper->appendSystemStateToEnd(mujocoHelper->mjDataMain);
     }
 
     for(int i = 0; i < horizonLength; i++){
         // set controls
-        activeModelTranslator->setControlVector(initControls[i], MAIN_DATA_STATE);
+        activeModelTranslator->setControlVector(initControls[i], mujocoHelper->mjDataMain);
 
         // Integrate simulator
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        mujocoHelper->stepSimulator(1, mujocoHelper->mjDataMain);
 
         // return cost for this state
-        Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-        Ut = activeModelTranslator->returnControlVector(MAIN_DATA_STATE);
+        Xt = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
+        Ut = activeModelTranslator->returnControlVector(mujocoHelper->mjDataMain);
         double stateCost;
         
         if(i == initControls.size() - 1){
-            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
+            stateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataMain, true);
         }
         else{
-            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+            stateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataMain, false);
         }
 //        cout << "state: " << Xt.transpose() << endl;
 
@@ -103,16 +101,16 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         if(saveStates){
             X_old[i + 1] = Xt.replicate(1, 1);
             U_old[i] = Ut.replicate(1, 1);
-            if(activePhysicsSimulator->checkIfDataIndexExists(i + 1)){
-                activePhysicsSimulator->copySystemState(i + 1, MAIN_DATA_STATE);
+            if(mujocoHelper->checkIfDataIndexExists(i + 1)){
+                mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[i + 1], mujocoHelper->mjDataMain);
             }
             else{
-                activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+                mujocoHelper->appendSystemStateToEnd(mujocoHelper->mjDataMain);
             }
         }
 
 //        activeVisualizer->render("gah");
-        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
+        cost += (stateCost * mujocoHelper->returnModelTimeStep());
     }
 
 //    cout << "cost of initial trajectory was: " << cost << endl;
@@ -151,7 +149,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     double oldCost = 0.0f;
     double newCost = 0.0f;
     bool costReducedLastIter = true;
-    convergeThisIteration = false;
 
     // ---------------------- Clear data saving variables ----------------------
     costHistory.clear();
@@ -173,7 +170,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
     initialCost = oldCost;
     cout << "initial cost: " << oldCost << endl;
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
     // Optimise for a set number of iterations
     for(int i = 0; i < maxIter; i++){
@@ -291,7 +288,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     avgPercentDerivs /= percentDerivsPerIter.size();
 
     // Load the initial data back into main data
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_old[i]);
@@ -506,7 +503,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
     while(!costReduction){
 
         // Copy intial data state into main data state for rollout
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
         newCost = 0;
         MatrixXd stateFeedback(2*dof, 1);
@@ -519,7 +516,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
             _X = X_old[t].replicate(1, 1);
             _U = U_old[t].replicate(1, 1);
 
-            X_new = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            X_new = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
             // Calculate difference from new state to old state
             stateFeedback = X_new - _X;
 
@@ -541,7 +538,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
 //            cout << "state feedback" << endl << stateFeedback << endl;
 //            cout << "new control: " << endl << U_new[t] << endl;
 
-            activeModelTranslator->setControlVector(U_new[t], MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(U_new[t], mujocoHelper->mjDataMain);
 
             Ut = U_new[t].replicate(1, 1);
 //            cout << "U_new: " << endl << U_new[t] << endl;
@@ -549,15 +546,15 @@ double interpolatediLQR::forwardsPass(double oldCost){
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
+                newStateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataMain, true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+                newStateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataMain, false);
             }
 
-            newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+            newCost += (newStateCost * mujocoHelper->returnModelTimeStep());
 
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            mujocoHelper->stepSimulator(1, mujocoHelper->mjDataMain);
 
 //             if(t % 5 == 0){
 //                 const char* fplabel = "fp";
@@ -584,17 +581,17 @@ double interpolatediLQR::forwardsPass(double oldCost){
 
     // If the cost was reduced
     if(newCost < oldCost){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
         for(int i = 0; i < horizonLength; i++){
 
-            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(U_new[i], mujocoHelper->mjDataMain);
+            mujocoHelper->stepSimulator(1, mujocoHelper->mjDataMain);
 
             // Log the old state
-             X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+             X_old.at(i + 1) = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
 
-             activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
+            mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[i+1], mujocoHelper->mjDataMain);
 
              U_old[i] = U_new[i].replicate(1, 1);
 
@@ -619,10 +616,8 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
     double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     for(int i = 0; i < 8; i++){
-        activePhysicsSimulator->copySystemState(i+1, 0);
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[i+1], mujocoHelper->mjDataTrajectory[0]);
     }
-
-    MatrixXd initState = activeModelTranslator->returnStateVector(1);
 
     #pragma omp parallel for
     for(int i = 0; i < 8; i++){
@@ -641,7 +636,7 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
             //_U = activeModelTranslator->returnControlVector(t);
             _U = U_old[t].replicate(1, 1);
 
-            X_new = activeModelTranslator->returnStateVector(i+1);
+            X_new = activeModelTranslator->returnStateVector(mujocoHelper->mjDataTrajectory[i+1]);
 
             // Calculate difference from new state to old state
             stateFeedback = X_new - _X;
@@ -659,7 +654,7 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
                 }
             }
 
-            activeModelTranslator->setControlVector(U_alpha[t][i], i+1);
+            activeModelTranslator->setControlVector(U_alpha[t][i], mujocoHelper->mjDataTrajectory[i+1]);
 //            Xt = activeModelTranslator->returnStateVector(i+1);
 //            //cout << "Xt: " << Xt << endl;
 //
@@ -668,15 +663,15 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(i+1, true);
+                newStateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataTrajectory[i+1], true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(i+1, false);
+                newStateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataTrajectory[i+1], false);
             }
 
-            newCosts[i] += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+            newCosts[i] += (newStateCost * mujocoHelper->returnModelTimeStep());
 
-            activePhysicsSimulator->stepSimulator(1, i+1);
+            mujocoHelper->stepSimulator(1, mujocoHelper->mjDataTrajectory[i+1]);
 
             X_last = Xt.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
@@ -694,27 +689,26 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
 
     newCost = bestAlphaCost;
 //    cout << "best alpha cost = " << bestAlphaCost << " at alpha: " << alphas[bestAlphaIndex] << endl;
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
     // If the cost was reduced - update all the data states
     if(newCost < oldCost){
-        initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 
         for(int i = 0; i < horizonLength; i++){
 
-            activeModelTranslator->setControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(U_alpha[i][bestAlphaIndex], mujocoHelper->mjDataMain);
+            mujocoHelper->stepSimulator(1, mujocoHelper->mjDataMain);
 
             // Log the old state
-            X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            X_old.at(i + 1) = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
 
-            activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
+            mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[i+1], mujocoHelper->mjDataMain);
 
             U_old[i] = U_alpha[i][bestAlphaIndex].replicate(1, 1);
 
         }
 
-        MatrixXd testState = activeModelTranslator->returnStateVector(horizonLength - 1);
+        MatrixXd testState = activeModelTranslator->returnStateVector(mujocoHelper->mjDataTrajectory[horizonLength - 1]);
 //        cout << "final state after FP: " << testState.transpose() << endl;
 
         return newCost;

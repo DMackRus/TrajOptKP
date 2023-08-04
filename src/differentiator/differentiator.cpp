@@ -1,19 +1,15 @@
 #include "differentiator.h"
 
-differentiator::differentiator(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _physicsSimulator){
+differentiator::differentiator(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _mujocoHelper){
     activeModelTranslator = _modelTranslator;
-    activePhysicsSimulator = _physicsSimulator;
+    mujocoHelper = _mujocoHelper;
 
 }
 
-void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal){
+void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, const std::shared_ptr<mjData> d, bool terminal){
 //    cout << "start of derivs function " << endl;
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
-    int tid = omp_get_thread_num();
-    // This seems random, in optimiser we define -1 = "mainData", -2 = "masterData", 0 -> horizon Length = "stored trajectory data"
-    // So we need values below -2 for finite-differencing data
-    int physicsHelperId = -3 - tid;
 
     // Initialise sub matrices of A and B matrix
     // ------------ dof x dof ----------------
@@ -35,37 +31,34 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     double costDec = 0.0f;
 
     // Allocate memory for variables
-    activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-    activePhysicsSimulator->forwardSimulator(physicsHelperId);
-
-//    // Compute mj_forward once with no skips
-//    mj_forward(m, activePhysicsSimulator->savedSystemStatesList[dataIndex].get());
-
+    std::shared_ptr<mjData> fdData = shared_ptr<mjData>(mj_makeData(mujocoHelper->model.get()));
+    mujocoHelper->cpMjData(mujocoHelper->model, fdData, d);
+    mujocoHelper->forwardSimulator(fdData);
 
     // Compute mj_forward a few times to allow optimiser to get a more accurate value for qacc
     // skips position and velocity stages (TODO LOOK INTO IF THIS IS NEEDED FOR MY METHOD)
 
 //    for( int rep=1; rep<5; rep++ )
-//        mj_forwardSkip(m, activePhysicsSimulator->savedSystemStatesList[dataIndex].get(), mjSTAGE_VEL, 1);
+//        mj_forwardSkip(m, mujocoHelper->savedSystemStatesList[dataIndex].get(), mjSTAGE_VEL, 1);
 
     // save output for center point and warmstart (needed in forward only)
 
     if(USE_DQACC){
-        dqaccdctrl = calc_dqaccdctrl(cols, dataIndex, physicsHelperId, dcostdctrl, costDerivs, terminal);
+        dqaccdctrl = calc_dqaccdctrl(cols, d, fdData, dcostdctrl, costDerivs, terminal);
 
-        dqaccdqvel = calc_dqaccdqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
+        dqaccdqvel = calc_dqaccdqvel(cols, d, fdData, dcostdvel, costDerivs, terminal);
 //        dqveldqvel = calc_dqveldqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
 
-        dqaccdq = calc_dqaccdqpos(cols, dataIndex, physicsHelperId, dcostdpos, costDerivs, terminal);
+        dqaccdq = calc_dqaccdqpos(cols, d, fdData, dcostdpos, costDerivs, terminal);
     }
     else{
-        dqveldctrl = calc_dqveldctrl(cols, dataIndex, physicsHelperId, dcostdctrl, costDerivs, terminal);
+        dqveldctrl = calc_dqveldctrl(cols, d, fdData, dcostdctrl, costDerivs, terminal);
 //        cout << "after ctrl derivs" << endl;
 
-        dqveldq = calc_dqveldqpos(cols, dataIndex, physicsHelperId, dcostdpos, costDerivs, terminal);
+        dqveldq = calc_dqveldqpos(cols, d, fdData, dcostdpos, costDerivs, terminal);
 //        cout << "after pos derivs" << endl;
 
-        dqveldqvel = calc_dqveldqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
+        dqveldqvel = calc_dqveldqvel(cols, d, fdData, dcostdvel, costDerivs, terminal);
 //        cout << "after vel derivs" << endl;
     }
 
@@ -90,155 +83,153 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     MatrixXd l_u_inc(numCtrl, 1);
     MatrixXd l_u_dec(numCtrl, 1);
 
-    MatrixXd currentState = activeModelTranslator->returnStateVector(physicsHelperId);
-    MatrixXd currentControl = activeModelTranslator->returnControlVector(physicsHelperId);
+    MatrixXd currentState = activeModelTranslator->returnStateVector(fdData);
+    MatrixXd currentControl = activeModelTranslator->returnControlVector(fdData);
 
-    if(costDerivs && !HESSIAN_APPROXIMATION) {
-        double epsCost = 1e-6;
-        double epsTest = 1e-6;
-
-        MatrixXd test1;
-        MatrixXd test2;
-
-        for(int i = 0; i < 2*dof; i++){
-            MatrixXd perturbedState = currentState.replicate(1, 1);
-            perturbedState(i) += epsCost;
-
-            for(int j = 0; j < 2*dof; j++){
-//                cout << "perturb state index " << i << " with state index " << j << endl;
-                MatrixXd stateInc = perturbedState.replicate(1,1);
-                stateInc(j) += epsTest;
-//                cout << "state inc pos: " << endl << stateInc << endl;
-
-                activeModelTranslator->setStateVector(stateInc, physicsHelperId);
-//                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-//                activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                test1 = activeModelTranslator->returnStateVector(physicsHelperId);
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                MatrixXd stateDec = perturbedState.replicate(1,1);
-                stateDec(j) -= epsTest;
-//                cout << "state dec: " << endl << stateDec << endl;
-
-                activeModelTranslator->setStateVector(stateDec, physicsHelperId);
-//                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-//                activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                test2 = activeModelTranslator->returnStateVector(physicsHelperId);
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-//                cout << "difference in returned states: " << endl << test1 - test2 << endl;
-//                cout << "cost inc: " << costInc << endl;
-//                cout << "cost dec: " << costDec << endl;
-
-                l_x_inc(j, 0) = (costInc - costDec)/(2*epsTest);
-            }
-
-//            cout << "perturbed state pos: " << endl << perturbedState << endl;
-//            cout << "l_x_inc: " << endl << l_x_inc << endl;
-
-            perturbedState = currentState.replicate(1, 1);
-            perturbedState(i) -= epsCost;
-
-            for(int j = 0; j < 2*dof; j++){
-                MatrixXd stateInc = perturbedState.replicate(1,1);
-                stateInc(j) += epsTest;
-
-                activeModelTranslator->setStateVector(stateInc, physicsHelperId);
-//                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                MatrixXd stateDec = perturbedState.replicate(1,1);
-                stateDec(j) -= epsTest;
-
-                activeModelTranslator->setStateVector(stateDec, physicsHelperId);
-//                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                l_x_dec(j, 0) = (costInc - costDec)/(2*epsTest);
-            }
-
-//            cout << "perturbed state neg: " << endl << perturbedState << endl;
-//            cout << "l_x_dec: " << endl << l_x_dec << endl;
-
-            // New l_x at perturbed position i
-            for(int j = 0; j < 2*dof; j++){
-                l_xx(j, i) = (l_x_inc(j, 0) - l_x_dec(j, 0))/(2*epsCost);
-            }
-        }
-
-        for(int i = 0; i < numCtrl; i++){
-            MatrixXd perturbedControl = currentControl.replicate(1, 1);
-            perturbedControl(i) += epsCost;
-
-            for(int j = 0; j < numCtrl; j++){
-                MatrixXd controlInc = perturbedControl.replicate(1,1);
-                controlInc(j) += epsCost;
-
-                activeModelTranslator->setControlVector(controlInc, physicsHelperId);
-
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                MatrixXd controlDec = perturbedControl.replicate(1,1);
-                controlDec(j) -= epsCost;
-
-                activeModelTranslator->setControlVector(controlDec, physicsHelperId);
-
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                l_u_inc(j, 0) = (costInc - costDec)/(2*epsCost);
-            }
-
-            perturbedControl = currentControl.replicate(1, 1);
-            perturbedControl(i) -= epsCost;
-
-            for(int j = 0; j < numCtrl; j++){
-                MatrixXd controlInc = perturbedControl.replicate(1,1);
-                controlInc(j) += epsCost;
-
-                activeModelTranslator->setControlVector(controlInc, physicsHelperId);
-
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                MatrixXd controlDec = perturbedControl.replicate(1,1);
-                controlDec(j) -= epsCost;
-
-                activeModelTranslator->setControlVector(controlDec, physicsHelperId);
-
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                l_u_dec(j, 0) = (costInc - costDec)/(2*epsCost);
-            }
-
-            for(int j = 0; j < numCtrl; j++){
-                l_uu(j, i) = (l_u_inc(j, 0) - l_u_dec(j, 0))/(2*epsCost);
-            }
-        }
-    }
-//    cout << "l_x: " << endl << l_x << endl;
-//    cout << "l_xx: " << endl << l_xx << endl;
+//    if(costDerivs && !HESSIAN_APPROXIMATION) {
+//        double epsCost = 1e-6;
+//        double epsTest = 1e-6;
+//
+//        MatrixXd test1;
+//        MatrixXd test2;
+//
+//        for(int i = 0; i < 2*dof; i++){
+//            MatrixXd perturbedState = currentState.replicate(1, 1);
+//            perturbedState(i) += epsCost;
+//
+//            for(int j = 0; j < 2*dof; j++){
+////                cout << "perturb state index " << i << " with state index " << j << endl;
+//                MatrixXd stateInc = perturbedState.replicate(1,1);
+//                stateInc(j) += epsTest;
+////                cout << "state inc pos: " << endl << stateInc << endl;
+//
+//                activeModelTranslator->setStateVector(stateInc, physicsHelperId);
+////                mujocoHelper->forwardSimulator(physicsHelperId);
+////                mujocoHelper->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
+//                mujocoHelper->stepSimulator(1, physicsHelperId);
+//                mujocoHelper->forwardSimulator(physicsHelperId);
+//                test1 = activeModelTranslator->returnStateVector(physicsHelperId);
+//                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+//                mujocoHelper->copySystemState(physicsHelperId, dataIndex);
+//
+//                MatrixXd stateDec = perturbedState.replicate(1,1);
+//                stateDec(j) -= epsTest;
+////                cout << "state dec: " << endl << stateDec << endl;
+//
+//                activeModelTranslator->setStateVector(stateDec, physicsHelperId);
+////                mujocoHelper->forwardSimulator(physicsHelperId);
+////                mujocoHelper->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
+//                mujocoHelper->stepSimulator(1, physicsHelperId);
+//                mujocoHelper->forwardSimulator(physicsHelperId);
+//                test2 = activeModelTranslator->returnStateVector(physicsHelperId);
+//                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+//                mujocoHelper->copySystemState(physicsHelperId, dataIndex);
+////                cout << "difference in returned states: " << endl << test1 - test2 << endl;
+////                cout << "cost inc: " << costInc << endl;
+////                cout << "cost dec: " << costDec << endl;
+//
+//                l_x_inc(j, 0) = (costInc - costDec)/(2*epsTest);
+//            }
+//
+////            cout << "perturbed state pos: " << endl << perturbedState << endl;
+////            cout << "l_x_inc: " << endl << l_x_inc << endl;
+//
+//            perturbedState = currentState.replicate(1, 1);
+//            perturbedState(i) -= epsCost;
+//
+//            for(int j = 0; j < 2*dof; j++){
+//                MatrixXd stateInc = perturbedState.replicate(1,1);
+//                stateInc(j) += epsTest;
+//
+//                activeModelTranslator->setStateVector(stateInc, physicsHelperId);
+////                mujocoHelper->forwardSimulator(physicsHelperId);
+//                mujocoHelper->stepSimulator(1, physicsHelperId);
+//                mujocoHelper->forwardSimulator(physicsHelperId);
+//                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+//                mujocoHelper->copySystemState(physicsHelperId, dataIndex);
+//
+//                MatrixXd stateDec = perturbedState.replicate(1,1);
+//                stateDec(j) -= epsTest;
+//
+//                activeModelTranslator->setStateVector(stateDec, physicsHelperId);
+////                mujocoHelper->forwardSimulator(physicsHelperId);
+//                mujocoHelper->stepSimulator(1, physicsHelperId);
+//                mujocoHelper->forwardSimulator(physicsHelperId);
+//                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+//                mujocoHelper->copySystemState(physicsHelperId, dataIndex);
+//
+//                l_x_dec(j, 0) = (costInc - costDec)/(2*epsTest);
+//            }
+//
+////            cout << "perturbed state neg: " << endl << perturbedState << endl;
+////            cout << "l_x_dec: " << endl << l_x_dec << endl;
+//
+//            // New l_x at perturbed position i
+//            for(int j = 0; j < 2*dof; j++){
+//                l_xx(j, i) = (l_x_inc(j, 0) - l_x_dec(j, 0))/(2*epsCost);
+//            }
+//        }
+//
+//        for(int i = 0; i < numCtrl; i++){
+//            MatrixXd perturbedControl = currentControl.replicate(1, 1);
+//            perturbedControl(i) += epsCost;
+//
+//            for(int j = 0; j < numCtrl; j++){
+//                MatrixXd controlInc = perturbedControl.replicate(1,1);
+//                controlInc(j) += epsCost;
+//
+//                activeModelTranslator->setControlVector(controlInc, physicsHelperId);
+//
+//                mujocoHelper->stepSimulator(1, physicsHelperId);
+//                mujocoHelper->forwardSimulator(physicsHelperId);
+//                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+//                mujocoHelper->copySystemState(physicsHelperId, dataIndex);
+//
+//                MatrixXd controlDec = perturbedControl.replicate(1,1);
+//                controlDec(j) -= epsCost;
+//
+//                activeModelTranslator->setControlVector(controlDec, physicsHelperId);
+//
+//                mujocoHelper->stepSimulator(1, physicsHelperId);
+//                mujocoHelper->forwardSimulator(physicsHelperId);
+//                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+//                mujocoHelper->copySystemState(physicsHelperId, dataIndex);
+//
+//                l_u_inc(j, 0) = (costInc - costDec)/(2*epsCost);
+//            }
+//
+//            perturbedControl = currentControl.replicate(1, 1);
+//            perturbedControl(i) -= epsCost;
+//
+//            for(int j = 0; j < numCtrl; j++){
+//                MatrixXd controlInc = perturbedControl.replicate(1,1);
+//                controlInc(j) += epsCost;
+//
+//                activeModelTranslator->setControlVector(controlInc, physicsHelperId);
+//
+//                mujocoHelper->stepSimulator(1, physicsHelperId);
+//                mujocoHelper->forwardSimulator(physicsHelperId);
+//                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+//                mujocoHelper->copySystemState(physicsHelperId, dataIndex);
+//
+//                MatrixXd controlDec = perturbedControl.replicate(1,1);
+//                controlDec(j) -= epsCost;
+//
+//                activeModelTranslator->setControlVector(controlDec, physicsHelperId);
+//
+//                mujocoHelper->stepSimulator(1, physicsHelperId);
+//                mujocoHelper->forwardSimulator(physicsHelperId);
+//                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+//                mujocoHelper->copySystemState(physicsHelperId, dataIndex);
+//
+//                l_u_dec(j, 0) = (costInc - costDec)/(2*epsCost);
+//            }
+//
+//            for(int j = 0; j < numCtrl; j++){
+//                l_uu(j, i) = (l_u_inc(j, 0) - l_u_dec(j, 0))/(2*epsCost);
+//            }
+//        }
+//    }
 
     if(costDerivs && HESSIAN_APPROXIMATION){
         l_xx = l_x * l_x.transpose();
@@ -283,13 +274,13 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     // TODO - check if this code is completely correct
     for(int i = 0; i < cols.size(); i++){
         if(USE_DQACC){
-            A.block(dof, cols[i], dof, 1) = dqaccdq.block(0, cols[i], dof, 1) * activePhysicsSimulator->returnModelTimeStep();
+            A.block(dof, cols[i], dof, 1) = dqaccdq.block(0, cols[i], dof, 1) * mujocoHelper->returnModelTimeStep();
             for(int j = 0; j < dof; j ++){
                 if(j == cols[i]){
-                    A(dof + j, cols[i] + dof) = 1 + (dqaccdqvel(j, cols[i]) * activePhysicsSimulator->returnModelTimeStep());
+                    A(dof + j, cols[i] + dof) = 1 + (dqaccdqvel(j, cols[i]) * mujocoHelper->returnModelTimeStep());
                 }
                 else{
-                    A(dof + j, cols[i] + dof) = dqaccdqvel(j, cols[i]) * activePhysicsSimulator->returnModelTimeStep();
+                    A(dof + j, cols[i] + dof) = dqaccdqvel(j, cols[i]) * mujocoHelper->returnModelTimeStep();
                 }
 
             }
@@ -309,7 +300,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     for(int i = 0; i < cols.size(); i++){
         if(cols[i] < numCtrl){
             if(USE_DQACC){
-                B.block(dof, cols[i], dof, 1) = dqaccdctrl.block(0, cols[i], dof, 1) * activePhysicsSimulator->returnModelTimeStep();
+                B.block(dof, cols[i], dof, 1) = dqaccdctrl.block(0, cols[i], dof, 1) * mujocoHelper->returnModelTimeStep();
             }
             else{
                 B.block(dof, cols[i], dof, 1) = dqveldctrl.block(0, cols[i], dof, 1);
@@ -317,9 +308,11 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
         }
     }
 
+    // Delete the temporary data
+    mj_deleteData(fdData.get());
 }
 
-MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
+MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, const std::shared_ptr<mjData> origData, std::shared_ptr<mjData> fdData, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
     int numCtrl = activeModelTranslator->num_ctrl;
     int dof = activeModelTranslator->dof;
     MatrixXd velocityInc(dof, 1);
@@ -328,7 +321,7 @@ MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, i
     double costInc;
     double costDec;
 
-    MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(physicsHelperId);
+    MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(origData);
     for(int i = 0; i < numCtrl; i++){
         bool computeColumn = false;
         for(int j = 0; j < cols.size(); j++){
@@ -341,41 +334,41 @@ MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, i
             // perturb control vector positively
             MatrixXd perturbedControls = unperturbedControls.replicate(1,1);
             perturbedControls(i) += epsControls;
-            activeModelTranslator->setControlVector(perturbedControls, physicsHelperId);
+            activeModelTranslator->setControlVector(perturbedControls, fdData);
 
             // Integrate the simulator
-//            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
-            activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            mujocoHelper->stepSimulator(1, fdData);
 //            cout << "after first step simulator - " << i << endl;
 
             // return the  new velcoity vector
-            velocityInc = activeModelTranslator->returnVelocityVector(physicsHelperId);
+            velocityInc = activeModelTranslator->returnVelocityVector(fdData);
 
             // If calculating cost derivatives
             if(fd_costDerivs){
                 // Calculate cost
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costInc = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // return data state back to initial data state
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
 
             // perturb control vector in opposite direction
             perturbedControls = unperturbedControls.replicate(1, 1);
             perturbedControls(i) -= epsControls;
 
             // integrate simulator
-//            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
-            activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            mujocoHelper->stepSimulator(1, fdData);
 //            cout << "after second step simulator - " << i << endl;
 
             // return the new velocity vector
-            velocityDec = activeModelTranslator->returnVelocityVector(physicsHelperId);
+            velocityDec = activeModelTranslator->returnVelocityVector(fdData);
 
             // If calculating cost derivatives via finite-differencing
             if(fd_costDerivs){
                 // Calculate cost
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costDec = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // Calculate one column of the dqveldctrl matrix
@@ -392,15 +385,14 @@ MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, i
             }
 
             // Undo pertubation
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-//            cout << "reset simulator state - " << i << endl;
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
         }
     }
 
     return dqveldctrl;
 }
 
-MatrixXd differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
+MatrixXd differentiator::calc_dqaccdctrl(std::vector<int> cols, const std::shared_ptr<mjData> origData, std::shared_ptr<mjData> fdData, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
     int numCtrl = activeModelTranslator->num_ctrl;
     int dof = activeModelTranslator->dof;
     MatrixXd acellInc(dof, 1);
@@ -409,11 +401,11 @@ MatrixXd differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
     double costInc;
     double costDec;
 
-    int tid = -3 - physicsHelperId;
-    mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->fd_data[tid].get(), dof);
-    mju_copy(warmstart, activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
+//    int tid = -3 - physicsHelperId;
+//    mjtNum* warmstart = mj_stackAlloc(mujocoHelper->fd_data[tid].get(), dof);
+//    mju_copy(warmstart, mujocoHelper->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
 
-    MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(physicsHelperId);
+    MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(fdData);
     for(int i = 0; i < numCtrl; i++){
         bool computeColumn = false;
         for(int j = 0; j < cols.size(); j++){
@@ -426,38 +418,38 @@ MatrixXd differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
             // perturb control vector positively
             MatrixXd perturbedControls = unperturbedControls.replicate(1,1);
             perturbedControls(i) += epsControls;
-            activeModelTranslator->setControlVector(perturbedControls, physicsHelperId);
+            activeModelTranslator->setControlVector(perturbedControls, fdData);
 
             // Integrate the simulator
-            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            activePhysicsSimulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 0);
-            acellInc = activeModelTranslator->returnAccelerationVector(physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, dof);
+//            mujocoHelper->forwardSimulator(physicsHelperId);
+            mujocoHelper->forwardSimulatorWithSkip(fdData, mjSTAGE_POS, 0);
+            acellInc = activeModelTranslator->returnAccelerationVector(fdData);
 
             // If calculating cost derivatives
             if(fd_costDerivs){
                 // Calculate cost
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costInc = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // return data state back to initial data state
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
 
             // perturb control vector in opposite direction
             perturbedControls = unperturbedControls.replicate(1, 1);
             perturbedControls(i) -= epsControls;
 
             // integrate simulator
-//            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
-            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            activePhysicsSimulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 0);
-            acellDec = activeModelTranslator->returnAccelerationVector(physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, dof);
+//            mujocoHelper->forwardSimulator(physicsHelperId);
+            mujocoHelper->forwardSimulatorWithSkip(fdData, mjSTAGE_POS, 0);
+            acellDec = activeModelTranslator->returnAccelerationVector(fdData);
 
             // If calculating cost derivatives via finite-differencing
             if(fd_costDerivs){
                 // Calculate cost
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costDec = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // Calculate one column of the dqveldctrl matrix
@@ -471,21 +463,21 @@ MatrixXd differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
             }
 
             // Undo pertubation
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
         }
     }
 
     return dqaccdctrl;
 }
 
-MatrixXd differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
+MatrixXd differentiator::calc_dqveldqvel(std::vector<int> cols, const std::shared_ptr<mjData> origData, std::shared_ptr<mjData> fdData, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
     int dof = activeModelTranslator->dof;
     MatrixXd velocityInc(dof, 1);
     MatrixXd velocityDec(dof, 1);
     double costInc;
     double costDec;
     MatrixXd dqveldqvel(dof, dof);
-    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(physicsHelperId);
+    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(fdData);
 //    cout << "unperturbed velocities - " << unperturbedVelocities << endl;
 
     for(int i = 0; i < dof; i++){
@@ -501,44 +493,44 @@ MatrixXd differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, i
             // Perturb velocity vector positively
             MatrixXd perturbedVelocities = unperturbedVelocities.replicate(1, 1);
             perturbedVelocities(i) += epsVelocities;
-            activeModelTranslator->setVelocityVector(perturbedVelocities, physicsHelperId);
+            activeModelTranslator->setVelocityVector(perturbedVelocities, fdData);
 
             // Integrate the simulator
-//            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
-            activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            mujocoHelper->stepSimulator(1, fdData);
 //            cout << "after first step simulator velocity - " << i << endl;
 
 
             // return the new velocity vector
-            velocityInc = activeModelTranslator->returnVelocityVector(physicsHelperId);
+            velocityInc = activeModelTranslator->returnVelocityVector(fdData);
 //            cout << "velocityInc - " << velocityInc << endl;
 
             // If calculating cost derivs via finite-differencing
             if(fd_costDerivs){
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costInc = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // reset the data state back to initial data state
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
 
             // perturb velocity vector negatively
             perturbedVelocities = unperturbedVelocities.replicate(1, 1);
             perturbedVelocities(i) -= epsVelocities;
-            activeModelTranslator->setVelocityVector(perturbedVelocities, physicsHelperId);
+            activeModelTranslator->setVelocityVector(perturbedVelocities, fdData);
 
             // Integrate the simulatormodel
-//            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
-            activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            mujocoHelper->stepSimulator(1, fdData);
 //            cout << "after 2nd step simulator - " << i << endl;
 
             // Return the new velocity vector
-            velocityDec = activeModelTranslator->returnVelocityVector(physicsHelperId);
+            velocityDec = activeModelTranslator->returnVelocityVector(fdData);
 //            cout << "velocityDec - " << velocityDec << endl;
 
 
             // If calculating cost derivs via finite-differencing
             if(fd_costDerivs){
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costDec = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // Calculate one column of the dqveldqvel matrix
@@ -551,24 +543,24 @@ MatrixXd differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, i
             }
 
             // Undo perturbation
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
         }
     }
     return dqveldqvel;
 }
 
-MatrixXd differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
+MatrixXd differentiator::calc_dqaccdqvel(std::vector<int> cols, const std::shared_ptr<mjData> origData, std::shared_ptr<mjData> fdData, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
     int dof = activeModelTranslator->dof;
     MatrixXd acellInc(dof, 1);
     MatrixXd acellDec(dof, 1);
     double costInc;
     double costDec;
     MatrixXd dqaccdvel(dof, dof);
-    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(physicsHelperId);
+    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(fdData);
 
-    int tid = -3 - physicsHelperId;
-    mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->fd_data[tid].get(), dof);
-    mju_copy(warmstart, activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
+//    int tid = -3 - physicsHelperId;
+//    mjtNum* warmstart = mj_stackAlloc(mujocoHelper->fd_data[tid].get(), dof);
+//    mju_copy(warmstart, mujocoHelper->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
 
     for(int i = 0; i < dof; i++){
         bool computeColumn = false;
@@ -583,36 +575,36 @@ MatrixXd differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, i
             // Perturb velocity vector positively
             MatrixXd perturbedVelocities = unperturbedVelocities.replicate(1, 1);
             perturbedVelocities(i) += epsVelocities;
-            activeModelTranslator->setVelocityVector(perturbedVelocities, physicsHelperId);
+            activeModelTranslator->setVelocityVector(perturbedVelocities, fdData);
 
             //Integrate the simulator
-            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            activePhysicsSimulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 0);
-            acellInc = activeModelTranslator->returnAccelerationVector(physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, dof);
+//            mujocoHelper->forwardSimulator(physicsHelperId);
+            mujocoHelper->forwardSimulatorWithSkip(fdData, mjSTAGE_POS, 0);
+            acellInc = activeModelTranslator->returnAccelerationVector(fdData);
 
             // If calculating cost derivs via finite-differencing
             if(fd_costDerivs){
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costInc = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // reset the data state back to initial data state
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
 
             // perturb velocity vector negatively
             perturbedVelocities = unperturbedVelocities.replicate(1, 1);
             perturbedVelocities(i) -= epsVelocities;
-            activeModelTranslator->setVelocityVector(perturbedVelocities, physicsHelperId);
+            activeModelTranslator->setVelocityVector(perturbedVelocities, fdData);
 
             // Integrate the simulator
-            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            activePhysicsSimulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 0);
-            acellDec = activeModelTranslator->returnAccelerationVector(physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, dof);
+//            mujocoHelper->forwardSimulator(physicsHelperId);
+            mujocoHelper->forwardSimulatorWithSkip(fdData, mjSTAGE_POS, 0);
+            acellDec = activeModelTranslator->returnAccelerationVector(fdData);
 
             // If calculating cost derivs via finite-differencing
             if(fd_costDerivs){
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costDec = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // Calculate one column of the dqveldqvel matrix
@@ -625,14 +617,14 @@ MatrixXd differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, i
             }
 
             // Undo perturbation
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
         }
     }
     return dqaccdvel;
 }
 
-MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
-    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(physicsHelperId);
+MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, const std::shared_ptr<mjData> origData, std::shared_ptr<mjData> fdData, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
+    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(fdData);
     int dof = activeModelTranslator->dof;
     MatrixXd velocityInc(dof, 1);
     MatrixXd velocityDec(dof, 1);
@@ -652,40 +644,40 @@ MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
             // Perturb position vector positively
             MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
             perturbedPositions(i) += epsPositions;
-            activeModelTranslator->setPositionVector(perturbedPositions, physicsHelperId);
+            activeModelTranslator->setPositionVector(perturbedPositions, fdData);
 //                cout << "Perturbed positions positive " << perturbedPositions << endl;cout << "Perturbed positions positive " << perturbedPositions << endl;
 
             // Integrate the simulator
-//                mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
-            activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//                mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            mujocoHelper->stepSimulator(1, fdData);
 //                cout << "after step simulator positon - " << i << endl;
 
             // return the new velocity vector
-            velocityInc = activeModelTranslator->returnVelocityVector(physicsHelperId);
+            velocityInc = activeModelTranslator->returnVelocityVector(fdData);
 //                cout << "Velocity positive " << velocityInc << endl;
 
             if(fd_costDerivs){
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costInc = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // reset the data state back to initial data statedataIndex
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
 
             // perturb position vector negatively
             perturbedPositions = unperturbedPositions.replicate(1, 1);
             perturbedPositions(i) -= epsPositions;
-            activeModelTranslator->setPositionVector(perturbedPositions, physicsHelperId);
+            activeModelTranslator->setPositionVector(perturbedPositions, fdData);
 
             // Integrate the simulator
-//                mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
-            activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//                mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            mujocoHelper->stepSimulator(1, fdData);
 
             // Return the new velocity vector
-            velocityDec = activeModelTranslator->returnVelocityVector(physicsHelperId);
+            velocityDec = activeModelTranslator->returnVelocityVector(fdData);
 //                cout << "velocity dec " << velocityDec << endl;
 
             if(fd_costDerivs){
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costDec = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // Calculate one column of the dqaccdq matrix
@@ -698,24 +690,24 @@ MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
             }
 
             // Undo perturbation
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
         }
     }
     return dqveldq;
 }
 
-MatrixXd differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
+MatrixXd differentiator::calc_dqaccdqpos(std::vector<int> cols, const std::shared_ptr<mjData> origData, std::shared_ptr<mjData> fdData, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
     int dof = activeModelTranslator->dof;
-    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(physicsHelperId);
+    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(fdData);
     MatrixXd accellInc(dof, 1);
     MatrixXd accellDec(dof, 1);
     double costInc;
     double costDec;
     MatrixXd dqaccdq(dof, dof);
 
-    int tid = -3 - physicsHelperId;
-    mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->fd_data[tid].get(), dof);
-    mju_copy(warmstart, activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
+//    int tid = -3 - physicsHelperId;
+//    mjtNum* warmstart = mj_stackAlloc(mujocoHelper->fd_data[tid].get(), dof);
+//    mju_copy(warmstart, mujocoHelper->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
 
     for(int i = 0; i < dof; i++){
 
@@ -731,33 +723,33 @@ MatrixXd differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, i
             // Perturb position vector positively
             MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
             perturbedPositions(i) += epsPositions;
-            activeModelTranslator->setPositionVector(perturbedPositions, physicsHelperId);
+            activeModelTranslator->setPositionVector(perturbedPositions, fdData);
 
             // Integrate the simulator
-            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            activePhysicsSimulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
-            accellInc = activeModelTranslator->returnAccelerationVector(physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, dof);
+//            mujocoHelper->forwardSimulator(physicsHelperId);
+            mujocoHelper->forwardSimulatorWithSkip(fdData, mjSTAGE_NONE, 0);
+            accellInc = activeModelTranslator->returnAccelerationVector(fdData);
 
             if(fd_costDerivs){
-                costInc = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costInc = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             //Reset data state
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
 
             //Perturb position vector negatively
             perturbedPositions = unperturbedPositions.replicate(1, 1);
             perturbedPositions(i) -= epsPositions;
-            activeModelTranslator->setPositionVector(perturbedPositions, physicsHelperId);
+            activeModelTranslator->setPositionVector(perturbedPositions, fdData);
 
-            mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            activePhysicsSimulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
-            accellDec = activeModelTranslator->returnAccelerationVector(physicsHelperId);
+//            mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, dof);
+//            mujocoHelper->forwardSimulator(physicsHelperId);
+            mujocoHelper->forwardSimulatorWithSkip(fdData, mjSTAGE_NONE, 0);
+            accellDec = activeModelTranslator->returnAccelerationVector(fdData);
 
             if(fd_costDerivs){
-                costDec = activeModelTranslator->costFunction(physicsHelperId, terminal);
+                costDec = activeModelTranslator->costFunction(fdData, terminal);
             }
 
             // Calculate one column of the dqaccdq matrix
@@ -770,7 +762,7 @@ MatrixXd differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, i
             }
 
             // Undo perturbation
-            activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
 
         }
     }

@@ -4,7 +4,7 @@
 
 #include "gradDescent.h"
 
-gradDescent::gradDescent(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, std::shared_ptr<visualizer> _visualizer, int _maxHorizon, std::shared_ptr<fileHandler> _yamlReader) : optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+gradDescent::gradDescent(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _mujocoHelper, std::shared_ptr<differentiator> _differentiator, std::shared_ptr<visualizer> _visualizer, int _maxHorizon, std::shared_ptr<fileHandler> _yamlReader) : optimiser(_modelTranslator, _mujocoHelper, _yamlReader, _differentiator){
 //    activeDifferentiator = _differentiator;
     activeVisualizer = _visualizer;
 
@@ -22,7 +22,7 @@ gradDescent::gradDescent(std::shared_ptr<modelTranslator> _modelTranslator, std:
 
         A[i].block(0, 0, dof, dof).setIdentity();
         A[i].block(0, dof, dof, dof).setIdentity();
-        A[i].block(0, dof, dof, dof) *= activePhysicsSimulator->returnModelTimeStep();
+        A[i].block(0, dof, dof, dof) *= mujocoHelper->returnModelTimeStep();
         B[i].setZero();
 
         f_x.push_back(MatrixXd(2*dof, 2*dof));
@@ -54,8 +54,8 @@ gradDescent::gradDescent(std::shared_ptr<modelTranslator> _modelTranslator, std:
 double gradDescent::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
     double cost = 0.0f;
 
-    if(initialDataIndex != MAIN_DATA_STATE){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, initialDataIndex);
+    if(initialDataIndex != -1){
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[initialDataIndex]);
     }
 
     MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
@@ -63,47 +63,47 @@ double gradDescent::rolloutTrajectory(int initialDataIndex, bool saveStates, std
     MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
-    X_old[0] = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-    if(activePhysicsSimulator->checkIfDataIndexExists(0)){
-        activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    X_old[0] = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
+    if(mujocoHelper->checkIfDataIndexExists(0)){
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[0], mujocoHelper->mjDataMain);
     }
     else{
-        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+        mujocoHelper->appendSystemStateToEnd(mujocoHelper->mjDataMain);
     }
 
     for(int i = 0; i < initControls.size(); i++){
         // set controls
-        activeModelTranslator->setControlVector(initControls[i], MAIN_DATA_STATE);
+        activeModelTranslator->setControlVector(initControls[i], mujocoHelper->mjDataMain);
 
         // Integrate simulator
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        mujocoHelper->stepSimulator(1, mujocoHelper->mjDataMain);
 
         // return cost for this state
-        Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-        Ut = activeModelTranslator->returnControlVector(MAIN_DATA_STATE);
+        Xt = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
+        Ut = activeModelTranslator->returnControlVector(mujocoHelper->mjDataMain);
         double stateCost;
 
         if(i == initControls.size() - 1){
-            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
+            stateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataMain, true);
         }
         else{
-            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+            stateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataMain, false);
         }
 
         // If required to save states to trajectory tracking, then save state
         if(saveStates){
             X_old[i + 1] = Xt.replicate(1, 1);
             U_old[i] = Ut.replicate(1, 1);
-            if(activePhysicsSimulator->checkIfDataIndexExists(i + 1)){
-                activePhysicsSimulator->copySystemState(i + 1, MAIN_DATA_STATE);
+            if(mujocoHelper->checkIfDataIndexExists(i + 1)){
+                mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[i+1], mujocoHelper->mjDataMain);
             }
             else{
-                activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+                mujocoHelper->appendSystemStateToEnd(mujocoHelper->mjDataMain);
             }
 
         }
 
-        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
+        cost += (stateCost * mujocoHelper->returnModelTimeStep());
     }
 
     cout << "cost of trajectory was: " << cost << endl;
@@ -121,8 +121,8 @@ std::vector<MatrixXd> gradDescent::optimise(int initialDataIndex, std::vector<Ma
     double oldCost = 0.0f;
     double newCost = 0.0f;
 
-    oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    oldCost = rolloutTrajectory(-1, true, initControls);
+    mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
     for(int i = 0; i < maxIter; i++){
 
@@ -169,7 +169,7 @@ std::vector<MatrixXd> gradDescent::optimise(int initialDataIndex, std::vector<Ma
     }
 
     // Load the initial data back into main data
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_old[i]);
@@ -226,7 +226,7 @@ double gradDescent::forwardsPass(double oldCost, bool &costReduced){
     while(!costReduction){
 
         // Copy intial data state into main data state for rollout
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
         newCost = 0;
         MatrixXd stateFeedback(2*dof, 1);
@@ -237,11 +237,11 @@ double gradDescent::forwardsPass(double oldCost, bool &costReduced){
 //        #pragma omp parallel for
         for(int t = 0; t < horizonLength; t++) {
             // Step 1 - get old state and old control that were linearised around
-            _X = activeModelTranslator->returnStateVector(t);
+            _X = activeModelTranslator->returnStateVector(mujocoHelper->mjDataTrajectory[t]);
             //_U = activeModelTranslator->returnControlVector(t);
             _U = U_old[t].replicate(1, 1);
 
-            X_new = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            X_new = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
 
             // Calculate new optimal controls
             U_new[t] = _U + (alpha * J_u[t]);
@@ -259,23 +259,23 @@ double gradDescent::forwardsPass(double oldCost, bool &costReduced){
 //            cout << "state feedback" << endl << stateFeedback << endl;
 //            cout << "new control: " << endl << U_new[t] << endl;
 
-            activeModelTranslator->setControlVector(U_new[t], MAIN_DATA_STATE);
-            Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(U_new[t], mujocoHelper->mjDataMain);
+            Xt = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
 
             Ut = U_new[t].replicate(1, 1);
 
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
+                newStateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataMain, true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+                newStateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataMain, false);
             }
 
-            newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+            newCost += (newStateCost * mujocoHelper->returnModelTimeStep());
 
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            mujocoHelper->stepSimulator(1, mujocoHelper->mjDataMain);
 
              if(t % 20 == 0){
                  const char* fplabel = "fp";
@@ -304,17 +304,17 @@ double gradDescent::forwardsPass(double oldCost, bool &costReduced){
 
     // If the cost was reduced
     if(newCost < oldCost){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
         for(int i = 0; i < horizonLength; i++){
 
-            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(U_new[i], mujocoHelper->mjDataMain);
+            mujocoHelper->stepSimulator(1, mujocoHelper->mjDataMain);
 
             // Log the old state
-            X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            X_old.at(i + 1) = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
 
-            activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
+            mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[i+1], mujocoHelper->mjDataMain);
 
             U_old[i] = U_new[i].replicate(1, 1);
 
@@ -337,7 +337,7 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
     double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     for(int i = 0; i < 8; i++){
-        activePhysicsSimulator->copySystemState(i+1, 0);
+        mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[i+1], mujocoHelper->mjDataTrajectory[0]);
     }
 
     #pragma omp parallel for
@@ -365,8 +365,8 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
                 }
             }
 
-            activeModelTranslator->setControlVector(U_alpha[t][i], i+1);
-            Xt = activeModelTranslator->returnStateVector(i+1);
+            activeModelTranslator->setControlVector(U_alpha[t][i], mujocoHelper->mjDataTrajectory[i+1]);
+            Xt = activeModelTranslator->returnStateVector(mujocoHelper->mjDataTrajectory[i+1]);
 //            //cout << "Xt: " << Xt << endl;
 //
             Ut = U_alpha[t][i].replicate(1, 1);
@@ -376,15 +376,15 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(i+1, true);
+                newStateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataTrajectory[i+1], true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(i+1, false);
+                newStateCost = activeModelTranslator->costFunction(mujocoHelper->mjDataTrajectory[i+1], false);
             }
 
-            newCosts[i] += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+            newCosts[i] += (newStateCost * mujocoHelper->returnModelTimeStep());
 
-            activePhysicsSimulator->stepSimulator(1, i+1);
+            mujocoHelper->stepSimulator(1, mujocoHelper->mjDataTrajectory[i+1]);
 
             X_last = Xt.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
@@ -402,20 +402,20 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
 
     newCost = bestAlphaCost;
     cout << "best alpha cost = " << bestAlphaCost << " at alpha: " << alphas[bestAlphaIndex] << endl;
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
     // If the cost was reduced
     if(newCost < oldCost){
 
         for(int i = 0; i < horizonLength; i++){
 
-            activeModelTranslator->setControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(U_alpha[i][bestAlphaIndex], mujocoHelper->mjDataMain);
+            mujocoHelper->stepSimulator(1, mujocoHelper->mjDataMain);
 
             // Log the old state
-            X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            X_old.at(i + 1) = activeModelTranslator->returnStateVector(mujocoHelper->mjDataMain);
 
-            activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
+            mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataTrajectory[i+1], mujocoHelper->mjDataMain);
 
             U_old[i] = U_alpha[i][bestAlphaIndex].replicate(1, 1);
 

@@ -9,10 +9,10 @@ doublePendulum::doublePendulum(): modelTranslator(){
     initModelTranslator(yamlFilePath);
 }
 
-bool doublePendulum::taskComplete(int dataIndex, double &dist){
+bool doublePendulum::taskComplete(std::shared_ptr<mjData> d, double &dist){
     double diff = 0.0f;
 
-    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Xt = returnStateVector(d);
 
     for(int i = 0; i < dof; i++){
         diff += abs(X_desired(i) - Xt(i));

@@ -4,7 +4,7 @@
 
 #include "stdInclude.h"
 #include "modelTranslator.h"
-#include "physicsSimulator.h"
+#include "MuJoCoHelper.h"
 #include "differentiator.h"
 
 enum interpMethod{
@@ -27,7 +27,7 @@ struct indexTuple{
 
 class optimiser{
 public:
-    optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
+    optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _mujocoHelper, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
 
     virtual double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) = 0;
     virtual std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) = 0;
@@ -58,7 +58,6 @@ public:
     int max_interval = 100;
 
     bool filteringMatrices = true;
-    bool approximate_backwardsPass = false;
 
     std::vector<double> time_getDerivs_ms;
     double avgTime_getDerivs_ms = 0.0f;
@@ -93,7 +92,7 @@ public:
 
 protected:
     std::shared_ptr<modelTranslator> activeModelTranslator;
-    std::shared_ptr<physicsSimulator> activePhysicsSimulator;
+    std::shared_ptr<MuJoCoHelper> mujocoHelper;
 
     int dof;
     int num_ctrl;
@@ -102,8 +101,6 @@ protected:
     std::shared_ptr<differentiator> activeDifferentiator;
 
     std::vector<std::vector<int>> computedKeyPoints;
-
-
 
     // Generate keypoints we will calculate derivatives at
     std::vector<std::vector<int>> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
@@ -121,9 +118,6 @@ protected:
 
     void filterMatrices();
     std::vector<double> filterIndividualValue(std::vector<double> unfiltered);
-
-    bool convergeThisIteration = false;
-
 
 private:
     double epsConverge = 0.02;

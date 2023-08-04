@@ -7,9 +7,9 @@ pandaReaching::pandaReaching(): modelTranslator(){
 
 }
 
-bool pandaReaching::taskComplete(int dataIndex, double &dist){
+bool pandaReaching::taskComplete(std::shared_ptr<mjData> d, double &dist){
     double cumError = 0.0f;
-    MatrixXd X = returnStateVector(dataIndex);
+    MatrixXd X = returnStateVector(d);
 
     for(int i = 0; i < dof; i++){
         double diff = X_desired(i) - X(i);
@@ -44,10 +44,10 @@ MatrixXd pandaReaching::returnRandomStartState(){
             jointPositions[i] = randomJoint;
         }
 
-        activePhysicsSimulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+        mujocoHelper->setRobotJointsPositions(robotName, jointPositions, mujocoHelper->mjDataMain);
 
         // Check if current configuration is valid
-        if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+        if(mujocoHelper->checkSystemForCollisions(mujocoHelper->mjDataMain)){
             cout << "invalid robot position \n";
         }
         else{
@@ -90,10 +90,10 @@ MatrixXd pandaReaching::returnRandomGoalState(MatrixXd X0){
             jointPositions[i] = randomJoint;
         }
 
-        activePhysicsSimulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+        mujocoHelper->setRobotJointsPositions(robotName, jointPositions, mujocoHelper->mjDataMain);
 
         // Check if current configuration is valid
-        if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+        if(mujocoHelper->checkSystemForCollisions(mujocoHelper->mjDataMain)){
             cout << "invalid robot position \n";
         }
         else{
@@ -119,9 +119,9 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
-            activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            mujocoHelper->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, mujocoHelper->mjDataMain);
 
-            Xt = returnStateVector(MAIN_DATA_STATE);
+            Xt = returnStateVector(mujocoHelper->mjDataMain);
 
             for(int j = 0; j < num_ctrl; j++){
                 control(j) = gravCompensation[j];
@@ -131,13 +131,13 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
             cout << "grav compensation: " << control << endl;
             cout << "current state: " << Xt << endl;
 
-            setControlVector(control, MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            setControlVector(control, mujocoHelper->mjDataMain);
+            mujocoHelper->stepSimulator(1, mujocoHelper->mjDataMain);
             initControls.push_back(control);
         }
     }
     else{
-        MatrixXd startState = returnStateVector(MAIN_DATA_STATE);
+        MatrixXd startState = returnStateVector(mujocoHelper->mjDataMain);
         MatrixXd goalState = X_desired.replicate(1, 1);
         MatrixXd difference = goalState - startState;
 

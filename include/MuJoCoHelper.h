@@ -8,6 +8,7 @@
 #include "stdInclude.h"
 #include "mujoco.h"
 #include <GLFW/glfw3.h>
+#include <thread>
 
 #define MAIN_DATA_STATE     -1
 #define MASTER_RESET_DATA   -2
@@ -29,41 +30,42 @@ public:
 
     // Utility functions -- robots
     bool isValidRobotName(string robotName, int &robotIndex, string &robotBaseJointName);
-    bool setRobotJointsPositions(string robotName, vector<double> jointPositions, int dataIndex);
-    bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities, int dataIndex);
-    bool setRobotJointsControls(string robotName, vector<double> jointControls, int dataIndex);
 
-    bool getRobotJointsPositions(string robotName, vector<double> &jointPositions, int dataIndex);
-    bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities, int dataIndex);
-    bool getRobotJointsAccelerations(string robotName, vector<double> &jointsAccelerations, int dataIndex);
-    bool getRobotJointsControls(string robotName, vector<double> &jointsControls, int dataIndex);
-    bool getRobotJointsGravityCompensaionControls(string robotName, vector<double> &jointsControls, int dataIndex);
+    bool setRobotJointsPositions(string robotName, vector<double> jointPositions, std::shared_ptr<mjData> d);
+    bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities, std::shared_ptr<mjData> d);
+    bool setRobotJointsControls(string robotName, vector<double> jointControls, std::shared_ptr<mjData> d);
+
+    bool getRobotJointsPositions(string robotName, vector<double> &jointPositions, std::shared_ptr<mjData> d);
+    bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities, std::shared_ptr<mjData> d);
+    bool getRobotJointsAccelerations(string robotName, vector<double> &jointsAccelerations, std::shared_ptr<mjData> d);
+    bool getRobotJointsControls(string robotName, vector<double> &jointsControls, std::shared_ptr<mjData> d);
+    bool getRobotJointsGravityCompensaionControls(string robotName, vector<double> &jointsControls, std::shared_ptr<mjData> d);
 
     // Utility functions -- bodies
     bool isValidBodyName(string bodyName, int &bodyIndex);
-    bool setBodyPose_quat(string bodyName, pose_7 pose, int dataIndex);
-    bool setBodyPose_angle(string bodyName, pose_6 pose, int dataIndex);
-    bool setBodyVelocity(string bodyName, pose_6 velocity, int dataIndex);
+    bool setBodyPose_quat(string bodyName, pose_7 pose, std::shared_ptr<mjData> d);
+    bool setBodyPose_angle(string bodyName, pose_6 pose, std::shared_ptr<mjData> d);
+    bool setBodyVelocity(string bodyName, pose_6 velocity, std::shared_ptr<mjData> d);
 
-    bool getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex);
-    bool getBodyPose_angle(string bodyName, pose_6 &pose, int dataIndex);
-    bool getBodyVelocity(string bodyName, pose_6 &velocity, int dataIndex);
-    bool getBodyAcceleration(string bodyName, pose_6 &acceleration, int dataIndex);
+    bool getBodyPose_quat(string bodyName, pose_7 &pose, std::shared_ptr<mjData> d);
+    bool getBodyPose_angle(string bodyName, pose_6 &pose, std::shared_ptr<mjData> d);
+    bool getBodyVelocity(string bodyName, pose_6 &velocity, std::shared_ptr<mjData> d);
+    bool getBodyAcceleration(string bodyName, pose_6 &acceleration, std::shared_ptr<mjData> d);
 
     // Extras
-    Eigen::MatrixXd calculateJacobian(std::string bodyName, int dataIndex);
-    int checkSystemForCollisions(int dataIndex);
-    bool checkBodyForCollisions(string bodyName, int dataIndex);
+    Eigen::MatrixXd calculateJacobian(std::string bodyName, std::shared_ptr<mjData> d);
+    int checkSystemForCollisions(std::shared_ptr<mjData> d);
+    bool checkBodyForCollisions(string bodyName, std::shared_ptr<mjData> d);
 
     // ----- Loading and saving system states -----
-    bool appendSystemStateToEnd(int dataIndex);
+    bool appendSystemStateToEnd(std::shared_ptr<mjData> d);
     bool checkIfDataIndexExists(int dataIndex);
-    bool copySystemState(int dataDestinationIndex, int dataSourceIndex);
+//    bool copySystemState(int dataDestinationIndex, int dataSourceIndex);
     bool deleteSystemStateFromIndex(int listIndex);
     bool clearSystemStateList();
 
     void cpMjData(const std::shared_ptr<mjModel> m, std::shared_ptr<mjData> d_dest, const std::shared_ptr<mjData> d_src);
-    std::shared_ptr<mjData> returnDesiredDataState(int dataIndex);
+    std::shared_ptr<mjData> returnDesiredDataState(std::shared_ptr<mjData> d);
 
     // ------------------------------- Visualisation -----------------------------------------
     void initVisualisation();
@@ -76,9 +78,9 @@ public:
     mjrContext con;				    // custom GPU context
 
     void initSimulator(double timestep, const char* fileName);
-    bool stepSimulator(int steps, int dataIndex);
-    bool forwardSimulator(int dataIndex);
-    bool forwardSimulatorWithSkip(int dataIndex, int skipStage, int skipSensor);
+    bool stepSimulator(int steps, std::shared_ptr<mjData> d);
+    bool forwardSimulator(std::shared_ptr<mjData> d);
+    bool forwardSimulatorWithSkip(std::shared_ptr<mjData> d, int skipStage, int skipSensor);
 
     void setupMuJoCoWorld(double timestep, const char* fileName);
 
@@ -89,13 +91,13 @@ public:
 
     double returnModelTimeStep();
 
-    double* sensorState(int dataIndex, std::string sensorName);
+    double* sensorState(std::shared_ptr<mjData> d, std::string sensorName);
 
-    vector<std::shared_ptr<mjData>> savedSystemStatesList;      // List of saved system states
-    std::shared_ptr<mjData> d_master_reset;                     // Master reset mujoco data
-    std::shared_ptr<mjData> mdata;                              // main MuJoCo data
+    vector<std::shared_ptr<mjData>> mjDataTrajectory;      // List of saved system states
+    std::shared_ptr<mjData> mjDataMaster;                     // Master reset mujoco data
+    std::shared_ptr<mjData> mjDataMain;                              // main MuJoCo data
+
     std::shared_ptr<mjModel> model;                             // MuJoCo model
-    std::vector<std::shared_ptr<mjData>> fd_data;               // Finite differencing MuJoCo data - instantiated with the number of cores on the pc
 
     vector<robot> robots;
     vector<string> bodies;
