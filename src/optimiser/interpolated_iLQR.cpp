@@ -170,6 +170,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
     initialCost = oldCost;
     cout << "initial cost: " << oldCost << endl;
+    cout << "size of mjdata trajectory is: " << mujocoHelper->mjDataTrajectory.size() << endl;
     mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataTrajectory[0]);
 
     // Optimise for a set number of iterations
@@ -224,6 +225,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             auto fp_start = high_resolution_clock::now();
 //            cout << "forwards pass \n";
 //            newCost = forwardsPass(oldCost);
+            cout << "before fp parallel \n";
             newCost = forwardsPassParallel(oldCost);
             auto fp_stop = high_resolution_clock::now();
             auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);

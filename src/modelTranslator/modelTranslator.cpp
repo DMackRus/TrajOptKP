@@ -217,6 +217,7 @@ bool modelTranslator::taskComplete(std::shared_ptr<mjData> d, double &dist){
 std::vector<MatrixXd> modelTranslator::createInitSetupControls(int horizonLength){
     std::vector<MatrixXd> emptyInitSetupControls;
 //    mujocoHelper->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    mujocoHelper->cpMjData(mujocoHelper->model, mujocoHelper->mjDataMain, mujocoHelper->mjDataMaster);
     return emptyInitSetupControls;
 }
 

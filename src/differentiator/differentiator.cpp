@@ -31,6 +31,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     double costDec = 0.0f;
 
     // Allocate memory for variables
+    MatrixXd teststate = activeModelTranslator->returnStateVector(d);
     std::shared_ptr<mjData> fdData = shared_ptr<mjData>(mj_makeData(mujocoHelper->model.get()));
     mujocoHelper->cpMjData(mujocoHelper->model, fdData, d);
     mujocoHelper->forwardSimulator(fdData);
@@ -309,7 +310,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     }
 
     // Delete the temporary data
-    mj_deleteData(fdData.get());
+//    mj_deleteData(fdData.get());
 }
 
 MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, const std::shared_ptr<mjData> origData, std::shared_ptr<mjData> fdData, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
@@ -351,7 +352,7 @@ MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, const std::share
             }
 
             // return data state back to initial data state
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
 
             // perturb control vector in opposite direction
             perturbedControls = unperturbedControls.replicate(1, 1);
@@ -385,7 +386,7 @@ MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, const std::share
             }
 
             // Undo pertubation
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
         }
     }
 
@@ -433,7 +434,7 @@ MatrixXd differentiator::calc_dqaccdctrl(std::vector<int> cols, const std::share
             }
 
             // return data state back to initial data state
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
 
             // perturb control vector in opposite direction
             perturbedControls = unperturbedControls.replicate(1, 1);
@@ -463,7 +464,7 @@ MatrixXd differentiator::calc_dqaccdctrl(std::vector<int> cols, const std::share
             }
 
             // Undo pertubation
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
         }
     }
 
@@ -511,7 +512,7 @@ MatrixXd differentiator::calc_dqveldqvel(std::vector<int> cols, const std::share
             }
 
             // reset the data state back to initial data state
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
 
             // perturb velocity vector negatively
             perturbedVelocities = unperturbedVelocities.replicate(1, 1);
@@ -543,7 +544,7 @@ MatrixXd differentiator::calc_dqveldqvel(std::vector<int> cols, const std::share
             }
 
             // Undo perturbation
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
         }
     }
     return dqveldqvel;
@@ -589,7 +590,7 @@ MatrixXd differentiator::calc_dqaccdqvel(std::vector<int> cols, const std::share
             }
 
             // reset the data state back to initial data state
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
 
             // perturb velocity vector negatively
             perturbedVelocities = unperturbedVelocities.replicate(1, 1);
@@ -617,7 +618,7 @@ MatrixXd differentiator::calc_dqaccdqvel(std::vector<int> cols, const std::share
             }
 
             // Undo perturbation
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
         }
     }
     return dqaccdvel;
@@ -661,7 +662,7 @@ MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, const std::share
             }
 
             // reset the data state back to initial data statedataIndex
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
 
             // perturb position vector negatively
             perturbedPositions = unperturbedPositions.replicate(1, 1);
@@ -690,7 +691,7 @@ MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, const std::share
             }
 
             // Undo perturbation
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
         }
     }
     return dqveldq;
@@ -736,7 +737,7 @@ MatrixXd differentiator::calc_dqaccdqpos(std::vector<int> cols, const std::share
             }
 
             //Reset data state
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
 
             //Perturb position vector negatively
             perturbedPositions = unperturbedPositions.replicate(1, 1);
@@ -762,7 +763,7 @@ MatrixXd differentiator::calc_dqaccdqpos(std::vector<int> cols, const std::share
             }
 
             // Undo perturbation
-            mujocoHelper->cpMjData(mujocoHelper->model, origData, fdData);
+            mujocoHelper->cpMjData(mujocoHelper->model, fdData, origData);
 
         }
     }
