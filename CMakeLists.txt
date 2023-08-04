@@ -249,8 +249,7 @@ message(STATUS "project include directory: " ${PROJECT_INCLUDE_DIR})
 
 
 add_executable(${PROJECT_NAME} src/main.cpp
-                src/physicsSimulators/physicsSimulator.cpp
-                src/stdInclude/stdInclude.cpp
+        src/stdInclude/stdInclude.cpp
                 src/physicsSimulators/MuJoCoHelper.cpp 
                 src/modelTranslator/modelTranslator.cpp 
                 src/visualizer/visualizer.cpp
