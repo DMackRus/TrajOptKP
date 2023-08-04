@@ -146,7 +146,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     std::vector<MatrixXd> optimisedControls;
     horizonLength = _horizonLength;
     numberOfTotalDerivs = _horizonLength * dof;
-    lambda = 0.1;
+    lambda = 1;
     double oldCost = 0.0f;
     double newCost = 0.0f;
     bool costReducedLastIter = true;
@@ -557,16 +557,16 @@ double interpolatediLQR::forwardsPass(double oldCost){
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-             if(t % 5 == 0){
-                 const char* fplabel = "fp";
-                 activeVisualizer->render(fplabel);
-             }
+//             if(t % 5 == 0){
+//                 const char* fplabel = "fp";
+//                 activeVisualizer->render(fplabel);
+//             }
 
             X_last = X_new.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
         }
 
-//        cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
+        cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
 
         if(newCost < oldCost){
             costReduction = true;

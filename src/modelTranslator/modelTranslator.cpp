@@ -18,6 +18,14 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 
     // initialise physics simulator
     vector<string> bodyNames;
+    for(int i = 0; i < taskConfig.robots.size(); i++){
+        bodyNames.push_back(taskConfig.robots[i].name);
+        cout << "robot names: " << taskConfig.robots[i].name << endl;
+        for(int j = 0; j < taskConfig.robots[i].jointNames.size(); j++){
+            cout << "joint names: " << taskConfig.robots[i].jointNames[j] << endl;
+        }
+    }
+
     for(int i = 0; i < taskConfig.bodiesStates.size(); i++){
         bodyNames.push_back(taskConfig.bodiesStates[i].name);
         cout << "body names: " << taskConfig.bodiesStates[i].name << endl;
@@ -52,7 +60,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     X_start.resize(stateVectorSize, 1);
 
     // --------- Set size of cost matrices correctly ------------
-    num_ctrl = myStateVector.robots[0].numActuators;
+    num_ctrl = myStateVector.robots[0].actuatorNames.size();
     Q.resize(stateVectorSize);
     Q.setZero();
     R.resize(num_ctrl);
@@ -134,14 +142,14 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     // Loop through robots and starting assinging control specific costs
     int R_index = 0;
     for(int i = 0; i < myStateVector.robots.size(); i++){
-        int robotNumJoints = myStateVector.robots[i].jointNames.size();
+        int robotNumActuators = myStateVector.robots[i].actuatorNames.size();
 
         // Loop through the robot joints
-        for(int j = 0; j < robotNumJoints; j++){
+        for(int j = 0; j < robotNumActuators; j++){
             R.diagonal()[R_index + j, R_index + j] = myStateVector.robots[i].jointControlCosts[j];
         }
 
-        R_index += robotNumJoints;
+        R_index += robotNumActuators;
     }
     // ----------------------------------------------------------------------------------------------
 
@@ -345,12 +353,12 @@ MatrixXd modelTranslator::returnControlVector(int dataIndex){
     for(int i = 0; i < myStateVector.robots.size(); i++){
         vector<double> jointControls;
         activePhysicsSimulator->getRobotJointsControls(myStateVector.robots[i].name, jointControls, dataIndex);
-        for(int j = 0; j < myStateVector.robots[i].numActuators; j++){
+        for(int j = 0; j < myStateVector.robots[i].actuatorNames.size(); j++){
 
             controlVector(currentStateIndex + j, 0) = jointControls[j];
         }
 
-        currentStateIndex += myStateVector.robots[i].numActuators;
+        currentStateIndex += myStateVector.robots[i].actuatorNames.size();
 
     }
 
@@ -368,14 +376,14 @@ bool modelTranslator::setControlVector(MatrixXd _controlVector, int dataIndex){
     // loop through all the present robots
     for(int i = 0; i < myStateVector.robots.size(); i++){
         vector<double> jointControls;
-        for(int j = 0; j < myStateVector.robots[i].numActuators; j++){
+        for(int j = 0; j < myStateVector.robots[i].actuatorNames.size(); j++){
 
             jointControls.push_back(_controlVector(currentStateIndex + j));
         }
 
         activePhysicsSimulator->setRobotJointsControls(myStateVector.robots[i].name, jointControls, dataIndex);
 
-        currentStateIndex += myStateVector.robots[i].numActuators;
+        currentStateIndex += myStateVector.robots[i].actuatorNames.size();
 
     }
 
@@ -384,7 +392,7 @@ bool modelTranslator::setControlVector(MatrixXd _controlVector, int dataIndex){
 
 MatrixXd modelTranslator::returnPositionVector(int dataIndex){
     MatrixXd posVector(dof, 1);
-    activePhysicsSimulator->forwardSimulator(dataIndex);
+//    activePhysicsSimulator->forwardSimulator(dataIndex);
 
     int currentStateIndex = 0;
 
@@ -428,8 +436,7 @@ MatrixXd modelTranslator::returnPositionVector(int dataIndex){
 
 MatrixXd modelTranslator::returnVelocityVector(int dataIndex){
     MatrixXd velVector(dof, 1);
-    activePhysicsSimulator->forwardSimulator(dataIndex);
-
+//    activePhysicsSimulator->forwardSimulator(dataIndex);
     int currentStateIndex = 0;
 
     // Loop through all robots in the state vector

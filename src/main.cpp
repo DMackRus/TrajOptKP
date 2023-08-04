@@ -225,7 +225,9 @@ int main(int argc, char **argv) {
         mpcVisualise = true;
 
         // No clutter - 1800 - 500 - 1800
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 1000, 1, 200);
+        activeModelTranslator->X_desired(10) = 0.5;
+        cout << "X_desired: " << activeModelTranslator->X_desired << endl;
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2000, 1, 100);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -860,7 +862,7 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
                     horizon = maxHorizon;
                 }
 
-                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 2, 1, horizon);
+                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, horizon);
                 reInitialiseCounter = 0;
 
 //                totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
@@ -1098,8 +1100,8 @@ void keyboardControl(){
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
     int dof = activeModelTranslator->stateVectorSize / 2;
 
-    startStateVector << 0.3, 0, -0.3, -0.3, 0, 0.3,
-            0, 0, 0, 0, 0, 0.5;
+    startStateVector << 0, 1, 0, 0.3, 0, -0.3, -0.3, 0, 0.3,
+            0, 0, 0, 0, 0, 0, 0, 0, 0;
 
 
 
@@ -1147,11 +1149,11 @@ void keyboardControl(){
 //        control(testIndex) = 0.1;
 //        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
         double cost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
-        cout << "cost: " << cost << endl;
+//        cout << "cost: " << cost << endl;
 
 
 //        cout << "control: " << control << endl;
-//        activeModelTranslator->setControlVector(control, MAIN_DATA_STATE);
+        activeModelTranslator->setControlVector(control, MAIN_DATA_STATE);
 //        MatrixXd returncontrol = activeModelTranslator->returnControlVector(MAIN_DATA_STATE);
 //        cout << "return control: " << returncontrol << endl;
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);

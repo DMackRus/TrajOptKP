@@ -11,8 +11,8 @@ class locomotion_anymal : public modelTranslator {
 public:
     locomotion_anymal();
 
-    double costFunction(int dataIndex, bool terminal) override;
-    void costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
+//    double costFunction(int dataIndex, bool terminal) override;
+//    void costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
 
     bool taskComplete(int dataIndex, double &dist) override;
     MatrixXd returnRandomStartState() override;

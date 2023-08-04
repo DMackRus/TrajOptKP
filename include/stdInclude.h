@@ -19,7 +19,7 @@
 struct robot{
     std::string name;
     std::vector<std::string> jointNames;
-    int numActuators;
+    std::vector<std::string> actuatorNames;
     bool torqueControlled;
     std::vector<double> torqueLimits;
     std::vector<double> startPos;

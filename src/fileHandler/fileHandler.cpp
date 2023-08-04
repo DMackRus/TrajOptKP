@@ -33,7 +33,7 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
         robot tempRobot;
         string robotName;
         vector<string> jointNames;
-        int numActuators;
+        vector<string> actuatorNames;
         bool torqueControlled;
         vector<double> torqueLimits;
         vector<double> startPos;
@@ -49,7 +49,10 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
             jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
         }
 
-        numActuators = robot_it->second["numActuators"].as<int>();
+        for(int i = 0; i < robot_it->second["actuatorNames"].size(); i++){
+            actuatorNames.push_back(robot_it->second["actuatorNames"][i].as<std::string>());
+        }
+
         torqueControlled = robot_it->second["torqueControl"].as<bool>();
 
         for(int i = 0; i < robot_it->second["torqueLimits"].size(); i++){
@@ -82,7 +85,7 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
 
         tempRobot.name = robotName;
         tempRobot.jointNames = jointNames;
-        tempRobot.numActuators = numActuators;
+        tempRobot.actuatorNames = actuatorNames;
         tempRobot.torqueControlled = torqueControlled;
         tempRobot.torqueLimits = torqueLimits;
         tempRobot.startPos = startPos;

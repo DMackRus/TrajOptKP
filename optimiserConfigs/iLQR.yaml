@@ -3,6 +3,6 @@ maxIter: 20
 maxHorizon: 4000
 # setInterval = 0, adaptive_jerk = 1, adaptive_accel = 2, iterative_error = 3
 keyPointMethod: 0
-min_interval: 1
+min_interval: 2
 max_interval: 10
 approximate_backwardsPass: false

@@ -32,7 +32,7 @@ bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> join
     int robotIndex;
     string robotBaseJointName;
     if(isValidRobotName(robotName, robotIndex, robotBaseJointName)){
-        if(jointPositions.size() != robots[robotIndex].numActuators){
+        if(jointPositions.size() != robots[robotIndex].jointNames.size()){
             cout << "Invalid number of joint positions\n";
             return false;
         }
@@ -74,7 +74,7 @@ bool MuJoCoHelper::setRobotJointsVelocities(string robotName, vector<double> joi
     int robotIndex;
     string robotBaseJointName;
     if(isValidRobotName(robotName, robotIndex, robotBaseJointName)){
-        if(jointVelocities.size() != robots[robotIndex].numActuators){
+        if(jointVelocities.size() != robots[robotIndex].jointNames.size()){
             cout << "Invalid number of joint positions\n";
             return false;
         }
@@ -113,7 +113,7 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
     int robotIndex;
     string robotBaseJointName;
     if(isValidRobotName(robotName, robotIndex, robotBaseJointName)){
-        if(jointControls.size() != robots[robotIndex].numActuators){
+        if(jointControls.size() != robots[robotIndex].actuatorNames.size()){
             cout << "Invalid number of joint positions\n";
             return false;
         }
@@ -124,24 +124,32 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
     }
 
     // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
-
-    if(jointId == -1){
-        cout << "Base link of robot not found\n";
-        return false;
-    }
-    int startIndex = model.get()->jnt_dofadr[jointId];
-
-    if(startIndex == -1){
-        cout << "Invalid bodyId for robot\n";
-        return false;
-    }
+//    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
+//    std::vector<int> jointIds;
 
     std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
-
     for(int i = 0; i < jointControls.size(); i++){
-        d->ctrl[startIndex + i] = jointControls[i];
+        int actuatorId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robots[robotIndex].actuatorNames[i].c_str());
+        int qposIndex = model.get()->jnt_dofadr[actuatorId];
+        d->ctrl[qposIndex] = jointControls[i];
     }
+
+//    if(jointId == -1){
+//        cout << "Base link of robot not found\n";
+//        return false;
+//    }
+//    int startIndex = model.get()->jnt_dofadr[jointId];
+//
+//    if(startIndex == -1){
+//        cout << "Invalid bodyId for robot\n";
+//        return false;
+//    }
+//
+//    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+//
+//    for(int i = 0; i < jointControls.size(); i++){
+//        d->ctrl[startIndex + i] = jointControls[i];
+//    }
 
     return true;
 }
@@ -254,24 +262,29 @@ bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &join
     }
 
     // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
+//    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
 
-    if(jointId == -1){
-        cout << "Base link of robot not found\n";
-        return false;
-    }
-    int startIndex = model.get()->jnt_dofadr[jointId];
-
-    if(startIndex == -1){
-        cout << "Invalid bodyId for robot\n";
-        return false;
-    }
+//    if(jointId == -1){
+//        cout << "Base link of robot not found\n";
+//        return false;
+//    }
+//    int startIndex = model.get()->jnt_dofadr[jointId];
+//
+//    if(startIndex == -1){
+//        cout << "Invalid bodyId for robot\n";
+//        return false;
+//    }
 
     std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
-
-    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        jointControls.push_back(d->ctrl[startIndex + i]);
+    for(int i = 0; i < robots[robotIndex].actuatorNames.size(); i++){
+        int actuatorId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robots[robotIndex].actuatorNames[i].c_str());
+        int ctrlIndex = model.get()->jnt_dofadr[actuatorId];
+        jointControls.push_back(d->ctrl[ctrlIndex]);
     }
+
+//    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
+//        jointControls.push_back(d->ctrl[startIndex + i]);
+//    }
 
     return true;
 }
@@ -851,11 +864,11 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
 //    cout << "model iterations: " << model->opt.iterations << endl;
 //    cout << "model tolerance : " << model->opt.tolerance << endl;
 
-//    cout << "model nq: " << model->nq << endl;
-//    cout << "model nv: " << model->nv << endl;
-//    cout << "model nu: " << model->nu << endl;
-//    cout << "model nbody: " << model->nbody << endl;
-//
+    cout << "model nq: " << model->nq << endl;
+    cout << "model nv: " << model->nv << endl;
+    cout << "model nu: " << model->nu << endl;
+    cout << "model nbody: " << model->nbody << endl;
+
 //    for(int i = 0; i < model->nu; i++){
 //        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i] << endl;
 //        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i+1] << endl;
