@@ -4,7 +4,7 @@ timeStep: 0.004
 robots:
   panda:
     jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
-    numActuators: 7
+    actuatorNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
     torqueControl: true 
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
@@ -22,7 +22,7 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, 0.0, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [1, 1, 0]
+    linearPosCost: [0.3, 0.35, 0]
     linearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]

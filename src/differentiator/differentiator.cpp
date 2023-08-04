@@ -60,11 +60,16 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     }
     else{
         dqveldctrl = calc_dqveldctrl(cols, dataIndex, physicsHelperId, dcostdctrl, costDerivs, terminal);
+//        cout << "after ctrl derivs" << endl;
 
         dqveldq = calc_dqveldqpos(cols, dataIndex, physicsHelperId, dcostdpos, costDerivs, terminal);
+//        cout << "after pos derivs" << endl;
 
         dqveldqvel = calc_dqveldqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
+//        cout << "after vel derivs" << endl;
     }
+
+//    cout << "dqveldqvel: " << endl << dqveldqvel << endl;
 
 
     if(costDerivs) {
@@ -85,8 +90,8 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     MatrixXd l_u_inc(numCtrl, 1);
     MatrixXd l_u_dec(numCtrl, 1);
 
-    MatrixXd currentState = activeModelTranslator->returnStateVector(dataIndex);
-    MatrixXd currentControl = activeModelTranslator->returnControlVector(dataIndex);
+    MatrixXd currentState = activeModelTranslator->returnStateVector(physicsHelperId);
+    MatrixXd currentControl = activeModelTranslator->returnControlVector(physicsHelperId);
 
     if(costDerivs && !HESSIAN_APPROXIMATION) {
         double epsCost = 1e-6;
@@ -323,7 +328,7 @@ MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, i
     double costInc;
     double costDec;
 
-    MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(dataIndex);
+    MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(physicsHelperId);
     for(int i = 0; i < numCtrl; i++){
         bool computeColumn = false;
         for(int j = 0; j < cols.size(); j++){
@@ -408,7 +413,7 @@ MatrixXd differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
     mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->fd_data[tid].get(), dof);
     mju_copy(warmstart, activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
 
-    MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(dataIndex);
+    MatrixXd unperturbedControls = activeModelTranslator->returnControlVector(physicsHelperId);
     for(int i = 0; i < numCtrl; i++){
         bool computeColumn = false;
         for(int j = 0; j < cols.size(); j++){
@@ -480,7 +485,8 @@ MatrixXd differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, i
     double costInc;
     double costDec;
     MatrixXd dqveldqvel(dof, dof);
-    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(dataIndex);
+    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(physicsHelperId);
+//    cout << "unperturbed velocities - " << unperturbedVelocities << endl;
 
     for(int i = 0; i < dof; i++){
         bool computeColumn = false;
@@ -505,6 +511,7 @@ MatrixXd differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, i
 
             // return the new velocity vector
             velocityInc = activeModelTranslator->returnVelocityVector(physicsHelperId);
+//            cout << "velocityInc - " << velocityInc << endl;
 
             // If calculating cost derivs via finite-differencing
             if(fd_costDerivs){
@@ -526,6 +533,7 @@ MatrixXd differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, i
 
             // Return the new velocity vector
             velocityDec = activeModelTranslator->returnVelocityVector(physicsHelperId);
+//            cout << "velocityDec - " << velocityDec << endl;
 
 
             // If calculating cost derivs via finite-differencing
@@ -556,7 +564,7 @@ MatrixXd differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, i
     double costInc;
     double costDec;
     MatrixXd dqaccdvel(dof, dof);
-    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(dataIndex);
+    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(physicsHelperId);
 
     int tid = -3 - physicsHelperId;
     mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->fd_data[tid].get(), dof);
@@ -624,7 +632,7 @@ MatrixXd differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, i
 }
 
 MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
-    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(dataIndex);
+    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(physicsHelperId);
     int dof = activeModelTranslator->dof;
     MatrixXd velocityInc(dof, 1);
     MatrixXd velocityDec(dof, 1);
@@ -698,7 +706,7 @@ MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
 
 MatrixXd differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
     int dof = activeModelTranslator->dof;
-    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(dataIndex);
+    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(physicsHelperId);
     MatrixXd accellInc(dof, 1);
     MatrixXd accellDec(dof, 1);
     double costInc;

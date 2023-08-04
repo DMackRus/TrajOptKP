@@ -95,6 +95,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         else{
             stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
         }
+//        cout << "state: " << Xt.transpose() << endl;
 
 //        cout << "state cost: " << stateCost << endl;
 
@@ -146,7 +147,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     std::vector<MatrixXd> optimisedControls;
     horizonLength = _horizonLength;
     numberOfTotalDerivs = _horizonLength * dof;
-    lambda = 1;
+    lambda = 0.1;
     double oldCost = 0.0f;
     double newCost = 0.0f;
     bool costReducedLastIter = true;
@@ -171,6 +172,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
     oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
     initialCost = oldCost;
+    cout << "initial cost: " << oldCost << endl;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     // Optimise for a set number of iterations

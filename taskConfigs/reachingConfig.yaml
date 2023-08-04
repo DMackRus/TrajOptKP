@@ -4,8 +4,7 @@ timeStep: 0.004
 robots:
   panda:
     jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
-#    jointNames: ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6", "joint7"]
-    numActuators: 7
+    actuatorNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
     torqueControl: true 
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [-1, 0.5, 0, -1, 0, 0.6, 1]

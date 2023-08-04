@@ -1,11 +1,11 @@
 modelFile: "/mujoco_models/Acrobot/Acrobot.xml"
 modelName: "/doublePendulum"
-timeStep: 0.004
+timeStep: 0.002
 # stable down pos [3.1415, 0], half up unstable pos [3.14, 3.14], full up unstable pos [0, 0]
 robots:
   doublePendulum:
     jointNames: [shoulder, elbow]
-    numActuators: 2
+    actuatorNames: [shoulder, elbow]
     torqueControl: true 
     torqueLimits: [100, 100]
     startPos: [2, 0]
