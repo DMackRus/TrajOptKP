@@ -6,8 +6,11 @@ differentiator::differentiator(std::shared_ptr<modelTranslator> _modelTranslator
 
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, const std::shared_ptr<mjData> d, bool terminal){
 //    cout << "start of derivs function " << endl;
+
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
 
@@ -58,7 +61,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
 
         dqveldq = calc_dqveldqpos(cols, d, fdData, dcostdpos, costDerivs, terminal);
 //        cout << "after pos derivs" << endl;
-
+//
         dqveldqvel = calc_dqveldqvel(cols, d, fdData, dcostdvel, costDerivs, terminal);
 //        cout << "after vel derivs" << endl;
     }
@@ -312,6 +315,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     // Delete the temporary data
 //    mj_deleteData(fdData.get());
 }
+#pragma GCC pop_options
 
 MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, const std::shared_ptr<mjData> origData, std::shared_ptr<mjData> fdData, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
     int numCtrl = activeModelTranslator->num_ctrl;
@@ -629,6 +633,8 @@ MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, const std::share
     int dof = activeModelTranslator->dof;
     MatrixXd velocityInc(dof, 1);
     MatrixXd velocityDec(dof, 1);
+    velocityInc.setZero();
+    velocityDec.setZero();
     double costInc;
     double costDec;
     MatrixXd dqveldq(dof, dof);
@@ -650,11 +656,20 @@ MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, const std::share
 
             // Integrate the simulator
 //                mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+//            if(i == 0){
+//                cout << "perturbed pos vector: " << perturbedPositions.transpose() << endl;
+//                MatrixXd temp = activeModelTranslator->returnPositionVector(fdData);
+//                cout << "same pos vector from fdData: " << temp.transpose() << endl;
+//            }
             mujocoHelper->stepSimulator(1, fdData);
-//                cout << "after step simulator positon - " << i << endl;
+//            cout << "after step 1 - dof" << i << endl;
 
             // return the new velocity vector
             velocityInc = activeModelTranslator->returnVelocityVector(fdData);
+//            cout << "Velocity positive " << velocityInc << endl;
+////            if(i == 0){
+//                cout << "velocityInc: " << velocityInc.transpose() << endl;
+//            }
 //                cout << "Velocity positive " << velocityInc << endl;
 
             if(fd_costDerivs){
@@ -671,10 +686,20 @@ MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, const std::share
 
             // Integrate the simulator
 //                mju_copy(mujocoHelper->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+//            if(i == 0){
+//                cout << "perturbed pos vector: " << perturbedPositions.transpose() << endl;
+//                temp = activeModelTranslator->returnPositionVector(fdData);
+//                cout << "same pos vector from fdData: " << temp.transpose() << endl;
+//            }
             mujocoHelper->stepSimulator(1, fdData);
+//            cout << "after step 2 -dof - " << i << endl;
 
             // Return the new velocity vector
             velocityDec = activeModelTranslator->returnVelocityVector(fdData);
+//            cout << "velocityDec: " << velocityDec.transpose() << endl;
+////            if(i == 0){
+//                cout << "velocity dec: " << velocityDec.transpose() << endl;
+//            }
 //                cout << "velocity dec " << velocityDec << endl;
 
             if(fd_costDerivs){
@@ -696,6 +721,7 @@ MatrixXd differentiator::calc_dqveldqpos(std::vector<int> cols, const std::share
     }
     return dqveldq;
 }
+
 
 MatrixXd differentiator::calc_dqaccdqpos(std::vector<int> cols, const std::shared_ptr<mjData> origData, std::shared_ptr<mjData> fdData, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
     int dof = activeModelTranslator->dof;
