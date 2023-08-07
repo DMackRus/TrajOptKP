@@ -6,6 +6,8 @@ differentiator::differentiator(std::shared_ptr<modelTranslator> _modelTranslator
 
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal){
 //    cout << "start of derivs function " << endl;
     int dof = activeModelTranslator->dof;
@@ -318,6 +320,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     }
 
 }
+
 
 MatrixXd differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
     int numCtrl = activeModelTranslator->num_ctrl;
@@ -776,3 +779,5 @@ MatrixXd differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, i
     }
     return dqaccdq;
 }
+
+#pragma GCC pop_options
