@@ -103,8 +103,6 @@ protected:
 
     std::vector<std::vector<int>> computedKeyPoints;
 
-
-
     // Generate keypoints we will calculate derivatives at
     std::vector<std::vector<int>> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
     std::vector<std::vector<int>> generateKeyPointsIteratively();
@@ -122,12 +120,9 @@ protected:
     void filterMatrices();
     std::vector<double> filterIndividualValue(std::vector<double> unfiltered);
 
-    bool convergeThisIteration = false;
-
 
 private:
     double epsConverge = 0.02;
-    
 
 };
 

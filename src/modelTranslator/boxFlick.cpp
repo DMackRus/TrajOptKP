@@ -21,6 +21,11 @@ boxFlick::boxFlick(int _clutterLevel){
     initModelTranslator(yamlFilePath);
 }
 
+void boxFlick::generateRandomGoalAndStartState() {
+    X_start = returnRandomStartState();
+    X_desired = returnRandomGoalState(X_start);
+}
+
 MatrixXd boxFlick::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
@@ -155,8 +160,6 @@ MatrixXd boxFlick::returnRandomStartState(){
         cout << "ERROR: Invalid clutter level" << endl;
     }
 
-
-
     return randomStartState;
 }
 
@@ -275,6 +278,9 @@ void boxFlick::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, Mat
 
 std::vector<MatrixXd> boxFlick::createInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
+
+    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through

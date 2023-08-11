@@ -23,6 +23,11 @@ twoDPushing::twoDPushing(int _clutterLevel){
     initModelTranslator(yamlFilePath);
 }
 
+void twoDPushing::generateRandomGoalAndStartState() {
+    X_start = returnRandomStartState();
+    X_desired = returnRandomGoalState(X_start);
+}
+
 MatrixXd twoDPushing::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 

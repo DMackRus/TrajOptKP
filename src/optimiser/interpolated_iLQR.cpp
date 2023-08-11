@@ -138,6 +138,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
     if(verboseOutput) {
         cout << " ---------------- optimisation begins -------------------" << endl;
+        cout << " ------ " << activeModelTranslator->modelName << " ------ " << endl;
         cout << "minN " << min_interval << "  keypointsMethod: " << keyPointsMethodsStrings[keyPointsMethod] << endl;
     }
 
@@ -151,7 +152,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     double oldCost = 0.0f;
     double newCost = 0.0f;
     bool costReducedLastIter = true;
-    convergeThisIteration = false;
 
     // ---------------------- Clear data saving variables ----------------------
     costHistory.clear();
@@ -180,11 +180,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         numIterationsForConvergence++;
 
         //STEP 1 - If forwards pass changed the trajectory, -
-//        cout << "generate derivs \n";
         if(costReducedLastIter){
             generateDerivatives();
         }
-//        cout << "A[horizonLength] is: " << A[horizonLength - 1] << endl;
 
         if(saveTrajecInfomation){
 

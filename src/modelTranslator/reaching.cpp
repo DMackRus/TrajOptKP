@@ -26,6 +26,96 @@ bool pandaReaching::taskComplete(int dataIndex, double &dist){
     }
 }
 
+void pandaReaching::generateRandomGoalAndStartState() {
+    bool validStartAndGoal = false;
+    vector<double> jointStartPositions;
+    vector<double> jointGoalPositions;
+
+    while(!validStartAndGoal){
+
+        // Generate a random starting state
+        bool validStartState = false;
+
+
+        for(int i = 0; i < 7; i++){
+            jointStartPositions.push_back(0.0f);
+        }
+
+        while(!validStartState){
+            // Generate a random robot configuration
+            std::string robotName = "panda";
+            for(int i = 0; i < 7; i++){
+                double randomJoint = randFloat(jointLimsMin[i], jointLimsMax[i]);
+                jointStartPositions[i] = randomJoint;
+            }
+
+            activePhysicsSimulator->setRobotJointsPositions(robotName, jointStartPositions, MAIN_DATA_STATE);
+
+            // Check if current configuration is valid
+            if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+                cout << "invalid robot position \n";
+            }
+            else{
+                validStartState = true;
+            }
+        }
+
+        // Generate a random goal state
+        double jointOffsets[7] = {0.5, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8};
+        double jointOffsetNoise[7] = {0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2};
+        int resetCounter = 0;
+
+        bool validGoalState = false;
+
+        for(int i = 0; i < 7; i++){
+            jointGoalPositions.push_back(0.0f);
+        }
+
+        while(!validGoalState){
+            // Generate a random robot configuration
+            std::string robotName = "panda";
+            for(int i = 0; i < 7; i++){
+                double targetJointVal;
+                if(jointStartPositions[i] - jointOffsets[i] > jointLimsMin[i]){
+                    targetJointVal = jointStartPositions[i] - jointOffsets[i];
+                }
+                else{
+                    targetJointVal = jointStartPositions[i] + jointOffsets[i];
+                }
+
+                double randomJoint = randFloat(targetJointVal - jointOffsetNoise[i], targetJointVal + jointOffsetNoise[i]);
+                jointGoalPositions[i] = randomJoint;
+            }
+
+            activePhysicsSimulator->setRobotJointsPositions(robotName, jointGoalPositions, MAIN_DATA_STATE);
+
+            // Check if current configuration is valid
+            if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+                cout << "invalid robot position \n";
+                resetCounter++;
+            }
+            else{
+                validGoalState = true;
+            }
+
+            if(resetCounter > 100){
+                cout << "regenerate random start state \n";
+            }
+
+        }
+
+        if(validStartState && validGoalState){
+            validStartAndGoal = true;
+        }
+
+    }
+
+    X_start << jointStartPositions[0], jointStartPositions[1], jointStartPositions[2], jointStartPositions[3], jointStartPositions[4], jointStartPositions[5], jointStartPositions[6],
+            0, 0, 0, 0, 0, 0, 0;
+    X_desired << jointGoalPositions[0], jointGoalPositions[1], jointGoalPositions[2], jointGoalPositions[3], jointGoalPositions[4], jointGoalPositions[5], jointGoalPositions[6],
+            0, 0, 0, 0, 0, 0, 0;
+}
+
 MatrixXd pandaReaching::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
@@ -128,8 +218,6 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
 //                double diff = X_desired(j) - Xt(j);
 //                control(j) += diff * gains[j];
             }
-            cout << "grav compensation: " << control << endl;
-            cout << "current state: " << Xt << endl;
 
             setControlVector(control, MAIN_DATA_STATE);
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);

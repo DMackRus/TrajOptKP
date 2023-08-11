@@ -55,6 +55,10 @@ bool locomotion_anymal::taskComplete(int dataIndex, double &dist){
     return false;
 }
 
+void locomotion_anymal::generateRandomGoalAndStartState(){
+    MatrixXd test;
+}
+
 MatrixXd locomotion_anymal::returnRandomStartState(){
     MatrixXd test;
     return test;

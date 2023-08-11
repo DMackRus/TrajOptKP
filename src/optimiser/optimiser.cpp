@@ -107,7 +107,7 @@ void optimiser::generateDerivatives(){
 //    cout << "l_x[horizonLength]: " << l_x[horizonLength] << endl;
 //    cout << "l_u[horizonLength - 1]: " << l_u[horizonLength - 1] << endl;
 //    cout << "l_uu[horizonLength - 1]: " << l_uu[horizonLength - 1] << endl;
-    cout << "A[0]: " << endl << A[0] << endl;
+//    cout << "A[0]: " << endl << A[0] << endl;
 //    cout << "a[horizon - 2]" << endl << A[horizonLength - 2] << endl;
 //    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
 
@@ -535,7 +535,9 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 //    cout << "num valid: " << counter << "\n";
 //    cout << "num too small: " << counterTooSmall << "\n";
 //    cout << "num too large: " << counterTooLarge << "\n";
-    if(averageError < 0.00005){
+
+    // 0.00005
+    if(averageError < 0.00001){
         approximationGood = true;
     }
     else{

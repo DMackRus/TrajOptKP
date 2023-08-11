@@ -39,11 +39,12 @@ public:
     virtual void costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
     virtual bool taskComplete(int dataIndex, double &dist);
     virtual std::vector<MatrixXd> createInitSetupControls(int horizonLength);
+    virtual std::vector<MatrixXd> createInitOptimisationControls(int horizonLength);
 
     // - Pure virtual functions that HAVE to be overwritten
-    virtual std::vector<MatrixXd> createInitOptimisationControls(int horizonLength);
     virtual MatrixXd returnRandomStartState() = 0;
     virtual MatrixXd returnRandomGoalState(MatrixXd X0) = 0;
+    virtual void generateRandomGoalAndStartState() = 0;
 
     int dof;
     int num_ctrl;

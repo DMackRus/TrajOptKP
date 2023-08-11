@@ -33,6 +33,7 @@
 
 # Other git repositories
 /mujoco_models
+/savedTrajecInfo
 /cmake-build-debug
 /.vscode
 /.idea

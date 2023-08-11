@@ -7,6 +7,7 @@ class twoDPushing: public modelTranslator{
 public:
     twoDPushing(int clutterLevel);
 
+    void generateRandomGoalAndStartState() override;
     MatrixXd returnRandomStartState() override;
     MatrixXd returnRandomGoalState(MatrixXd X0) override;
     std::vector<MatrixXd> createInitOptimisationControls(int horizonLength) override;
