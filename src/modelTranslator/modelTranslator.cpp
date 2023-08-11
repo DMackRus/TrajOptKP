@@ -14,6 +14,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     fileHandler yamlReader;
     yamlReader.readModelConfigFile(yamlFilePath, taskConfig);
     modelFilePath = taskConfig.modelFilePath;
+    modelName = taskConfig.modelName;
     const char* _modelPath = modelFilePath.c_str();
 
     // initialise physics simulator
@@ -473,7 +474,6 @@ MatrixXd modelTranslator::returnVelocityVector(int dataIndex){
             }
         }
     }
-
 
     return velVector;
 }

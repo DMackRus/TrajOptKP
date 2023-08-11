@@ -21,6 +21,11 @@ boxFlick::boxFlick(int _clutterLevel){
     initModelTranslator(yamlFilePath);
 }
 
+void boxFlick::generateRandomGoalAndStartState() {
+    X_start = returnRandomStartState();
+    X_desired = returnRandomGoalState(X_start);
+}
+
 MatrixXd boxFlick::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 

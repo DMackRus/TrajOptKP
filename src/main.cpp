@@ -150,18 +150,21 @@ int main(int argc, char **argv) {
     // random start and goal state
     std::string taskPrefix = activeModelTranslator->modelName;
     if(taskInitMode == "random"){
-        startStateVector = activeModelTranslator->returnRandomStartState();
-        activeModelTranslator->X_start = startStateVector;
-        activeModelTranslator->X_desired = activeModelTranslator->returnRandomGoalState(startStateVector);
+//        startStateVector = activeModelTranslator->returnRandomStartState();
+//        activeModelTranslator->X_start = startStateVector;
+//        activeModelTranslator->X_desired = activeModelTranslator->returnRandomGoalState(startStateVector);
 
-        yamlReader->saveTaskToFile(taskPrefix, 0, activeModelTranslator->X_start, activeModelTranslator->X_desired);
+        activeModelTranslator->generateRandomGoalAndStartState();
+
+//        yamlReader->saveTaskToFile(taskPrefix, 0, activeModelTranslator->X_start, activeModelTranslator->X_desired);
     }
     else if(taskInitMode == "fromCSV"){
         yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
-        cout << "start state " << activeModelTranslator->X_start << endl;
-        cout << "desired state " << activeModelTranslator->X_desired << endl;
     }
+
+    cout << "start state " << activeModelTranslator->X_start << endl;
+    cout << "desired state " << activeModelTranslator->X_desired << endl;
 
     activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
     activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
@@ -225,9 +228,9 @@ int main(int argc, char **argv) {
         mpcVisualise = true;
 
         // No clutter - 1800 - 500 - 1800
-        activeModelTranslator->X_desired(10) = 0.5;
+        activeModelTranslator->X_desired(10) = 0.0;
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2000, 1, 100);
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2000, 1, 200);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -346,7 +349,7 @@ void onetaskGenerateTestingData(){
     std::vector<int> minN = {1, 5, 100, 1000, 5, 5};
 
     // Loop through saved trajectories
-    for(int i = 0; i < 2; i++){
+    for(int i = 0; i < 100; i++){
         cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
 
         // Loop through our interpolating derivatives methods
@@ -596,12 +599,10 @@ void generateFilteringData(){
 
 void generateTestScenes(){
     for(int i = 0; i < 100; i++){
-        MatrixXd startStateVector = activeModelTranslator->returnRandomStartState();
-        activeModelTranslator->X_start = startStateVector;
-        activeModelTranslator->X_desired = activeModelTranslator->returnRandomGoalState(startStateVector);
-        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
+        activeModelTranslator->generateRandomGoalAndStartState();
+        activeModelTranslator->setStateVector(activeModelTranslator->X_start, MAIN_DATA_STATE);
         activeVisualiser->render("init state");
-        cout << "starting state: " << startStateVector << endl;
+        cout << "starting state: " << activeModelTranslator->X_start << endl;
 
 
         cout << "model name: " << activeModelTranslator->modelName << endl;
