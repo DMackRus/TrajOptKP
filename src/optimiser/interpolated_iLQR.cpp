@@ -52,7 +52,6 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTransl
     keyPointsMethod = _yamlReader->keyPointMethod;
 
     filteringMatrices = activeYamlReader->filtering;
-    approximate_backwardsPass = activeYamlReader->approximate_backwardsPass;
 
 }
 

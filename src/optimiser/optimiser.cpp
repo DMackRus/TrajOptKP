@@ -169,6 +169,10 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
         activePhysicsSimulator->resetModelAfterFiniteDifferencing();
 
     }
+    else if(keyPointsMethod == magvel_change){
+        std::vector<MatrixXd> velProfile = generateVelProfile();
+        evaluationWaypoints = generateKeyPointsMagVelChange(velProfile);
+    }
     else{
         std::cout << "ERROR: keyPointsMethod not recognised \n";
     }
@@ -190,7 +194,6 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
         }
         evaluationWaypoints.push_back(oneRow);
     }
-
 
     return evaluationWaypoints;
 }
@@ -298,7 +301,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsAdaptive(std::vector<M
 }
 
 std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
-    std::vector<std::vector<int>> evalPoints;
+    std::vector<std::vector<int>> keyPoints;
     bool binsComplete[dof];
     std::vector<indexTuple> indexTuples;
     int startIndex = 0;
@@ -312,7 +315,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
     }
 
     for(int i = 0; i < horizonLength; i++){
-        evalPoints.push_back(std::vector<int>());
+        keyPoints.push_back(std::vector<int>());
     }
 
     // Loop through all dofs in the system
@@ -381,7 +384,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
 
                 if(i == computedKeyPoints[j][k]){
 //                    cout << "Adding key point " << i << " to dof " << j << "\n";
-                    evalPoints[i].push_back(j);
+                    keyPoints[i].push_back(j);
                 }
             }
         }
@@ -389,26 +392,87 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
 
     // Sort list into order
     for(int i = 0; i < dof; i++){
-        std::sort(evalPoints[i].begin(), evalPoints[i].end());
+        std::sort(keyPoints[i].begin(), keyPoints[i].end());
     }
 
     // Remove duplicates
     for(int i = 0; i < dof; i++){
-        evalPoints[i].erase(std::unique(evalPoints[i].begin(), evalPoints[i].end()), evalPoints[i].end());
+        keyPoints[i].erase(std::unique(keyPoints[i].begin(), keyPoints[i].end()), keyPoints[i].end());
     }
 
+    return keyPoints;
+}
 
-    // Print the key points
-//    for(int i = 0; i < horizonLength; i++){
-//        cout << "Key points for index " << i << ":";
-//        for(int j = 0; j < evalPoints[i].size(); j++){
-//            cout << " " << evalPoints[i][j];
-//        }
-//        cout << "\n";
-//
-//    }
+std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vector<MatrixXd> velProfile){
+    std::vector<std::vector<int>> keyPoints;
 
-    return evalPoints;
+    for(int t = 0; t < horizonLength; t++){
+        keyPoints.push_back(std::vector<int>());
+    }
+
+    for(int i = 0; i < dof; i++){
+        keyPoints[0].push_back(i);
+    }
+
+    // Keeps track of interval from last keypoint for this dof
+    std::vector<int> lastKeypointCounter = std::vector<int>(dof, 0);
+    std::vector<double> lastVelValue = std::vector<double>(dof, 0);
+    std::vector<double> lastVelDirection = std::vector<double>(dof, 0);
+
+    for(int i = 0; i < dof; i++){
+        lastVelValue[i] = velProfile[i](0, 0);
+    }
+
+    // Loop over the velocity dofs
+    for(int i = 0; i < dof; i++){
+        // Loop over the horizon
+        for(int t = 1; t < horizonLength; t++){
+
+            lastKeypointCounter[i]++;
+            double currentVelDirection = velProfile[t](i, 0) - velProfile[t - 1](i, 0);
+            double currentVelChangeSinceKeypoint = velProfile[t](i, 0) - lastVelValue[i];
+
+            // If the vel change is above the required threshold
+            if(abs(currentVelChangeSinceKeypoint) > magVelChangeThreshold){
+                keyPoints[t].push_back(i);
+                lastVelValue[i] = velProfile[t](i, 0);
+                lastKeypointCounter[i] = 0;
+                continue;
+            }
+//            cout << " after check mag change" << endl;
+
+            // If the interval is greater than minN
+            if(lastKeypointCounter[i] >= min_interval){
+                // If the direction of the velocity has changed
+                if(currentVelDirection * lastVelDirection[i] < 0){
+                    keyPoints[t].push_back(i);
+                    lastVelValue[i] = velProfile[t](i, 0);
+                    lastKeypointCounter[i] = 0;
+                    continue;
+                }
+            }
+            else{
+                lastVelDirection[i] = currentVelDirection;
+            }
+
+//            cout << " after check direction" << endl;
+
+            // If interval is greater than maxN
+            if(lastKeypointCounter[i] >= max_interval){
+                keyPoints[t].push_back(i);
+                lastVelValue[i] = velProfile[t](i, 0);
+                lastKeypointCounter[i] = 0;
+                continue;
+            }
+        }
+    }
+
+    // Enforce last keypoint for all sofs at horizonLength - 1
+    for(int i = 0; i < dof; i++){
+        keyPoints[horizonLength-1].push_back(i);
+    }
+
+    return keyPoints;
 }
 
 bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
@@ -748,7 +812,6 @@ std::vector<MatrixXd> optimiser::generateJerkProfile(){
 }
 
 std::vector<MatrixXd> optimiser::generateAccelProfile(){
-
     MatrixXd accel(activeModelTranslator->dof, 1);
 
     MatrixXd state1(activeModelTranslator->stateVectorSize, 1);
@@ -770,6 +833,22 @@ std::vector<MatrixXd> optimiser::generateAccelProfile(){
     }
 
     return accelProfile;
+}
+
+std::vector<MatrixXd> optimiser::generateVelProfile(){
+    std::vector<MatrixXd> velProfile;
+    MatrixXd velocities(activeModelTranslator->dof, 1);
+
+    for(int t = 0; t < horizonLength; t++){
+
+        for(int i = 0; i < activeModelTranslator->dof; i++){
+            velocities(i, 0) = X_old[t](i+dof, 0);
+        }
+
+        velProfile.push_back(velocities);
+    }
+
+    return velProfile;
 }
 
 void optimiser::filterMatrices(){

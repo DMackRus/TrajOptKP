@@ -7,17 +7,12 @@
 #include "physicsSimulator.h"
 #include "differentiator.h"
 
-enum interpMethod{
-    linear = 0,
-    quadratic = 1,
-    cubic = 2,
-};
-
 enum keyPointsMethod{
     setInterval = 0,
     adaptive_jerk = 1,
     adaptive_accel = 2,
-    iterative_error = 3
+    iterative_error = 3,
+    magvel_change = 4
 };
 
 struct indexTuple{
@@ -37,9 +32,8 @@ public:
     void returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
     int currentTrajecNumber = 0;
-    int interpMethod = linear;
     int keyPointsMethod = setInterval;
-    std::string keyPointsMethodsStrings[4] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error"};
+    std::string keyPointsMethodsStrings[5] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error", "magVel_change"};
 
     double optTime;
 
@@ -54,11 +48,13 @@ public:
 
     int numIterationsForConvergence;
 
+    // ----------- Derivative interpolation settings -----------------------
     int min_interval = 1;
     int max_interval = 100;
+    double magVelChangeThreshold = 2;
+    double iterativeErrorThreshold = 0.0001;
 
     bool filteringMatrices = true;
-    bool approximate_backwardsPass = false;
 
     std::vector<double> time_getDerivs_ms;
     double avgTime_getDerivs_ms = 0.0f;
@@ -109,8 +105,10 @@ protected:
     bool checkOneMatrixError(indexTuple indices);
     bool checkDoFColumnError(indexTuple indices, int dof);
     std::vector<std::vector<int>> generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile);
+    std::vector<std::vector<int>> generateKeyPointsMagVelChange(std::vector<MatrixXd> velProfile);
     std::vector<MatrixXd> generateJerkProfile();
     std::vector<MatrixXd> generateAccelProfile();
+    std::vector<MatrixXd> generateVelProfile();
 
     // Calculate derivatives at key points
     void getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints);

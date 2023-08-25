@@ -51,7 +51,7 @@ std::shared_ptr<gradDescent> gradDescentOptimiser;
 std::shared_ptr<visualizer> activeVisualiser;
 std::shared_ptr<fileHandler> yamlReader;
 
-int keyPointMethod = setInterval;
+int keyPointMethod = magvel_change;
 //int keyPointMethod = setInterval;
 
 bool mpcVisualise = false;
@@ -993,7 +993,6 @@ void generateTestingData_MPC(){
         int numMethods = methodNames.size();
         int keyPointMethods[6] = {setInterval, setInterval, setInterval, adaptive_jerk, adaptive_accel,
                                   iterative_error};
-        int interpMethod[6] = {linear, linear, linear, linear, linear, linear};
         int minN[6] = {1, 10, 200, 10, 10, 10};
         bool approxBackwardsPass[6] = {false, false, false, false, false, false};
 
