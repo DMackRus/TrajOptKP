@@ -38,10 +38,11 @@ public:
     virtual double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) = 0;
     virtual std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) = 0;
     virtual bool checkForConvergence(double oldCost, double newCost);
-    void setupTestingExtras(int _trajecNumber, int _keyPointsMethod, int minN);
+    void setTrajecNumber(int _trajecNumber);
 
     void returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
+    derivative_interpolator returnDerivativeInterpolator();
     void setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator);
 
     int currentTrajecNumber = 0;

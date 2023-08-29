@@ -31,10 +31,8 @@ bool optimiser::checkForConvergence(double oldCost, double newCost){
     return false;
 }
 
-void optimiser::setupTestingExtras(int _trajecNumber, int _keyPointsMethod, int _minN){
+void optimiser::setTrajecNumber(int _trajecNumber) {
     currentTrajecNumber = _trajecNumber;
-    activeDerivativeInterpolator.keypoint_method = _keyPointsMethod;
-    activeDerivativeInterpolator.minN = _minN;
 }
 
 void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
@@ -44,6 +42,10 @@ void optimiser::returnOptimisationData(double &_optTime, double &_costReduction,
     _avgPercentageDerivs = avgPercentDerivs;
     _avgTimeGettingDerivs = avgTime_getDerivs_ms;
     _numIterations = numIterationsForConvergence;
+}
+
+derivative_interpolator optimiser::returnDerivativeInterpolator(){
+    return activeDerivativeInterpolator;
 }
 
 void optimiser::setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator){

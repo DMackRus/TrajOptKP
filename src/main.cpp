@@ -216,17 +216,16 @@ int main(int argc, char **argv) {
         bool _;
         double __, ___, ____, _____, ______, _7;
         double finalDist;
-        // TODO - fix hard coded minN
-        activeOptimiser->setupTestingExtras(1000, keyPointMethod, 5);
+        activeOptimiser->setTrajecNumber(1000);
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
         activeOptimiser->verboseOutput = true;
         mpcVisualise = true;
 
         // No clutter - 1800 - 500 - 1800
-        activeModelTranslator->X_desired(10) = 0.0;
+        activeModelTranslator->X_desired(10) = 0.3;
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2000, 1, 200);
+        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2000, 1, 80);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -381,7 +380,10 @@ void onetaskGenerateTestingData(){
             activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
 
             // Setup interpolation method
-            activeOptimiser->setupTestingExtras(i, keyPointMethods[j], minN[j]);
+
+            // TODO - fix this for generating testing data
+            // return derivative interpolator , change necessary things and set it
+//            activeOptimiser->setupTestingExtras(i, keyPointMethods[j], minN[j]);
             // Setup initial state of the problem
 
 //            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -545,7 +547,7 @@ void generateFilteringData(){
         // Load optimiser
 
         // Reset optimisers variables as required
-        activeOptimiser->setupTestingExtras(i, keyPointMethod, 1);
+        activeOptimiser->setTrajecNumber(i);
 
         // Generate init controls
         std::vector<MatrixXd> initControls;
@@ -1053,7 +1055,9 @@ void generateTestingData_MPC(){
                 cout << "--------------------------------------------------------------------------------\n";
                 cout << "current method: " << methodNames[j] << "\n";
 
-                activeOptimiser->setupTestingExtras(i, keyPointMethods[j], minN[j]);
+                // TODO - fix this, need to return derivative interpolator, change necessary detaisl and set it
+//                activeOptimiser->setupTestingExtras(i, keyPointMethods[j], minN[j]);
+
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
                 MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgTimeForDerivs, avgPercentageDerivs,
                                  avgTimeBP, avgTimeFP, 2500, 500, 1800);

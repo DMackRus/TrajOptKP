@@ -165,7 +165,11 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     time_getDerivs_ms.clear();
     // ------------------------------------------------------------------------
 
+    auto time_start = high_resolution_clock::now();
     oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
+    auto time_end = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(time_end - time_start);
+    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
     initialCost = oldCost;
     cout << "initial cost: " << oldCost << endl;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -229,7 +233,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
                 cout << "| derivs: " << time_getDerivs_ms[i] << " | backwardsPass: " << time_backwardsPass_ms[i] << " | forwardsPass: " << time_forwardsPass_ms[i] << " ms |\n";
                 cout << "| Cost went from " << oldCost << " ---> " << newCost << " | \n";
             }
-
 
             costHistory.push_back(newCost);
 
@@ -600,6 +603,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
 }
 
 double interpolatediLQR::forwardsPassParallel(double oldCost){
+//    auto start = std::chrono::high_resolution_clock::now();
     float alpha = 1.0;
     double newCost = 0.0;
     bool costReduction = false;
@@ -616,6 +620,11 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
     }
 
     MatrixXd initState = activeModelTranslator->returnStateVector(1);
+//    auto end = std::chrono::high_resolution_clock::now();
+//    auto copy_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
+//    cout << "copy duration: " << copy_duration.count() / 1000.0f << endl;
+
+//    start = std::chrono::high_resolution_clock::now();
 
     #pragma omp parallel for
     for(int i = 0; i < 8; i++){
@@ -685,14 +694,16 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
         }
     }
 
+//    end = std::chrono::high_resolution_clock::now();
+//    auto rollout_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
+//    cout << "rollout duration: " << rollout_duration.count() / 1000.0f << endl;
+
     newCost = bestAlphaCost;
 //    cout << "best alpha cost = " << bestAlphaCost << " at alpha: " << alphas[bestAlphaIndex] << endl;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     // If the cost was reduced - update all the data states
     if(newCost < oldCost){
-        initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-
         for(int i = 0; i < horizonLength; i++){
 
             activeModelTranslator->setControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);

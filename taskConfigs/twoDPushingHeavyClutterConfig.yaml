@@ -1,6 +1,10 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing_heavyClutter.xml"
 modelName: "/panda_pushing_heavy_clutter"
 timeStep: 0.004
+keypointMethod: "adaptive_jerk"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+minN: 5
+maxN: 50
+iterativeErrorThreshold: 0.00001
 robots:
   panda:
     jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
@@ -13,6 +17,7 @@ robots:
     jointVelCosts: [0, 0, 0, 0, 0, 0, 0]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0, 0]
     jointJerkThresholds: [0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005]
+    magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   blueTin:
     activeLinearDOF: [true, true, false]
@@ -27,6 +32,8 @@ bodies:
     angularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.01, 0.01, 0.01 ]
     angularJerkThreshold: [ 0.01, 0.01, 0.01 ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   mediumCylinder:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
@@ -40,6 +47,8 @@ bodies:
     angularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   bigBox:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -53,6 +62,8 @@ bodies:
     angularVelCost: [ 0, 0, 0 ]
     linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle1:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -66,6 +77,8 @@ bodies:
     angularVelCost: [ 0, 0, 0 ]
     linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle2:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -79,6 +92,8 @@ bodies:
     angularVelCost: [ 0, 0, 0 ]
     linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle3:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -92,6 +107,8 @@ bodies:
     angularVelCost: [ 0, 0, 0 ]
     linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle4:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -105,6 +122,8 @@ bodies:
     angularVelCost: [ 0, 0, 0 ]
     linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle5:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -116,5 +135,7 @@ bodies:
     linearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
     angularVelCost: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
-    angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearJerkThreshold: [ 0.02, 0.02, 0.02 ]
+    angularJerkThreshold: [ 0.02, 0.02, 0.02 ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]

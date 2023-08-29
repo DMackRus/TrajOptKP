@@ -1,8 +1,8 @@
 modelFile: "/mujoco_models/Acrobot/Acrobot.xml"
 modelName: "/doublePendulum"
-timeStep: 0.002
+timeStep: 0.004
 keypointMethod: "magvel_change"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
-minN: 5
+minN: 1
 maxN: 50
 iterativeErrorThreshold: 0.001
 # stable down pos [3.1415, 0], half up unstable pos [3.14, 3.14], full up unstable pos [0, 0]
@@ -18,4 +18,4 @@ robots:
     jointVelCosts: [0.1, 0.1]
     jointControlCosts: [0.001, 0.001]
     jointJerkThresholds: [0.1, 0.1]
-    magVelThresholds: [2.0, 2.0]
+    magVelThresholds: [1.0, 2.0]
