@@ -24,9 +24,14 @@ fileHandler::fileHandler(){
 void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfig){
     YAML::Node node = YAML::LoadFile(projectParentPath + yamlFilePath);
 
+    // General task settings
     _taskConfig.modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
     _taskConfig.modelName = node["modelName"].as<std::string>();
     _taskConfig.modelTimeStep = node["timeStep"].as<double>();
+    _taskConfig.keypointMethod = node["keypointMethod"].as<std::string>();
+    _taskConfig.minN = node["minN"].as<int>();
+    _taskConfig.maxN = node["maxN"].as<int>();
+    _taskConfig.iterativeErrorThreshold = node["iterativeErrorThreshold"].as<double>();
 
     // Loop through robots
     for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){
@@ -42,6 +47,7 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
         vector<double> jointVelCosts;
         vector<double> jointControlCosts;
         vector<double> jointJerkThresholds;
+        vector<double> magVelThresholds;
 
         robotName = robot_it->first.as<string>();
 
@@ -83,6 +89,10 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
             jointJerkThresholds.push_back(robot_it->second["jointJerkThresholds"][i].as<double>());
         }
 
+        for(int i = 0; i < robot_it->second["magVelThresholds"].size(); i++){
+            magVelThresholds.push_back(robot_it->second["magVelThresholds"][i].as<double>());
+        }
+
         tempRobot.name = robotName;
         tempRobot.jointNames = jointNames;
         tempRobot.actuatorNames = actuatorNames;
@@ -94,6 +104,7 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
         tempRobot.jointVelCosts = jointVelCosts;
         tempRobot.jointControlCosts = jointControlCosts;
         tempRobot.jointJerkThresholds = jointJerkThresholds;
+        tempRobot.magVelThresholds = magVelThresholds;
 
         _taskConfig.robots.push_back(tempRobot);
     }
@@ -114,6 +125,8 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
         double angularVelCosts[3];
         double linearJerkThreshold[3];
         double angularJerkThreshold[3];
+        double linearMagVelThreshold[3];
+        double angularMagVelThreshold[3];
 
         bodyName = body_it->first.as<string>();
 
@@ -165,6 +178,14 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
             angularJerkThreshold[i] = body_it->second["angularJerkThreshold"][i].as<double>();
         }
 
+        for(int i = 0; i < body_it->second["linearMagVelThreshold"].size(); i++){
+            linearMagVelThreshold[i] = body_it->second["linearMagVelThreshold"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["angularMagVelThreshold"].size(); i++){
+            angularMagVelThreshold[i] = body_it->second["angularMagVelThreshold"][i].as<double>();
+        }
+
         tempBody.name = bodyName;
         for(int i = 0; i < 3; i++){
             tempBody.activeLinearDOF[i] = activeLinearDOF[i];
@@ -179,6 +200,8 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
             tempBody.angularVelCost[i] = angularVelCosts[i];
             tempBody.linearJerkThreshold[i] = linearJerkThreshold[i];
             tempBody.angularJerkThreshold[i] = angularJerkThreshold[i];
+            tempBody.linearMagVelThreshold[i] = linearMagVelThreshold[i];
+            tempBody.angularMagVelThreshold[i] = angularMagVelThreshold[i];
         }
 
         _taskConfig.bodiesStates.push_back(tempBody);
@@ -221,16 +244,6 @@ void fileHandler::readOptimisationSettingsFile(int optimiser) {
     maxIter = node["maxIter"].as<int>();
     maxHorizon = node["maxHorizon"].as<int>();
 
-    if(optimiser == opt_iLQR || optimiser == opt_gradDescent){
-        keyPointMethod = node["keyPointMethod"].as<int>();
-        minInterval = node["min_interval"].as<int>();
-        maxInterval = node["max_interval"].as<int>();
-
-    }
-
-    if(optimiser == opt_iLQR){
-        approximate_backwardsPass = node["approximate_backwardsPass"].as<bool>();
-    }
 }
 
 void fileHandler::generalSaveMatrices(std::vector<MatrixXd> matrices, std::string fileName){

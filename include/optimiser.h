@@ -20,6 +20,17 @@ struct indexTuple{
     int endIndex;
 };
 
+struct derivative_interpolator{
+    std::string keypoint_method;
+    int minN;
+    int maxN;
+    std::vector<double> jerkThresholds;
+    std::vector<double> accelThresholds;
+    double iterativeErrorThreshold;
+    std::vector<double> magVelChangeThresholds;
+
+};
+
 class optimiser{
 public:
     optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
@@ -31,8 +42,9 @@ public:
 
     void returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
+    void setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator);
+
     int currentTrajecNumber = 0;
-    int keyPointsMethod = setInterval;
     std::string keyPointsMethodsStrings[5] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error", "magVel_change"};
 
     double optTime;
@@ -49,10 +61,10 @@ public:
     int numIterationsForConvergence;
 
     // ----------- Derivative interpolation settings -----------------------
-    int min_interval = 1;
-    int max_interval = 100;
-    double magVelChangeThreshold = 2;
-    double iterativeErrorThreshold = 0.0001;
+//    int min_interval = 1;
+//    int max_interval = 100;
+//    double magVelChangeThreshold = 2;
+//    double iterativeErrorThreshold = 0.0001;
 
     bool filteringMatrices = true;
 
@@ -93,6 +105,7 @@ protected:
 
     int dof;
     int num_ctrl;
+    derivative_interpolator activeDerivativeInterpolator;
 
     std::shared_ptr<fileHandler> activeYamlReader;
     std::shared_ptr<differentiator> activeDifferentiator;

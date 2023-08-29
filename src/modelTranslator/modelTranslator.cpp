@@ -15,21 +15,41 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     yamlReader.readModelConfigFile(yamlFilePath, taskConfig);
     modelFilePath = taskConfig.modelFilePath;
     modelName = taskConfig.modelName;
+    minN = taskConfig.minN;
+    maxN = taskConfig.maxN;
+    keypointMethod = taskConfig.keypointMethod;
+    iterativeErrorThreshold = taskConfig.iterativeErrorThreshold;
     const char* _modelPath = modelFilePath.c_str();
 
     // initialise physics simulator
     vector<string> bodyNames;
     for(int i = 0; i < taskConfig.robots.size(); i++){
         bodyNames.push_back(taskConfig.robots[i].name);
-        cout << "robot names: " << taskConfig.robots[i].name << endl;
+//        cout << "robot names: " << taskConfig.robots[i].name << endl;
         for(int j = 0; j < taskConfig.robots[i].jointNames.size(); j++){
-            cout << "joint names: " << taskConfig.robots[i].jointNames[j] << endl;
+//            cout << "joint names: " << taskConfig.robots[i].jointNames[j] << endl;
+            jerkThresholds.push_back(taskConfig.robots[i].jointJerkThresholds[j]);
+            // TODO fix this dupliate jerk thresholds
+            accelThresholds.push_back(taskConfig.robots[i].jointJerkThresholds[j]);
+            magVelChangeThresholds.push_back(taskConfig.robots[i].magVelThresholds[j]);
         }
+
     }
 
     for(int i = 0; i < taskConfig.bodiesStates.size(); i++){
         bodyNames.push_back(taskConfig.bodiesStates[i].name);
-        cout << "body names: " << taskConfig.bodiesStates[i].name << endl;
+//        cout << "body names: " << taskConfig.bodiesStates[i].name << endl;
+        for(int j = 0; j < 3; j++){
+            jerkThresholds.push_back(taskConfig.bodiesStates[i].linearJerkThreshold[j]);
+            jerkThresholds.push_back(taskConfig.bodiesStates[i].angularJerkThreshold[j]);
+
+            // TODO fix this dupliate jerk thresholds
+            accelThresholds.push_back(taskConfig.bodiesStates[i].linearJerkThreshold[j]);
+            accelThresholds.push_back(taskConfig.bodiesStates[i].angularJerkThreshold[j]);
+
+            magVelChangeThresholds.push_back(taskConfig.bodiesStates[i].linearMagVelThreshold[j]);
+            magVelChangeThresholds.push_back(taskConfig.bodiesStates[i].angularMagVelThreshold[j]);
+        }
     }
     
     myHelper = std::make_shared<MuJoCoHelper>(taskConfig.robots, bodyNames);

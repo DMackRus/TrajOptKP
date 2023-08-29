@@ -51,7 +51,7 @@ std::shared_ptr<gradDescent> gradDescentOptimiser;
 std::shared_ptr<visualizer> activeVisualiser;
 std::shared_ptr<fileHandler> yamlReader;
 
-int keyPointMethod = magvel_change;
+int keyPointMethod = setInterval;
 //int keyPointMethod = setInterval;
 
 bool mpcVisualise = false;
@@ -216,7 +216,8 @@ int main(int argc, char **argv) {
         bool _;
         double __, ___, ____, _____, ______, _7;
         double finalDist;
-        activeOptimiser->setupTestingExtras(1000, keyPointMethod, activeOptimiser->min_interval);
+        // TODO - fix hard coded minN
+        activeOptimiser->setupTestingExtras(1000, keyPointMethod, 5);
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
         activeOptimiser->verboseOutput = true;
@@ -544,7 +545,7 @@ void generateFilteringData(){
         // Load optimiser
 
         // Reset optimisers variables as required
-        activeOptimiser->setupTestingExtras(i, keyPointMethod, activeOptimiser->min_interval);
+        activeOptimiser->setupTestingExtras(i, keyPointMethod, 1);
 
         // Generate init controls
         std::vector<MatrixXd> initControls;
@@ -684,9 +685,9 @@ void optimiseOnceandShow(){
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
-//    test = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//    cout << "test 2: " << test << endl;
-    activeOptimiser->setupTestingExtras(1000, keyPointMethod, activeOptimiser->min_interval);
+
+
+//    activeOptimiser->setupTestingExtras(1000, keyPointMethod, activeOptimiser->min_interval);
 
     auto start = high_resolution_clock::now();
     std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);

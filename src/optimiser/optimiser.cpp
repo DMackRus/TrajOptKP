@@ -9,6 +9,17 @@ optimiser::optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::sha
 
     dof = activeModelTranslator->dof;
     num_ctrl = activeModelTranslator->num_ctrl;
+
+    // Set up the derivative interpolator from YAML settings
+    activeDerivativeInterpolator.keypoint_method = activeModelTranslator->keypointMethod;
+    activeDerivativeInterpolator.minN = activeModelTranslator->minN;
+    activeDerivativeInterpolator.maxN = activeModelTranslator->maxN;
+    activeDerivativeInterpolator.jerkThresholds = activeModelTranslator->jerkThresholds;
+    // TODO - fix this - add acell thresholds to yaml
+    activeDerivativeInterpolator.accelThresholds = activeModelTranslator->jerkThresholds;
+    activeDerivativeInterpolator.iterativeErrorThreshold = activeModelTranslator->iterativeErrorThreshold;
+    activeDerivativeInterpolator.magVelChangeThresholds = activeModelTranslator->magVelChangeThresholds;
+
 }
 
 bool optimiser::checkForConvergence(double oldCost, double newCost){
@@ -22,8 +33,8 @@ bool optimiser::checkForConvergence(double oldCost, double newCost){
 
 void optimiser::setupTestingExtras(int _trajecNumber, int _keyPointsMethod, int _minN){
     currentTrajecNumber = _trajecNumber;
-    keyPointsMethod = _keyPointsMethod;
-    min_interval = _minN;
+    activeDerivativeInterpolator.keypoint_method = _keyPointsMethod;
+    activeDerivativeInterpolator.minN = _minN;
 }
 
 void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
@@ -35,7 +46,10 @@ void optimiser::returnOptimisationData(double &_optTime, double &_costReduction,
     _numIterations = numIterationsForConvergence;
 }
 
-// ------------------------------------------- STEP 1 FUNCTIONS (GET DERIVATIVES) ----------------------------------------------
+void optimiser::setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator){
+    activeDerivativeInterpolator = _derivativeInterpolator;
+}
+
 void optimiser::generateDerivatives(){
     auto start = high_resolution_clock::now();
     // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
@@ -43,7 +57,7 @@ void optimiser::generateDerivatives(){
     std::vector<std::vector<int>> keyPoints = generateKeyPoints(X_old, U_old);
 
     // Calculate derivatives via finite differnecing / analytically for cost functions if available
-    if(keyPointsMethod != iterative_error){
+    if(activeDerivativeInterpolator.keypoint_method != "iterative_error"){
         auto start_fd_time = high_resolution_clock::now();
         getDerivativesAtSpecifiedIndices(keyPoints);
         auto stop_fd_time = high_resolution_clock::now();
@@ -128,10 +142,10 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
     }
     evaluationWaypoints.push_back(oneRow);
 
-    if(keyPointsMethod == setInterval){
+    if(activeDerivativeInterpolator.keypoint_method == "setInterval"){
         for(int i = 1; i < horizonLength - 1; i++){
 
-            if(i % min_interval == 0){
+            if(i % activeDerivativeInterpolator.minN == 0){
                 std::vector<int> oneRow;
                 for(int j = 0; j < dof; j++){
                     oneRow.push_back(j);
@@ -143,33 +157,23 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
                 evaluationWaypoints.push_back(oneRow);
             }
         }
-
-//        int numEvals = horizonLength / min_interval;
-//        for(int i = 1; i < numEvals; i++){
-//            if(i * min_interval < horizonLength){
-//                std::vector<int> oneRow(dof, i * min_interval);
-//                evaluationWaypoints.push_back(oneRow);
-//            }
-//        }
-
     }
-    else if(keyPointsMethod == adaptive_jerk){
+    else if(activeDerivativeInterpolator.keypoint_method == "adaptive_jerk"){
         std::vector<MatrixXd> jerkProfile = generateJerkProfile();
         evaluationWaypoints = generateKeyPointsAdaptive(jerkProfile);
-
     }
-    else if(keyPointsMethod == adaptive_accel){
+    else if(activeDerivativeInterpolator.keypoint_method == "adaptive_accel"){
         std::vector<MatrixXd> accelProfile = generateAccelProfile();
         evaluationWaypoints = generateKeyPointsAdaptive(accelProfile);
     }
-    else if(keyPointsMethod == iterative_error){
+    else if(activeDerivativeInterpolator.keypoint_method == "iterative_error"){
         computedKeyPoints.clear();
         activePhysicsSimulator->initModelForFiniteDifferencing();
         evaluationWaypoints = generateKeyPointsIteratively();
         activePhysicsSimulator->resetModelAfterFiniteDifferencing();
 
     }
-    else if(keyPointsMethod == magvel_change){
+    else if(activeDerivativeInterpolator.keypoint_method == "magvel_change"){
         std::vector<MatrixXd> velProfile = generateVelProfile();
         evaluationWaypoints = generateKeyPointsMagVelChange(velProfile);
     }
@@ -199,105 +203,121 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
 }
 
 std::vector<std::vector<int>> optimiser::generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile){
-    std::vector<std::vector<int>> evaluationWaypoints;
+    std::vector<std::vector<int>> keypoints;
 
     std::vector<int> oneRow;
     for(int i = 0; i < dof; i++){
         oneRow.push_back(i);
     }
-    evaluationWaypoints.push_back(oneRow);
+    keypoints.push_back(oneRow);
 
     int lastIndices[dof];
     for(int i = 0; i < dof; i++){
         lastIndices[i] = 0;
     }
 
+    // Loop over the trajectory
     for(int i = 0; i < trajecProfile.size(); i++){
         std::vector<int> currentRow;
-        int dofCounter = 0;
 
-        // Loop through all possible robots
-        for(int j = 0; j < activeModelTranslator->myStateVector.robots.size(); j++) {
-            // Loop through all joints of each robot
-            for(int k = 0; k < activeModelTranslator->myStateVector.robots[j].jointNames.size(); k++) {
-
-                // Check if lastUpdate is above minN
-                if((i - lastIndices[dofCounter]) >= min_interval) {
-                    // Check if the jerk is above the threshold
-                    if (trajecProfile[i](dofCounter, 0) > activeModelTranslator->myStateVector.robots[j].jointJerkThresholds[k]) {
-                        currentRow.push_back(dofCounter);
-                        lastIndices[dofCounter] = i;
-                    }
+        for(int j = 0; j < dof; j++){
+            if((i - lastIndices[j]) >= activeDerivativeInterpolator.minN) {
+                // Check if the jerk is above the threshold
+                if (trajecProfile[i](j, 0) > activeDerivativeInterpolator.jerkThresholds[j]) {
+                    currentRow.push_back(j);
+                    lastIndices[j] = i;
                 }
+            }
 
-                // Check if lastUpdate is above maxN
-                if((i - lastIndices[dofCounter]) >= max_interval){
-                    currentRow.push_back(dofCounter);
-                    lastIndices[dofCounter] = i;
-                }
-
-                dofCounter++;
+            if((i - lastIndices[j]) >= activeDerivativeInterpolator.maxN){
+                currentRow.push_back(j);
+                lastIndices[j] = i;
             }
         }
-
-        // Loop through all bodies in simulation state
-        for(int j = 0; j < activeModelTranslator->myStateVector.bodiesStates.size(); j++) {
-            //Loop through linear states
-            for (int k = 0; k < 3; k++) {
-                // If we are considering this dof in the problem
-                if (activeModelTranslator->myStateVector.bodiesStates[j].activeLinearDOF[k]) {
-
-                    // Check if lastUpdate is above minN
-                    if((i - lastIndices[dofCounter]) >= min_interval){
-                        if (trajecProfile[i](dofCounter, 0) >
-                            activeModelTranslator->myStateVector.bodiesStates[j].linearJerkThreshold[k]) {
-
-                            currentRow.push_back(dofCounter);
-                            lastIndices[dofCounter] = i;
-                        }
-                    }
-
-                    // Check if lastUpdates is above maxN
-                    if((i - lastIndices[dofCounter]) >= max_interval){
-                        currentRow.push_back(dofCounter);
-                        lastIndices[dofCounter] = i;
-                    }
-
-                    dofCounter++;
-                }
-            }
-
-            //Loop through angular states
-            for (int k = 0; k < 3; k++) {
-                // Check if we are considering this dof in the problem
-                if (activeModelTranslator->myStateVector.bodiesStates[j].activeAngularDOF[k]) {
-
-                    // Check if lastUpdate is above minN
-                    if((i - lastIndices[dofCounter]) >= min_interval){
-                        if (trajecProfile[i](dofCounter, 0) >
-                            activeModelTranslator->myStateVector.bodiesStates[j].angularJerkThreshold[k]) {
-
-                            currentRow.push_back(dofCounter);
-                            lastIndices[dofCounter] = i;
-                        }
-                    }
-
-                    // Check if lastUpdate is above maxN
-                    if((i - lastIndices[dofCounter]) >= max_interval){
-                        currentRow.push_back(dofCounter);
-                        lastIndices[dofCounter] = i;
-                    }
-
-                    dofCounter++;
-                }
-            }
-        }
+//        int dofCounter = 0;
+//
+//        // Loop through all possible robots
+//        for(int j = 0; j < activeModelTranslator->myStateVector.robots.size(); j++) {
+//            // Loop through all joints of each robot
+//            for(int k = 0; k < activeModelTranslator->myStateVector.robots[j].jointNames.size(); k++) {
+//
+//                // Check if lastUpdate is above minN
+//                if((i - lastIndices[dofCounter]) >= activeDerivativeInterpolator.minN) {
+//                    // Check if the jerk is above the threshold
+//                    if (trajecProfile[i](dofCounter, 0) > activeModelTranslator->myStateVector.robots[j].jointJerkThresholds[k]) {
+//                        currentRow.push_back(dofCounter);
+//                        lastIndices[dofCounter] = i;
+//                    }
+//                }
+//
+//                // Check if lastUpdate is above maxN
+//                if((i - lastIndices[dofCounter]) >= activeDerivativeInterpolator.maxN){
+//                    currentRow.push_back(dofCounter);
+//                    lastIndices[dofCounter] = i;
+//                }
+//
+//                dofCounter++;
+//            }
+//        }
+//
+//        // Loop through all bodies in simulation state
+//        for(int j = 0; j < activeModelTranslator->myStateVector.bodiesStates.size(); j++) {
+//            //Loop through linear states
+//            for (int k = 0; k < 3; k++) {
+//                // If we are considering this dof in the problem
+//                if (activeModelTranslator->myStateVector.bodiesStates[j].activeLinearDOF[k]) {
+//
+//                    // Check if lastUpdate is above minN
+//                    if((i - lastIndices[dofCounter]) >= activeDerivativeInterpolator.minN){
+//                        if (trajecProfile[i](dofCounter, 0) >
+//                            activeModelTranslator->myStateVector.bodiesStates[j].linearJerkThreshold[k]) {
+//
+//                            currentRow.push_back(dofCounter);
+//                            lastIndices[dofCounter] = i;
+//                        }
+//                    }
+//
+//                    // Check if lastUpdates is above maxN
+//                    if((i - lastIndices[dofCounter]) >= activeDerivativeInterpolator.maxN){
+//                        currentRow.push_back(dofCounter);
+//                        lastIndices[dofCounter] = i;
+//                    }
+//
+//                    dofCounter++;
+//                }
+//            }
+//
+//            //Loop through angular states
+//            for (int k = 0; k < 3; k++) {
+//                // Check if we are considering this dof in the problem
+//                if (activeModelTranslator->myStateVector.bodiesStates[j].activeAngularDOF[k]) {
+//
+//                    // Check if lastUpdate is above minN
+//                    if((i - lastIndices[dofCounter]) >=  activeDerivativeInterpolator.minN){
+//                        if (trajecProfile[i](dofCounter, 0) >
+//                            activeModelTranslator->myStateVector.bodiesStates[j].angularJerkThreshold[k]) {
+//
+//                            currentRow.push_back(dofCounter);
+//                            lastIndices[dofCounter] = i;
+//                        }
+//                    }
+//
+//                    // Check if lastUpdate is above maxN
+//                    if((i - lastIndices[dofCounter]) >=  activeDerivativeInterpolator.maxN){
+//                        currentRow.push_back(dofCounter);
+//                        lastIndices[dofCounter] = i;
+//                    }
+//
+//                    dofCounter++;
+//                }
+//            }
+//        }
 
         // Always append current row, even if empty.
-        evaluationWaypoints.push_back(currentRow);
+        keypoints.push_back(currentRow);
     }
 
-    return evaluationWaypoints;
+    return keypoints;
 }
 
 std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
@@ -433,7 +453,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
             double currentVelChangeSinceKeypoint = velProfile[t](i, 0) - lastVelValue[i];
 
             // If the vel change is above the required threshold
-            if(abs(currentVelChangeSinceKeypoint) > magVelChangeThreshold){
+            if(abs(currentVelChangeSinceKeypoint) > activeDerivativeInterpolator.magVelChangeThresholds[i]){
                 keyPoints[t].push_back(i);
                 lastVelValue[i] = velProfile[t](i, 0);
                 lastKeypointCounter[i] = 0;
@@ -442,7 +462,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
 //            cout << " after check mag change" << endl;
 
             // If the interval is greater than minN
-            if(lastKeypointCounter[i] >= min_interval){
+            if(lastKeypointCounter[i] >= activeDerivativeInterpolator.minN){
                 // If the direction of the velocity has changed
                 if(currentVelDirection * lastVelDirection[i] < 0){
                     keyPoints[t].push_back(i);
@@ -458,7 +478,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
 //            cout << " after check direction" << endl;
 
             // If interval is greater than maxN
-            if(lastKeypointCounter[i] >= max_interval){
+            if(lastKeypointCounter[i] >= activeDerivativeInterpolator.maxN){
                 keyPoints[t].push_back(i);
                 lastVelValue[i] = velProfile[t](i, 0);
                 lastKeypointCounter[i] = 0;
@@ -488,7 +508,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 
 
     int midIndex = (indices.startIndex + indices.endIndex) / 2;
-    if((indices.endIndex - indices.startIndex) < min_interval){
+    if((indices.endIndex - indices.startIndex) <  activeDerivativeInterpolator.minN){
         return true;
     }
 
@@ -601,7 +621,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 //    cout << "num too large: " << counterTooLarge << "\n";
 
     // 0.00005
-    if(averageError < 0.00001){
+    if(averageError <  activeDerivativeInterpolator.iterativeErrorThreshold){ //0.00001
         approximationGood = true;
     }
     else{

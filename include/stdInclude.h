@@ -28,6 +28,7 @@ struct robot{
     std::vector<double> jointVelCosts;
     std::vector<double> jointControlCosts;
     std::vector<double> jointJerkThresholds;
+    std::vector<double> magVelThresholds;
 };
 
 struct bodyStateVec{
@@ -44,6 +45,8 @@ struct bodyStateVec{
     double angularVelCost[3];
     double linearJerkThreshold[3];
     double angularJerkThreshold[3];
+    double linearMagVelThreshold[3];
+    double angularMagVelThreshold[3];
 };
 
 struct task{
@@ -52,6 +55,13 @@ struct task{
     double modelTimeStep;
     std::string modelName;
     std::string modelFilePath;
+    std::string keypointMethod;
+    int minN;
+    int maxN;
+    std::vector<double> jerkThresholds;
+    std::vector<double> acellThresholds;
+    double iterativeErrorThreshold;
+    std::vector<double> magVelThresholds;
 
 };
 

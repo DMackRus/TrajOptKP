@@ -58,6 +58,15 @@ public:
     std::string modelFilePath;
     std::string modelName;
 
+    // Default derivative interpolation settings
+    std::string keypointMethod;
+    int minN;
+    int maxN;
+    std::vector<double> jerkThresholds;
+    std::vector<double> accelThresholds;
+    double iterativeErrorThreshold;
+    std::vector<double> magVelChangeThresholds;
+
 protected:
     DiagonalMatrix<double, Eigen::Dynamic> Q;
     DiagonalMatrix<double, Eigen::Dynamic> Q_terminal;

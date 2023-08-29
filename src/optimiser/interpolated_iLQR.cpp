@@ -47,10 +47,6 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTransl
     X_old.push_back(MatrixXd(2*dof, 1));
     X_new.push_back(MatrixXd(2*dof, 1));
 
-    min_interval = _yamlReader->minInterval;
-    max_interval = _yamlReader->maxInterval;
-    keyPointsMethod = _yamlReader->keyPointMethod;
-
     filteringMatrices = activeYamlReader->filtering;
 
 }
@@ -138,7 +134,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     if(verboseOutput) {
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << " ------ " << activeModelTranslator->modelName << " ------ " << endl;
-        cout << "minN " << min_interval << "  keypointsMethod: " << keyPointsMethodsStrings[keyPointsMethod] << endl;
+        cout << "minN " << activeDerivativeInterpolator.minN << "  keypointsMethod: " << activeDerivativeInterpolator.keypoint_method << endl;
     }
 
     auto optStart = high_resolution_clock::now();
