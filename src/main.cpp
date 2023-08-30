@@ -8,6 +8,8 @@
 #include "twoDPushing.h"
 #include "boxFlick.h"
 #include "locomotion.h"
+#include "spherePush.h"
+#include "boxSweep.h"
 
 #include "visualizer.h"
 #include "MuJoCoHelper.h"
@@ -38,7 +40,9 @@ enum scenes{
     boxFlicking = 7,
     boxFlickingMildClutter = 8,
     boxFlickingHeavyClutter = 9,
-    anymal_locomotion = 10
+    anymal_locomotion = 10,
+    sphere_push = 11,
+    box_sweep = 12
 };
 
 // --------------------- Global class instances --------------------------------
@@ -133,6 +137,14 @@ int main(int argc, char **argv) {
     else if(task == anymal_locomotion){
         std::shared_ptr<locomotion_anymal> myLocomotion = std::make_shared<locomotion_anymal>();
         activeModelTranslator = myLocomotion;
+    }
+    else if(task == sphere_push){
+        std::shared_ptr<spherePush> mySpherePush = std::make_shared<spherePush>(noClutter);
+        activeModelTranslator = mySpherePush;
+    }
+    else if(task == box_sweep){
+        std::shared_ptr<boxSweep> myBoxSweep = std::make_shared<boxSweep>();
+        activeModelTranslator = myBoxSweep;
     }
     else{
         std::cout << "invalid scene selected, exiting" << std::endl;
@@ -1100,14 +1112,14 @@ void keyboardControl(){
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
     int dof = activeModelTranslator->stateVectorSize / 2;
 
-    startStateVector << 0, 1, 0, 0.3, 0, -0.3, -0.3, 0, 0.3,
-            0, 0, 0, 0, 0, 0, 0, 0, 0;
-
-
-
-    activeModelTranslator->X_start = startStateVector;
-    activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
-    activeModelTranslator->activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
+//    startStateVector << 0, 1, 0, 0.3, 0, -0.3, -0.3, 0, 0.3,
+//            0, 0, 0, 0, 0, 0, 0, 0, 0;
+//
+//
+//
+//    activeModelTranslator->X_start = startStateVector;
+//    activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
+//    activeModelTranslator->activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
 
 //    double cost = activeModelTranslator->costFunction(MASTER_RESET_DATA, false);
 //
@@ -1123,40 +1135,12 @@ void keyboardControl(){
     activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
 
+    activeModelTranslator->activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
+
     while(activeVisualiser->windowOpen()){
         vector<double> gravCompensation;
-//        activeModelTranslator->activePhysicsSimulator->getRobotJointsGravityCompensaionControls("panda", gravCompensation, MAIN_DATA_STATE);
-
-        MatrixXd control(activeModelTranslator->num_ctrl, 1);
-        int testIndex = 0;
-        startStateVector = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//        cout << "state: " << startStateVector << endl;
-//
-//        for(int i = 0; i < dof; i++){
-//            if ( i != testIndex){
-//                startStateVector(i) = 0.0f;
-//            }
-//        }
-
-        control(0) = 0.1;
-        control(1) = -0.1;
-        control(2) = 0.1;
-
-        control(3) = 0.2;
-        control(4) = -0.2;
-        control(5) = 0.3;
-
-//        control(testIndex) = 0.1;
-//        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
-        double cost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
-//        cout << "cost: " << cost << endl;
-
-
-//        cout << "control: " << control << endl;
-        activeModelTranslator->setControlVector(control, MAIN_DATA_STATE);
 //        MatrixXd returncontrol = activeModelTranslator->returnControlVector(MAIN_DATA_STATE);
 //        cout << "return control: " << returncontrol << endl;
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         activeVisualiser->render("keyboard control");
     }

@@ -222,7 +222,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         if(!lambdaExit){
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
             auto fp_start = high_resolution_clock::now();
-//            cout << "forwards pass \n";
 //            newCost = forwardsPass(oldCost);
             newCost = forwardsPassParallel(oldCost);
             auto fp_stop = high_resolution_clock::now();
@@ -252,10 +251,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
                 }
             }
 
-
             if(converged && (i >= minIter))
             {
-//              std::cout << "converged after " << i << " iterations" << std::endl;
                 break;
             }
         }
@@ -555,10 +552,10 @@ double interpolatediLQR::forwardsPass(double oldCost){
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-//             if(t % 5 == 0){
-//                 const char* fplabel = "fp";
-//                 activeVisualizer->render(fplabel);
-//             }
+             if(t % 5 == 0){
+                 const char* fplabel = "fp";
+                 activeVisualizer->render(fplabel);
+             }
 
             X_last = X_new.replicate(1, 1);
             U_last = Ut.replicate(1, 1);

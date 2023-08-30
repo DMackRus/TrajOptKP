@@ -510,7 +510,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 
 
     int midIndex = (indices.startIndex + indices.endIndex) / 2;
-    if((indices.endIndex - indices.startIndex) <  activeDerivativeInterpolator.minN){
+    if((indices.endIndex - indices.startIndex) <=  activeDerivativeInterpolator.minN){
         return true;
     }
 
