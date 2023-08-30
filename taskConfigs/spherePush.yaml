@@ -2,7 +2,7 @@ modelFile: "/mujoco_models/Franka_emika_scenes_V1/sphere_push.xml"
 modelName: "/sphere_push"
 timeStep: 0.004
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
-minN: 5
+minN: 1
 maxN: 50
 iterativeErrorThreshold: 0.00001
 robots:

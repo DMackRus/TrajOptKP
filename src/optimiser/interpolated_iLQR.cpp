@@ -135,6 +135,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << " ------ " << activeModelTranslator->modelName << " ------ " << endl;
         cout << "minN " << activeDerivativeInterpolator.minN << "  keypointsMethod: " << activeDerivativeInterpolator.keypoint_method << endl;
+        cout << "lambda: " << lambda << endl;
     }
 
     auto optStart = high_resolution_clock::now();
@@ -222,8 +223,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         if(!lambdaExit){
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
             auto fp_start = high_resolution_clock::now();
-//            newCost = forwardsPass(oldCost);
-            newCost = forwardsPassParallel(oldCost);
+            newCost = forwardsPass(oldCost);
+//            newCost = forwardsPassParallel(oldCost);
             auto fp_stop = high_resolution_clock::now();
             auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
             time_forwardsPass_ms.push_back(fpDuration.count() / 1000.0f);
@@ -273,15 +274,25 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
     for(int i = 0; i < time_getDerivs_ms.size(); i++){
         avgTime_getDerivs_ms += time_getDerivs_ms[i];
-        avgTime_backwardsPass_ms += time_backwardsPass_ms[i];
-        avgTime_forwardsPass_ms += time_forwardsPass_ms[i];
         avgPercentDerivs += percentDerivsPerIter[i];
     }
 
     avgTime_getDerivs_ms /= time_getDerivs_ms.size();
-    avgTime_backwardsPass_ms /= time_backwardsPass_ms.size();
-    avgTime_forwardsPass_ms /= time_forwardsPass_ms.size();
     avgPercentDerivs /= percentDerivsPerIter.size();
+
+    for(int i = 0; i < time_backwardsPass_ms.size(); i++){
+        avgTime_backwardsPass_ms += time_backwardsPass_ms[i];
+    }
+
+    avgTime_backwardsPass_ms /= time_backwardsPass_ms.size();
+
+    for(int i = 0; i < time_forwardsPass_ms.size(); i++){
+        avgTime_forwardsPass_ms += time_forwardsPass_ms[i];
+    }
+
+    if(time_forwardsPass_ms.size() != 0){
+        avgTime_forwardsPass_ms /= time_forwardsPass_ms.size();
+    }
 
     // Load the initial data back into main data
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -552,10 +563,10 @@ double interpolatediLQR::forwardsPass(double oldCost){
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-             if(t % 5 == 0){
-                 const char* fplabel = "fp";
-                 activeVisualizer->render(fplabel);
-             }
+//             if(t % 5 == 0){
+//                 const char* fplabel = "fp";
+//                 activeVisualizer->render(fplabel);
+//             }
 
             X_last = X_new.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
@@ -600,55 +611,54 @@ double interpolatediLQR::forwardsPass(double oldCost){
 }
 
 double interpolatediLQR::forwardsPassParallel(double oldCost){
-//    auto start = std::chrono::high_resolution_clock::now();
-    float alpha = 1.0;
+    auto start = std::chrono::high_resolution_clock::now();
     double newCost = 0.0;
     bool costReduction = false;
-    int alphaCount = 0;
-    float alphaReduc = 0.1;
-    int alphaMax = (1 / alphaReduc) - 1;
 
 //    double alphas[8] = {0.125, 0.25, 0.375, 0.5, 0.675, 0.75, 0.875, 1.0};
-    double alphas[8] = {1.0, 0.875, 0.75, 0.675, 0.5, 0.375, 0.25, 0.125};
-    double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+//    double alphas[8] = {1.0, 0.875, 0.75, 0.675, 0.5, 0.375, 0.25, 0.125};
 
-    for(int i = 0; i < 8; i++){
+    std::vector<double> alphas = {1.0, 0.75, 0.5, 0.1};
+    std::vector<double> newCosts;
+    newCosts.resize(alphas.size());
+//    double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+    for(int i = 0; i < alphas.size(); i++){
         activePhysicsSimulator->copySystemState(i+1, 0);
     }
 
     MatrixXd initState = activeModelTranslator->returnStateVector(1);
-//    auto end = std::chrono::high_resolution_clock::now();
-//    auto copy_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
-//    cout << "copy duration: " << copy_duration.count() / 1000.0f << endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto copy_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
+    cout << "copy duration: " << copy_duration.count() / 1000.0f << endl;
 
-//    start = std::chrono::high_resolution_clock::now();
+    start = std::chrono::high_resolution_clock::now();
 
     #pragma omp parallel for
-    for(int i = 0; i < 8; i++){
+    for(int i = 0; i < alphas.size(); i++){
         MatrixXd stateFeedback(2*dof, 1);
         MatrixXd _X(2*dof, 1);
         MatrixXd X_new(2*dof, 1);
         MatrixXd _U(num_ctrl, 1);
         MatrixXd Xt(2 * dof, 1);
-        MatrixXd X_last(2 * dof, 1);
-        MatrixXd Ut(num_ctrl, 1);
-        MatrixXd U_last(num_ctrl, 1);
 
         for(int t = 0; t < horizonLength; t++) {
             // Step 1 - get old state and old control that were linearised around
-            _X = X_old[t].replicate(1, 1);
+//            _X = X_old[t].replicate(1, 1);
             //_U = activeModelTranslator->returnControlVector(t);
-            _U = U_old[t].replicate(1, 1);
+//            _U = U_old[t].replicate(1, 1);
 
             X_new = activeModelTranslator->returnStateVector(i+1);
 
             // Calculate difference from new state to old state
-            stateFeedback = X_new - _X;
+//            stateFeedback = X_new - _X;
+            stateFeedback = X_new - X_old[t];
 
             MatrixXd feedBackGain = K[t] * stateFeedback;
 
             // Calculate new optimal controls
-            U_alpha[t][i] = _U + (alphas[i] * k[t]) + feedBackGain;
+//            U_alpha[t][i] = _U + (alphas[i] * k[t]) + feedBackGain;
+            U_alpha[t][i] = U_old[t] + (alphas[i] * k[t]) + feedBackGain;
 
             // Clamp torque within limits
             if(activeModelTranslator->myStateVector.robots[0].torqueControlled){
@@ -662,7 +672,6 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
 //            Xt = activeModelTranslator->returnStateVector(i+1);
 //            //cout << "Xt: " << Xt << endl;
 //
-            Ut = U_alpha[t][i].replicate(1, 1);
 //
             double newStateCost;
             // Terminal state
@@ -677,23 +686,21 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
 
             activePhysicsSimulator->stepSimulator(1, i+1);
 
-            X_last = Xt.replicate(1, 1);
-            U_last = Ut.replicate(1, 1);
         }
     }
 
     double bestAlphaCost = newCosts[0];
     int bestAlphaIndex = 0;
-    for(int i = 0; i < 8; i++){
+    for(int i = 0; i < alphas.size(); i++){
         if(newCosts[i] < bestAlphaCost){
             bestAlphaCost = newCosts[i];
             bestAlphaIndex = i;
         }
     }
 
-//    end = std::chrono::high_resolution_clock::now();
-//    auto rollout_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
-//    cout << "rollout duration: " << rollout_duration.count() / 1000.0f << endl;
+    end = std::chrono::high_resolution_clock::now();
+    auto rollout_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
+    cout << "rollouts duration: " << rollout_duration.count() / 1000.0f << endl;
 
     newCost = bestAlphaCost;
 //    cout << "best alpha cost = " << bestAlphaCost << " at alpha: " << alphas[bestAlphaIndex] << endl;

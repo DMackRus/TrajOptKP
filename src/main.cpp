@@ -62,7 +62,7 @@ bool mpcVisualise = false;
 
 void showInitControls();
 void optimiseOnceandShow();
-void MPCUntilComplete(bool &sucess, double &finalDist, double &totalOptimisationTime, double &totalExecutionTime, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
+void MPCUntilComplete(double &trajecCost, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON);
 void MPCContinous();
 void generateTestScenes();
@@ -225,9 +225,8 @@ int main(int argc, char **argv) {
     }
     else if(mode == MPC_UNTIL_COMPLETE){
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
-        bool _;
-        double __, ___, ____, _____, ______, _7;
-        double finalDist;
+        double trajecCost;
+        double avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
         activeOptimiser->setTrajecNumber(1000);
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
@@ -235,9 +234,10 @@ int main(int argc, char **argv) {
         mpcVisualise = true;
 
         // No clutter - 1800 - 500 - 1800
+
         activeModelTranslator->X_desired(10) = 0.3;
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(_, finalDist, __, ___, ____, _____, ______, _7, 2000, 1, 80);
+        MPCUntilComplete(trajecCost, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2000, 1, 50);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -799,7 +799,7 @@ void MPCContinous(){
 
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
 // optimiser settings. This function can then return necessary testing data for us to store
-void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTime, double &totalOptimisationTime, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
+void MPCUntilComplete(double &trajecCost, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
     bool taskComplete = false;
     int visualCounter = 0;
@@ -809,9 +809,6 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
 
     activeVisualiser->replayControls.clear();
 
-    totalOptimisationTime = 0.0f;
-    totalExecutionTime = 0.0f;
-    finalDist = 0.0f;
     std::vector<double> timeGettingDerivs;
     std::vector<double> timeBackwardsPass;
     std::vector<double> timeForwardsPass;
@@ -855,34 +852,28 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
         reInitialiseCounter++;
         visualCounter++;
 
-        if(activeModelTranslator->taskComplete(MAIN_DATA_STATE, finalDist)){
-            taskComplete = true;
-            sucess = true;
-        }
-        else{
-            if(reInitialiseCounter >= REPLAN_TIME){
-                activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+        if(reInitialiseCounter >= REPLAN_TIME){
+            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
 //                initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
 //                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 //
 //                optimisedControls = initOptimisationControls;
 
-                maxHorizon = MAX_TASK_TIME - overallTaskCounter;
-                horizon = OPT_HORIZON;
-                if(maxHorizon < OPT_HORIZON){
-                    horizon = maxHorizon;
-                }
+            maxHorizon = MAX_TASK_TIME - overallTaskCounter;
+            horizon = OPT_HORIZON;
 
-                optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, horizon);
-                reInitialiseCounter = 0;
+            optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, horizon);
+            reInitialiseCounter = 0;
+            yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B,
+                                             activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->modelName,
+                                             overallTaskCounter, horizon);
 
 //                totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
-//                timeGettingDerivs.push_back(activeOptimiser->avgTime_getDerivs_ms);
-//                timeBackwardsPass.push_back(activeOptimiser->avgTime_backwardsPass_ms);
-//                timeForwardsPass.push_back(activeOptimiser->avgTime_forwardsPass_ms);
-//                percentagesDerivsCalculated.push_back(activeOptimiser->avgPercentDerivs);
+                timeGettingDerivs.push_back(activeOptimiser->avgTime_getDerivs_ms);
+                timeBackwardsPass.push_back(activeOptimiser->avgTime_backwardsPass_ms);
+                timeForwardsPass.push_back(activeOptimiser->avgTime_forwardsPass_ms);
+                percentagesDerivsCalculated.push_back(activeOptimiser->avgPercentDerivs);
 
-            }
         }
 
         if(mpcVisualise){
@@ -898,42 +889,45 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
         if(overallTaskCounter >= MAX_TASK_TIME){
             cout << "task time out" << endl;
             taskComplete = true;
-            sucess = false;
         }
     }
 
-    // Print some useful information about the task
-//    avgTimeGettingDerivs = 0.0f;
-//    avgTimeBP = 0.0f;
-//    avgTimeFP = 0.0f;
-//    avgPercentDerivs = 0.0f;
-//    totalExecutionTime = activeVisualiser->replayControls.size() * MUJOCO_DT;
-//
-//    for(int i = 0; i < timeGettingDerivs.size(); i++){
-//        avgTimeGettingDerivs += timeGettingDerivs[i];
-//        avgTimeBP += timeBackwardsPass[i];
-//        avgTimeFP += timeForwardsPass[i];
-//        avgPercentDerivs += percentagesDerivsCalculated[i];
-//    }
-//    avgTimeGettingDerivs /= timeGettingDerivs.size();
-//    avgTimeBP /= timeBackwardsPass.size();
-//    avgTimeFP /= timeForwardsPass.size();
-//    avgPercentDerivs /= percentagesDerivsCalculated.size();
-//
-//    if(sucess){
-//        cout << "| Task sucessful |\n";
-//    }
-//    else{
-//        cout << "| Task failed |\n";
-//    }
-//    cout << "| Distance to goal: " << finalDist << " |\n";
-//    cout << "| Execution time: " << totalExecutionTime << " seconds |\n";
-//    cout << "| Optimisation time: " << totalOptimisationTime << " seconds |\n";
-//    cout << "| Avg percentage of derivatives calculated: " << avgPercentDerivs << "\n";
-//    cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
+    trajecCost = 0.0f;
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
+        MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
+        double stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+        trajecCost += stateCost * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep();
+
+        activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+    }
+
+    cout << "trajec cost: " << trajecCost << endl;
+    avgTimeGettingDerivs = 0.0f;
+    avgTimeBP = 0.0f;
+    avgTimeFP = 0.0f;
+    avgPercentDerivs = 0.0f;
+
+    for(int i = 0; i < timeGettingDerivs.size(); i++){
+        avgTimeGettingDerivs += timeGettingDerivs[i];
+        avgTimeBP += timeBackwardsPass[i];
+        avgTimeFP += timeForwardsPass[i];
+        avgPercentDerivs += percentagesDerivsCalculated[i];
+    }
+
+    avgTimeGettingDerivs /= timeGettingDerivs.size();
+    avgTimeBP /= timeBackwardsPass.size();
+    avgTimeFP /= timeForwardsPass.size();
+    avgPercentDerivs /= percentagesDerivsCalculated.size();
+
+    cout << "| Avg percentage of derivatives calculated: " << avgPercentDerivs << "\n";
+    cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
 
     if(mpcVisualise){
         while(activeVisualiser->windowOpen()){
+
             if(activeVisualiser->replayTriggered){
                 activeVisualiser->replayTriggered = false;
 
@@ -941,6 +935,7 @@ void MPCUntilComplete(bool &sucess, double &finalDist, double &totalExecutionTim
                 int controlCounter = 0;
                 while(controlCounter < activeVisualiser->replayControls.size()){
                     MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
+                    double stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
 
                     activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
 
@@ -1071,8 +1066,8 @@ void generateTestingData_MPC(){
 //                activeOptimiser->setupTestingExtras(i, keyPointMethods[j], minN[j]);
 
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
-                MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgTimeForDerivs, avgPercentageDerivs,
-                                 avgTimeBP, avgTimeFP, 2500, 500, 1800);
+//                MPCUntilComplete(sucess, finalDistance, executionTime, optimisationTime, avgTimeForDerivs, avgPercentageDerivs,
+//                                 avgTimeBP, avgTimeFP, 2500, 500, 1800);
 
                 sucessesRow.push_back(sucess);
                 finalDistancesRow.push_back(finalDistance);

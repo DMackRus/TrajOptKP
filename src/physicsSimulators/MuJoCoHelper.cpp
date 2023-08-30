@@ -901,12 +901,12 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
         printf("%s\n", error);
     }
 
+    // defaults 100 , 1e-8
     model->opt.timestep = timestep;
-//    model->opt.gravity[2] = -2;
-//    model->opt.iterations = 30;
-//    model->opt.tolerance = 1e-1;
-//    cout << "model iterations: " << model->opt.iterations << endl;
-//    cout << "model tolerance : " << model->opt.tolerance << endl;
+    model->opt.iterations = 30;
+    model->opt.tolerance = 1e-1;
+    cout << "model iterations: " << model->opt.iterations << endl;
+    cout << "model tolerance : " << model->opt.tolerance << endl;
 
     cout << "model nq: " << model->nq << endl;
     cout << "model nv: " << model->nv << endl;
@@ -940,7 +940,7 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
 void MuJoCoHelper::initModelForFiniteDifferencing(){
     save_iterations = model->opt.iterations;
     save_tolerance = model->opt.tolerance;
-    model->opt.iterations = 30;
+    model->opt.iterations = 50;
     model->opt.tolerance = 0;
 }
 

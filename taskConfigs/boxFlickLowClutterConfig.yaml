@@ -1,6 +1,10 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/boxFlick_lowClutter.xml"
 modelName: "/panda_box_flick_low_clutter"
 timeStep: 0.004
+keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+minN: 1
+maxN: 50
+iterativeErrorThreshold: 0.00001
 robots:
   panda:
     jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
@@ -13,6 +17,7 @@ robots:
     jointVelCosts: [0.1, 0.1, 0.1, 0.1, 0.1, 0.05, 0.05]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
     jointJerkThresholds: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
+    magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   goal:
     activeLinearDOF: [true, true, false]
@@ -27,6 +32,8 @@ bodies:
     angularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.01, 0.01, 0.01 ]
     angularJerkThreshold: [ 0.01, 0.01, 0.01 ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   mainObstacle:
     activeLinearDOF: [ true, true, true ]
     activeAngularDOF: [ false, false, false ]
@@ -40,6 +47,8 @@ bodies:
     angularVelCost: [ 0, 0, 0 ]
     linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle1:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -51,8 +60,10 @@ bodies:
     linearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
     angularVelCost: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
-    angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearJerkThreshold: [ 0.02, 0.02, 0.02 ]
+    angularJerkThreshold: [ 0.02, 0.02, 0.02 ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle2:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
@@ -66,3 +77,5 @@ bodies:
     angularVelCost: [ 0, 0, 0 ]
     linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
