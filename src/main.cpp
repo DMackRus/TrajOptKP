@@ -799,7 +799,7 @@ void MPCContinous(){
 
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
 // optimiser settings. This function can then return necessary testing data for us to store
-void MPCUntilComplete(double &trajecCost, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
+void MPCUntilComplete(double &trajecCost, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP, double avgHZ,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
     bool taskComplete = false;
     int visualCounter = 0;
@@ -819,21 +819,11 @@ void MPCUntilComplete(double &trajecCost, double &avgTimeGettingDerivs, double &
     // Instantiate init controls
     std::vector<MatrixXd> initOptimisationControls;
 
-    int maxHorizon = MAX_TASK_TIME - overallTaskCounter;
     int horizon = OPT_HORIZON;
-    if(maxHorizon < OPT_HORIZON){
-        horizon = maxHorizon;
-    }
 
     initOptimisationControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
-//    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-
-//    cout << "first control: " << initOptimisationControls[1] << endl;
-//    MatrixXd testStartState = activeModelTranslator->returnStateVector(0);
-//    cout << "test start state: " << testStartState << endl;
-//    cout << "desired state: " << activeModelTranslator->X_desired << endl;
 
     optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 5, 4, OPT_HORIZON);
 
@@ -854,15 +844,8 @@ void MPCUntilComplete(double &trajecCost, double &avgTimeGettingDerivs, double &
 
         if(reInitialiseCounter >= REPLAN_TIME){
             activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-//                initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
-//                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-//
-//                optimisedControls = initOptimisationControls;
 
-            maxHorizon = MAX_TASK_TIME - overallTaskCounter;
-            horizon = OPT_HORIZON;
-
-            optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, horizon);
+            optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, OPT_HORIZON);
             reInitialiseCounter = 0;
             yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B,
                                              activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->modelName,
@@ -922,8 +905,11 @@ void MPCUntilComplete(double &trajecCost, double &avgTimeGettingDerivs, double &
     avgTimeFP /= timeForwardsPass.size();
     avgPercentDerivs /= percentagesDerivsCalculated.size();
 
+    avgHZ = 1000.0f / (avgTimeGettingDerivs + avgTimeBP + avgTimeFP);
+
     cout << "| Avg percentage of derivatives calculated: " << avgPercentDerivs << "\n";
     cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
+    cout << "average control frequency is: " << avgHZ << endl;
 
     if(mpcVisualise){
         while(activeVisualiser->windowOpen()){
@@ -962,8 +948,6 @@ void generateTestingData_MPC(){
     auto startTime = std::chrono::high_resolution_clock::now();
 
     for(int k = 0; k < 1; k ++) {
-        std::shared_ptr<twoDPushing> myBoxPushing = std::make_shared<twoDPushing>(heavyClutter);
-        activeModelTranslator = myBoxPushing;
         activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 
         activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
