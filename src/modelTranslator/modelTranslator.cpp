@@ -84,13 +84,16 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     num_ctrl = myStateVector.robots[0].actuatorNames.size();
     Q.resize(stateVectorSize);
     Q.setZero();
+    Q_terminal.resize(stateVectorSize);
+    Q_terminal.setZero();
     R.resize(num_ctrl);
     R.setZero();
 
     // -----------------------------------------------------------------------------------------
     //                      Assign cost matrices
     // ------------------------------------------------------------------------------------------
-    // Loop through robots and starting assinging state specific costs
+    // Loop through robots and starting assigning state specific costs
+    cout << "befroe assigning Q matrices" << endl;
     int Q_index = 0;
     for(int i = 0; i < myStateVector.robots.size(); i++){
         int robotNumJoints = myStateVector.robots[i].jointNames.size();
@@ -98,8 +101,12 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
         // Loop through the robot joints
         for(int j = 0; j < robotNumJoints; j++){
             Q.diagonal()[Q_index + j, Q_index + j] = myStateVector.robots[i].jointPosCosts[j];
+            Q_terminal.diagonal()[Q_index + j, Q_index + j] = myStateVector.robots[i].terminalJointPosCosts[j];
+            cout << "terminal joint pos costs: " << myStateVector.robots[i].terminalJointPosCosts[j] << endl;
 
             Q.diagonal()[Q_index + j + dof, Q_index + j + dof] = myStateVector.robots[i].jointVelCosts[j];
+            Q_terminal.diagonal()[Q_index + j + dof, Q_index + j + dof] = myStateVector.robots[i].terminalJointVelCosts[j];
+            cout << "terminal joint vel costs: " << myStateVector.robots[i].terminalJointVelCosts[j] << endl;
 
             X_desired(Q_index + j, 0) = myStateVector.robots[i].goalPos[j];
             X_desired(Q_index + j + dof, 0) = 0.0f;
@@ -174,17 +181,17 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
     }
     // ----------------------------------------------------------------------------------------------
 
-//    cout << "Q: " << Q << std::endl;
-//    cout << "R: " << R << std::endl;
+    cout << "Q: " << Q.diagonal() << std::endl;
+    cout << "R: " << R.diagonal() << std::endl;
 
     // Set terminal cost matrix
-    Q_terminal.resize(stateVectorSize);
-    Q_terminal.setZero();
-    for(int i = 0; i < dof; i++){
-        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 1000;
-    }
 
-//   cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
+//    for(int i = 0; i < dof; i++){
+//        Q_terminal.diagonal()[i] = Q.diagonal()[i] * 10000;
+//        // 1000 is a magic number that seems to work well
+//    }
+
+   cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
 }
 
 double modelTranslator::costFunction(int dataIndex, bool terminal){
@@ -231,6 +238,13 @@ void modelTranslator::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_
 
     l_u = 2 * R * Ut;
     l_uu = 2 * R;
+
+    // Do I need to time the cost derivatives by the time step?
+    l_x = l_x * activePhysicsSimulator->returnModelTimeStep();
+    l_xx = l_xx * activePhysicsSimulator->returnModelTimeStep();
+
+    l_u = l_u * activePhysicsSimulator->returnModelTimeStep();
+    l_uu = l_uu * activePhysicsSimulator->returnModelTimeStep();
 }
 
 bool modelTranslator::taskComplete(int dataIndex, double &dist){

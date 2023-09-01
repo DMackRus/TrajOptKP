@@ -45,6 +45,8 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
         vector<double> goalPos;
         vector<double> jointPosCosts;
         vector<double> jointVelCosts;
+        vector<double> terminalJointPosCosts;
+        vector<double> terminalJointVelCosts;
         vector<double> jointControlCosts;
         vector<double> jointJerkThresholds;
         vector<double> magVelThresholds;
@@ -81,6 +83,14 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
             jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
         }
 
+        for(int i = 0; i < robot_it->second["terminalJointPosCosts"].size(); i++){
+            terminalJointPosCosts.push_back(robot_it->second["terminalJointPosCosts"][i].as<double>());
+        }
+
+        for(int i = 0; i < robot_it->second["terminalJointVelCosts"].size(); i++){
+            terminalJointVelCosts.push_back(robot_it->second["terminalJointVelCosts"][i].as<double>());
+        }
+
         for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
             jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
         }
@@ -102,6 +112,8 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
         tempRobot.goalPos = goalPos;
         tempRobot.jointPosCosts = jointPosCosts;
         tempRobot.jointVelCosts = jointVelCosts;
+        tempRobot.terminalJointPosCosts = terminalJointPosCosts;
+        tempRobot.terminalJointVelCosts = terminalJointVelCosts;
         tempRobot.jointControlCosts = jointControlCosts;
         tempRobot.jointJerkThresholds = jointJerkThresholds;
         tempRobot.magVelThresholds = magVelThresholds;

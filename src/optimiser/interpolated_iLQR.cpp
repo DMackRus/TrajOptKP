@@ -84,6 +84,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         
         if(i == initControls.size() - 1){
             stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
+            cout << "terminal state in rollout" << endl;
         }
         else{
             stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
@@ -340,6 +341,9 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
     MatrixXd Q_uu(num_ctrl, num_ctrl);
     MatrixXd Q_ux(num_ctrl, 2*dof);
 
+    cout << "l_xx[horizonLength] \n" << l_xx[horizonLength] << endl;
+    cout << "l_xx[horizon - 1] \n " << l_xx[horizonLength - 1] << endl;
+
     for(int t = horizonLength - 1; t > -1; t--){
 
 //        cout << "t: " << t << endl;
@@ -556,6 +560,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
             // Terminal state
             if(t == horizonLength - 1){
                 newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
+                cout << "terminal cost in forwards pass: " << newStateCost << endl;
             }
             else{
                 newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);

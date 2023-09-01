@@ -740,8 +740,9 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, 
             }
         }
     }
-    l_xx[horizonLength] = l_xx[horizonLength - 1].replicate(1, 1);
-    l_x[horizonLength] = l_x[horizonLength - 1].replicate(1, 1);
+    // TODO - remove this????
+//    l_xx[horizonLength] = l_xx[horizonLength - 1].replicate(1, 1);
+//    l_x[horizonLength] = l_x[horizonLength - 1].replicate(1, 1);
 }
 
 std::vector<MatrixXd> optimiser::generateJerkProfile(){
