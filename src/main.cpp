@@ -1062,7 +1062,7 @@ void generateTestingData_MPC(){
                 activeOptimiser->setDerivativeInterpolator(currentInterpolator);
 
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
-                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1000, 1, 50);
+                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1800, 1, 50);
 
                 finalCostsRow.push_back(finalCost);
                 avgHZRow.push_back(avgHz);
@@ -1070,8 +1070,8 @@ void generateTestingData_MPC(){
                 avgTimeBPRow.push_back(avgTimeBP);
                 avgTimeFPRow.push_back(avgTimeFP);
                 avgPercentDerivsRow.push_back(avgPercentageDerivs);
-
             }
+
             // New row of data added
             finalCosts.push_back(finalCostsRow);
             avgHzs.push_back(avgHZRow);

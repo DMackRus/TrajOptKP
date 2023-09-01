@@ -20,6 +20,7 @@ optimiser::optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::sha
     activeDerivativeInterpolator.iterativeErrorThreshold = activeModelTranslator->iterativeErrorThreshold;
     activeDerivativeInterpolator.magVelChangeThresholds = activeModelTranslator->magVelChangeThresholds;
 
+
 }
 
 bool optimiser::checkForConvergence(double oldCost, double newCost){
@@ -128,7 +129,7 @@ void optimiser::generateDerivatives(){
 //    cout << "A[0]: " << endl << A[0] << endl;
 //    cout << "A[1]: " << endl << A[1] << endl;
 //    cout << "A[horizon - 2]" << endl << A[horizonLength - 2] << endl;
-//
+
 //    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
 
     auto stop = high_resolution_clock::now();
@@ -141,71 +142,69 @@ void optimiser::generateDerivatives(){
 
 std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
-    std::vector<std::vector<int>> evaluationWaypoints;
+    std::vector<std::vector<int>> keypoints;
     std::vector<int> oneRow;
     for(int i = 0; i < dof; i++){
         oneRow.push_back(i);
     }
-    evaluationWaypoints.push_back(oneRow);
+    keypoints.push_back(oneRow);
 
     if(activeDerivativeInterpolator.keypoint_method == "setInterval"){
-        for(int i = 1; i < horizonLength - 1; i++){
+        for(int i = 1; i < horizonLength; i++){
 
             if(i % activeDerivativeInterpolator.minN == 0){
                 std::vector<int> oneRow;
                 for(int j = 0; j < dof; j++){
                     oneRow.push_back(j);
                 }
-                evaluationWaypoints.push_back(oneRow);
+                keypoints.push_back(oneRow);
             }
             else{
                 std::vector<int> oneRow;
-                evaluationWaypoints.push_back(oneRow);
+                keypoints.push_back(oneRow);
             }
         }
     }
     else if(activeDerivativeInterpolator.keypoint_method == "adaptive_jerk"){
         std::vector<MatrixXd> jerkProfile = generateJerkProfile();
-        evaluationWaypoints = generateKeyPointsAdaptive(jerkProfile);
+        keypoints = generateKeyPointsAdaptive(jerkProfile);
     }
     else if(activeDerivativeInterpolator.keypoint_method == "adaptive_accel"){
         std::vector<MatrixXd> accelProfile = generateAccelProfile();
-        evaluationWaypoints = generateKeyPointsAdaptive(accelProfile);
+        keypoints = generateKeyPointsAdaptive(accelProfile);
     }
     else if(activeDerivativeInterpolator.keypoint_method == "iterative_error"){
         computedKeyPoints.clear();
         activePhysicsSimulator->initModelForFiniteDifferencing();
-        evaluationWaypoints = generateKeyPointsIteratively();
+        keypoints = generateKeyPointsIteratively();
         activePhysicsSimulator->resetModelAfterFiniteDifferencing();
 
     }
     else if(activeDerivativeInterpolator.keypoint_method == "magvel_change"){
         std::vector<MatrixXd> velProfile = generateVelProfile();
-        evaluationWaypoints = generateKeyPointsMagVelChange(velProfile);
+        keypoints = generateKeyPointsMagVelChange(velProfile);
     }
     else{
         std::cout << "ERROR: keyPointsMethod not recognised \n";
     }
 
-    //Check if last element in evaluationWaypoints is horizonLength - 1
-    if(evaluationWaypoints.back().size() != 0){
-        if(evaluationWaypoints.back()[0] != horizonLength - 1){
-            std::vector<int> oneRow;
-            for(int i = 0; i < dof; i++){
-                oneRow.push_back(i);
-            }
-            evaluationWaypoints.push_back(oneRow);
-        }
-    }
-    else{
-        std::vector<int> oneRow;
-        for(int i = 0; i < dof; i++){
-            oneRow.push_back(i);
-        }
-        evaluationWaypoints.push_back(oneRow);
+    // Enforce that last time step is evaluated for all dofs
+    keypoints.back().clear();
+
+    for(int i = 0; i < dof; i++){
+        keypoints.back().push_back(i);
     }
 
-    return evaluationWaypoints;
+    // Print out the key points
+//    for(int i = 0; i < keypoints.size(); i++){
+//        cout << "timestep " << i << ": ";
+//        for(int j = 0; j < keypoints[i].size(); j++){
+//            cout << keypoints[i][j] << " ";
+//        }
+//        cout << "\n";
+//    }
+
+    return keypoints;
 }
 
 std::vector<std::vector<int>> optimiser::generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile){
@@ -326,10 +325,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
 //            cout << "Computed key points for dof " << j << " are: ";
             for(int k = 0; k < computedKeyPoints[j].size(); k++){
                 // If the current index is a computed key point
-//                cout << computedKeyPoints[j][k] << " ";
-
                 if(i == computedKeyPoints[j][k]){
-//                    cout << "Adding key point " << i << " to dof " << j << "\n";
                     keyPoints[i].push_back(j);
                 }
             }
@@ -430,11 +426,6 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     for(int i = 0; i < 2; i++){
         midColumnsApprox[i] = MatrixXd::Zero(activeModelTranslator->stateVectorSize, 1);
     }
-
-//    if(dofIndex == 0){
-//        cout << "start index: " << indices.startIndex << " mid index: " << " end index: " << indices.endIndex << "\n";
-//    }
-
 
     int midIndex = (indices.startIndex + indices.endIndex) / 2;
     if((indices.endIndex - indices.startIndex) <=  activeDerivativeInterpolator.minN){
@@ -570,13 +561,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 void optimiser::getCostDerivs(){
     #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
-        if(i == 0){
-            activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
-        }
-        else{
-            activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
-        }
-
+        activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
     }
 
     activeModelTranslator->costDerivatives(horizonLength-1,
@@ -588,18 +573,11 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     activePhysicsSimulator->initModelForFiniteDifferencing();
 
     // Loop through keypoints and delete any entries that have no keypoints
-    for(int i = 0; i < keyPoints.size(); i++){
-        if(keyPoints[i].size() == 0){
-            keyPoints.erase(keyPoints.begin() + i);
-            i--;
-        }
-    }
-
 //    for(int i = 0; i < keyPoints.size(); i++){
-//        for(int j = 0; j < keyPoints[i].size(); j++){
-//            cout << keyPoints[i][j] << " ";
+//        if(keyPoints[i].size() == 0){
+//            keyPoints.erase(keyPoints.begin() + i);
+//            i--;
 //        }
-//        cout << "\n";
 //    }
 
     #pragma omp parallel for
@@ -640,7 +618,7 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         }
         //    #TODO - check if this should be horizon length
         activeModelTranslator->costDerivatives(horizonLength - 1,
-                                               l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength], true);
+                                               l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
 
     }
 }
@@ -672,7 +650,7 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, 
 
     // Loop through all the time indices - can skip the first
     // index as we preload the first index as the start index for all dofs.
-    for(int t = 1; t <= horizonLength; t++){
+    for(int t = 1; t < horizonLength; t++){
         // Loop through all the dofs
         for(int i = 0; i < dof; i++){
             // Check the current vector at that time segment for the current dof

@@ -38,13 +38,16 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTransl
         }
 
         U_alpha.push_back(U_temp);
-
     }
 
     // One more state than control
     X_old.push_back(MatrixXd(2*dof, 1));
     X_new.push_back(MatrixXd(2*dof, 1));
+    l_x.push_back(MatrixXd(2*dof, 1));
+    l_xx.push_back(MatrixXd(2*dof, 2*dof));
 
+
+    // Whether to do some low pass filtering over A and B matrices
     filteringMatrices = activeYamlReader->filtering;
 
 }
@@ -82,7 +85,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         Ut = activeModelTranslator->returnControlVector(MAIN_DATA_STATE);
         double stateCost;
         
-        if(i == initControls.size() - 1){
+        if(i == horizonLength - 1){
             stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
         }
         else{
@@ -319,9 +322,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 // ------------------------------------------- STEP 2 FUNCTIONS (BACKWARDS PASS) ----------------------------------------------
 bool interpolatediLQR::backwardsPass_Quu_reg(){
     MatrixXd V_x(2*dof, 2*dof);
-    V_x = l_x[horizonLength];
+    V_x = l_x[horizonLength - 1];
     MatrixXd V_xx(2*dof, 2*dof);
-    V_xx = l_xx[horizonLength];
+    V_xx = l_xx[horizonLength - 1];
     int Quu_pd_check_counter = 0;
     int number_steps_between_pd_checks = 100;
 
@@ -333,9 +336,10 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
     MatrixXd Q_uu(num_ctrl, num_ctrl);
     MatrixXd Q_ux(num_ctrl, 2*dof);
 
-//    cout << "l_xx[horizonLength] \n" << l_xx[horizonLength] << endl;
-//    cout << "l_xx[horizon - 1] \n " << l_xx[horizonLength - 1] << endl;
+//    cout << "V_x \n" << V_x << endl;
+//    cout << "V_xx \n " << V_xx << endl;
 
+    // TODO check if this should start at -2 or -1 and end at 0 or 1?
     for(int t = horizonLength - 1; t > -1; t--){
 
 //        cout << "t: " << t << endl;
@@ -417,67 +421,6 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
     return true;
 }
 
-bool interpolatediLQR::backwardsPass_Quu_skips(){
-    MatrixXd V_x(2*dof, 2*dof);
-    V_x = l_x[horizonLength];
-    MatrixXd V_xx(2*dof, 2*dof);
-    V_xx = l_xx[horizonLength];
-    int Quu_pd_check_counter = 0;
-    int number_steps_between_pd_checks = 100;
-
-    int t = horizonLength - 1;
-    MatrixXd Q_x(2*dof, 1);
-    MatrixXd Q_u(num_ctrl, 1);
-    MatrixXd Q_xx(2*dof, 2*dof);
-    MatrixXd Q_uu(num_ctrl, num_ctrl);
-    MatrixXd Q_ux(num_ctrl, 2*dof);
-
-    while(t > 0){
-
-        Quu_pd_check_counter ++;
-
-        Q_u = l_u[t] + (B[t].transpose() * V_x);
-
-        Q_x = l_x[t] + (A[t].transpose() * V_x);
-
-        Q_ux = (B[t].transpose() * (V_xx * A[t]));
-
-        Q_uu = l_uu[t] + (B[t].transpose() * (V_xx * B[t]));
-
-        Q_xx = l_xx[t] + (A[t].transpose() * (V_xx * A[t]));
-
-        MatrixXd Q_uu_reg = Q_uu.replicate(1, 1);
-
-        for(int i = 0; i < Q_uu.rows(); i++){
-            Q_uu_reg(i, i) += lambda;
-        }
-
-        if(Quu_pd_check_counter >= number_steps_between_pd_checks){
-            if(!isMatrixPD(Q_uu_reg)){
-                cout << "iteration " << t << endl;
-                return false;
-            }
-            Quu_pd_check_counter = 0;
-        }
-
-        auto temp = (Q_uu_reg).ldlt();
-        MatrixXd I(num_ctrl, num_ctrl);
-        I.setIdentity();
-        MatrixXd Q_uu_inv = temp.solve(I);
-
-        k[t] = -Q_uu_inv * Q_u;
-        K[t] = -Q_uu_inv * Q_ux;
-
-        V_x = Q_x + (K[t].transpose() * (Q_uu * k[t])) + (K[t].transpose() * Q_u) + (Q_ux.transpose() * k[t]);
-        V_xx = Q_xx + (K[t].transpose() * (Q_uu * K[t])) + (K[t].transpose() * Q_ux) + (Q_ux.transpose() * K[t]);
-
-        V_xx = (V_xx + V_xx.transpose()) / 2;
-
-    }
-
-    return true;
-}
-
 bool interpolatediLQR::isMatrixPD(Ref<MatrixXd> matrix){
     bool matrixPD = true;
     //TODO - implement cholesky decomp for PD check and maybe use result for inverse Q_uu
@@ -493,6 +436,7 @@ bool interpolatediLQR::isMatrixPD(Ref<MatrixXd> matrix){
 
 // ------------------------------------------- STEP 3 FUNCTIONS (FORWARDS PASS) ----------------------------------------------
 double interpolatediLQR::forwardsPass(double oldCost){
+    cout << "start of fp \n";
     float alpha = 1.0;
     double newCost = 0.0;
     bool costReduction = false;
@@ -501,9 +445,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
     int alphaMax = (1 / alphaReduc) - 1;
 
     MatrixXd Xt(2 * dof, 1);
-    MatrixXd X_last(2 * dof, 1);
     MatrixXd Ut(num_ctrl, 1);
-    MatrixXd U_last(num_ctrl, 1);
 
     while(!costReduction){
 
@@ -529,7 +471,6 @@ double interpolatediLQR::forwardsPass(double oldCost){
 
             // Calculate new optimal controls
             U_new[t] = _U + (alpha * k[t]) + feedBackGain;
-//            cout << "k: " << endl << k[t] << endl;
 
             // Clamp torque within limits
             if(activeModelTranslator->myStateVector.robots[0].torqueControlled){
@@ -549,7 +490,6 @@ double interpolatediLQR::forwardsPass(double oldCost){
 
             double newStateCost;
             // Terminal state
-            // TODO - think if this should be horizon or horizon - 1
             if(t == horizonLength - 1){
                 newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
             }
@@ -569,8 +509,6 @@ double interpolatediLQR::forwardsPass(double oldCost){
 //                 activeVisualizer->render(fplabel);
 //             }
 
-            X_last = X_new.replicate(1, 1);
-            U_last = Ut.replicate(1, 1);
         }
 
 //        cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
