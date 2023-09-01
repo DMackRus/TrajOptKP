@@ -445,8 +445,7 @@ void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
     fileOutput.close();
 }
 
-void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<bool>> sucesses,
-                         std::vector<std::vector<double>> finalDist, std::vector<std::vector<double>> executionTimes, std::vector<std::vector<double>> optimisationTimes,
+void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> finalCosts, std::vector<std::vector<double>> avgHZ,
                          std::vector<std::vector<double>> avgTimeGettingDerivs,std::vector<std::vector<double>> avgTimeBP, std::vector<std::vector<double>> avgTimeFP, std::vector<std::vector<double>> avgPercentDerivs){
     std::string rootPath = projectParentPath;
     std::string filename = rootPath + taskPrefix + "_testingData.csv";
@@ -461,16 +460,12 @@ void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::s
         fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
-        fileOutput << methodNames[i] << ",";
-        fileOutput << methodNames[i] << ",";
     }
     fileOutput << std::endl;
 
     for(int i = 0; i < methodNames.size(); i++){
-        fileOutput << "sucess" << ",";
-        fileOutput << "final dist" << ",";
-        fileOutput << "execution time" << ",";
-        fileOutput << "optimisation time" << ",";
+        fileOutput << "final costs" << ",";
+        fileOutput << "avg Hz" << ",";
         fileOutput << "avgTimeDerivs" << ",";
         fileOutput << "avgTimeBP" << ",";
         fileOutput << "avgTimeFP" << ",";
@@ -478,19 +473,13 @@ void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::s
     }
     fileOutput << std::endl;
 
-    int numTrajecs = executionTimes.size();
+    int numTrajecs = finalCosts.size();
+    cout << "num trajecs: " << numTrajecs << endl;
 
     for(int i = 0; i < numTrajecs; i++){
         for(int j = 0; j < methodNames.size(); j++){
-            if(sucesses[i][j]){
-                fileOutput << 1 << ",";
-            }
-            else{
-                fileOutput << 0 << ",";
-            }
-            fileOutput << finalDist[i][j] << ",";
-            fileOutput << executionTimes[i][j] << ",";
-            fileOutput << optimisationTimes[i][j] << ",";
+            fileOutput << finalCosts[i][j] << ",";
+            fileOutput << avgHZ[i][j] << ",";
             fileOutput << avgTimeGettingDerivs[i][j] << ",";
             fileOutput << avgTimeBP[i][j] << ",";
             fileOutput << avgTimeFP[i][j] << ",";

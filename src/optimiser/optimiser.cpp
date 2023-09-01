@@ -584,6 +584,21 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
 
     activePhysicsSimulator->initModelForFiniteDifferencing();
 
+    // Loop through keypoints and delete any entries that have no keypoints
+    for(int i = 0; i < keyPoints.size(); i++){
+        if(keyPoints[i].size() == 0){
+            keyPoints.erase(keyPoints.begin() + i);
+            i--;
+        }
+    }
+
+//    for(int i = 0; i < keyPoints.size(); i++){
+//        for(int j = 0; j < keyPoints[i].size(); j++){
+//            cout << keyPoints[i][j] << " ";
+//        }
+//        cout << "\n";
+//    }
+
     #pragma omp parallel for
     for(int i = 0; i < keyPoints.size(); i++){
 
@@ -591,9 +606,9 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         std::vector<int> columns = keyPoints[i];
 //        cout << "columns.size(): index " << i << ": " << columns.size() << "\n";
         // If there are no keypoints at a certain data index, dont compute derivatives
-        if(columns.size() == 0){
-            continue;
-        }
+//        if(columns.size() == 0){
+//            continue;
+//        }
         bool terminal = false;
         if(timeIndex == horizonLength - 1){
             terminal = true;

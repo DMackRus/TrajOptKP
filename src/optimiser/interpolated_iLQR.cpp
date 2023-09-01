@@ -3,10 +3,8 @@
 interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, std::shared_ptr<visualizer> _visualizer, std::shared_ptr<fileHandler> _yamlReader) :
                                     optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
 
-//    activeDifferentiator = _differentiator;
     maxHorizon = _maxHorizon;
     activeVisualizer = _visualizer;
-//    activeYamlReader = _yamlReader;
 
     // initialise all vectors of matrices
     for(int i = 0; i < maxHorizon; i++){
@@ -135,8 +133,12 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << " ------ " << activeModelTranslator->modelName << " ------ " << endl;
         cout << "minN " << activeDerivativeInterpolator.minN << "  keypointsMethod: " << activeDerivativeInterpolator.keypoint_method << endl;
-        cout << "lambda: " << lambda << endl;
     }
+
+//    // temp
+//    for(int i = 0; i < activeDerivativeInterpolator.jerkThresholds.size(); i++){
+//        cout << "jerk threshold: " << activeDerivativeInterpolator.jerkThresholds[i] << endl;
+//    }
 
     auto optStart = high_resolution_clock::now();
     
@@ -170,9 +172,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
-    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
+//    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
     initialCost = oldCost;
-    cout << "initial cost: " << oldCost << endl;
+//    cout << "initial cost: " << oldCost << endl;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     // Optimise for a set number of iterations
@@ -572,7 +574,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
             U_last = Ut.replicate(1, 1);
         }
 
-        cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
+//        cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
 
         if(newCost < oldCost){
             costReduction = true;

@@ -1,11 +1,7 @@
-//
-// Created by dave on 09/03/23.
-//
-
 #include "doublePendulum.h"
 
 doublePendulum::doublePendulum(): modelTranslator(){
-    std::string yamlFilePath = "/taskConfigs/pendulumConfig.yaml";
+    std::string yamlFilePath = "/taskConfigs/doublePendulumConfig.yaml";
     initModelTranslator(yamlFilePath);
 }
 

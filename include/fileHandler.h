@@ -39,9 +39,9 @@ public:
                                    std::vector<std::vector<double>> costReduction, std::vector<std::vector<double>> avgPercentageDerivs,
                                    std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<int>> numIterations);
 
-    void saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<bool>> sucesses,
-                                   std::vector<std::vector<double>> finalDist, std::vector<std::vector<double>> executionTimes, std::vector<std::vector<double>> optimisationTimes,
-                                   std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<double>> avgTimeBP, std::vector<std::vector<double>> avgTimeFP, std::vector<std::vector<double>> avgPercentDerivs);
+    void saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> finalCosts,
+                             std::vector<std::vector<double>> avgHZ, std::vector<std::vector<double>> avgTimeGettingDerivs,
+                             std::vector<std::vector<double>> avgTimeBP, std::vector<std::vector<double>> avgTimeFP, std::vector<std::vector<double>> avgPercentDerivs);
 
     int project_display_mode;
     int taskNumber;

@@ -903,8 +903,8 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
 
     // defaults 100 , 1e-8
     model->opt.timestep = timestep;
-    model->opt.iterations = 30;
-    model->opt.tolerance = 1e-1;
+//    model->opt.iterations = 30;
+//    model->opt.tolerance = 1e-1;
     cout << "model iterations: " << model->opt.iterations << endl;
     cout << "model tolerance : " << model->opt.tolerance << endl;
 
@@ -912,6 +912,7 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     cout << "model nv: " << model->nv << endl;
     cout << "model nu: " << model->nu << endl;
     cout << "model nbody: " << model->nbody << endl;
+//    cout << "model memory: " << model->memory
 
 //    for(int i = 0; i < model->nu; i++){
 //        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i] << endl;

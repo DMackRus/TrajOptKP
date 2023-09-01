@@ -60,13 +60,21 @@ void locomotion_anymal::generateRandomGoalAndStartState(){
 }
 
 MatrixXd locomotion_anymal::returnRandomStartState(){
-    MatrixXd test;
-    return test;
+    MatrixXd startState;
+
+    startState << 0, 0, 0, 1, -1, 0.2, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0;
+
+    return startState;
 }
 
 MatrixXd locomotion_anymal::returnRandomGoalState(MatrixXd X0){
-    MatrixXd test;
-    return test;
+    MatrixXd goalState;
+
+    goalState << 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0.3, 0, 0, 0, 0, 0, 0, 0;
+
+    return goalState;
 }
 
 std::vector<MatrixXd> locomotion_anymal::createInitOptimisationControls(int horizonLength){
