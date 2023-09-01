@@ -124,8 +124,11 @@ void optimiser::generateDerivatives(){
 //    cout << "l_x[horizonLength]: " << l_x[horizonLength] << endl;
 //    cout << "l_u[horizonLength - 1]: " << l_u[horizonLength - 1] << endl;
 //    cout << "l_uu[horizonLength - 1]: " << l_uu[horizonLength - 1] << endl;
+
 //    cout << "A[0]: " << endl << A[0] << endl;
-//    cout << "a[horizon - 2]" << endl << A[horizonLength - 2] << endl;
+//    cout << "A[1]: " << endl << A[1] << endl;
+//    cout << "A[horizon - 2]" << endl << A[horizonLength - 2] << endl;
+//
 //    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
 
     auto stop = high_resolution_clock::now();
@@ -669,7 +672,7 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, 
 
     // Loop through all the time indices - can skip the first
     // index as we preload the first index as the start index for all dofs.
-    for(int t = 1; t < horizonLength; t++){
+    for(int t = 1; t <= horizonLength; t++){
         // Loop through all the dofs
         for(int i = 0; i < dof; i++){
             // Check the current vector at that time segment for the current dof
