@@ -436,16 +436,14 @@ bool interpolatediLQR::isMatrixPD(Ref<MatrixXd> matrix){
 
 // ------------------------------------------- STEP 3 FUNCTIONS (FORWARDS PASS) ----------------------------------------------
 double interpolatediLQR::forwardsPass(double oldCost){
-    cout << "start of fp \n";
-    float alpha = 1.0;
-    double newCost = 0.0;
+    double newCost;
     bool costReduction = false;
     int alphaCount = 0;
-    float alphaReduc = 0.1;
-    int alphaMax = (1 / alphaReduc) - 1;
 
     MatrixXd Xt(2 * dof, 1);
     MatrixXd Ut(num_ctrl, 1);
+
+    std::vector<double> alphas = {1.0, 0.8, 0.5, 0.3, 0.1};
 
     while(!costReduction){
 
@@ -470,7 +468,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
             MatrixXd feedBackGain = K[t] * stateFeedback;
 
             // Calculate new optimal controls
-            U_new[t] = _U + (alpha * k[t]) + feedBackGain;
+            U_new[t] = _U + (alphas[alphaCount] * k[t]) + feedBackGain;
 
             // Clamp torque within limits
             if(activeModelTranslator->myStateVector.robots[0].torqueControlled){
@@ -479,10 +477,6 @@ double interpolatediLQR::forwardsPass(double oldCost){
                     if (U_new[t](i) < -activeModelTranslator->myStateVector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->myStateVector.robots[0].torqueLimits[i];
                 }
             }
-
-//            cout << "old control: " << endl << U_old[t] << endl;
-//            cout << "state feedback" << endl << stateFeedback << endl;
-//            cout << "new control: " << endl << U_new[t] << endl;
 
             activeModelTranslator->setControlVector(U_new[t], MAIN_DATA_STATE);
 
@@ -517,9 +511,8 @@ double interpolatediLQR::forwardsPass(double oldCost){
             costReduction = true;
         }
         else{
-            alpha = alpha - 0.1;
             alphaCount++;
-            if(alphaCount >= alphaMax){
+            if(alphaCount >= alphas.size()){
                 break;
             }
         }
@@ -529,21 +522,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
     if(newCost < oldCost){
         activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
-//        for(int i = 0; i < horizonLength; i++){
-//
-//            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
-//            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-//
-//            // Log the old state
-//             X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//
-//             activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
-//
-//             U_old[i] = U_new[i].replicate(1, 1);
-//
-//        }
         //Copy the rollout buffer to saved systems state list, prevents recomputation using optimal controls
-
         activePhysicsSimulator->copyRolloutBufferToSavedSystemStatesList();
 
         for(int i = 0 ; i < horizonLength; i++){

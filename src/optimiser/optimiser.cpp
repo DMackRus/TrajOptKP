@@ -573,29 +573,26 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     activePhysicsSimulator->initModelForFiniteDifferencing();
 
     // Loop through keypoints and delete any entries that have no keypoints
-//    for(int i = 0; i < keyPoints.size(); i++){
-//        if(keyPoints[i].size() == 0){
-//            keyPoints.erase(keyPoints.begin() + i);
-//            i--;
-//        }
-//    }
+    for(int i = 0; i < keyPoints.size(); i++){
+        if(keyPoints[i].size() == 0){
+            keyPoints.erase(keyPoints.begin() + i);
+            i--;
+        }
+    }
 
     #pragma omp parallel for
     for(int i = 0; i < keyPoints.size(); i++){
 
         int timeIndex = i;
         std::vector<int> columns = keyPoints[i];
-//        cout << "columns.size(): index " << i << ": " << columns.size() << "\n";
-        // If there are no keypoints at a certain data index, dont compute derivatives
-//        if(columns.size() == 0){
-//            continue;
-//        }
+
         bool terminal = false;
         if(timeIndex == horizonLength - 1){
             terminal = true;
         }
-        activeDifferentiator->getDerivatives(A[timeIndex], B[timeIndex], columns, l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex], activeYamlReader->costDerivsFD, timeIndex, terminal);
-
+        activeDifferentiator->getDerivatives(A[timeIndex], B[timeIndex], columns,
+                                             l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex],
+                                             activeYamlReader->costDerivsFD, timeIndex, terminal);
     }
 
 //    cout << "A[0]: \n" << A[0] << "\n";
@@ -616,10 +613,8 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
                 activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
         }
-        //    #TODO - check if this should be horizon length
         activeModelTranslator->costDerivatives(horizonLength - 1,
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
-
     }
 }
 
