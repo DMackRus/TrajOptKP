@@ -84,14 +84,10 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         
         if(i == initControls.size() - 1){
             stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
-            cout << "terminal state in rollout" << endl;
         }
         else{
             stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
         }
-//        cout << "state: " << Xt.transpose() << endl;
-
-//        cout << "state cost: " << stateCost << endl;
 
         // If required to save states to trajectory tracking, then save state
         if(saveStates){
@@ -105,7 +101,6 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
             }
         }
 
-//        activeVisualizer->render("gah");
         cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
     }
 
@@ -341,8 +336,8 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
     MatrixXd Q_uu(num_ctrl, num_ctrl);
     MatrixXd Q_ux(num_ctrl, 2*dof);
 
-    cout << "l_xx[horizonLength] \n" << l_xx[horizonLength] << endl;
-    cout << "l_xx[horizon - 1] \n " << l_xx[horizonLength - 1] << endl;
+//    cout << "l_xx[horizonLength] \n" << l_xx[horizonLength] << endl;
+//    cout << "l_xx[horizon - 1] \n " << l_xx[horizonLength - 1] << endl;
 
     for(int t = horizonLength - 1; t > -1; t--){
 
@@ -554,13 +549,12 @@ double interpolatediLQR::forwardsPass(double oldCost){
             activeModelTranslator->setControlVector(U_new[t], MAIN_DATA_STATE);
 
             Ut = U_new[t].replicate(1, 1);
-//            cout << "U_new: " << endl << U_new[t] << endl;
 
             double newStateCost;
             // Terminal state
+            // TODO - think if this should be horizon or horizon - 1
             if(t == horizonLength - 1){
                 newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
-                cout << "terminal cost in forwards pass: " << newStateCost << endl;
             }
             else{
                 newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
@@ -569,6 +563,9 @@ double interpolatediLQR::forwardsPass(double oldCost){
             newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+            // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
+            activePhysicsSimulator->saveDataToRolloutBuffer(MAIN_DATA_STATE, t + 1);
 
 //             if(t % 5 == 0){
 //                 const char* fplabel = "fp";
@@ -595,20 +592,27 @@ double interpolatediLQR::forwardsPass(double oldCost){
 
     // If the cost was reduced
     if(newCost < oldCost){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+//        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+//
+//        for(int i = 0; i < horizonLength; i++){
+//
+//            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
+//            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+//
+//            // Log the old state
+//             X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//
+//             activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
+//
+//             U_old[i] = U_new[i].replicate(1, 1);
+//
+//        }
+        //Copy the rollout buffer to saved systems state list, prevents recomputation using optimal controls
+        activePhysicsSimulator->copyRolloutBufferToSavedSystemStatesList();
 
-        for(int i = 0; i < horizonLength; i++){
-
-            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-
-            // Log the old state
-             X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-
-             activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
-
-             U_old[i] = U_new[i].replicate(1, 1);
-
+        for(int i = 0 ; i < horizonLength; i++){
+            X_old.at(i + 1) = activeModelTranslator->returnStateVector(i + 1);
+            U_old[i] = U_new[i].replicate(1, 1);
         }
 
         return newCost;
@@ -707,7 +711,7 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
 
     end = std::chrono::high_resolution_clock::now();
     auto rollout_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
-    cout << "rollouts duration: " << rollout_duration.count() / 1000.0f << endl;
+//    cout << "rollouts duration: " << rollout_duration.count() / 1000.0f << endl;
 
     newCost = bestAlphaCost;
 //    cout << "best alpha cost = " << bestAlphaCost << " at alpha: " << alphas[bestAlphaIndex] << endl;

@@ -48,9 +48,12 @@ public:
     bool copySystemState(int dataDestinationIndex, int dataSourceIndex) override;
     bool deleteSystemStateFromIndex(int listIndex) override;
     bool clearSystemStateList() override;
+    void saveDataToRolloutBuffer(int dataIndex, int rolloutIndex) override;
+    void copyRolloutBufferToSavedSystemStatesList() override;
 
     void cpMjData(const std::shared_ptr<mjModel> m, std::shared_ptr<mjData> d_dest, const std::shared_ptr<mjData> d_src);
     std::shared_ptr<mjData> returnDesiredDataState(int dataIndex);
+
 
     // ------------------------------- Visualisation -----------------------------------------
     void initVisualisation() override;
@@ -79,6 +82,7 @@ public:
     double* sensorState(int dataIndex, std::string sensorName) override;
 
     vector<std::shared_ptr<mjData>> savedSystemStatesList;      // List of saved system states
+    vector<std::shared_ptr<mjData>> fp_rollout_data;     // forwards pass rollout data
     std::shared_ptr<mjData> d_master_reset;                     // Master reset mujoco data
     std::shared_ptr<mjData> mdata;                              // main MuJoCo data
     std::shared_ptr<mjModel> model;                             // MuJoCo model

@@ -195,7 +195,7 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
 }
 
 double modelTranslator::costFunction(int dataIndex, bool terminal){
-    double cost = 0.0f;
+    double cost;
     MatrixXd Xt = returnStateVector(dataIndex);
     MatrixXd Ut = returnControlVector(dataIndex);
 
@@ -240,11 +240,11 @@ void modelTranslator::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_
     l_uu = 2 * R;
 
     // Do I need to time the cost derivatives by the time step?
-    l_x = l_x * activePhysicsSimulator->returnModelTimeStep();
-    l_xx = l_xx * activePhysicsSimulator->returnModelTimeStep();
-
-    l_u = l_u * activePhysicsSimulator->returnModelTimeStep();
-    l_uu = l_uu * activePhysicsSimulator->returnModelTimeStep();
+//    l_x = l_x * activePhysicsSimulator->returnModelTimeStep();
+//    l_xx = l_xx * activePhysicsSimulator->returnModelTimeStep();
+//
+//    l_u = l_u * activePhysicsSimulator->returnModelTimeStep();
+//    l_uu = l_uu * activePhysicsSimulator->returnModelTimeStep();
 }
 
 bool modelTranslator::taskComplete(int dataIndex, double &dist){

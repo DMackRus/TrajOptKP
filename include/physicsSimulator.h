@@ -63,6 +63,8 @@ public:
     virtual bool copySystemState(int dataDestinationIndex, int dataSourceIndex) = 0;
     virtual bool deleteSystemStateFromIndex(int listIndex) = 0;
     virtual bool clearSystemStateList() = 0;
+    virtual void saveDataToRolloutBuffer(int dataIndex, int rolloutIndex) = 0;
+    virtual void copyRolloutBufferToSavedSystemStatesList() = 0;
 
     // ------------------------------- Visualisation -----------------------------------------
     virtual void initVisualisation() = 0;

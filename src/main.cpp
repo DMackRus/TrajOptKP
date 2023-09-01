@@ -59,7 +59,7 @@ std::shared_ptr<fileHandler> yamlReader;
 
 int task;
 bool mpcVisualise = true;
-bool playback = false;
+bool playback = true;
 
 void showInitControls();
 void optimiseOnceandShow();
@@ -242,7 +242,10 @@ int main(int argc, char **argv) {
 
         // No clutter - 1800 - 500 - 1800
 
-        activeModelTranslator->X_desired(10) = 0.25;
+        if(task == walker){
+            activeModelTranslator->X_desired(10) = 0.25;
+        }
+
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
         MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1000, 1, 50);
     }

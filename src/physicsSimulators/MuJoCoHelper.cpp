@@ -715,14 +715,11 @@ bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 
     auto saveData = returnDesiredDataState(dataIndex);
 
-//    mjData *d = mj_makeData(model.get());
-//    auto d_unique = std::shared_ptr<mjData>(d);
-
-//    cpMjData(model, d_unique, saveData);
-
-//    mj_forward(model.get(), d_unique.get());
     savedSystemStatesList.push_back(std::shared_ptr<mjData>(mj_makeData(model.get())));
+    fp_rollout_data.push_back(std::shared_ptr<mjData>(mj_makeData(model.get())));
+
     cpMjData(model, savedSystemStatesList.back(), saveData);
+    cpMjData(model, fp_rollout_data.back(), saveData);
 
     return true;
 }
@@ -738,7 +735,6 @@ bool MuJoCoHelper::copySystemState(int dataDestinationIndex, int dataSourceIndex
     std::shared_ptr<mjData> dataSource = returnDesiredDataState(dataSourceIndex);
 
     cpMjData(model, dataDestination, dataSource);
-//    mj_forward(model.get(), dataDestination.get());
 
     return true;
 }
@@ -785,6 +781,22 @@ std::shared_ptr<mjData> MuJoCoHelper::returnDesiredDataState(int dataIndex){
         return savedSystemStatesList[dataIndex];
     }
 }
+
+void MuJoCoHelper::saveDataToRolloutBuffer(int dataIndex, int rolloutIndex){
+    std::shared_ptr<mjData> dataSource = returnDesiredDataState(dataIndex);
+
+    std::shared_ptr<mjData> dataDestination = fp_rollout_data[rolloutIndex];
+
+    cpMjData(model, dataDestination, dataSource);
+
+}
+
+void MuJoCoHelper::copyRolloutBufferToSavedSystemStatesList(){
+    for(int i = 0; i < fp_rollout_data.size(); i++){
+        cpMjData(model, savedSystemStatesList[i], fp_rollout_data[i]);
+    }
+}
+
 // ------------------------------- END OF SYSTEM STATE FUNCTIONS ----------------------------------------
 
 bool MuJoCoHelper::stepSimulator(int steps, int dataIndex){
