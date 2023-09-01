@@ -792,7 +792,7 @@ void MuJoCoHelper::saveDataToRolloutBuffer(int dataIndex, int rolloutIndex){
 }
 
 void MuJoCoHelper::copyRolloutBufferToSavedSystemStatesList(){
-    for(int i = 0; i < fp_rollout_data.size(); i++){
+    for(int i = 1; i < fp_rollout_data.size(); i++){
         cpMjData(model, savedSystemStatesList[i], fp_rollout_data[i]);
     }
 }

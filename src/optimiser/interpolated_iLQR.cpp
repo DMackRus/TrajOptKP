@@ -592,8 +592,8 @@ double interpolatediLQR::forwardsPass(double oldCost){
 
     // If the cost was reduced
     if(newCost < oldCost){
-//        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-//
+        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+
 //        for(int i = 0; i < horizonLength; i++){
 //
 //            activeModelTranslator->setControlVector(U_new[i], MAIN_DATA_STATE);
@@ -608,6 +608,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
 //
 //        }
         //Copy the rollout buffer to saved systems state list, prevents recomputation using optimal controls
+
         activePhysicsSimulator->copyRolloutBufferToSavedSystemStatesList();
 
         for(int i = 0 ; i < horizonLength; i++){
