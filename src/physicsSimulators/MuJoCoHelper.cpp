@@ -7,6 +7,7 @@
 // Empty constructor
 MuJoCoHelper::MuJoCoHelper(vector<robot> _robots, vector<string> _bodies): physicsSimulator(_robots, _bodies) {
     std::cout << "created mujoco helper" << std::endl;
+
 }
 
 // ------------------------------------    ROBOT UTILITY   --------------------------------------------
@@ -31,7 +32,7 @@ bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> join
     int robotIndex;
     string robotBaseJointName;
     if(isValidRobotName(robotName, robotIndex, robotBaseJointName)){
-        if(jointPositions.size() != robots[robotIndex].numActuators){
+        if(jointPositions.size() != robots[robotIndex].jointNames.size()){
             cout << "Invalid number of joint positions\n";
             return false;
         }
@@ -41,39 +42,38 @@ bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> join
         return false;
     }
 
-    // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
-
-    if(jointId == -1){
-        cout << "Base link of robot not found\n";
-        return false;
-    }
-
-    
-    int startIndex = model->jnt_qposadr[jointId];
-
-    if(startIndex == MAIN_DATA_STATE){
-        cout << "Invalid bodyId for robot\n";
-        return false;
-    }
-
-    mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
-
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
     for(int i = 0; i < jointPositions.size(); i++){
-        d->qpos[startIndex + i] = jointPositions[i];
+        int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robots[robotIndex].jointNames[i].c_str());
+        if(jointId == -1){
+            cout << "Invalid bodyId for robot\n";
+            return false;
+        }
+        int qposIndex = model.get()->jnt_qposadr[jointId];
+        d->qpos[qposIndex] = jointPositions[i];
     }
+
+    // Get the body id of the base link of the robot
+//    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
+//
+//    if(jointId == -1){
+//        cout << "Base link of robot not found\n";
+//        return false;
+//    }
+//
+//
+//    int startIndex = model.get()->jnt_qposadr[jointId];
+//
+//    if(startIndex == MAIN_DATA_STATE){
+//        cout << "Invalid bodyId for robot\n";
+//        return false;
+//    }
+//
+//
+//
+//    for(int i = 0; i < jointPositions.size(); i++){
+//        d->qpos[startIndex + i] = jointPositions[i];
+//    }
 
     return true;
 }
@@ -85,7 +85,7 @@ bool MuJoCoHelper::setRobotJointsVelocities(string robotName, vector<double> joi
     int robotIndex;
     string robotBaseJointName;
     if(isValidRobotName(robotName, robotIndex, robotBaseJointName)){
-        if(jointVelocities.size() != robots[robotIndex].numActuators){
+        if(jointVelocities.size() != robots[robotIndex].jointNames.size()){
             cout << "Invalid number of joint positions\n";
             return false;
         }
@@ -95,36 +95,36 @@ bool MuJoCoHelper::setRobotJointsVelocities(string robotName, vector<double> joi
         return false;
     }
 
-    // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
-
-    if(jointId == -1){
-        cout << "Base link of robot not found\n";
-        return false;
-    }
-    int startIndex = model->jnt_dofadr[jointId];
-
-    if(startIndex == -1){
-        cout << "Invalid bodyId for robot\n";
-        return false;
-    }
-
-    mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
-
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
     for(int i = 0; i < jointVelocities.size(); i++){
-        d->qvel[startIndex + i] = jointVelocities[i];
+        int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robots[robotIndex].jointNames[i].c_str());
+        if(jointId == -1){
+            cout << "Invalid bodyId for robot\n";
+            return false;
+        }
+        int qposIndex = model.get()->jnt_qposadr[jointId];
+        d->qvel[qposIndex] = jointVelocities[i];
     }
+
+//    // Get the body id of the base link of the robot
+//    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
+//
+//    if(jointId == -1){
+//        cout << "Base link of robot not found\n";
+//        return false;
+//    }
+//    int startIndex = model.get()->jnt_dofadr[jointId];
+//
+//    if(startIndex == -1){
+//        cout << "Invalid bodyId for robot\n";
+//        return false;
+//    }
+//
+//    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+//
+//    for(int i = 0; i < jointVelocities.size(); i++){
+//        d->qvel[startIndex + i] = jointVelocities[i];
+//    }
 
     return true;
 }
@@ -135,7 +135,7 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
     int robotIndex;
     string robotBaseJointName;
     if(isValidRobotName(robotName, robotIndex, robotBaseJointName)){
-        if(jointControls.size() != robots[robotIndex].numActuators){
+        if(jointControls.size() != robots[robotIndex].actuatorNames.size()){
             cout << "Invalid number of joint positions\n";
             return false;
         }
@@ -146,36 +146,32 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
     }
 
     // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
+//    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
+//    std::vector<int> jointIds;
 
-    if(jointId == -1){
-        cout << "Base link of robot not found\n";
-        return false;
-    }
-    int startIndex = model->jnt_dofadr[jointId];
-
-    if(startIndex == -1){
-        cout << "Invalid bodyId for robot\n";
-        return false;
-    }
-
-    mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
-
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
     for(int i = 0; i < jointControls.size(); i++){
-        d->ctrl[startIndex + i] = jointControls[i];
+        int actuatorId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robots[robotIndex].actuatorNames[i].c_str());
+        int qposIndex = model.get()->jnt_dofadr[actuatorId];
+        d->ctrl[qposIndex] = jointControls[i];
     }
+
+//    if(jointId == -1){
+//        cout << "Base link of robot not found\n";
+//        return false;
+//    }
+//    int startIndex = model.get()->jnt_dofadr[jointId];
+//
+//    if(startIndex == -1){
+//        cout << "Invalid bodyId for robot\n";
+//        return false;
+//    }
+//
+//    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+//
+//    for(int i = 0; i < jointControls.size(); i++){
+//        d->ctrl[startIndex + i] = jointControls[i];
+//    }
 
     return true;
 }
@@ -190,37 +186,36 @@ bool MuJoCoHelper::getRobotJointsPositions(string robotName, vector<double> &joi
         return false;
     }
 
-    // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
-
-    if(jointId == -1){
-        cout << "Base link of robot not found\n";
-        return false;
-    }
-    int startIndex = model->jnt_dofadr[jointId];
-
-    if(startIndex == -1){
-        cout << "Invalid bodyId for robot\n";
-        return false;
-    }
-
-    mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
-
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        jointPositions.push_back(d->qpos[startIndex + i]);
+        int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robots[robotIndex].jointNames[i].c_str());
+        if(jointId == -1){
+            cout << "Invalid bodyId for robot\n";
+            return false;
+        }
+        int qposIndex = model.get()->jnt_qposadr[jointId];
+        jointPositions.push_back(d->qpos[qposIndex]);
     }
+
+    // Get the body id of the base link of the robot
+//    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
+//
+//    if(jointId == -1){
+//        cout << "Base link of robot not found\n";
+//        return false;
+//    }
+//    int startIndex = model.get()->jnt_dofadr[jointId];
+//
+//    if(startIndex == -1){
+//        cout << "Invalid bodyId for robot\n";
+//        return false;
+//    }
+//
+//    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+//
+//    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
+//        jointPositions.push_back(d->qpos[startIndex + i]);
+//    }
 
     return true;
 }
@@ -235,25 +230,36 @@ bool MuJoCoHelper::getRobotJointsVelocities(string robotName, vector<double> &jo
         return false;
     }
 
-    // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
-
-    if(jointId == -1){
-        cout << "Base link of robot not found\n";
-        return false;
-    }
-    int startIndex = model->jnt_dofadr[jointId];
-
-    if(startIndex == -1){
-        cout << "Invalid bodyId for robot\n";
-        return false;
-    }
-
-    mjData *d = returnDesiredDataState(dataIndex);
-
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        jointVelocities.push_back(d->qvel[startIndex + i]);
+        int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robots[robotIndex].jointNames[i].c_str());
+        if(jointId == -1){
+            cout << "Invalid bodyId for robot\n";
+            return false;
+        }
+        int qposIndex = model.get()->jnt_qposadr[jointId];
+        jointVelocities.push_back(d->qvel[qposIndex]);
     }
+
+    // Get the body id of the base link of the robot
+//    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
+//
+//    if(jointId == -1){
+//        cout << "Base link of robot not found\n";
+//        return false;
+//    }
+//    int startIndex = model.get()->jnt_dofadr[jointId];
+//
+//    if(startIndex == -1){
+//        cout << "Invalid bodyId for robot\n";
+//        return false;
+//    }
+//
+//    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+//
+//    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
+//        jointVelocities.push_back(d->qvel[startIndex + i]);
+//    }
 
     return true;
 }
@@ -267,20 +273,20 @@ bool MuJoCoHelper::getRobotJointsAccelerations(string robotName, vector<double> 
     }
 
     // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
+    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
 
     if(jointId == -1){
         cout << "Base link of robot not found\n";
         return false;
     }
-    int startIndex = model->jnt_dofadr[jointId];
+    int startIndex = model.get()->jnt_dofadr[jointId];
 
     if(startIndex == -1){
         cout << "Invalid bodyId for robot\n";
         return false;
     }
 
-    mjData *d = returnDesiredDataState(dataIndex);
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
         jointAccelerations.push_back(d->qacc[startIndex + i]);
@@ -300,24 +306,29 @@ bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &join
     }
 
     // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
+//    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
 
-    if(jointId == -1){
-        cout << "Base link of robot not found\n";
-        return false;
+//    if(jointId == -1){
+//        cout << "Base link of robot not found\n";
+//        return false;
+//    }
+//    int startIndex = model.get()->jnt_dofadr[jointId];
+//
+//    if(startIndex == -1){
+//        cout << "Invalid bodyId for robot\n";
+//        return false;
+//    }
+
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+    for(int i = 0; i < robots[robotIndex].actuatorNames.size(); i++){
+        int actuatorId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robots[robotIndex].actuatorNames[i].c_str());
+        int ctrlIndex = model.get()->jnt_dofadr[actuatorId];
+        jointControls.push_back(d->ctrl[ctrlIndex]);
     }
-    int startIndex = model->jnt_dofadr[jointId];
 
-    if(startIndex == -1){
-        cout << "Invalid bodyId for robot\n";
-        return false;
-    }
-
-    mjData *d = returnDesiredDataState(dataIndex);
-
-    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        jointControls.push_back(d->ctrl[startIndex + i]);
-    }
+//    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
+//        jointControls.push_back(d->ctrl[startIndex + i]);
+//    }
 
     return true;
 }
@@ -333,20 +344,21 @@ bool MuJoCoHelper::getRobotJointsGravityCompensaionControls(string robotName, ve
     }
 
     // Get the body id of the base link of the robot
-    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
+    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
 
     if(jointId == -1){
         cout << "Base link of robot not found\n";
         return false;
     }
-    int startIndex = model->jnt_dofadr[jointId];
+    int startIndex = model.get()->jnt_dofadr[jointId];
 
     if(startIndex == -1){
         cout << "Invalid bodyId for robot\n";
         return false;
     }
 
-    mjData *d = returnDesiredDataState(dataIndex);
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+    mj_forward(model.get(), d.get());
 
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
         jointsControls.push_back(d->qfrc_bias[startIndex + i]);
@@ -377,11 +389,11 @@ bool MuJoCoHelper::setBodyPose_quat(string bodyName, pose_7 pose, int dataIndex)
         return false;
     }
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
-    const int jointIndex = model->body_jntadr[bodyId];
-    const int qposIndex = model->jnt_qposadr[jointIndex];
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model.get()->body_jntadr[bodyId];
+    const int qposIndex = model.get()->jnt_qposadr[jointIndex];
 
-    mjData *d = returnDesiredDataState(dataIndex);
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < 3; i++){
         d->qpos[qposIndex + i] = pose.position(i);
@@ -402,13 +414,13 @@ bool MuJoCoHelper::setBodyPose_angle(string bodyName, pose_6 pose, int dataIndex
         return false;
     }
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
-    const int jointIndex = model->body_jntadr[bodyId];
-    const int qposIndex = model->jnt_qposadr[jointIndex];
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model.get()->body_jntadr[bodyId];
+    const int qposIndex = model.get()->jnt_qposadr[jointIndex];
 
     m_quat q = eul2Quat(pose.orientation);
 
-    mjData *d = returnDesiredDataState(dataIndex);
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < 3; i++){
         d->qpos[qposIndex + i] = pose.position(i);
@@ -432,11 +444,11 @@ bool MuJoCoHelper::setBodyVelocity(string bodyName, pose_6 velocity, int dataInd
         return false;
     }
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
-    const int jointIndex = model->body_jntadr[bodyId];
-    const int qvelIndex = model->jnt_dofadr[jointIndex];
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model.get()->body_jntadr[bodyId];
+    const int qvelIndex = model.get()->jnt_dofadr[jointIndex];
 
-    mjData *d = returnDesiredDataState(dataIndex);
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < 3; i++){
         d->qvel[qvelIndex + i] = velocity.position(i);
@@ -456,23 +468,11 @@ bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex
         return false;
     }
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
-    const int jointIndex = model->body_jntadr[bodyId];
-    const int qposIndex = model->jnt_qposadr[jointIndex];
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model.get()->body_jntadr[bodyId];
+    const int qposIndex = model.get()->jnt_qposadr[jointIndex];
 
-    mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < 3; i++){
         pose.position(i) = d->xpos[(bodyId * 3) + i];
@@ -481,6 +481,13 @@ bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex
     for(int i = 0; i < 4; i++){
         pose.quat(i) = d->xquat[(bodyId * 4) + i];
     }
+//    for(int i = 0; i < 3; i++){
+//        pose.position(i) = d->qpos[qposIndex + i];
+//    }
+//
+//    for(int i = 0; i < 4; i++){
+//        pose.quat(i) = d->qpos[qposIndex + 3 + i];
+//    }
 
     return true;
 }
@@ -492,33 +499,27 @@ bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose, int dataInde
         return false;
     }
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
-    const int jointIndex = model->body_jntadr[bodyId];
-    const int qposIndex = model->jnt_qposadr[jointIndex];
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model.get()->body_jntadr[bodyId];
+    const int qposIndex = model.get()->jnt_qposadr[jointIndex];
 
-    mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < 3; i++){
         pose.position(i) = d->xpos[(bodyId * 3) + i];
     }
+//    for(int i = 0; i < 3; i++){
+//        pose.position(i) = d->qpos[qposIndex + i];
+//    }
 
     m_quat tempQuat;
 
     for(int i = 0; i < 4; i++){
         tempQuat(i) = d->xquat[(bodyId * 4) + i];
     }
+//    for(int i = 0; i < 4; i++){
+//        tempQuat(i) = d->qpos[qposIndex + 3 + i];
+//    }
 
     m_point euler = quat2Eul(tempQuat);
 
@@ -536,23 +537,11 @@ bool MuJoCoHelper::getBodyVelocity(string bodyName, pose_6 &velocity, int dataIn
         return false;
     }
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
-    const int jointIndex = model->body_jntadr[bodyId];
-    const int qvelIndex = model->jnt_dofadr[jointIndex];
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model.get()->body_jntadr[bodyId];
+    const int qvelIndex = model.get()->jnt_dofadr[jointIndex];
 
-    mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < 3; i++){
         velocity.position(i) = d->qvel[qvelIndex + i];
@@ -572,23 +561,11 @@ bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration, in
         return false;
     }
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
-    const int jointIndex = model->body_jntadr[bodyId];
-    const int qvelIndex = model->jnt_dofadr[jointIndex];
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
+    const int jointIndex = model.get()->body_jntadr[bodyId];
+    const int qvelIndex = model.get()->jnt_dofadr[jointIndex];
 
-    mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        if(savedSystemStatesList.size() < dataIndex){
-//            cout << "invalid data index, out of size of save system state list \n";
-//            return false;
-//        }
-//        d = savedSystemStatesList[dataIndex];
-//    }
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < 3; i++){
         acceleration.position(i) = d->qacc[qvelIndex + i];
@@ -606,23 +583,15 @@ bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration, in
 Eigen::MatrixXd MuJoCoHelper::calculateJacobian(std::string bodyName, int dataIndex){
     Eigen::MatrixXd kinematicJacobian(6, 7);
 
-    mjData *d = returnDesiredDataState(dataIndex);
-    // use mdata
-//    if(dataIndex == MAIN_DATA_STATE){
-//        d = mdata;
-//    }
-//    // use a saved data state
-//    else{
-//        d = savedSystemStatesList[dataIndex];
-//    }
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
-    //mjtNum* J_COMi_temp = mj_stackAlloc(_data, 3*_model->nv);
-    Matrix<double, Dynamic, Dynamic, RowMajor> J_p(3, model->nv);
-    Matrix<double, Dynamic, Dynamic, RowMajor> J_r(3, model->nv);
+    //mjtNum* J_COMi_temp = mj_stackAlloc(_data, 3*_model.get()->nv);
+    Matrix<double, Dynamic, Dynamic, RowMajor> J_p(3, model.get()->nv);
+    Matrix<double, Dynamic, Dynamic, RowMajor> J_r(3, model.get()->nv);
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
 
-    mj_jacBody(model, d, J_p.data(), J_r.data(), bodyId);
+    mj_jacBody(model.get(), d.get(), J_p.data(), J_r.data(), bodyId);
 
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 7; j++) {
@@ -642,8 +611,8 @@ Eigen::MatrixXd MuJoCoHelper::calculateJacobian(std::string bodyName, int dataIn
 
 int MuJoCoHelper::checkSystemForCollisions(int dataIndex){
 
-    mjData *d = returnDesiredDataState(dataIndex);
-    mj_forward(model, d);
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+    mj_forward(model.get(), d.get());
 
     int numContacts = d->ncon;
     int numCollisions = 0;
@@ -651,16 +620,18 @@ int MuJoCoHelper::checkSystemForCollisions(int dataIndex){
     for(int i = 0; i < numContacts; i++){
         auto contact = d->contact[i];
 
-        int bodyInContact1 = model->body_rootid[model->geom_bodyid[contact.geom1]];
-        int bodyInContact2 = model->body_rootid[model->geom_bodyid[contact.geom2]];
+        int bodyInContact1 = model.get()->body_rootid[model.get()->geom_bodyid[contact.geom1]];
+        int bodyInContact2 = model.get()->body_rootid[model.get()->geom_bodyid[contact.geom2]];
 
         // Get name of bodies in contact
-        string bodyName1 = mj_id2name(model, mjOBJ_BODY, bodyInContact1);
-        string bodyName2 = mj_id2name(model, mjOBJ_BODY, bodyInContact2);
-
-
+        string bodyName1 = mj_id2name(model.get(), mjOBJ_BODY, bodyInContact1);
+        string bodyName2 = mj_id2name(model.get(), mjOBJ_BODY, bodyInContact2);
 
         if(bodyInContact1 == 0 || bodyInContact2 == 0){
+
+        }
+        else if(bodyInContact1 == bodyInContact2){
+
         }
         else{
             cout << "bodies in contact: " << bodyName1 << " " << bodyName2 << endl;
@@ -674,8 +645,8 @@ int MuJoCoHelper::checkSystemForCollisions(int dataIndex){
 //        auto contact = d->contact[i];
 //
 //        // Get the ids of the two bodies in contacts
-//        int bodyInContact1 = _model->body_rootid[_model->geom_bodyid[contact.geom1]];
-//        int bodyInContact2 = _model->body_rootid[_model->geom_bodyid[contact.geom2]];
+//        int bodyInContact1 = _model.get()->body_rootid[_model.get()->geom_bodyid[contact.geom1]];
+//        int bodyInContact2 = _model.get()->body_rootid[_model.get()->geom_bodyid[contact.geom2]];
 //
 //        // only consider it a collision if robot - robot
 //        // or robot - table
@@ -710,20 +681,21 @@ int MuJoCoHelper::checkSystemForCollisions(int dataIndex){
 }
 
 bool MuJoCoHelper::checkBodyForCollisions(string bodyName, int dataIndex){
-    mjData *d = returnDesiredDataState(dataIndex);
-    mj_forward(model, d);
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+    mj_forward(model.get(), d.get());
 
     int numContacts = d->ncon;
-    int numCollisions = 0;
+    // id to name
+//    std::string name = mj_id2name(model.get(), mjOBJ_BODY, 10);
 
-    int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
     bool objectCollisionFound = false;
 
     for(int i = 0; i < numContacts; i++) {
         auto contact = d->contact[i];
 
-        int bodyInContact1 = model->body_rootid[model->geom_bodyid[contact.geom1]];
-        int bodyInContact2 = model->body_rootid[model->geom_bodyid[contact.geom2]];
+        int bodyInContact1 = model.get()->body_rootid[model.get()->geom_bodyid[contact.geom1]];
+        int bodyInContact2 = model.get()->body_rootid[model.get()->geom_bodyid[contact.geom2]];
 
         if(bodyInContact1 == bodyId && bodyInContact2 != 0){
             objectCollisionFound = true;
@@ -741,12 +713,13 @@ bool MuJoCoHelper::checkBodyForCollisions(string bodyName, int dataIndex){
 // ------------------------------- System State Functions -----------------------------------------------
 bool MuJoCoHelper::appendSystemStateToEnd(int dataIndex){
 
-    mjData *saveData = returnDesiredDataState(dataIndex);
+    auto saveData = returnDesiredDataState(dataIndex);
 
-    mjData *d = mj_makeData(model);
-    cpMjData(model, d, saveData);
+    savedSystemStatesList.push_back(std::shared_ptr<mjData>(mj_makeData(model.get())));
+    fp_rollout_data.push_back(std::shared_ptr<mjData>(mj_makeData(model.get())));
 
-    savedSystemStatesList.push_back(d);
+    cpMjData(model, savedSystemStatesList.back(), saveData);
+    cpMjData(model, fp_rollout_data.back(), saveData);
 
     return true;
 }
@@ -757,22 +730,9 @@ bool MuJoCoHelper::checkIfDataIndexExists(int dataIndex){
 
 bool MuJoCoHelper::copySystemState(int dataDestinationIndex, int dataSourceIndex){
 
-    mjData *dataDestination = returnDesiredDataState(dataDestinationIndex);
+    std::shared_ptr<mjData> dataDestination = returnDesiredDataState(dataDestinationIndex);
 
-//    if(dataDestinationIndex == MAIN_DATA_STATE){
-//        dataDestination = mdata;
-//    }
-//    else{
-//        dataDestination = savedSystemStatesList[dataDestinationIndex];
-//    }
-
-    mjData *dataSource = returnDesiredDataState(dataSourceIndex);
-//    if(dataSourceIndex == MAIN_DATA_STATE){
-//        dataSource = mdata;
-//    }
-//    else{
-//        dataSource = savedSystemStatesList[dataSourceIndex];
-//    }
+    std::shared_ptr<mjData> dataSource = returnDesiredDataState(dataSourceIndex);
 
     cpMjData(model, dataDestination, dataSource);
 
@@ -780,7 +740,7 @@ bool MuJoCoHelper::copySystemState(int dataDestinationIndex, int dataSourceIndex
 }
 
 bool MuJoCoHelper::deleteSystemStateFromIndex(int listIndex){
-    mj_deleteData(savedSystemStatesList[listIndex]);
+    mj_deleteData(savedSystemStatesList[listIndex].get());
     savedSystemStatesList.erase(savedSystemStatesList.begin() + listIndex);
 
     return true;
@@ -788,14 +748,14 @@ bool MuJoCoHelper::deleteSystemStateFromIndex(int listIndex){
 
 bool MuJoCoHelper::clearSystemStateList(){
     for(int i = 0; i < savedSystemStatesList.size(); i++){
-        mj_deleteData(savedSystemStatesList[i]);
+        mj_deleteData(savedSystemStatesList[i].get());
     }
     savedSystemStatesList.clear();
 
     return true;
 }
 
-void MuJoCoHelper::cpMjData(const mjModel* m, mjData* d_dest, const mjData* d_src){
+void MuJoCoHelper::cpMjData(const std::shared_ptr<mjModel> m, std::shared_ptr<mjData> d_dest, const std::shared_ptr<mjData> d_src){
     d_dest->time = d_src->time;
     mju_copy(d_dest->qpos, d_src->qpos, m->nq);
     mju_copy(d_dest->qvel, d_src->qvel, m->nv);
@@ -806,27 +766,69 @@ void MuJoCoHelper::cpMjData(const mjModel* m, mjData* d_dest, const mjData* d_sr
     mju_copy(d_dest->ctrl, d_src->ctrl, m->nu);
 }
 
-mjData* MuJoCoHelper::returnDesiredDataState(int dataIndex){
+std::shared_ptr<mjData> MuJoCoHelper::returnDesiredDataState(int dataIndex){
     if(dataIndex == MAIN_DATA_STATE){
         return mdata;
     }
     else if(dataIndex == MASTER_RESET_DATA){
         return d_master_reset;
     }
+    else if(dataIndex < MASTER_RESET_DATA){
+        int fd_id = -dataIndex - 3;
+        return fd_data[fd_id];
+    }
     else{
         return savedSystemStatesList[dataIndex];
     }
 }
+
+void MuJoCoHelper::saveDataToRolloutBuffer(int dataIndex, int rolloutIndex){
+    std::shared_ptr<mjData> dataSource = returnDesiredDataState(dataIndex);
+
+    std::shared_ptr<mjData> dataDestination = fp_rollout_data[rolloutIndex];
+
+    cpMjData(model, dataDestination, dataSource);
+
+}
+
+void MuJoCoHelper::copyRolloutBufferToSavedSystemStatesList(){
+    for(int i = 1; i < fp_rollout_data.size(); i++){
+        cpMjData(model, savedSystemStatesList[i], fp_rollout_data[i]);
+    }
+}
+
 // ------------------------------- END OF SYSTEM STATE FUNCTIONS ----------------------------------------
 
 bool MuJoCoHelper::stepSimulator(int steps, int dataIndex){
 
-    mjData *d = returnDesiredDataState(dataIndex);
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < steps; i++){
-        mj_step(model, d);
+        mj_step(model.get(), d.get());
     }
     return true;
+}
+
+// TODO - this is a bit hardcoded, make it less so
+bool MuJoCoHelper::forwardSimulator(int dataIndex){
+
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+
+//    mj_forwardSkip(model.get(), d.get(), mjSTAGE_NONE, 1);
+    mj_forward(model.get(), d.get());
+
+    return true;
+}
+
+bool MuJoCoHelper::forwardSimulatorWithSkip(int dataIndex, int skipStage, int skipSensor){
+
+        std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+
+        mjtNum skipStages[3] = {mjSTAGE_NONE, mjSTAGE_VEL, mjSTAGE_POS};
+
+        mj_forwardSkip(model.get(), d.get(), skipStages[skipStage], skipSensor);
+
+        return true;
 }
 
 // --------------------------------- Visualization Functions ---------------------------------------
@@ -839,23 +841,24 @@ void MuJoCoHelper::initVisualisation() {
     mjr_defaultContext(&con);
     mjv_defaultScene(&scn);
 
-    cam.distance = 1.66269;
-    cam.azimuth = 124.3;
-    cam.elevation = -61.5;
-    cam.lookat[0] = 0.4056;
-    cam.lookat[1] = 0.0161;
-    cam.lookat[2] = 0.14797;
+//    cam.distance = 1.66269;
+    cam.azimuth = -118.7;
+    cam.elevation = 3;
+    cam.elevation = -34.7;
+    cam.lookat[0] = 0.4027;
+    cam.lookat[1] = 0.0169;
+    cam.lookat[2] = 0.1067;
 
     // create scene and context
-    mjv_makeScene(model, &scn, 2000);
-    mjr_makeContext(model, &con, mjFONTSCALE_150);
+    mjv_makeScene(model.get(), &scn, 2000);
+    mjr_makeContext(model.get(), &con, mjFONTSCALE_150);
 }
 
 void MuJoCoHelper::updateScene(GLFWwindow *window, const char* label){
     // update scene and render
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
-    mjv_updateScene(model, mdata, &opt, NULL, &cam, mjCAT_ALL, &scn);
+    mjv_updateScene(model.get(), mdata.get(), &opt, NULL, &cam, mjCAT_ALL, &scn);
 
     mjr_render(viewport, &scn, &con);
 
@@ -892,11 +895,11 @@ void MuJoCoHelper::mouseMove(double dx, double dy, bool button_left, bool button
         action = mjMOUSE_ZOOM;
 
     // move camera
-    mjv_moveCamera(model, action, dx / height, dy / height, &scn, &cam);
+    mjv_moveCamera(model.get(), action, dx / height, dy / height, &scn, &cam);
 }
 
 void MuJoCoHelper::scroll(double yoffset){
-    mjv_moveCamera(model, mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
+    mjv_moveCamera(model.get(), mjMOUSE_ZOOM, 0, -0.05 * yoffset, &scn, &cam);
 }
 
 // --------------------------------- END OF VISUALIZATION FUNCTIONS ---------------------------------------
@@ -904,19 +907,74 @@ void MuJoCoHelper::scroll(double yoffset){
 void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
     // cout << "fileName in init: " << fileName << endl;
-    model = mj_loadXML(fileName, NULL, error, 1000);
-    cout << "any errors? " << error << endl;
-
-    model->opt.timestep = timestep;
+    model = shared_ptr<mjModel>(mj_loadXML(fileName, NULL, error, 1000));
 
     if( !model ) {
-
         printf("%s\n", error);
     }
 
-    // make data corresponding to model
-    mdata = mj_makeData(model);
-    d_master_reset = mj_makeData(model);
+    // defaults 100 , 1e-8
+    model->opt.timestep = timestep;
+//    model->opt.iterations = 30;
+//    model->opt.tolerance = 1e-1;
+    cout << "model iterations: " << model->opt.iterations << endl;
+    cout << "model tolerance : " << model->opt.tolerance << endl;
 
-    //model->opt.gravity[2] = 0;
+    cout << "model nq: " << model->nq << endl;
+    cout << "model nv: " << model->nv << endl;
+    cout << "model nu: " << model->nu << endl;
+    cout << "model nbody: " << model->nbody << endl;
+//    cout << "model memory: " << model->memory
+
+//    for(int i = 0; i < model->nu; i++){
+//        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i] << endl;
+//        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i+1] << endl;
+//    }
+//
+//    std::string names[6] = {"right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"};
+//
+////    int id = mj_name2id(model.get(), mjOBJ_BODY, "right_hip");
+//    for(int i = 0; i < 6; i++){
+//        int id = mj_name2id(model.get(), mjOBJ_ACTUATOR, names[i].c_str());
+//        cout << "actuator id: " << id << endl;
+//    }
+
+    // make data corresponding to model.get()
+    mdata = shared_ptr<mjData>(mj_makeData(model.get()));
+    d_master_reset = shared_ptr<mjData>(mj_makeData(model.get()));
+
+    // Get the number of available cores
+    int numCores = std::thread::hardware_concurrency();
+    for(int i = 0; i < numCores; i++){
+        fd_data.push_back(shared_ptr<mjData>(mj_makeData(model.get())));
+    }
+}
+
+void MuJoCoHelper::initModelForFiniteDifferencing(){
+    save_iterations = model->opt.iterations;
+    save_tolerance = model->opt.tolerance;
+    model->opt.iterations = 50;
+    model->opt.tolerance = 0;
+}
+
+void MuJoCoHelper::resetModelAfterFiniteDifferencing(){
+    model->opt.iterations = save_iterations;
+    model->opt.tolerance = save_tolerance;
+
+}
+
+double MuJoCoHelper::returnModelTimeStep() {
+    return model->opt.timestep;
+}
+
+double* MuJoCoHelper::sensorState(int dataIndex, std::string sensorName){
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+
+    int id = mj_name2id(model.get(), mjOBJ_SENSOR, sensorName.c_str());
+    if (id == -1) {
+        std::cerr << "sensor \"" << sensorName << "\" not found.\n";
+        return nullptr;
+    } else {
+        return d->sensordata + model->sensor_adr[id];
+    }
 }

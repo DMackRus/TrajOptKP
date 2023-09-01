@@ -21,6 +21,11 @@ boxFlick::boxFlick(int _clutterLevel){
     initModelTranslator(yamlFilePath);
 }
 
+void boxFlick::generateRandomGoalAndStartState() {
+    X_start = returnRandomStartState();
+    X_desired = returnRandomGoalState(X_start);
+}
+
 MatrixXd boxFlick::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
@@ -43,12 +48,14 @@ MatrixXd boxFlick::returnRandomStartState(){
     objectCurrentPose.position(0) = startX;
     objectCurrentPose.position(1) = startY;
     activePhysicsSimulator->setBodyPose_angle("goal", objectCurrentPose, MAIN_DATA_STATE);
+    activePhysicsSimulator->setBodyPose_angle("goal", objectCurrentPose, MASTER_RESET_DATA);
 
     activePhysicsSimulator->getBodyPose_angle("mainObstacle", objectCurrentPose, MASTER_RESET_DATA);
     objectCurrentPose.position(0) = startX;
     objectCurrentPose.position(1) = startY;
     objectCurrentPose.position(2) = 0.2;
     activePhysicsSimulator->setBodyPose_angle("mainObstacle", objectCurrentPose, MAIN_DATA_STATE);
+    activePhysicsSimulator->setBodyPose_angle("mainObstacle", objectCurrentPose, MASTER_RESET_DATA);
 
 
     if(clutterLevel == noClutter){
@@ -153,8 +160,6 @@ MatrixXd boxFlick::returnRandomStartState(){
         cout << "ERROR: Invalid clutter level" << endl;
     }
 
-
-
     return randomStartState;
 }
 
@@ -192,8 +197,10 @@ MatrixXd boxFlick::returnRandomGoalState(MatrixXd X0){
     return randomGoalState;
 }
 
-double boxFlick::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, bool terminal){
+double boxFlick::costFunction(int dataIndex, bool terminal){
     double cost = 0.0f;
+    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Ut = returnControlVector(dataIndex);
 
     MatrixXd X_diff = Xt - X_desired;
     MatrixXd temp;
@@ -225,7 +232,9 @@ double boxFlick::costFunction(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixX
     return cost;
 }
 
-void boxFlick::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, MatrixXd U_last, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+void boxFlick::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Ut = returnControlVector(dataIndex);
     MatrixXd X_diff = Xt - X_desired;
 
     // Special elemetns for gaussian distance of obstacle1 to goal
@@ -269,6 +278,9 @@ void boxFlick::costDerivatives(MatrixXd Xt, MatrixXd Ut, MatrixXd X_last, Matrix
 
 std::vector<MatrixXd> boxFlick::createInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
+
+    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -432,7 +444,7 @@ void boxFlick::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd,
     // intermediatePoint(0) = intermediatePointX;
     // intermediatePoint(1) = intermediatePointY;
 
-    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
+    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * activePhysicsSimulator->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
@@ -591,7 +603,7 @@ std::vector<MatrixXd> boxFlick::generate_initControls_fromWayPoints(std::vector<
     return initControls;
 }
 
-bool boxFlick::taskComplete(int dataIndex){
+bool boxFlick::taskComplete(int dataIndex, double &dist){
     bool taskComplete = false;
 
     MatrixXd currentState = returnStateVector(dataIndex);
@@ -599,10 +611,10 @@ bool boxFlick::taskComplete(int dataIndex){
     float x_diff = currentState(9) - currentState(7);
     float y_diff = currentState(10) - currentState(8);
 
-    float distance = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
-    std::cout << "distance is: " << distance << std::endl;
+    dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
+    std::cout << "distance is: " << dist << std::endl;
 
-    if(distance > 0.1){
+    if(dist > 0.1){
         taskComplete = true;
     }
 

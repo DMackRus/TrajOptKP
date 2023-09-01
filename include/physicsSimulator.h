@@ -8,6 +8,7 @@
 #include "stdInclude.h"
 #include <GLFW/glfw3.h>
 #include "mujoco.h"
+#include <thread>
 
 #define MAIN_DATA_STATE     -1
 #define MASTER_RESET_DATA   -2
@@ -62,6 +63,8 @@ public:
     virtual bool copySystemState(int dataDestinationIndex, int dataSourceIndex) = 0;
     virtual bool deleteSystemStateFromIndex(int listIndex) = 0;
     virtual bool clearSystemStateList() = 0;
+    virtual void saveDataToRolloutBuffer(int dataIndex, int rolloutIndex) = 0;
+    virtual void copyRolloutBufferToSavedSystemStatesList() = 0;
 
     // ------------------------------- Visualisation -----------------------------------------
     virtual void initVisualisation() = 0;
@@ -72,6 +75,18 @@ public:
     virtual void initSimulator(double timeStep, const char* fileName) = 0;
 
     virtual bool stepSimulator(int steps, int dataIndex) = 0;
+    virtual bool forwardSimulator(int dataIndex) = 0;
+    virtual bool forwardSimulatorWithSkip(int dataIndex, int skipStage, int skipSensor) = 0;
+
+    virtual double* sensorState(int dataIndex, std::string sensorName) = 0;
+
+
+
+    virtual void initModelForFiniteDifferencing() = 0;
+    virtual void resetModelAfterFiniteDifferencing() = 0;
+
+    virtual double returnModelTimeStep() = 0;
+
 
 
 protected:

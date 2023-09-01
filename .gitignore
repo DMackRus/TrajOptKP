@@ -32,7 +32,8 @@
 *.app
 
 # Other git repositories
-/Franka-emika-panda-arm
+/mujoco_models
+/savedTrajecInfo
 /cmake-build-debug
 /.vscode
 /.idea

@@ -48,9 +48,12 @@ public:
     bool copySystemState(int dataDestinationIndex, int dataSourceIndex) override;
     bool deleteSystemStateFromIndex(int listIndex) override;
     bool clearSystemStateList() override;
+    void saveDataToRolloutBuffer(int dataIndex, int rolloutIndex) override;
+    void copyRolloutBufferToSavedSystemStatesList() override;
 
-    void cpMjData(const mjModel* m, mjData* d_dest, const mjData* d_src);
-    mjData* returnDesiredDataState(int dataIndex);
+    void cpMjData(const std::shared_ptr<mjModel> m, std::shared_ptr<mjData> d_dest, const std::shared_ptr<mjData> d_src);
+    std::shared_ptr<mjData> returnDesiredDataState(int dataIndex);
+
 
     // ------------------------------- Visualisation -----------------------------------------
     void initVisualisation() override;
@@ -64,16 +67,30 @@ public:
 
     void initSimulator(double timestep, const char* fileName) override;
     bool stepSimulator(int steps, int dataIndex) override;
+    bool forwardSimulator(int dataIndex) override;
+    bool forwardSimulatorWithSkip(int dataIndex, int skipStage, int skipSensor) override;
+
     void setupMuJoCoWorld(double timestep, const char* fileName);
 
     bool setBodyPosition(string bodyName, m_point position);
 
-    vector<mjData*> savedSystemStatesList;
-    mjData *d_master_reset;
-    mjData *mdata;                   // main mujcoc data
-    mjModel *model;                  // MuJoCo model
+    void initModelForFiniteDifferencing() override;
+    void resetModelAfterFiniteDifferencing() override;
+
+    double returnModelTimeStep() override;
+
+    double* sensorState(int dataIndex, std::string sensorName) override;
+
+    vector<std::shared_ptr<mjData>> savedSystemStatesList;      // List of saved system states
+    vector<std::shared_ptr<mjData>> fp_rollout_data;     // forwards pass rollout data
+    std::shared_ptr<mjData> d_master_reset;                     // Master reset mujoco data
+    std::shared_ptr<mjData> mdata;                              // main MuJoCo data
+    std::shared_ptr<mjModel> model;                             // MuJoCo model
+    std::vector<std::shared_ptr<mjData>> fd_data;               // Finite differencing MuJoCo data - instantiated with the number of cores on the pc
 
 private:
+    int save_iterations;
+    mjtNum save_tolerance;
 
 };
 

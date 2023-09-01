@@ -9,7 +9,7 @@
 
 class interpolatediLQR: public optimiser{
 public:
-    interpolatediLQR(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, int _maxHorizon, visualizer *_visualizer, fileHandler *_yamlReader);
+    interpolatediLQR(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, std::shared_ptr<visualizer> _visualizer, std::shared_ptr<fileHandler> _yamlReader);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
@@ -19,20 +19,19 @@ public:
     bool backwardsPass_Quu_skips();
     bool isMatrixPD(Ref<MatrixXd> matrix);
 
-    double forwardsPass(double oldCost, bool &costReduced);
-    double forwardsPassParallel(double oldCost, bool &costReduced);
-
+    double forwardsPass(double oldCost);
+    double forwardsPassParallel(double oldCost);
 
     std::vector<double> costHistory;
     int numIters = 0;
 
-    bool saveTrajecInfomation = true;
-    bool saveCostHistory = true;
+    bool saveTrajecInfomation = false;
+    bool saveCostHistory = false;
 
 private:
     double lambda = 0.1;
-    double maxLambda = 10000;
-    double minLambda = 0.00001;
+    double maxLambda = 0.1;
+    double minLambda = 0.0001;
     double lambdaFactor = 10;
     int maxHorizon = 0;
 
@@ -40,7 +39,7 @@ private:
     vector<MatrixXd> k;
     vector<MatrixXd> K;
 
-    visualizer *activeVisualizer;
+    std::shared_ptr<visualizer> activeVisualizer;
 
     vector<vector<MatrixXd>> U_alpha;
 

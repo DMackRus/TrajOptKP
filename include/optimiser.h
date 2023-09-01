@@ -7,17 +7,12 @@
 #include "physicsSimulator.h"
 #include "differentiator.h"
 
-enum interpMethod{
-    linear = 0,
-    quadratic = 1,
-    cubic = 2,
-};
-
 enum keyPointsMethod{
     setInterval = 0,
     adaptive_jerk = 1,
     adaptive_accel = 2,
-    iterative_error = 3
+    iterative_error = 3,
+    magvel_change = 4
 };
 
 struct indexTuple{
@@ -25,52 +20,68 @@ struct indexTuple{
     int endIndex;
 };
 
+struct derivative_interpolator{
+    std::string keypoint_method;
+    int minN;
+    int maxN;
+    std::vector<double> jerkThresholds;
+    std::vector<double> accelThresholds;
+    double iterativeErrorThreshold;
+    std::vector<double> magVelChangeThresholds;
+
+};
+
 class optimiser{
 public:
-    optimiser(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, fileHandler *_yamlReader, differentiator *_differentiator);
+    optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
 
     virtual double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) = 0;
     virtual std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) = 0;
     virtual bool checkForConvergence(double oldCost, double newCost);
-    void setupTestingExtras(int _trajecNumber, int _interpMethod, int _keyPointsMethod, int minN);
+    void setTrajecNumber(int _trajecNumber);
 
-    void returnOptimisationData(double &_optTime, double &_costReduction, int &_avgNumDerivs, double &_avgTimeGettingDerivs);
+    void returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
+
+    derivative_interpolator returnDerivativeInterpolator();
+    void setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator);
 
     int currentTrajecNumber = 0;
-    int interpMethod = linear;
-    int keyPointsMethod = setInterval;
-    std::string interpMethodsStrings[3] = {"linear", "quadratic", "cubic"};
-    std::string keyPointsMethodsStrings[4] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error"};
+    std::string keyPointsMethodsStrings[5] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error", "magVel_change"};
 
     double optTime;
 
     double initialCost;
     double costReduction = 1.0f;
 
-    std::vector<int> numDerivsPerIter;
-    int avgNumDerivs;
+    std::vector<double> percentDerivsPerIter;
+    double avgPercentDerivs;
+    int numberOfTotalDerivs = 0;
 
     std::vector<double> timeDerivsPerIter;
-    double avgTimePerDerivs;
 
-    int min_interval = 1;
-    int max_interval = 100;
+    int numIterationsForConvergence;
+
+    // ----------- Derivative interpolation settings -----------------------
+//    int min_interval = 1;
+//    int max_interval = 100;
+//    double magVelChangeThreshold = 2;
+//    double iterativeErrorThreshold = 0.0001;
 
     bool filteringMatrices = true;
 
+    std::vector<double> time_getDerivs_ms;
+    double avgTime_getDerivs_ms = 0.0f;
+    std::vector<double> time_backwardsPass_ms;
+    double avgTime_backwardsPass_ms = 0.0f;
+    std::vector<double> time_forwardsPass_ms;
+    double avgTime_forwardsPass_ms = 0.0f;
+    bool verboseOutput = true;
 
-protected:
-    modelTranslator *activeModelTranslator;
-    physicsSimulator *activePhysicsSimulator;
-
-    int dof;
-    int num_ctrl;
-    int horizonLength;
+    // - Top level function - ensures all derivates are calculate over an entire trajectory by some method
+    void generateDerivatives();
 
     // -------------- Vectors of matrices for gradient information about the trajectory -------------
     // First order dynamics
-    vector<MatrixXd> f_x;
-    vector<MatrixXd> f_u;
     vector<MatrixXd> A;
     vector<MatrixXd> B;
 
@@ -86,29 +97,37 @@ protected:
     vector<MatrixXd> X_new;
     vector<MatrixXd> X_old;
 
-    fileHandler *activeYamlReader;
-    differentiator *activeDifferentiator;
+    int horizonLength;
 
 
-    std::vector<int> computedKeyPoints;
+protected:
+    std::shared_ptr<modelTranslator> activeModelTranslator;
+    std::shared_ptr<physicsSimulator> activePhysicsSimulator;
 
-    // - Top level function - ensures all derivates are calculate over an entire trajectory by some method
-    void generateDerivatives();
+    int dof;
+    int num_ctrl;
+    derivative_interpolator activeDerivativeInterpolator;
+
+    std::shared_ptr<fileHandler> activeYamlReader;
+    std::shared_ptr<differentiator> activeDifferentiator;
+
+    std::vector<std::vector<int>> computedKeyPoints;
 
     // Generate keypoints we will calculate derivatives at
-    std::vector<int> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
-    std::vector<int> generateKeyPointsIteratively();
+    std::vector<std::vector<int>> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
+    std::vector<std::vector<int>> generateKeyPointsIteratively();
     bool checkOneMatrixError(indexTuple indices);
-    std::vector<int> generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile);
+    bool checkDoFColumnError(indexTuple indices, int dof);
+    std::vector<std::vector<int>> generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile);
+    std::vector<std::vector<int>> generateKeyPointsMagVelChange(std::vector<MatrixXd> velProfile);
     std::vector<MatrixXd> generateJerkProfile();
     std::vector<MatrixXd> generateAccelProfile();
+    std::vector<MatrixXd> generateVelProfile();
 
     // Calculate derivatives at key points
-    void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
+    void getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints);
     void getCostDerivs();
-    void interpolateDerivatives(std::vector<int> calculatedIndices);
-
-
+    void interpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs);
 
     void filterMatrices();
     std::vector<double> filterIndividualValue(std::vector<double> unfiltered);
@@ -116,7 +135,6 @@ protected:
 
 private:
     double epsConverge = 0.02;
-    
 
 };
 

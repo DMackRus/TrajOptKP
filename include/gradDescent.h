@@ -13,14 +13,14 @@
 
 class gradDescent: public optimiser{
 public:
-    gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler *_yamlReader);
+    gradDescent(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, std::shared_ptr<visualizer> _visualizer, int _maxHorizon, std::shared_ptr<fileHandler> _yamlReader);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
 
-    std::vector<int> generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
-    void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
-    void interpolateDerivatives(std::vector<int> calculatedIndices);
+//    std::vector<int> generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
+//    void getDerivativesAtSpecifiedIndices(std::vector<int> indices);
+//    void interpolateDerivatives(std::vector<int> calculatedIndices);
 
     void backwardsPass();
 
@@ -53,8 +53,8 @@ private:
     vector<MatrixXd> X_new;
     vector<MatrixXd> X_old;
 
-    differentiator *activeDifferentiator;
-    visualizer *activeVisualizer;
+//    differentiator *activeDifferentiator;
+    std::shared_ptr<visualizer> activeVisualizer;
 
     vector<vector<MatrixXd>> U_alpha;
 

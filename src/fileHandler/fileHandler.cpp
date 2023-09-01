@@ -21,26 +21,35 @@ fileHandler::fileHandler(){
 }
 
 
-void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies, std::string &modelFilePath, std::string &_modelName){
+void fileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfig){
     YAML::Node node = YAML::LoadFile(projectParentPath + yamlFilePath);
 
-    modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
-    _modelName = node["modelName"].as<std::string>();
+    // General task settings
+    _taskConfig.modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
+    _taskConfig.modelName = node["modelName"].as<std::string>();
+    _taskConfig.modelTimeStep = node["timeStep"].as<double>();
+    _taskConfig.keypointMethod = node["keypointMethod"].as<std::string>();
+    _taskConfig.minN = node["minN"].as<int>();
+    _taskConfig.maxN = node["maxN"].as<int>();
+    _taskConfig.iterativeErrorThreshold = node["iterativeErrorThreshold"].as<double>();
 
     // Loop through robots
     for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){
         robot tempRobot;
         string robotName;
         vector<string> jointNames;
-        int numActuators;
+        vector<string> actuatorNames;
         bool torqueControlled;
         vector<double> torqueLimits;
         vector<double> startPos;
         vector<double> goalPos;
         vector<double> jointPosCosts;
         vector<double> jointVelCosts;
+        vector<double> terminalJointPosCosts;
+        vector<double> terminalJointVelCosts;
         vector<double> jointControlCosts;
         vector<double> jointJerkThresholds;
+        vector<double> magVelThresholds;
 
         robotName = robot_it->first.as<string>();
 
@@ -48,7 +57,10 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
             jointNames.push_back(robot_it->second["jointNames"][i].as<std::string>());
         }
 
-        numActuators = robot_it->second["numActuators"].as<int>();
+        for(int i = 0; i < robot_it->second["actuatorNames"].size(); i++){
+            actuatorNames.push_back(robot_it->second["actuatorNames"][i].as<std::string>());
+        }
+
         torqueControlled = robot_it->second["torqueControl"].as<bool>();
 
         for(int i = 0; i < robot_it->second["torqueLimits"].size(); i++){
@@ -71,6 +83,14 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
             jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
         }
 
+        for(int i = 0; i < robot_it->second["terminalJointPosCosts"].size(); i++){
+            terminalJointPosCosts.push_back(robot_it->second["terminalJointPosCosts"][i].as<double>());
+        }
+
+        for(int i = 0; i < robot_it->second["terminalJointVelCosts"].size(); i++){
+            terminalJointVelCosts.push_back(robot_it->second["terminalJointVelCosts"][i].as<double>());
+        }
+
         for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
             jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
         }
@@ -79,19 +99,26 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
             jointJerkThresholds.push_back(robot_it->second["jointJerkThresholds"][i].as<double>());
         }
 
+        for(int i = 0; i < robot_it->second["magVelThresholds"].size(); i++){
+            magVelThresholds.push_back(robot_it->second["magVelThresholds"][i].as<double>());
+        }
+
         tempRobot.name = robotName;
         tempRobot.jointNames = jointNames;
-        tempRobot.numActuators = numActuators;
+        tempRobot.actuatorNames = actuatorNames;
         tempRobot.torqueControlled = torqueControlled;
         tempRobot.torqueLimits = torqueLimits;
         tempRobot.startPos = startPos;
         tempRobot.goalPos = goalPos;
         tempRobot.jointPosCosts = jointPosCosts;
         tempRobot.jointVelCosts = jointVelCosts;
+        tempRobot.terminalJointPosCosts = terminalJointPosCosts;
+        tempRobot.terminalJointVelCosts = terminalJointVelCosts;
         tempRobot.jointControlCosts = jointControlCosts;
         tempRobot.jointJerkThresholds = jointJerkThresholds;
+        tempRobot.magVelThresholds = magVelThresholds;
 
-        _robots.push_back(tempRobot);
+        _taskConfig.robots.push_back(tempRobot);
     }
 
     // Loop through bodies
@@ -110,6 +137,8 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
         double angularVelCosts[3];
         double linearJerkThreshold[3];
         double angularJerkThreshold[3];
+        double linearMagVelThreshold[3];
+        double angularMagVelThreshold[3];
 
         bodyName = body_it->first.as<string>();
 
@@ -161,6 +190,14 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
             angularJerkThreshold[i] = body_it->second["angularJerkThreshold"][i].as<double>();
         }
 
+        for(int i = 0; i < body_it->second["linearMagVelThreshold"].size(); i++){
+            linearMagVelThreshold[i] = body_it->second["linearMagVelThreshold"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["angularMagVelThreshold"].size(); i++){
+            angularMagVelThreshold[i] = body_it->second["angularMagVelThreshold"][i].as<double>();
+        }
+
         tempBody.name = bodyName;
         for(int i = 0; i < 3; i++){
             tempBody.activeLinearDOF[i] = activeLinearDOF[i];
@@ -175,9 +212,11 @@ void fileHandler::readModelConfigFile(std::string yamlFilePath, vector<robot> &_
             tempBody.angularVelCost[i] = angularVelCosts[i];
             tempBody.linearJerkThreshold[i] = linearJerkThreshold[i];
             tempBody.angularJerkThreshold[i] = angularJerkThreshold[i];
+            tempBody.linearMagVelThreshold[i] = linearMagVelThreshold[i];
+            tempBody.angularMagVelThreshold[i] = angularMagVelThreshold[i];
         }
 
-        _bodies.push_back(tempBody);
+        _taskConfig.bodiesStates.push_back(tempBody);
     }
 }
 
@@ -217,11 +256,6 @@ void fileHandler::readOptimisationSettingsFile(int optimiser) {
     maxIter = node["maxIter"].as<int>();
     maxHorizon = node["maxHorizon"].as<int>();
 
-    if(optimiser == opt_iLQR || optimiser == opt_gradDescent){
-        keyPointMethod = node["keyPointMethod"].as<int>();
-        minInterval = node["min_interval"].as<int>();
-        maxInterval = node["max_interval"].as<int>();
-    }
 }
 
 void fileHandler::generalSaveMatrices(std::vector<MatrixXd> matrices, std::string fileName){
@@ -252,9 +286,7 @@ void fileHandler::generalSaveMatrices(std::vector<MatrixXd> matrices, std::strin
 
 }
 
-void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber){
-    int size = A_matrices.size();
-    cout << "trajectory size: " << size << endl;
+void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength){
     std::string rootPath = projectParentPath + "/savedTrajecInfo" + filePrefix + "/" + std::to_string(trajecNumber);
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/A_matrices.csv";
@@ -263,7 +295,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     int num_ctrl = B_matrices[0].cols();
 
     // trajectory length
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength - 1; i++){
         // Row
         for(int j = 0; j < (dof); j++){
             // Column
@@ -279,7 +311,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     filename = rootPath + "/B_matrices.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength - 1; i++){
         for(int j = 0; j < (dof); j++){
             for(int k = 0; k < num_ctrl; k++){
                 fileOutput << B_matrices[i](j + dof, k) << ",";
@@ -292,7 +324,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
 
     filename = rootPath + "/states.csv";
     fileOutput.open(filename);
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength - 1; i++){
         for(int j = 0; j < (dof * 2); j++)
         {
             fileOutput << states[i](j) << ",";
@@ -305,7 +337,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     filename = rootPath + "/controls.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < size; i++){
+    for(int i = 0; i < horizonLength - 1; i++){
         for(int j = 0; j < num_ctrl; j++) {
             fileOutput << controls[i](j) << ",";
         }
@@ -341,8 +373,6 @@ void fileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, MatrixXd
     std::string rootPath = projectParentPath + "/testTasks" + taskPrefix;
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
-
-    cout << "start state size: " << startState.size() << endl;
 
     fstream fin;
 
@@ -384,7 +414,9 @@ void fileHandler::saveCostHistory(std::vector<double> costHistory, std::string f
     fileOutput.close();
 }
 
-void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> optTimes, std::vector<std::vector<double>> costReduction, std::vector<std::vector<int>> avgNumDerivs, std::vector<std::vector<double>> avgTimeGettingDerivs){
+void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> optTimes,
+                                            std::vector<std::vector<double>> costReduction, std::vector<std::vector<double>> avgPercentageDerivs,
+                                            std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<int>> numIterations){
     std::string rootPath = projectParentPath;
     std::string filename = rootPath + taskPrefix + "_testingData.csv";
 
@@ -396,28 +428,76 @@ void fileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
         fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
         fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
     }
     fileOutput << std::endl;
 
     for(int i = 0; i < methodNames.size(); i++){
         fileOutput << "optTime" << ",";
         fileOutput << "Cost reduction" << ",";
-        fileOutput << "avgNumDerivs" << ",";
+        fileOutput << "avgPercentDerivs" << ",";
         fileOutput << "avgTimeDerivs" << ",";
+        fileOutput << "numIterations" << ",";
     }
     fileOutput << std::endl;
 
     int numTrajecs = optTimes.size();
-    cout << "numTrajecs = " << numTrajecs << endl;
 
     for(int i = 0; i < numTrajecs; i++){
         for(int j = 0; j < methodNames.size(); j++){
             fileOutput << optTimes[i][j] << ",";
             fileOutput << costReduction[i][j] << ",";
-            fileOutput << avgNumDerivs[i][j] << ",";
+            fileOutput << avgPercentageDerivs[i][j] << ",";
             fileOutput << avgTimeGettingDerivs[i][j] << ",";
+            fileOutput << numIterations[i][j] << ",";
 
         }
         fileOutput << std::endl;
     }
+    fileOutput.close();
+}
+
+void fileHandler::saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> finalCosts, std::vector<std::vector<double>> avgHZ,
+                         std::vector<std::vector<double>> avgTimeGettingDerivs,std::vector<std::vector<double>> avgTimeBP, std::vector<std::vector<double>> avgTimeFP, std::vector<std::vector<double>> avgPercentDerivs){
+    std::string rootPath = projectParentPath;
+    std::string filename = rootPath + taskPrefix + "_testingData.csv";
+
+    fileOutput.open(filename);
+
+    // Make header
+    for(int i = 0; i < methodNames.size(); i++){
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+        fileOutput << methodNames[i] << ",";
+    }
+    fileOutput << std::endl;
+
+    for(int i = 0; i < methodNames.size(); i++){
+        fileOutput << "final costs" << ",";
+        fileOutput << "avg Hz" << ",";
+        fileOutput << "avgTimeDerivs" << ",";
+        fileOutput << "avgTimeBP" << ",";
+        fileOutput << "avgTimeFP" << ",";
+        fileOutput << "avgpercent derivs" << ",";
+    }
+    fileOutput << std::endl;
+
+    int numTrajecs = finalCosts.size();
+    cout << "num trajecs: " << numTrajecs << endl;
+
+    for(int i = 0; i < numTrajecs; i++){
+        for(int j = 0; j < methodNames.size(); j++){
+            fileOutput << finalCosts[i][j] << ",";
+            fileOutput << avgHZ[i][j] << ",";
+            fileOutput << avgTimeGettingDerivs[i][j] << ",";
+            fileOutput << avgTimeBP[i][j] << ",";
+            fileOutput << avgTimeFP[i][j] << ",";
+            fileOutput << avgPercentDerivs[i][j] << ",";
+        }
+        fileOutput << std::endl;
+    }
+    fileOutput.close();
 }

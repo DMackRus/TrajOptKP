@@ -23,11 +23,11 @@ enum optimisers{
 class fileHandler{
 public:
     fileHandler();
-    void readModelConfigFile(std::string yamlFilePath, vector<robot> &_robots, vector<bodyStateVec> &_bodies, std::string &modelFilePath, std::string &_modelName);
+    void readModelConfigFile(std::string yamlFilePath, task &_taskConfig);
     void readSettingsFile(std::string settingsFilePath);
     void readOptimisationSettingsFile(int optimiser);
 
-    void saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber);
+    void saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength);
     void generalSaveMatrices(std::vector<MatrixXd> matrices, std::string fileName);
 
     void saveTaskToFile(std::string filePrefix, int fileNum, MatrixXd startState, MatrixXd goalState);
@@ -35,7 +35,13 @@ public:
 
     void saveCostHistory(std::vector<double> costHistory, std::string filePrefix, int trajecNumber);
 
-    void saveResultsDataForMethods(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> optTimes, std::vector<std::vector<double>> costReduction, std::vector<std::vector<int>> avgNumDerivs, std::vector<std::vector<double>> avgTimeGettingDerivs);
+    void saveResultsDataForMethods(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> optTimes,
+                                   std::vector<std::vector<double>> costReduction, std::vector<std::vector<double>> avgPercentageDerivs,
+                                   std::vector<std::vector<double>> avgTimeGettingDerivs, std::vector<std::vector<int>> numIterations);
+
+    void saveResultsData_MPC(std::string taskPrefix, std::vector<std::string> methodNames, std::vector<std::vector<double>> finalCosts,
+                             std::vector<std::vector<double>> avgHZ, std::vector<std::vector<double>> avgTimeGettingDerivs,
+                             std::vector<std::vector<double>> avgTimeBP, std::vector<std::vector<double>> avgTimeFP, std::vector<std::vector<double>> avgPercentDerivs);
 
     int project_display_mode;
     int taskNumber;
@@ -43,6 +49,7 @@ public:
     std::string taskInitMode;
     int csvRow = 0;
     bool filtering = false;
+    bool approximate_backwardsPass = false;
     bool costDerivsFD = false;
     ofstream fileOutput;
 

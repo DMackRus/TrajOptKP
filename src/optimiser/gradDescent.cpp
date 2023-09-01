@@ -4,8 +4,8 @@
 
 #include "gradDescent.h"
 
-gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_physicsSimulator, differentiator *_differentiator, visualizer *_visualizer, int _maxHorizon, fileHandler *_yamlReader) : optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
-    activeDifferentiator = _differentiator;
+gradDescent::gradDescent(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, std::shared_ptr<visualizer> _visualizer, int _maxHorizon, std::shared_ptr<fileHandler> _yamlReader) : optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+//    activeDifferentiator = _differentiator;
     activeVisualizer = _visualizer;
 
     maxHorizon = _maxHorizon;
@@ -22,7 +22,7 @@ gradDescent::gradDescent(modelTranslator *_modelTranslator, physicsSimulator *_p
 
         A[i].block(0, 0, dof, dof).setIdentity();
         A[i].block(0, dof, dof, dof).setIdentity();
-        A[i].block(0, dof, dof, dof) *= MUJOCO_DT;
+        A[i].block(0, dof, dof, dof) *= activePhysicsSimulator->returnModelTimeStep();
         B[i].setZero();
 
         f_x.push_back(MatrixXd(2*dof, 2*dof));
@@ -84,10 +84,10 @@ double gradDescent::rolloutTrajectory(int initialDataIndex, bool saveStates, std
         double stateCost;
 
         if(i == initControls.size() - 1){
-            stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, true);
+            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
         }
         else{
-            stateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
         }
 
         // If required to save states to trajectory tracking, then save state
@@ -103,7 +103,7 @@ double gradDescent::rolloutTrajectory(int initialDataIndex, bool saveStates, std
 
         }
 
-        cost += (stateCost * MUJOCO_DT);
+        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
     }
 
     cout << "cost of trajectory was: " << cost << endl;
@@ -129,20 +129,13 @@ std::vector<MatrixXd> gradDescent::optimise(int initialDataIndex, std::vector<Ma
         auto start = high_resolution_clock::now();
         // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
         // generate the dynamics evaluation waypoints
-        std::vector<int> evaluationPoints = generateEvalWaypoints(X_old, U_old);
-//         for(int j = 0; j < evaluationPoints.size(); j++){
-//             cout << "eval: " << j << ": " << evaluationPoints[j] << endl;
-//         }
 
-        // Calculate derivatives via finite differnecing / analytically for cost functions if available
-        getDerivativesAtSpecifiedIndices(evaluationPoints);
-
-        // Interpolate derivatvies as required for a full set of derivatives
-        interpolateDerivatives(evaluationPoints);
+        // TODO - use optimiser class get derivatives function
+        generateDerivatives();
 
         auto stop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(stop - start);
-        cout << "number of derivatives calculated via fd: " << evaluationPoints.size() << endl;
+//        cout << "number of derivatives calculated via fd: " << evaluationPoints.size() << endl;
         cout << "calc derivatives took: " << linDuration.count() / 1000000.0f << " s\n";
 
         // STEP 2 - Backwards Pass to calculate optimal control gradient update
@@ -188,102 +181,6 @@ std::vector<MatrixXd> gradDescent::optimise(int initialDataIndex, std::vector<Ma
     cout << " ---------------- optimisation complete -------------------" << endl;
 
     return optimisedControls;
-}
-
-std::vector<int> gradDescent::generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
-    // Loop through the trajectory and decide what indices should be evaluated via finite differencing
-    std::vector<int> evaluationWaypoints;
-    int counter = 0;
-    int numEvals = horizonLength / intervalSize;
-
-    evaluationWaypoints.push_back(counter);
-
-    // set-interval method
-    if(setIntervalMethod){
-        for(int i = 0; i < numEvals; i++){
-            evaluationWaypoints.push_back(i * intervalSize);
-        }
-    }
-        // adaptive-interval method
-    else{
-
-    }
-    evaluationWaypoints.push_back(horizonLength);
-
-    return evaluationWaypoints;
-}
-
-void gradDescent::getDerivativesAtSpecifiedIndices(std::vector<int> indices){
-    activeDifferentiator->initModelForFiniteDifferencing();
-
-    #pragma omp parallel for
-    for(int i = 0; i < indices.size(); i++){
-
-        int index = indices[i];
-        MatrixXd l_uu;
-        MatrixXd l_xx;
-        bool terminal = false;
-        if(index == horizonLength){
-            terminal = true;
-        }
-        activeDifferentiator->getDerivatives(A[i], B[i], l_x[i], l_xx, l_u[i], l_uu, false, index, terminal);
-
-    }
-
-    activeDifferentiator->resetModelAfterFiniteDifferencing();
-
-    #pragma omp parallel for
-    for(int i = 0; i < horizonLength; i++){
-        MatrixXd l_uu(num_ctrl, num_ctrl);
-        MatrixXd l_xx(2*dof, 2*dof);
-        if(i == 0){
-            activeModelTranslator->costDerivatives(X_old[0], U_old[0], X_old[0], U_old[0], l_x[i], l_xx, l_u[i], l_uu, false);
-        }
-        else{
-            activeModelTranslator->costDerivatives(X_old[i], U_old[i], X_old[i-1], U_old[i-1], l_x[i], l_xx, l_u[i], l_uu, false);
-        }
-
-    }
-
-    MatrixXd l_uu(num_ctrl, num_ctrl);
-    MatrixXd l_xx(2*dof, 2*dof);
-    activeModelTranslator->costDerivatives(X_old[horizonLength], U_old[horizonLength - 1], X_old[horizonLength - 1], U_old[horizonLength - 1],
-                                           l_x[horizonLength], l_xx, l_u[horizonLength], l_uu, true);
-}
-
-void gradDescent::interpolateDerivatives(std::vector<int> calculatedIndices){
-
-    // Interpolate all the derivatvies that were not calculated via finite differencing
-    for(int t = 0; t < calculatedIndices.size()-1; t++){
-
-        MatrixXd addA(2*dof, 2*dof);
-        MatrixXd addB(2*dof, num_ctrl);
-        int nextInterpolationSize = calculatedIndices[t+1] - calculatedIndices[t];
-        int startIndex = calculatedIndices[t];
-
-        MatrixXd startA = A[t].replicate(1, 1);
-        MatrixXd endA = A[t + 1].replicate(1, 1);
-        MatrixXd diffA = endA - startA;
-        addA = diffA / nextInterpolationSize;
-
-        MatrixXd startB = B[t].replicate(1, 1);
-        MatrixXd endB = B[t + 1].replicate(1, 1);
-        MatrixXd diffB = endB - startB;
-        addB = diffB / nextInterpolationSize;
-
-
-        // Interpolate A and B matrices
-        for(int i = 0; i < nextInterpolationSize; i++){
-            f_x[startIndex + i] = A[t].replicate(1,1) + (addA * i);
-            f_u[startIndex + i] = B[t].replicate(1,1) + (addB * i);
-        }
-    }
-
-    f_x[horizonLength - 1] = f_x[horizonLength - 2].replicate(1,1);
-    f_u[horizonLength - 1] = f_u[horizonLength - 2].replicate(1,1);
-
-    f_x[horizonLength] = f_x[horizonLength - 1].replicate(1,1);
-    f_u[horizonLength] = f_u[horizonLength - 1].replicate(1,1);
 }
 
 void gradDescent::backwardsPass(){
@@ -370,13 +267,13 @@ double gradDescent::forwardsPass(double oldCost, bool &costReduced){
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, true);
+                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
             }
 
-            newCost += (newStateCost * MUJOCO_DT);
+            newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
@@ -479,13 +376,13 @@ double gradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, true);
+                newStateCost = activeModelTranslator->costFunction(i+1, true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(Xt, Ut, X_last, U_last, false);
+                newStateCost = activeModelTranslator->costFunction(i+1, false);
             }
 
-            newCosts[i] += (newStateCost * MUJOCO_DT);
+            newCosts[i] += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
 
             activePhysicsSimulator->stepSimulator(1, i+1);
 

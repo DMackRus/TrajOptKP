@@ -14,22 +14,23 @@
 #include <chrono>
 #include <random>
 
-#define POSE_DOFS       6
-#define MUJOCO_DT   0.004
 #define PI          3.14152
 
 struct robot{
     std::string name;
     std::vector<std::string> jointNames;
-    int numActuators;
+    std::vector<std::string> actuatorNames;
     bool torqueControlled;
     std::vector<double> torqueLimits;
     std::vector<double> startPos;
     std::vector<double> goalPos;
     std::vector<double> jointPosCosts;
     std::vector<double> jointVelCosts;
+    std::vector<double> terminalJointPosCosts;
+    std::vector<double> terminalJointVelCosts;
     std::vector<double> jointControlCosts;
     std::vector<double> jointJerkThresholds;
+    std::vector<double> magVelThresholds;
 };
 
 struct bodyStateVec{
@@ -46,6 +47,24 @@ struct bodyStateVec{
     double angularVelCost[3];
     double linearJerkThreshold[3];
     double angularJerkThreshold[3];
+    double linearMagVelThreshold[3];
+    double angularMagVelThreshold[3];
+};
+
+struct task{
+    std::vector<robot> robots;
+    std::vector<bodyStateVec> bodiesStates;
+    double modelTimeStep;
+    std::string modelName;
+    std::string modelFilePath;
+    std::string keypointMethod;
+    int minN;
+    int maxN;
+    std::vector<double> jerkThresholds;
+    std::vector<double> acellThresholds;
+    double iterativeErrorThreshold;
+    std::vector<double> magVelThresholds;
+
 };
 
 struct stateVectorList{
