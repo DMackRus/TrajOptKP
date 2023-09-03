@@ -1,7 +1,7 @@
 modelFile: "/mujoco_models/walker.xml"
 modelName: "/walker"
 timeStep: 0.005
-keypointMethod: "adaptive_jerk"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 minN: 1
 maxN: 5
 iterativeErrorThreshold: 1
@@ -15,8 +15,8 @@ robots:
     goalPos: [0, 0, 0, 0, 0, 0, 0, 0, 0]
     jointPosCosts: [1, 0, 1, 0, 0, 0, 0, 0, 0]
     jointVelCosts: [0, 1, 0, 0, 0, 0, 0, 0, 0]
-    terminalJointPosCosts: [ 100, 0, 10, 0, 0, 0, 0, 0, 0 ]
+    terminalJointPosCosts: [ 10, 0, 1, 0, 0, 0, 0, 0, 0 ]
     terminalJointVelCosts: [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
     jointControlCosts: [0, 0, 0, 0, 0, 0]
     jointJerkThresholds: [0.1, 0.02, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-    magVelThresholds: [1.0, 1.0, 1.0, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+    magVelThresholds: [1.0, 1.0, 1.0, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]

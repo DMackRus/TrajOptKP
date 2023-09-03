@@ -70,6 +70,7 @@ void generateTestScenes();
 void keyboardControl();
 
 void generateTestingData_MPC();
+void generateTestingData_MPCHorizons();
 void generateTestingData();
 void generateFilteringData();
 
@@ -78,7 +79,7 @@ void genericTesting();
 int main(int argc, char **argv) {
     cout << "program started \n";
     // TODO - figure out what this does
-    omp_set_dynamic(0);     // Explicitly disable dynamic teams
+//    omp_set_dynamic(0);     // Explicitly disable dynamic teams
     std::string optimiser;
     int mode;
 
@@ -158,7 +159,8 @@ int main(int argc, char **argv) {
     }
 
     if(mode == GENERATE_TESTING_DATA){
-        generateTestingData_MPC();
+        generateTestingData_MPCHorizons();
+//        generateTestingData_MPC();
 //        generateTestingData();
         return 1;
     }
@@ -247,7 +249,7 @@ int main(int argc, char **argv) {
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1000, 1, 50);
+        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1200, 1, 30);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -947,9 +949,8 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 }
 
 void generateTestingData_MPC(){
-    //    int configs[3] = {noClutter, lowClutter, heavyClutter};
-    int configs[1] = {heavyClutter};
-
+    playback = false;
+    mpcVisualise = false;
 
     // start timer here
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -983,11 +984,11 @@ void generateTestingData_MPC(){
         std::vector<std::vector<double>> avgPercentDerivs;
         std::vector<double> avgPercentDerivsRow;
 
-        std::vector<std::string> methodNames = {"baseline", "SI2", "adapJerk"};
+        std::vector<std::string> methodNames = {"baseline", "SI5", "SI20", "adapJerk", "iter_error", "magvel"};
         int numMethods = methodNames.size();
-        std::vector<string> keypointMethods = {"setInterval", "setInterval", "adaptive_jerk"};
-        std::vector<int> minN = {1, 2, 1};
-        std::vector<int> maxN = {1, 2, 5};
+        std::vector<string> keypointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
+        std::vector<int> minN = {1, 5, 20, 1, 1, 1};
+        std::vector<int> maxN = {1, 2, 5, 5, 5, 5};
 
         std::vector<double> targetVelocities;
         double minTarget = 0.1;
@@ -1062,7 +1063,7 @@ void generateTestingData_MPC(){
                 activeOptimiser->setDerivativeInterpolator(currentInterpolator);
 
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
-                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1800, 1, 50);
+                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1000, 1, 50);
 
                 finalCostsRow.push_back(finalCost);
                 avgHZRow.push_back(avgHz);
@@ -1091,6 +1092,147 @@ void generateTestingData_MPC(){
         yamlReader->saveResultsData_MPC(activeModelTranslator->modelName, methodNames, finalCosts, avgHzs,
                                         avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
     }
+}
+
+void generateTestingData_MPCHorizons(){
+    playback = false;
+    mpcVisualise = false;
+
+    // start timer here
+    auto startTime = std::chrono::high_resolution_clock::now();
+
+    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
+
+    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+    yamlReader->readOptimisationSettingsFile(opt_iLQR);
+    iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
+                                                       activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
+                                                       yamlReader);
+    activeOptimiser = iLQROptimiser;
+
+    // ------------------------- data storage -------------------------------------
+    std::vector<std::vector<double>> finalCosts;
+    std::vector<double> finalCostsRow;
+
+    std::vector<std::vector<double>> avgHzs;
+    std::vector<double> avgHZRow;
+
+    std::vector<std::vector<double>> avgTimeForDerivs;
+    std::vector<double> avgTimeForDerivsRow;
+
+    std::vector<std::vector<double>> avgTimeBP;
+    std::vector<double> avgTimeBPRow;
+
+    std::vector<std::vector<double>> avgTimeFP;
+    std::vector<double> avgTimeFPRow;
+
+    std::vector<std::vector<double>> avgPercentDerivs;
+    std::vector<double> avgPercentDerivsRow;
+
+    std::vector<int> horizons = {2, 5, 10, 20, 30, 40, 50};
+    std::vector<std::string> methodNames;
+    int numMethods = horizons.size();
+
+    for(int i = 0; i < horizons.size(); i++){
+        methodNames.push_back(std::to_string(horizons[i]));
+    }
+
+    std::vector<double> targetVelocities;
+    double minTarget = 0.1;
+    double maxTarget = 0.3;
+    int numTests = 50;
+    double currentVel = minTarget;
+
+    for(int i = 0; i < numTests; i++){
+        targetVelocities.push_back(currentVel);
+        currentVel += (maxTarget - minTarget) / (numTests - 1);
+    }
+
+    auto startTimer = std::chrono::high_resolution_clock::now();
+    activeOptimiser->verboseOutput = false;
+
+    for (int i = 0; i < targetVelocities.size(); i++) {
+        cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
+
+        // Loop through our interpolating derivatives methods
+        finalCostsRow.clear();
+        avgHZRow.clear();
+        avgTimeForDerivsRow.clear();
+        avgTimeBPRow.clear();
+        avgTimeFPRow.clear();
+        avgPercentDerivsRow.clear();
+
+        MatrixXd startStateVector;
+        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+
+        yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector,
+                                     activeModelTranslator->X_desired);
+
+        // Walker model where were trying to match a velocity
+        if(task == walker){
+            activeModelTranslator->X_desired(10) = targetVelocities[i];
+        }
+
+        activeModelTranslator->X_start = startStateVector;
+        activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
+
+        if(activeModelTranslator->activePhysicsSimulator->checkIfDataIndexExists(0) == false){
+            activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
+        }
+
+        // Move the end-effector to a decent starting position
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+        std::vector<MatrixXd> setupControls = activeModelTranslator->createInitSetupControls(1000);
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+
+        for (int j = 0; j < numMethods; j++) {
+            double avgHz = 0.0f;
+            double finalCost = 0.0f;
+            double avgPercentageDerivs = 0.0f;
+            double avgTimeForDerivs = 0.0f;
+            double avgTimeBP = 0.0f;
+            double avgTimeFP = 0.0f;
+
+            cout << "--------------------------------------------------------------------------------\n";
+            cout << "current horizon: " << methodNames[j] << "\n";
+
+            // Setup the keypoint method
+            derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+            currentInterpolator.minN = 1;
+            currentInterpolator.maxN = 5;
+            currentInterpolator.keypoint_method = "iterative_error";
+            activeOptimiser->setDerivativeInterpolator(currentInterpolator);
+
+            activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
+            MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1000, 1, horizons[j]);
+
+            finalCostsRow.push_back(finalCost);
+            avgHZRow.push_back(avgHz);
+            avgTimeForDerivsRow.push_back(avgTimeForDerivs);
+            avgTimeBPRow.push_back(avgTimeBP);
+            avgTimeFPRow.push_back(avgTimeFP);
+            avgPercentDerivsRow.push_back(avgPercentageDerivs);
+        }
+
+        // New row of data added
+        finalCosts.push_back(finalCostsRow);
+        avgHzs.push_back(avgHZRow);
+        avgTimeForDerivs.push_back(avgTimeForDerivsRow);
+        avgTimeBP.push_back(avgTimeBPRow);
+        avgTimeFP.push_back(avgTimeFPRow);
+        avgPercentDerivs.push_back(avgPercentDerivsRow);
+
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTimer).count();
+
+        cout << "Time taken so far: " << duration/ 1000.0f << " s" << endl;
+    }
+    // Save data to csv
+    cout << "save data to file\n";
+    yamlReader->saveResultsData_MPC(activeModelTranslator->modelName, methodNames, finalCosts, avgHzs,
+                                    avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
+
 }
 
 void keyboardControl(){

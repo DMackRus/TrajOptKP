@@ -149,6 +149,13 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
     }
     keypoints.push_back(oneRow);
 
+    // For the trivial case of horizon == 2, we only need to evaluate the start and end points
+    if(horizonLength == 2){
+        keypoints.push_back(oneRow);
+        return keypoints;
+
+    }
+
     if(activeDerivativeInterpolator.keypoint_method == "setInterval"){
         for(int i = 1; i < horizonLength; i++){
 
@@ -282,7 +289,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
             for(int j = 0; j < listOfIndicesCheck.size(); j++) {
 
                 int midIndex = (listOfIndicesCheck[j].startIndex + listOfIndicesCheck[j].endIndex) / 2;
-//                cout << "index tuple: " << listOfIndicesCheck[j].startIndex << " " << listOfIndicesCheck[j].endIndex << endl;
+//                cout <<"dof: " << i <<  ": index tuple: " << listOfIndicesCheck[j].startIndex << " " << listOfIndicesCheck[j].endIndex << endl;
                 bool approximationGood = checkDoFColumnError(listOfIndicesCheck[j], i);
 
                 if (!approximationGood) {
@@ -295,7 +302,8 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
                     tuple2.endIndex = listOfIndicesCheck[j].endIndex;
                     subListIndices.push_back(tuple1);
                     subListIndices.push_back(tuple2);
-                } else {
+                }
+                else{
                     subListWithMidpoints.push_back(listOfIndicesCheck[j].startIndex);
                     subListWithMidpoints.push_back(midIndex);
                     subListWithMidpoints.push_back(listOfIndicesCheck[j].endIndex);
@@ -304,7 +312,6 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
 
             if(allChecksComplete){
                 binsComplete[i] = true;
-//                evalPoints.push_back(subListWithMidpoints);
                 subListWithMidpoints.clear();
             }
 
@@ -333,12 +340,12 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
     }
 
     // Sort list into order
-    for(int i = 0; i < dof; i++){
+    for(int i = 0; i < horizonLength; i++){
         std::sort(keyPoints[i].begin(), keyPoints[i].end());
     }
 
     // Remove duplicates
-    for(int i = 0; i < dof; i++){
+    for(int i = 0; i < horizonLength; i++){
         keyPoints[i].erase(std::unique(keyPoints[i].begin(), keyPoints[i].end()), keyPoints[i].end());
     }
 
@@ -362,7 +369,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
     std::vector<double> lastVelDirection = std::vector<double>(dof, 0);
 
     for(int i = 0; i < dof; i++){
-        lastVelValue[i] = velProfile[i](0, 0);
+        lastVelValue[i] = velProfile[0](i, 0);
     }
 
     // Loop over the velocity dofs
