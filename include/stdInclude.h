@@ -42,9 +42,13 @@ struct bodyStateVec{
     double goalLinearPos[3];
     double goalAngularPos[3];
     double linearPosCost[3];
+    double terminalLinearPosCost[3];
     double linearVelCost[3];
+    double terminalLinearVelCost[3];
     double angularPosCost[3];
+    double terminalAngularPosCost[3];
     double angularVelCost[3];
+    double terminalAngularVelCost[3];
     double linearJerkThreshold[3];
     double angularJerkThreshold[3];
     double linearMagVelThreshold[3];

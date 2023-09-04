@@ -135,8 +135,10 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
         for(int j = 0; j < 3; j++){
             if(myStateVector.bodiesStates[i].activeLinearDOF[j]){
                 Q.diagonal()[Q_index + activeDofCounter, Q_index + activeDofCounter] = myStateVector.bodiesStates[i].linearPosCost[j];
+                Q_terminal.diagonal()[Q_index + activeDofCounter, Q_index + activeDofCounter] = myStateVector.bodiesStates[i].terminalLinearPosCost[j];
 
                 Q.diagonal()[Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof] = myStateVector.bodiesStates[i].linearVelCost[j];
+                Q_terminal.diagonal()[Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof] = myStateVector.bodiesStates[i].terminalLinearVelCost[j];
 
                 X_desired(Q_index + j, 0) = myStateVector.bodiesStates[i].goalLinearPos[j];
                 X_desired(Q_index + j + dof, 0) = 0.0f;
@@ -152,8 +154,10 @@ void modelTranslator::initModelTranslator(std::string yamlFilePath){
         for(int j = 0; j < 3; j++){
             if(myStateVector.bodiesStates[i].activeAngularDOF[j]){
                 Q.diagonal()[Q_index + activeDofCounter, Q_index + activeDofCounter] = myStateVector.bodiesStates[i].angularPosCost[j];
+                Q_terminal.diagonal()[Q_index + activeDofCounter, Q_index + activeDofCounter] = myStateVector.bodiesStates[i].terminalAngularPosCost[j];
 
                 Q.diagonal()[Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof] = myStateVector.bodiesStates[i].angularVelCost[j];
+                Q_terminal.diagonal()[Q_index + activeDofCounter + dof, Q_index + activeDofCounter + dof] = myStateVector.bodiesStates[i].terminalAngularVelCost[j];
 
                 X_desired(Q_index + j, 0) = myStateVector.bodiesStates[i].goalAngularPos[j];
                 X_desired(Q_index + j + dof, 0) = 0.0f;
