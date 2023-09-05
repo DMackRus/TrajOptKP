@@ -61,13 +61,7 @@ public:
 
     int numIterationsForConvergence;
 
-    // ----------- Derivative interpolation settings -----------------------
-//    int min_interval = 1;
-//    int max_interval = 100;
-//    double magVelChangeThreshold = 2;
-//    double iterativeErrorThreshold = 0.0001;
-
-    bool filteringMatrices = true;
+    std::string filteringMethod = "none";
 
     std::vector<double> time_getDerivs_ms;
     double avgTime_getDerivs_ms = 0.0f;
@@ -116,7 +110,6 @@ protected:
     // Generate keypoints we will calculate derivatives at
     std::vector<std::vector<int>> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
     std::vector<std::vector<int>> generateKeyPointsIteratively();
-    bool checkOneMatrixError(indexTuple indices);
     bool checkDoFColumnError(indexTuple indices, int dof);
     std::vector<std::vector<int>> generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile);
     std::vector<std::vector<int>> generateKeyPointsMagVelChange(std::vector<MatrixXd> velProfile);
@@ -129,8 +122,10 @@ protected:
     void getCostDerivs();
     void interpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs);
 
-    void filterMatrices();
-    std::vector<double> filterIndividualValue(std::vector<double> unfiltered);
+    // Filtering
+    void filterDynamicsMatrices();
+    std::vector<double> filterIndValFIRFilter(std::vector<double> unfiltered, std::vector<double> filterCoefficients);
+    std::vector<double> filterIndValLowPass(std::vector<double> unfiltered);
 
 
 private:

@@ -54,7 +54,6 @@ void optimiser::setDerivativeInterpolator(derivative_interpolator _derivativeInt
 }
 
 void optimiser::generateDerivatives(){
-    auto start = high_resolution_clock::now();
     // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
     // generate the dynamics evaluation waypoints
     std::vector<std::vector<int>> keyPoints = generateKeyPoints(X_old, U_old);
@@ -106,6 +105,7 @@ void optimiser::generateDerivatives(){
     }
 
     double percentDerivsCalculated = ((double) totalNumColumnsDerivs / (double)numberOfTotalDerivs) * 100.0f;
+    percentDerivsPerIter.push_back(percentDerivsCalculated);
     if(verboseOutput){
         cout << "percentage of derivs calculated: " << percentDerivsCalculated << endl;
     }
@@ -113,8 +113,8 @@ void optimiser::generateDerivatives(){
 //        A.resize(initControls.size());
 //        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 1);
 
-    if(filteringMatrices){
-        filterMatrices();
+    if(filteringMethod != "none"){
+        filterDynamicsMatrices();
     }
 
 //        A.resize(initControls.size());
@@ -132,12 +132,7 @@ void optimiser::generateDerivatives(){
 
 //    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
 
-    auto stop = high_resolution_clock::now();
-    auto linDuration = duration_cast<microseconds>(stop - start);
-    time_getDerivs_ms.push_back(linDuration.count() / 1000.0f);
 
-    percentDerivsPerIter.push_back(percentDerivsCalculated);
-    timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 }
 
 std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
@@ -723,9 +718,6 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, 
             }
         }
     }
-    // TODO - remove this????
-//    l_xx[horizonLength] = l_xx[horizonLength - 1].replicate(1, 1);
-//    l_x[horizonLength] = l_x[horizonLength - 1].replicate(1, 1);
 }
 
 std::vector<MatrixXd> optimiser::generateJerkProfile(){
@@ -796,7 +788,7 @@ std::vector<MatrixXd> optimiser::generateVelProfile(){
     return velProfile;
 }
 
-void optimiser::filterMatrices(){
+void optimiser::filterDynamicsMatrices() {
 
     for(int i = dof; i < 2 * dof; i++){
         for(int j = 0; j < 2 * dof; j++){
@@ -806,7 +798,19 @@ void optimiser::filterMatrices(){
             for(int k = 0; k < horizonLength; k++){
                 unfiltered.push_back(A[k](i, j));
             }
-            filtered = filterIndividualValue(unfiltered);
+
+            if(filteringMethod == "low_pass"){
+                filtered = filterIndValLowPass(unfiltered);
+            }
+            else if(filteringMethod == "FIR"){
+                std::vector<double> filterCoefficients = {0.1, 0.15, 0.5, 0.15, 0.1};
+                filtered = filterIndValFIRFilter(unfiltered, filterCoefficients);
+            }
+            else{
+                std::cerr << "Filtering method not recognised" << std::endl;
+            }
+
+
             for(int k = 0; k < horizonLength; k++){
                 A[k](i, j) = filtered[k];
             }
@@ -814,7 +818,7 @@ void optimiser::filterMatrices(){
     }
 }
 
-std::vector<double> optimiser::filterIndividualValue(std::vector<double> unfiltered){
+std::vector<double> optimiser::filterIndValLowPass(std::vector<double> unfiltered){
     double yn1 = unfiltered[0];
     double xn1 = unfiltered[0];
     double a = 0.25;
@@ -830,6 +834,24 @@ std::vector<double> optimiser::filterIndividualValue(std::vector<double> unfilte
         yn1 = yn;
 
         filtered.push_back(yn);
+    }
+    return filtered;
+}
+
+std::vector<double> optimiser::filterIndValFIRFilter(std::vector<double> unfiltered, std::vector<double> filterCoefficients){
+    std::vector<double> filtered;
+
+    for(int i = 0; i < unfiltered.size(); i++){
+        filtered.push_back(0);
+    }
+
+    for(int i = 0; i < unfiltered.size(); i++){
+        for(int j = 0; j < filterCoefficients.size(); j++){
+            if(i - j >= 0){
+                filtered[i] += unfiltered[i - j] * filterCoefficients[j];
+            }
+        }
+
     }
     return filtered;
 }

@@ -48,8 +48,7 @@ public:
     std::string optimiser;
     std::string taskInitMode;
     int csvRow = 0;
-    bool filtering = false;
-    bool approximate_backwardsPass = false;
+    std::string filtering = "none";
     bool costDerivsFD = false;
     ofstream fileOutput;
 

@@ -254,7 +254,7 @@ void fileHandler::readSettingsFile(std::string settingsFilePath){
     taskNumber = node["taskNumber"].as<int>();
     taskInitMode = node["taskInitMode"].as<std::string>();
     csvRow = node["csvRow"].as<int>();
-    filtering = node["filtering"].as<bool>();
+    filtering = node["filtering"].as<std::string>();
     costDerivsFD = node["costDerivsFD"].as<bool>();
 
 }
@@ -315,6 +315,7 @@ void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     std::string rootPath = projectParentPath + "/savedTrajecInfo" + filePrefix + "/" + std::to_string(trajecNumber);
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/A_matrices.csv";
+    cout << "filename: " << filename << endl;
     fileOutput.open(filename);
     int dof = A_matrices[0].rows() / 2;
     int num_ctrl = B_matrices[0].cols();

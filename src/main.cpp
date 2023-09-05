@@ -249,7 +249,7 @@ int main(int argc, char **argv) {
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1200, 1, 30);
+        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1200, 50, 600);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -278,7 +278,14 @@ void genericTesting(){
     MatrixXd startStateVector;
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
-    for(int i = 0; i < 1; i++){
+    derivative_interpolator derivInterpolator = activeOptimiser->returnDerivativeInterpolator();
+    derivInterpolator.keypoint_method = "setInterval";
+    derivInterpolator.minN = 1;
+    derivInterpolator.maxN = 1;
+    activeOptimiser->setDerivativeInterpolator(derivInterpolator);
+
+
+    for(int i = 0; i < 100; i++){
 
         yamlReader->loadTaskFromFile(taskPrefix, i, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;

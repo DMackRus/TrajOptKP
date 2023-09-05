@@ -48,7 +48,7 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTransl
 
 
     // Whether to do some low pass filtering over A and B matrices
-    filteringMatrices = activeYamlReader->filtering;
+    filteringMethod = activeYamlReader->filtering;
 
 }
 
@@ -181,9 +181,14 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         numIterationsForConvergence++;
 
         //STEP 1 - If forwards pass changed the trajectory, -
+        auto derivsstart = high_resolution_clock::now();
         if(costReducedLastIter){
             generateDerivatives();
         }
+        auto derivsstop = high_resolution_clock::now();
+        auto linDuration = duration_cast<microseconds>(derivsstop - derivsstart);
+        time_getDerivs_ms.push_back(linDuration.count() / 1000.0f);
+        timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 
         if(saveTrajecInfomation){
 
@@ -306,7 +311,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
     if(saveCostHistory){
         cout << "saving cost history \n";
-        if(filteringMatrices){
+        if(filteringMethod != "none"){
             activeYamlReader->saveCostHistory(costHistory, "filtering", currentTrajecNumber);
         }
         else{

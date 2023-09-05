@@ -15,11 +15,29 @@ void boxSweep::generateRandomGoalAndStartState() {
 MatrixXd boxSweep::returnRandomStartState(){
     MatrixXd randomStartState(stateVectorSize, 1);
 
+    randomStartState << -0.178, 0.7, -0.0593, -1.73, 0, 0.722, -1.6,
+                        0.65, 0,
+                        0, 0, 0, 0, 0, 0, 0,
+                        0, 0;
+
     return randomStartState;
 }
 
 MatrixXd boxSweep::returnRandomGoalState(MatrixXd X0){
     MatrixXd randomGoalState(stateVectorSize, 1);
+
+    double upperBoundX = 0.7;
+    double lowerBoundX = 0.6;
+    double upperBoundY = 0.5;
+    double lowerBoundY = 0.3;
+
+    double randX = randFloat(lowerBoundX, upperBoundX);
+    double randY = randFloat(lowerBoundY, upperBoundY);
+
+    randomGoalState << 0, 0, 0, 0, 0, 0, 0,
+                        randX, randY,
+                        0, 0, 0, 0, 0, 0, 0,
+                        0, 0;
 
     return randomGoalState;
 }
