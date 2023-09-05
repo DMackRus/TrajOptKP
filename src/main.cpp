@@ -558,18 +558,16 @@ void generateTestingData(){
 void generateFilteringData(){
     int setupHorizon = 1000;
     int optHorizon = 2200;
-    int numTests = 1;
+    int numTests = 100;
 
     MatrixXd startStateVector;
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
-    std::vector<std::string> filterTests = {"none", "FIR"};
+    std::vector<std::string> filterTests = {"none", "FIR", "lowpass"};
     derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
     currentInterpolator.keypoint_method = "setInterval";
     currentInterpolator.minN = 1;
     activeOptimiser->setDerivativeInterpolator(currentInterpolator);
-
-
 
     for (int i = 0; i < numTests; i++) {
         yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector,
@@ -598,12 +596,7 @@ void generateFilteringData(){
                                                                                 optHorizon);
             // Save cost history to file
             std::string filePrefix;
-            if(filterTests[j] == "none"){
-                filePrefix = activeModelTranslator->modelName + "/unfiltered/";
-            }
-            else{
-                filePrefix = activeModelTranslator->modelName + "/filtered/";
-            }
+            filePrefix = activeModelTranslator->modelName + "/" + filterTests[j] + "/";
 
             yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
 

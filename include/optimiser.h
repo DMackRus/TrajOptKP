@@ -94,6 +94,8 @@ public:
     int horizonLength;
 
     std::vector<double> costHistory;
+    double lowPassACoefficient = 0.25;
+    std::vector<double> FIRCoefficients = {0.1, 0.15, 0.5, 0.15, 0.1};
 
 
 protected:

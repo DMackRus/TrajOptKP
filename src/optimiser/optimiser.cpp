@@ -803,8 +803,7 @@ void optimiser::filterDynamicsMatrices() {
                 filtered = filterIndValLowPass(unfiltered);
             }
             else if(filteringMethod == "FIR"){
-                std::vector<double> filterCoefficients = {0.1, 0.15, 0.5, 0.15, 0.1};
-                filtered = filterIndValFIRFilter(unfiltered, filterCoefficients);
+                filtered = filterIndValFIRFilter(unfiltered, FIRCoefficients);
             }
             else{
                 std::cerr << "Filtering method not recognised" << std::endl;
@@ -821,14 +820,12 @@ void optimiser::filterDynamicsMatrices() {
 std::vector<double> optimiser::filterIndValLowPass(std::vector<double> unfiltered){
     double yn1 = unfiltered[0];
     double xn1 = unfiltered[0];
-    double a = 0.25;
 
     std::vector<double> filtered;
     for(int i = 0; i < unfiltered.size(); i++){
         double xn = unfiltered[i];
-//        double yn = -0.7254*yn1 + 0.8627*xn + 0.8627*xn1;
 
-        double yn = ((1-a)*yn1) + a*((xn + xn1)/2);
+        double yn = ((1-lowPassACoefficient)*yn1) + lowPassACoefficient*((xn + xn1)/2);
 
         xn1 = xn;
         yn1 = yn;
