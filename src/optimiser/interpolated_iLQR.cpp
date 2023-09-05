@@ -309,16 +309,16 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, activeYamlReader->csvRow, horizonLength);
     }
 
-    if(saveCostHistory){
-        cout << "saving cost history \n";
-        if(filteringMethod != "none"){
-            activeYamlReader->saveCostHistory(costHistory, "filtering", currentTrajecNumber);
-        }
-        else{
-            activeYamlReader->saveCostHistory(costHistory, "no_filtering", currentTrajecNumber);
-        }
-
-    }
+//    if(saveCostHistory){
+//        cout << "saving cost history \n";
+//        if(filteringMethod != "none"){
+//            activeYamlReader->saveCostHistory(costHistory, "filtering", currentTrajecNumber);
+//        }
+//        else{
+//            activeYamlReader->saveCostHistory(costHistory, "no_filtering", currentTrajecNumber);
+//        }
+//
+//    }
 
     return optimisedControls;
 }

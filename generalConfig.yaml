@@ -8,12 +8,12 @@ optimiser: "interpolated_iLQR"
 # locomotion = 11
 # spherePush = 12
 # boxSweep = 13
-taskNumber: 1
+taskNumber: 3
 # init control = 0, optimise once = 1, MPCContinous = 2, MPC_until_completion = 3, generateTestScenes = 4, generateTestingData = 5, generateFilteringData = 6
 # generic testing = 9
-displayMode: 1
+displayMode: 6
 # Loadmodes can be, "random", "fromCSV", "fromYAML"
 taskInitMode: "fromCSV"
 csvRow: 0
-filtering: "none"
+filtering: "FIR"
 costDerivsFD: false

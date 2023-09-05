@@ -1,5 +1,5 @@
 modelFile: "/mujoco_models/Acrobot/double_pendulum.xml"
-modelName: "/doublePendulum"
+modelName: "/double_pendulum"
 timeStep: 0.004
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 minN: 2

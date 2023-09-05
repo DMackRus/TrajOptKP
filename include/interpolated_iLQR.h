@@ -15,18 +15,12 @@ public:
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
 
     bool backwardsPass_Quu_reg();
-    bool backwardsPass_Quu_reg_parallel();
-    bool backwardsPass_Quu_skips();
     bool isMatrixPD(Ref<MatrixXd> matrix);
 
     double forwardsPass(double oldCost);
     double forwardsPassParallel(double oldCost);
 
-    std::vector<double> costHistory;
-    int numIters = 0;
-
     bool saveTrajecInfomation = false;
-    bool saveCostHistory = false;
 
 private:
     double lambda = 0.1;

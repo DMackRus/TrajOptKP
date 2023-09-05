@@ -93,6 +93,8 @@ public:
 
     int horizonLength;
 
+    std::vector<double> costHistory;
+
 
 protected:
     std::shared_ptr<modelTranslator> activeModelTranslator;
