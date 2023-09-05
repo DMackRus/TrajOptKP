@@ -277,6 +277,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
     for(int i = 0; i < time_getDerivs_ms.size(); i++){
         avgTime_getDerivs_ms += time_getDerivs_ms[i];
+    }
+
+    for(int i = 0; i < percentDerivsPerIter.size(); i++){
         avgPercentDerivs += percentDerivsPerIter[i];
     }
 
@@ -305,20 +308,9 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     }
 
     if(saveTrajecInfomation){
-
         activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, activeYamlReader->csvRow, horizonLength);
     }
 
-//    if(saveCostHistory){
-//        cout << "saving cost history \n";
-//        if(filteringMethod != "none"){
-//            activeYamlReader->saveCostHistory(costHistory, "filtering", currentTrajecNumber);
-//        }
-//        else{
-//            activeYamlReader->saveCostHistory(costHistory, "no_filtering", currentTrajecNumber);
-//        }
-//
-//    }
 
     return optimisedControls;
 }

@@ -428,7 +428,7 @@ void fileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, MatrixXd
 void fileHandler::saveCostHistory(std::vector<double> costHistory, std::string filePrefix, int trajecNumber){
     std::string rootPath = projectParentPath + "/testingData/" + filePrefix;
     mkdir(rootPath.c_str(), 0777);
-    std::string filename = rootPath + "/" + std::to_string(trajecNumber) + ".csv";
+    std::string filename = rootPath + std::to_string(trajecNumber) + ".csv";
     fileOutput.open(filename);
 
     for(int i = 0; i < costHistory.size(); i++){

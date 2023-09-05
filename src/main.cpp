@@ -569,41 +569,46 @@ void generateFilteringData(){
     currentInterpolator.minN = 1;
     activeOptimiser->setDerivativeInterpolator(currentInterpolator);
 
-    for(int j = 0; j < filterTests.size(); j++) {
-        activeOptimiser->filteringMethod = filterTests[j];
-        for (int i = 0; i < numTests; i++) {
+
+
+    for (int i = 0; i < numTests; i++) {
+        yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector,
+                                     activeModelTranslator->X_desired);
+        activeModelTranslator->X_start = startStateVector;
+        activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MASTER_RESET_DATA);
+
+        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+
+        std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+
+
+        for(int j = 0; j < filterTests.size(); j++) {
+            activeOptimiser->filteringMethod = filterTests[j];
             // Load a task from saved tasks
 
-            yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector,
-                                         activeModelTranslator->X_desired);
-            activeModelTranslator->X_start = startStateVector;
-            cout << "starting state: " << startStateVector << endl;
-            cout << "desired state: " << activeModelTranslator->X_desired << endl;
-            activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
-            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
 
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-            std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-            std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(
-                    optHorizon);
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-
-            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE,
+            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0,
                                                                                 initOptimisationControls,
                                                                                 yamlReader->maxIter,
                                                                                 yamlReader->minIter,
                                                                                 optHorizon);
-
             // Save cost history to file
-            yamlReader->saveCostHistory(activeOptimiser->costHistory, "unfiltered", i);
+            std::string filePrefix;
+            if(filterTests[j] == "none"){
+                filePrefix = activeModelTranslator->modelName + "/unfiltered/";
+            }
+            else{
+                filePrefix = activeModelTranslator->modelName + "/filtered/";
+            }
 
-
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+            yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
 
         }
     }
-
 }
 
 void generateTestScenes(){
@@ -630,10 +635,6 @@ void showInitControls(){
     activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-
-    double cost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
-    cout << "cost: " << cost << endl;
-
 
     //Stitch setup and optimisation controls together
 //    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
