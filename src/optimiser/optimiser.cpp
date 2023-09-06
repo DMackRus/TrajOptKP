@@ -70,6 +70,7 @@ void optimiser::generateDerivatives(){
         getCostDerivs();
     }
 
+//    cout << "A[0] " << A[0] << endl;
 //    cout << "A[horizonLength - 1] " << A[horizonLength - 1] << endl;
 
 //    activeYamlReader->generalSaveMatrices(l_x, "l_x");
@@ -129,7 +130,7 @@ void optimiser::generateDerivatives(){
 //    cout << "A[0]: " << endl << A[0] << endl;
 //    cout << "A[1]: " << endl << A[1] << endl;
 //    cout << "A[horizon - 2]" << endl << A[horizonLength - 2] << endl;
-
+//
 //    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
 
 
@@ -575,18 +576,22 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     activePhysicsSimulator->initModelForFiniteDifferencing();
 
     // Loop through keypoints and delete any entries that have no keypoints
-    for(int i = 0; i < keyPoints.size(); i++){
-        if(keyPoints[i].size() == 0){
-            keyPoints.erase(keyPoints.begin() + i);
-            i--;
-        }
-    }
+//    for(int i = 0; i < keyPoints.size(); i++){
+//        if(keyPoints[i].size() == 0){
+//            keyPoints.erase(keyPoints.begin() + i);
+//            i--;
+//        }
+//    }
 
     #pragma omp parallel for
     for(int i = 0; i < keyPoints.size(); i++){
 
         int timeIndex = i;
         std::vector<int> columns = keyPoints[i];
+
+        if(columns.size() == 0){
+            continue;
+        }
 
         bool terminal = false;
         if(timeIndex == horizonLength - 1){

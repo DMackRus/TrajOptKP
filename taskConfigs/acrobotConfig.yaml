@@ -1,7 +1,7 @@
 modelFile: "/mujoco_models/Acrobot/acrobot.xml"
 modelName: "/acrobot"
 timeStep: 0.004
-keypointMethod: "iterative_error"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 minN: 1
 maxN: 5
 iterativeErrorThreshold: 0.00000001

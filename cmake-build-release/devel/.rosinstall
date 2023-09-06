@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/cmake-build-release/devel/setup.sh

@@ -249,7 +249,7 @@ int main(int argc, char **argv) {
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1200, 50, 600);
+        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1200, 1, 50);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -890,9 +890,9 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
             optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, OPT_HORIZON);
             reInitialiseCounter = 0;
-            yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B,
-                                             activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->modelName,
-                                             overallTaskCounter, horizon);
+//            yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B,
+//                                             activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->modelName,
+//                                             overallTaskCounter, horizon);
 
 //                totalOptimisationTime += activeOptimiser->optTime / 1000.0f;
                 timeGettingDerivs.push_back(activeOptimiser->avgTime_getDerivs_ms);
