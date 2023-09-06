@@ -131,7 +131,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     if(verboseOutput) {
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << " ------ " << activeModelTranslator->modelName << " ------ " << endl;
-        cout << "minN " << activeDerivativeInterpolator.minN << "  keypointsMethod: " << activeDerivativeInterpolator.keypoint_method << endl;
+        cout << "minN " << activeDerivativeInterpolator.minN << "  keypointsMethod: " << activeDerivativeInterpolator.keypoint_method;
+        cout << "filtering: " << filteringMethod << endl;
     }
 
 //    // temp

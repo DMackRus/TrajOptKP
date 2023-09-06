@@ -853,3 +853,11 @@ std::vector<double> optimiser::filterIndValFIRFilter(std::vector<double> unfilte
     return filtered;
 }
 
+void optimiser::setFIRFilter(std::vector<double> _FIRCoefficients){
+    FIRCoefficients.clear();
+
+    for(int i = 0; i < _FIRCoefficients.size(); i++){
+        FIRCoefficients.push_back(_FIRCoefficients[i]);
+    }
+}
+

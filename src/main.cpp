@@ -563,7 +563,14 @@ void generateFilteringData(){
     MatrixXd startStateVector;
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
 
-    std::vector<std::string> filterTests = {"none", "FIR", "lowpass"};
+    std::vector<double> lowPassTests = {0.05, 0.1, 0.15, 0.2, 0.25, 0.3};
+    std::vector<std::vector<double>> FIRTests;
+    FIRTests.push_back({0.25, 0.5, 0.25});
+    FIRTests.push_back({0.1, 0.15, 0.5, 0.15, 0.1});
+    FIRTests.push_back({0.05, 0.1, 0.15, 0.3, 0.15, 0.1, 0.05});
+    FIRTests.push_back({0.05, 0.05, 0.15, 0.2, 0.2, 0.2, 0.15, 0.05, 0.05});
+    FIRTests.push_back({0.05, 0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05});
+
     derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
     currentInterpolator.keypoint_method = "setInterval";
     currentInterpolator.minN = 1;
@@ -581,9 +588,31 @@ void generateFilteringData(){
 
         std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
 
+        // Initialise task for optimisation by here
 
-        for(int j = 0; j < filterTests.size(); j++) {
-            activeOptimiser->filteringMethod = filterTests[j];
+        // ---------------- unfiltered tests ------------------------------
+        activeOptimiser->filteringMethod = "none";
+        // Load a task from saved tasks
+
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+        activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
+
+        std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0,
+                                                                            initOptimisationControls,
+                                                                            yamlReader->maxIter,
+                                                                            yamlReader->minIter,
+                                                                            optHorizon);
+        // Save cost history to file
+        std::string filePrefix;
+        filePrefix = activeModelTranslator->modelName + "/none/";
+
+        yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
+
+        // ---------------------- Low pass filter tests ----------------------
+
+        for(int j = 0; j < lowPassTests.size(); j++){
+            activeOptimiser->filteringMethod = "low_pass";
+            activeOptimiser->lowPassACoefficient = lowPassTests[j];
             // Load a task from saved tasks
 
             activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
@@ -596,11 +625,35 @@ void generateFilteringData(){
                                                                                 optHorizon);
             // Save cost history to file
             std::string filePrefix;
-            filePrefix = activeModelTranslator->modelName + "/" + filterTests[j] + "/";
+
+            filePrefix = activeModelTranslator->modelName + "/lowPass" + std::to_string(lowPassTests[j]) +"/";
 
             yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
-
         }
+
+        // ---------------------- FIR filter tests ----------------------
+        for(int j = 0; j < FIRTests.size(); j++){
+            activeOptimiser->filteringMethod = "FIR";
+            activeOptimiser->setFIRFilter(FIRTests[j]);
+            // Load a task from saved tasks
+
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
+
+            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0,
+                                                                                initOptimisationControls,
+                                                                                yamlReader->maxIter,
+                                                                                yamlReader->minIter,
+                                                                                optHorizon);
+            // Save cost history to file
+            std::string filePrefix;
+
+            filePrefix = activeModelTranslator->modelName + "/FIR_" + std::to_string(j) +"/";
+
+            yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
+        }
+
+
     }
 }
 
