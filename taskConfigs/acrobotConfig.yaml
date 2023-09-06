@@ -1,10 +1,10 @@
 modelFile: "/mujoco_models/Acrobot/acrobot.xml"
 modelName: "/acrobot"
 timeStep: 0.004
-keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+keypointMethod: "iterative_error"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 minN: 1
-maxN: 5
-iterativeErrorThreshold: 0.00000001
+maxN: 100
+iterativeErrorThreshold: 0.000000001
 # stable down pos [3.1415, 0], half up unstable pos [3.14, 3.14], full up unstable pos [0, 0]
 robots:
   doublePendulum:
@@ -19,5 +19,5 @@ robots:
     terminalJointPosCosts: [10, 10]
     terminalJointVelCosts: [1, 1]
     jointControlCosts: [0.0001]
-    jointJerkThresholds: [0.0001, 0.0001]
-    magVelThresholds: [0.005, 0.005]
+    jointJerkThresholds: [0.0005, 0.001]
+    magVelThresholds: [0.2, 0.2]

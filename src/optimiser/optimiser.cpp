@@ -133,7 +133,6 @@ void optimiser::generateDerivatives(){
 //
 //    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
 
-
 }
 
 std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
@@ -312,11 +311,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
             }
 
             listOfIndicesCheck = subListIndices;
-//        for(int k = 0; k < listOfIndicesCheck.size(); k++){
-//            cout << listOfIndicesCheck[k].startIndex << " " << listOfIndicesCheck[k].endIndex << "\n";
-//        }
             subListIndices.clear();
-
         }
     }
 
@@ -328,12 +323,16 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
 //            cout << "Computed key points for dof " << j << " are: ";
             for(int k = 0; k < computedKeyPoints[j].size(); k++){
                 // If the current index is a computed key point
+//                cout << computedKeyPoints[j][k] << " ";
                 if(i == computedKeyPoints[j][k]){
                     keyPoints[i].push_back(j);
                 }
             }
+//            cout << "\n";
         }
     }
+
+
 
     // Sort list into order
     for(int i = 0; i < horizonLength; i++){

@@ -132,13 +132,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << " ------ " << activeModelTranslator->modelName << " ------ " << endl;
         cout << "minN " << activeDerivativeInterpolator.minN << "  keypointsMethod: " << activeDerivativeInterpolator.keypoint_method;
-        cout << "filtering: " << filteringMethod << endl;
+        cout << " filtering: " << filteringMethod << endl;
     }
-
-//    // temp
-//    for(int i = 0; i < activeDerivativeInterpolator.jerkThresholds.size(); i++){
-//        cout << "jerk threshold: " << activeDerivativeInterpolator.jerkThresholds[i] << endl;
-//    }
 
     auto optStart = high_resolution_clock::now();
     
@@ -174,7 +169,6 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     auto duration = duration_cast<microseconds>(time_end - time_start);
 //    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
     initialCost = oldCost;
-//    cout << "initial cost: " << oldCost << endl;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     // Optimise for a set number of iterations

@@ -62,24 +62,6 @@ std::vector<MatrixXd> boxSweep::createInitOptimisationControls(int horizonLength
     displayBodyPose.position[2] = 0.0f;
     activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 
-    // Copy master into main
-//    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-//    MatrixXd initControl;
-//    initControl.resize(num_ctrl,1);
-//
-//    // empty init controls
-//    for(int i = 0; i < horizonLength; i++){
-//        // get gravity compensation control
-//        std::vector<double> gravityCompensationControl;
-//        activePhysicsSimulator->getRobotJointsGravityCompensaionControls("panda", gravityCompensationControl, MAIN_DATA_STATE);
-//
-//        for(int j = 0; j < num_ctrl; j++){
-//            initControl(j) = gravityCompensationControl[j];
-//        }
-//
-//        initControls.push_back(initControl);
-//    }
-
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
     m_point goalPos;
@@ -107,7 +89,6 @@ std::vector<MatrixXd> boxSweep::createInitOptimisationControls(int horizonLength
 void boxSweep::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
     const std::string goalObject = "bigBox";
     const std::string EE_name = "franka_gripper";
-//    const std::string EE_name = "hand";
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
@@ -157,7 +138,7 @@ void boxSweep::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd,
 //    mainWayPoints.push_back(mainWayPoint);
 //    wayPointsTiming.push_back(3 * horizon / 4);
 
-    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * activePhysicsSimulator->returnModelTimeStep());
+    float maxDistTravelled = 0.01 * ((5.0f/6.0f) * horizon * activePhysicsSimulator->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
