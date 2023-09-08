@@ -1147,11 +1147,17 @@ void generateTestingData_MPCHorizons(){
         horizonNames.push_back(std::to_string(horizons[i]));
     }
 
-    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "adaptive_jerk", "iterative_error", "magvel_change"};
+//    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "adaptive_jerk", "iterative_error", "magvel_change"};
+//    int numMethods = methodNames.size();
+//    std::vector<int> minN = {1, 5, 10, 1, 1, 1};
+//    std::vector<int> maxN = {1, 5, 10, 5, 5, 5};
+//    std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
+
+    std::vector<std::string> methodNames = {"iterative_error"};
     int numMethods = methodNames.size();
-    std::vector<int> minN = {1, 5, 10, 1, 1, 1};
-    std::vector<int> maxN = {1, 5, 10, 5, 5, 5};
-    std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
+    std::vector<int> minN = {1};
+    std::vector<int> maxN = {5};
+    std::vector<std::string> keypoint_method = {"iterative_error"};
 
     std::vector<double> targetVelocities;
     double minTarget = 0.1;

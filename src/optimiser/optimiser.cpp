@@ -243,7 +243,6 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsAdaptive(std::vector<M
             }
         }
     }
-
     return keypoints;
 }
 
@@ -258,7 +257,6 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
     for(int i = 0; i < dof; i++){
         binsComplete[i] = false;
         computedKeyPoints.push_back(std::vector<int>());
-
     }
 
     for(int i = 0; i < horizonLength; i++){
@@ -440,9 +438,6 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     bool midIndexExists = false;
     bool endIndexExists = false;
 
-    int counterTooSmall = 0;
-    int counterTooLarge = 0;
-
     for(int i = 0; i < computedKeyPoints[dofIndex].size(); i++){
         if(computedKeyPoints[dofIndex][i] == indices.startIndex){
             startIndexExists = true;
@@ -461,39 +456,22 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     cols.push_back(dofIndex);
 
     if(!startIndexExists){
-//        if(dofIndex == 0){
-//            cout << "startIndex is being calced" << "\n";
-//        }
         activeDifferentiator->getDerivatives(A[indices.startIndex], B[indices.startIndex], cols, blank1, blank2, blank3, blank4, false, indices.startIndex, false);
         computedKeyPoints[dofIndex].push_back(indices.startIndex);
     }
 
     if(!midIndexExists){
-//        if(dofIndex == 0){
-//            cout << "midIndex is being calced" << "\n";
-//        }
         activeDifferentiator->getDerivatives(A[midIndex], B[midIndex], cols, blank1, blank2, blank3, blank4, false, midIndex, false);
         computedKeyPoints[dofIndex].push_back(midIndex);
     }
 
     if(!endIndexExists){
-//        if(dofIndex == 0){
-//            cout << "endIndex is being calced" << "\n";
-//        }
         activeDifferentiator->getDerivatives(A[indices.endIndex], B[indices.endIndex], cols, blank1, blank2, blank3, blank4, false, indices.endIndex, false);
         computedKeyPoints[dofIndex].push_back(indices.endIndex);
     }
 
     midColumnsApprox[0] = (A[indices.startIndex].block(0, dofIndex, dof*2, 1) + A[indices.endIndex].block(0, dofIndex, dof*2, 1)) / 2;
     midColumnsApprox[1] = (A[indices.startIndex].block(0, dofIndex + dof, dof*2, 1) + A[indices.endIndex].block(0, dofIndex + dof, dof*2, 1)) / 2;
-
-//    if(dofIndex == 0){
-//        cout << "matrixMidTrue: \n" << A[midIndex].block(0, dofIndex, dof*2, 1) << "\n";
-//        cout << "matrixMidApprox: \n" << midColumnsApprox[0] << "\n";
-//
-//        cout << "matrixMidTrue: \n" << A[midIndex].block(0, dofIndex + dof, dof*2, 1) << "\n";
-//        cout << "matrixMidApprox: \n" << midColumnsApprox[1] << "\n";
-//    }
 
 
     bool approximationGood = false;
@@ -506,22 +484,8 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
         for(int j = dof; j < activeModelTranslator->stateVectorSize; j++){
             double sqDiff = pow((A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0)),2);
 
-//            double absdiff = abs(A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0));
-//            if(sqDiff > 0.1){
-//                sqDiff = 0.0f;
-//                counterTooLarge++;
-//            }
-////            else if(sqDiff < 0.00001){
-////                sqDiff = 0.0f;
-////                counterTooSmall++;
-////            }
-//            else{
-//
-//                counter++;
-//            }
             counter++;
             errorSum += sqDiff;
-
         }
 //        cout << "errorSum: " << errorSum << "\n";
     }
@@ -533,6 +497,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     else{
         averageError = 0.0f;
     }
+
 //    if(dofIndex == 0){
 //        cout << "average error: " << averageError << "\n";
 //    }
@@ -567,7 +532,7 @@ void optimiser::getCostDerivs(){
     }
 
     activeModelTranslator->costDerivatives(horizonLength-1,
-                                           l_x[horizonLength], l_xx[horizonLength], l_u[horizonLength], l_uu[horizonLength], true);
+                                           l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
 }
 
 void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
