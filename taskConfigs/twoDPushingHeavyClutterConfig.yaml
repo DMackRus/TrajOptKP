@@ -4,7 +4,7 @@ timeStep: 0.004
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 minN: 1
 maxN: 50
-iterativeErrorThreshold: 0.00001
+iterativeErrorThreshold: 0.0001
 robots:
   panda:
     jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]

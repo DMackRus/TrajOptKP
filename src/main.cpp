@@ -341,11 +341,17 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<int>> numIterations;
     std::vector<int> numIterationsRow;
 
-    std::vector<std::string> methodNames = {"baseline", "SI5", "SI1000", "adaptive_jerk_5", "iterative_error_5", "magvel_change_5"};
+//    std::vector<std::string> methodNames = {"baseline", "SI5", "SI1000", "adaptive_jerk_5", "iterative_error_5", "magvel_change_5"};
+//    int numMethods = methodNames.size();
+//    std::vector<string> keyPointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
+//    std::vector<int> minN = {1, 5, 1000, 5, 5, 5};
+//    std::vector<int> maxN = {1, 5, 1000, 100, 100, 100};
+
+    std::vector<std::string> methodNames = {"iterative_error"};
     int numMethods = methodNames.size();
-    std::vector<string> keyPointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
-    std::vector<int> minN = {1, 5, 1000, 5, 5, 5};
-    std::vector<int> maxN = {1, 5, 1000, 100, 100, 100};
+    std::vector<std::string> keyPointMethods = {"iterative_error"};
+    std::vector<int> minN = {5};
+    std::vector<int> maxN = {20};
 
     // Loop through saved trajectories
     for(int i = 0; i < 100; i++){
