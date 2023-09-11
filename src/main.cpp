@@ -60,6 +60,7 @@ std::shared_ptr<fileHandler> yamlReader;
 int task;
 bool mpcVisualise = true;
 bool playback = true;
+std::vector<std::string> testingMethods;
 
 void showInitControls();
 void optimiseOnceandShow();
@@ -70,14 +71,20 @@ void generateTestScenes();
 void keyboardControl();
 
 void generateTestingData_MPC();
-void generateTestingData_MPCHorizons();
+int generateTestingData_MPCHorizons();
 void generateTestingData();
 void generateFilteringData();
 
 void genericTesting();
 
 int main(int argc, char **argv) {
-    cout << "program started \n";
+
+    if(argc > 1){
+        for (int i = 1; i < argc; i++) {
+            testingMethods.push_back(argv[i]);
+        }
+    }
+
     // TODO - figure out what this does
 //    omp_set_dynamic(0);     // Explicitly disable dynamic teams
     std::string optimiser;
@@ -159,10 +166,9 @@ int main(int argc, char **argv) {
     }
 
     if(mode == GENERATE_TESTING_DATA){
-        generateTestingData_MPCHorizons();
+        return generateTestingData_MPCHorizons();
 //        generateTestingData_MPC();
 //        generateTestingData();
-        return 1;
     }
 
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
@@ -1000,11 +1006,17 @@ void generateTestingData_MPC(){
         std::vector<std::vector<double>> avgPercentDerivs;
         std::vector<double> avgPercentDerivsRow;
 
-        std::vector<std::string> methodNames = {"baseline", "SI5", "SI20", "adapJerk", "iter_error", "magvel"};
+//        std::vector<std::string> methodNames = {"baseline", "SI5", "SI20", "adapJerk", "iter_error", "magvel"};
+//        int numMethods = methodNames.size();
+//        std::vector<string> keypointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
+//        std::vector<int> minN = {1, 5, 20, 1, 1, 1};
+//        std::vector<int> maxN = {1, 2, 5, 5, 5, 5};
+
+        std::vector<std::string> methodNames = {"magvel", "iter_error"};
         int numMethods = methodNames.size();
-        std::vector<string> keypointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
-        std::vector<int> minN = {1, 5, 20, 1, 1, 1};
-        std::vector<int> maxN = {1, 2, 5, 5, 5, 5};
+        std::vector<string> keypointMethods = {"magvel_change", "iterative_error"};
+        std::vector<int> minN = {1, 1};
+        std::vector<int> maxN = {5, 5};
 
         std::vector<double> targetVelocities;
         double minTarget = 0.1;
@@ -1110,7 +1122,7 @@ void generateTestingData_MPC(){
     }
 }
 
-void generateTestingData_MPCHorizons(){
+int generateTestingData_MPCHorizons(){
     playback = false;
     mpcVisualise = false;
 
@@ -1145,7 +1157,7 @@ void generateTestingData_MPCHorizons(){
     std::vector<std::vector<double>> avgPercentDerivs;
     std::vector<double> avgPercentDerivsRow;
 
-    std::vector<int> horizons = {5, 10, 20, 30, 40, 50, 60};
+    std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
     std::vector<std::string> horizonNames;
     int numHorizons = horizons.size();
 
@@ -1153,17 +1165,32 @@ void generateTestingData_MPCHorizons(){
         horizonNames.push_back(std::to_string(horizons[i]));
     }
 
-//    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "adaptive_jerk", "iterative_error", "magvel_change"};
-//    int numMethods = methodNames.size();
-//    std::vector<int> minN = {1, 5, 10, 1, 1, 1};
-//    std::vector<int> maxN = {1, 5, 10, 5, 5, 5};
-//    std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
+    if(testingMethods.size() == 0){
+        return 0;
+    }
 
-    std::vector<std::string> methodNames = {"iterative_error"};
-    int numMethods = methodNames.size();
-    std::vector<int> minN = {1};
-    std::vector<int> maxN = {5};
-    std::vector<std::string> keypoint_method = {"iterative_error"};
+    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk", "iterative_error", "magvel_change"};
+    std::vector<int> testIndices;
+    bool anyMatch = false;
+    for(int i = 0; i < testingMethods.size(); i++){
+        for(int j = 0; j < methodNames.size(); j++){
+            if(testingMethods[i] == methodNames[j]){
+                anyMatch = true;
+                testIndices.push_back(j);
+            }
+        }
+
+    }
+
+    if(anyMatch == false){
+        cout << "passed testing arguments didnt match any allowed methods \n";
+        return 0;
+    }
+
+
+    std::vector<int> minN = {1, 5, 10, 20, 1, 1, 1};
+    std::vector<int> maxN = {1, 5, 10, 20, 5, 5, 5};
+    std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
 
     std::vector<double> targetVelocities;
     double minTarget = 0.1;
@@ -1179,13 +1206,14 @@ void generateTestingData_MPCHorizons(){
     auto startTimer = std::chrono::high_resolution_clock::now();
     activeOptimiser->verboseOutput = false;
 
-    for(int k = 0; k < numMethods; k++) {
-        cout << "---------- current method " << methodNames[k] << " ----------------" << endl;
+    for(int k = 0; k < testIndices.size(); k++) {
+        int testIndex = testIndices[k];
+        cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
 
         derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
-        currentInterpolator.minN = minN[k];
-        currentInterpolator.maxN = maxN[k];
-        currentInterpolator.keypoint_method = keypoint_method[k];
+        currentInterpolator.minN = minN[testIndex];
+        currentInterpolator.maxN = maxN[testIndex];
+        currentInterpolator.keypoint_method = keypoint_method[testIndex];
         activeOptimiser->setDerivativeInterpolator(currentInterpolator);
 
         finalCosts.clear();
@@ -1242,7 +1270,7 @@ void generateTestingData_MPCHorizons(){
                 cout << "current horizon: " << horizonNames[j] << "\n";
 
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
-                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1200, 1, horizons[j]);
+                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 100, 1, horizons[j]);
 
                 finalCostsRow.push_back(finalCost);
                 avgHZRow.push_back(avgHz);
@@ -1266,11 +1294,14 @@ void generateTestingData_MPCHorizons(){
             cout << "Time taken so far: " << duration/ 1000.0f << " s" << endl;
         }
         // Save data to csv
-        cout << "save data to file for " << methodNames[k] << endl;
-        std::string taskPrefix = activeModelTranslator->modelName + "_" + methodNames[k];
+        cout << "save data to file for " << methodNames[testIndex] << endl;
+        std::string taskPrefix = activeModelTranslator->modelName + "_" + methodNames[testIndex];
         yamlReader->saveResultsData_MPC(taskPrefix, horizonNames, finalCosts, avgHzs,
                                         avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
     }
+
+    cout << "tests exited correctly \n";
+    return 1;
 }
 
 void keyboardControl(){
