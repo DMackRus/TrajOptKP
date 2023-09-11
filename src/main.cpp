@@ -9,7 +9,8 @@
 #include "twoDPushing.h"
 #include "boxFlick.h"
 #include "locomotion.h"
-#include "spherePush.h"
+#include "hopper.h"
+#include "humanoid.h"
 #include "boxSweep.h"
 
 #include "visualizer.h"
@@ -42,8 +43,9 @@ enum scenes{
     box_flicking = 8,
     box_flicking_mild_clutter = 9,
     box_flicking_heavy_clutter = 10,
-    walker = 11,
-    sphere_push = 12,
+    walker_locomotion = 11,
+    hopper_locomotion = 12,
+    humanoid_locomotion = 13,
     box_sweep = 13
 };
 
@@ -142,13 +144,13 @@ int main(int argc, char **argv) {
         std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(heavyClutter);
         activeModelTranslator = myBoxFlick;
     }
-    else if(task == walker){
-        std::shared_ptr<locomotion_anymal> myLocomotion = std::make_shared<locomotion_anymal>();
+    else if(task == walker_locomotion){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>();
         activeModelTranslator = myLocomotion;
     }
-    else if(task == sphere_push){
-        std::shared_ptr<spherePush> mySpherePush = std::make_shared<spherePush>(noClutter);
-        activeModelTranslator = mySpherePush;
+    else if(task == hopper_locomotion){
+        std::shared_ptr<hopper> myHopper = std::make_shared<hopper>();
+        activeModelTranslator = myHopper;
     }
     else if(task == box_sweep){
         std::shared_ptr<boxSweep> myBoxSweep = std::make_shared<boxSweep>();
@@ -244,8 +246,8 @@ int main(int argc, char **argv) {
 
         // No clutter - 1800 - 500 - 1800
 
-        if(task == walker){
-            activeModelTranslator->X_desired(10) = 0.25;
+        if(task == walker_locomotion){
+            activeModelTranslator->X_desired(10) = -0.1;
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
@@ -1038,7 +1040,7 @@ void generateTestingData_MPC(){
                                          activeModelTranslator->X_desired);
 
             // Walker model where were trying to match a velocity
-            if(task == walker){
+            if(task == walker_locomotion){
                 activeModelTranslator->X_desired(10) = targetVelocities[i];
             }
 
@@ -1213,7 +1215,7 @@ void generateTestingData_MPCHorizons(){
                                          activeModelTranslator->X_desired);
 
             // Walker model where were trying to match a velocity
-            if(task == walker){
+            if(task == walker_locomotion){
                 activeModelTranslator->X_desired(10) = targetVelocities[i];
             }
 

@@ -3,7 +3,7 @@
 //
 #include "locomotion.h"
 
-locomotion_anymal::locomotion_anymal(): modelTranslator(){
+walker::walker(): modelTranslator(){
     std::string yamlFilePath = "/taskConfigs/locomotionConfig.yaml";
     initModelTranslator(yamlFilePath);
 }
@@ -51,15 +51,15 @@ locomotion_anymal::locomotion_anymal(): modelTranslator(){
 ////    l_uu = 2 * R;
 //}
 
-bool locomotion_anymal::taskComplete(int dataIndex, double &dist){
+bool walker::taskComplete(int dataIndex, double &dist){
     return false;
 }
 
-void locomotion_anymal::generateRandomGoalAndStartState(){
+void walker::generateRandomGoalAndStartState(){
     MatrixXd test;
 }
 
-MatrixXd locomotion_anymal::returnRandomStartState(){
+MatrixXd walker::returnRandomStartState(){
     MatrixXd startState;
 
     startState << 0, 0, 0, 1, -1, 0.2, 0, 0, 0,
@@ -68,7 +68,7 @@ MatrixXd locomotion_anymal::returnRandomStartState(){
     return startState;
 }
 
-MatrixXd locomotion_anymal::returnRandomGoalState(MatrixXd X0){
+MatrixXd walker::returnRandomGoalState(MatrixXd X0){
     MatrixXd goalState;
 
     goalState << 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -77,12 +77,11 @@ MatrixXd locomotion_anymal::returnRandomGoalState(MatrixXd X0){
     return goalState;
 }
 
-std::vector<MatrixXd> locomotion_anymal::createInitOptimisationControls(int horizonLength){
+std::vector<MatrixXd> walker::createInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
     MatrixXd control(num_ctrl, 1);
     for(int i = 0; i < horizonLength; i++){
-
 
         for(int j = 0; j < num_ctrl; j++){
             control(j) = 0.0f;

@@ -1,0 +1,22 @@
+modelFile: "/mujoco_models/hopper.xml"
+modelName: "/hopper"
+timeStep: 0.005
+keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+minN: 1
+maxN: 5
+iterativeErrorThreshold: 0.5
+robots:
+  walker:
+    jointNames: ["rootz", "rootx", "rooty", "thigh_joint", "leg_joint", "foot_joint"]
+    actuatorNames: ["thigh", "leg", "foot"]
+    torqueControl: true
+    torqueLimits: [0.4, 0.4, 0.4]
+    startPos: [1.2, 0, 0, 0, 0, 0]
+    goalPos: [1.2, 1, 0, 0, 0, 0]
+    jointPosCosts: [1, 1, 1, 0, 0, 0]
+    jointVelCosts: [0, 0, 0, 0, 0, 0]
+    terminalJointPosCosts: [10, 1, 10, 0, 0, 0]
+    terminalJointVelCosts: [0, 0, 0, 0, 0, 0]
+    jointControlCosts: [0.01, 0.01, 0.01]
+    jointJerkThresholds: [0.1, 0.02, 0.1, 0.1, 0.1]
+    magVelThresholds: [1.0, 1.0, 1.0, 0.2, 0.2, 0.2]
