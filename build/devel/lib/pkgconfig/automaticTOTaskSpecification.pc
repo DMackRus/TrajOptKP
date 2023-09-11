@@ -1,0 +1,8 @@
+prefix=/home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/build/devel
+
+Name: automaticTOTaskSpecification
+Description: Description of automaticTOTaskSpecification
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: roscpp rospy
