@@ -6,13 +6,24 @@ differentiator::differentiator(std::shared_ptr<modelTranslator> _modelTranslator
 
 }
 
+
+//#pragma GCC push_options
+//#pragma GCC optimize ("O0")
+//void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal){
+//    for(int i = 0; i < cols.size(); i++){
+//        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+//    }
+//}
+
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
-void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal){
+void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId){
 //    cout << "start of derivs function " << endl;
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
-    int tid = omp_get_thread_num();
+    int tid = threadId;
+
+//    cout << "tid: " << tid << endl;
     // This seems random, in optimiser we define -1 = "mainData", -2 = "masterData", 0 -> horizon Length = "stored trajectory data"
     // So we need values below -2 for finite-differencing data
     int physicsHelperId = -3 - tid;
@@ -318,7 +329,6 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
             }
         }
     }
-
 }
 
 

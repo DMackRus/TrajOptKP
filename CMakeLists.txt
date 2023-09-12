@@ -265,9 +265,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
                 src/modelTranslator/locomotion.cpp
                 src/fileHandler/fileHandler.cpp
                 src/optimiser/gradDescent.cpp
-                src/modelTranslator/spherePush.cpp
-                src/modelTranslator/boxSweep.cpp
-                src/modelTranslator/acrobot.cpp)
+        src/modelTranslator/boxSweep.cpp
+                src/modelTranslator/acrobot.cpp include/humanoid.h include/hopper.h src/modelTranslator/hopper.cpp)
 
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}

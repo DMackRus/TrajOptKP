@@ -455,18 +455,20 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     std::vector<int> cols;
     cols.push_back(dofIndex);
 
+    int tid = omp_get_thread_num();
+
     if(!startIndexExists){
-        activeDifferentiator->getDerivatives(A[indices.startIndex], B[indices.startIndex], cols, blank1, blank2, blank3, blank4, false, indices.startIndex, false);
+        activeDifferentiator->getDerivatives(A[indices.startIndex], B[indices.startIndex], cols, blank1, blank2, blank3, blank4, false, indices.startIndex, false, tid);
         computedKeyPoints[dofIndex].push_back(indices.startIndex);
     }
 
     if(!midIndexExists){
-        activeDifferentiator->getDerivatives(A[midIndex], B[midIndex], cols, blank1, blank2, blank3, blank4, false, midIndex, false);
+        activeDifferentiator->getDerivatives(A[midIndex], B[midIndex], cols, blank1, blank2, blank3, blank4, false, midIndex, false, tid);
         computedKeyPoints[dofIndex].push_back(midIndex);
     }
 
     if(!endIndexExists){
-        activeDifferentiator->getDerivatives(A[indices.endIndex], B[indices.endIndex], cols, blank1, blank2, blank3, blank4, false, indices.endIndex, false);
+        activeDifferentiator->getDerivatives(A[indices.endIndex], B[indices.endIndex], cols, blank1, blank2, blank3, blank4, false, indices.endIndex, false, tid);
         computedKeyPoints[dofIndex].push_back(indices.endIndex);
     }
 
@@ -554,24 +556,51 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         }
     }
 
-    #pragma omp parallel for
-    for(int i = 0; i < keyPoints.size(); i++){
 
+    current_iteration = 0;
+    num_threads_iterations = keyPoints.size();
+    timeIndicesGlobal = timeIndices;
+    keypointsGlobal = keyPoints;
+
+    cout << "num time indices: " << num_threads_iterations << "\n";
+
+    // Setup all the required tasks
+    for (int i = 0; i < keyPoints.size(); ++i) {
         int timeIndex = timeIndices[i];
-        std::vector<int> columns = keyPoints[i];
-
-//        if(columns.size() == 0){
-//            continue;
-//        }
-
-        bool terminal = false;
-        if(timeIndex == horizonLength - 1){
-            terminal = true;
-        }
-        activeDifferentiator->getDerivatives(A[timeIndex], B[timeIndex], columns,
-                                             l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex],
-                                             activeYamlReader->costDerivsFD, timeIndex, terminal);
+        tasks.push_back(&differentiator::getDerivatives);
     }
+
+    // Get the number of threads available
+    const int num_threads = std::thread::hardware_concurrency();  // Get the number of available CPU cores
+    std::vector<std::thread> thread_pool;
+    for (int i = 0; i < num_threads; ++i) {
+        thread_pool.push_back(std::thread(&optimiser::worker, this, i));
+    }
+
+    for (std::thread& thread : thread_pool) {
+        thread.join();
+    }
+
+    cout << "threads finished \n";
+
+//    #pragma omp parallel for
+//    for(int i = 0; i < keyPoints.size(); i++){
+//
+//        int timeIndex = timeIndices[i];
+//        std::vector<int> columns = keyPoints[i];
+//
+////        if(columns.size() == 0){
+////            continue;
+////        }
+//
+//        bool terminal = false;
+//        if(timeIndex == horizonLength - 1){
+//            terminal = true;
+//        }
+//        activeDifferentiator->getDerivatives(A[timeIndex], B[timeIndex], columns,
+//                                             l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex],
+//                                             activeYamlReader->costDerivsFD, timeIndex, terminal);
+//    }
 
 //    cout << "A[0]: \n" << A[0] << "\n";
 //    cout << "B[0]: \n" << B[0] << "\n";
@@ -593,6 +622,24 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         }
         activeModelTranslator->costDerivatives(horizonLength - 1,
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
+    }
+}
+
+void optimiser::worker(int threadId) {
+    while (true) {
+        int iteration = current_iteration.fetch_add(1);
+        if (iteration >= num_threads_iterations) {
+            break;  // All iterations done
+        }
+
+        int timeIndex = timeIndicesGlobal[iteration];
+        bool terminal = false;
+        if(timeIndex == horizonLength - 1){
+            terminal = true;
+        }
+
+        std::vector<int> keyPoints;
+        (activeDifferentiator.get()->*(tasks[iteration]))(A[timeIndex], B[timeIndex], keypointsGlobal[iteration], l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex], activeYamlReader->costDerivsFD, timeIndex, terminal, threadId);
     }
 }
 
