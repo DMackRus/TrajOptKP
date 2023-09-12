@@ -6,6 +6,7 @@
 #include "modelTranslator.h"
 #include "physicsSimulator.h"
 #include "differentiator.h"
+#include <atomic>
 
 enum keyPointsMethod{
     setInterval = 0,
@@ -44,6 +45,14 @@ public:
 
     derivative_interpolator returnDerivativeInterpolator();
     void setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator);
+
+    void worker(int threadId);
+//    std::vector<std::function<void()>> tasks;  // Stores tasks for each iteration
+    std::vector<void (differentiator::*)(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId)> tasks;
+    std::atomic<int> current_iteration;
+    int num_threads_iterations;
+    std::vector<int> timeIndicesGlobal;
+    std::vector<std::vector<int>> keypointsGlobal;
 
     int currentTrajecNumber = 0;
     std::string keyPointsMethodsStrings[5] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error", "magVel_change"};

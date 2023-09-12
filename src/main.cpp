@@ -253,7 +253,7 @@ int main(int argc, char **argv) {
         // No clutter - 1800 - 500 - 1800
 
         if(task == walker_locomotion){
-            activeModelTranslator->X_desired(10) = -0.1;
+            activeModelTranslator->X_desired(10) = 0.3;
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
