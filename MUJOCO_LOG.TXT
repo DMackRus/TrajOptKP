@@ -1,0 +1,3 @@
+Tue Sep 12 01:54:40 2023
+ERROR: stack overflow: max = 4294967296, available = 4294961376, requested = 4294961400 (ne = 0, nf = 0, nefc = 12, ncon = 3)
+

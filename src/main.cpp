@@ -1270,7 +1270,7 @@ int generateTestingData_MPCHorizons(){
                 cout << "current horizon: " << horizonNames[j] << "\n";
 
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
-                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 100, 1, horizons[j]);
+                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1200, 1, horizons[j]);
 
                 finalCostsRow.push_back(finalCost);
                 avgHZRow.push_back(avgHz);
