@@ -88,15 +88,6 @@ void optimiser::generateDerivatives(){
 //    cout << "l_xx: " << l_xx[0] << endl;
 //    cout << "l_xx[horizonLength]: " << l_xx[horizonLength] << endl;
 
-
-    // Interpolate derivatvies as required for a full set of derivatives
-//    if((keyPointsMethod == setInterval) && (min_interval == 1)){
-//
-//    }
-//    else{
-//        interpolateDerivatives(keyPoints);
-//    }
-
     interpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
 
     int totalNumColumnsDerivs = 0;
@@ -197,7 +188,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
         keypoints.back().push_back(i);
     }
 
-    // Print out the key points
+//     Print out the key points
 //    for(int i = 0; i < keypoints.size(); i++){
 //        cout << "timestep " << i << ": ";
 //        for(int j = 0; j < keypoints[i].size(); j++){
@@ -556,7 +547,6 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         }
     }
 
-
     current_iteration = 0;
     num_threads_iterations = keyPoints.size();
     timeIndicesGlobal = timeIndices;
@@ -578,36 +568,10 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     for (std::thread& thread : thread_pool) {
         thread.join();
     }
-
-//    #pragma omp parallel for
-//    for(int i = 0; i < keyPoints.size(); i++){
-//
-//        int timeIndex = timeIndices[i];
-//        std::vector<int> columns = keyPoints[i];
-//
-////        if(columns.size() == 0){
-////            continue;
-////        }
-//
-//        bool terminal = false;
-//        if(timeIndex == horizonLength - 1){
-//            terminal = true;
-//        }
-//        activeDifferentiator->getDerivatives(A[timeIndex], B[timeIndex], columns,
-//                                             l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex],
-//                                             activeYamlReader->costDerivsFD, timeIndex, terminal);
-//    }
-
-//    cout << "A[0]: \n" << A[0] << "\n";
-//    cout << "B[0]: \n" << B[0] << "\n";
-
-//    activeYamlReader->generalSaveMatrices(l_x, "l_x_fd");
-//    activeYamlReader->generalSaveMatrices(l_xx, "l_xx_fd");
-
+      
     activePhysicsSimulator->resetModelAfterFiniteDifferencing();
 
     if(!activeYamlReader->costDerivsFD){
-        #pragma omp parallel for
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
                 activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
@@ -682,6 +646,7 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, 
                 // If there is a match, interpolate between the start index and the current index
                 // For the given columns
                 if(i == columns[j]){
+//                    cout << "dof: " << i << " end index: " << t << " start index: " << startIndices[i] << "\n";
                     MatrixXd startACol1 = A[startIndices[i]].block(dof, i, dof, 1);
                     MatrixXd endACol1 = A[t].block(dof, i, dof, 1);
                     MatrixXd addACol1 = (endACol1 - startACol1) / (t - startIndices[i]);

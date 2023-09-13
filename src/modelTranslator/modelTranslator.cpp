@@ -236,12 +236,6 @@ void modelTranslator::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_
     l_u = 2 * R * Ut;
     l_uu = 2 * R;
 
-    // Do I need to time the cost derivatives by the time step?
-//    l_x = l_x * activePhysicsSimulator->returnModelTimeStep();
-//    l_xx = l_xx * activePhysicsSimulator->returnModelTimeStep();
-//
-//    l_u = l_u * activePhysicsSimulator->returnModelTimeStep();
-//    l_uu = l_uu * activePhysicsSimulator->returnModelTimeStep();
 }
 
 bool modelTranslator::taskComplete(int dataIndex, double &dist){

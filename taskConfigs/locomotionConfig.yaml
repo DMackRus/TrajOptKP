@@ -2,9 +2,9 @@ modelFile: "/mujoco_models/walker.xml"
 modelName: "/walker"
 timeStep: 0.005
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
-minN: 5
+minN: 20
 maxN: 5
-iterativeErrorThreshold: 0.5
+iterativeErrorThreshold: 0.1
 robots:
   walker:
     jointNames: ["rootz", "rootx", "rooty", "right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"]
@@ -14,11 +14,12 @@ robots:
     startPos: [0, 0, 0, 1, -1, 0.2, 0, 0, 0]
     goalPos: [0, 0, 0, 0, 0, 0, 0, 0, 0]
     jointPosCosts: [1, 0, 1, 0, 0, 0, 0, 0, 0]
-    jointVelCosts: [0, 1, 0, 0, 0, 0, 0, 0, 0]
-    terminalJointPosCosts: [ 10, 0, 1, 0, 0, 0, 0, 0, 0 ]
-    terminalJointVelCosts: [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
-    jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
+    jointVelCosts: [0, 0.1, 0, 0, 0, 0, 0, 0, 0]
+    terminalJointPosCosts: [ 1, 0, 1, 0, 0, 0, 0, 0, 0 ]
+    terminalJointVelCosts: [ 0, 0.1, 0, 0, 0, 0, 0, 0, 0 ]
+    jointControlCosts: [0.001, 0.0001, 0.001, 0.001, 0.001, 0.001]
     #jointControlCosts: [0.005, 0.001, 0.001, 0.005, 0.001, 0.001]
-    jointJerkThresholds: [0.1, 0.02, 0.2, 0.4, 0.4, 0.2, 0.4, 0.4]
+#    jointJerkThresholds: [0.1, 0.02, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+    jointJerkThresholds: [1e-15, 1e-15, 1e-15, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
     #jointJerkThresholds: [0.1, 0.02, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     magVelThresholds: [1.0, 1.0, 1.0, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
