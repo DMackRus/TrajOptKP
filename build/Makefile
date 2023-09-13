@@ -681,6 +681,33 @@ src/modelTranslator/doublePendulum.cpp.s:
 	$(MAKE) -f CMakeFiles/automaticTOTaskSpecification.dir/build.make CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/doublePendulum.cpp.s
 .PHONY : src/modelTranslator/doublePendulum.cpp.s
 
+src/modelTranslator/hopper.o: src/modelTranslator/hopper.cpp.o
+
+.PHONY : src/modelTranslator/hopper.o
+
+# target to build an object file
+src/modelTranslator/hopper.cpp.o:
+	$(MAKE) -f CMakeFiles/automaticTOTaskSpecification.dir/build.make CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.o
+.PHONY : src/modelTranslator/hopper.cpp.o
+
+src/modelTranslator/hopper.i: src/modelTranslator/hopper.cpp.i
+
+.PHONY : src/modelTranslator/hopper.i
+
+# target to preprocess a source file
+src/modelTranslator/hopper.cpp.i:
+	$(MAKE) -f CMakeFiles/automaticTOTaskSpecification.dir/build.make CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.i
+.PHONY : src/modelTranslator/hopper.cpp.i
+
+src/modelTranslator/hopper.s: src/modelTranslator/hopper.cpp.s
+
+.PHONY : src/modelTranslator/hopper.s
+
+# target to generate assembly for a file
+src/modelTranslator/hopper.cpp.s:
+	$(MAKE) -f CMakeFiles/automaticTOTaskSpecification.dir/build.make CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.s
+.PHONY : src/modelTranslator/hopper.cpp.s
+
 src/modelTranslator/locomotion.o: src/modelTranslator/locomotion.cpp.o
 
 .PHONY : src/modelTranslator/locomotion.o
@@ -761,33 +788,6 @@ src/modelTranslator/reaching.s: src/modelTranslator/reaching.cpp.s
 src/modelTranslator/reaching.cpp.s:
 	$(MAKE) -f CMakeFiles/automaticTOTaskSpecification.dir/build.make CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/reaching.cpp.s
 .PHONY : src/modelTranslator/reaching.cpp.s
-
-src/modelTranslator/spherePush.o: src/modelTranslator/spherePush.cpp.o
-
-.PHONY : src/modelTranslator/spherePush.o
-
-# target to build an object file
-src/modelTranslator/spherePush.cpp.o:
-	$(MAKE) -f CMakeFiles/automaticTOTaskSpecification.dir/build.make CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.o
-.PHONY : src/modelTranslator/spherePush.cpp.o
-
-src/modelTranslator/spherePush.i: src/modelTranslator/spherePush.cpp.i
-
-.PHONY : src/modelTranslator/spherePush.i
-
-# target to preprocess a source file
-src/modelTranslator/spherePush.cpp.i:
-	$(MAKE) -f CMakeFiles/automaticTOTaskSpecification.dir/build.make CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.i
-.PHONY : src/modelTranslator/spherePush.cpp.i
-
-src/modelTranslator/spherePush.s: src/modelTranslator/spherePush.cpp.s
-
-.PHONY : src/modelTranslator/spherePush.s
-
-# target to generate assembly for a file
-src/modelTranslator/spherePush.cpp.s:
-	$(MAKE) -f CMakeFiles/automaticTOTaskSpecification.dir/build.make CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.s
-.PHONY : src/modelTranslator/spherePush.cpp.s
 
 src/modelTranslator/twoDPushing.o: src/modelTranslator/twoDPushing.cpp.o
 
@@ -1091,6 +1091,9 @@ help:
 	@echo "... src/modelTranslator/doublePendulum.o"
 	@echo "... src/modelTranslator/doublePendulum.i"
 	@echo "... src/modelTranslator/doublePendulum.s"
+	@echo "... src/modelTranslator/hopper.o"
+	@echo "... src/modelTranslator/hopper.i"
+	@echo "... src/modelTranslator/hopper.s"
 	@echo "... src/modelTranslator/locomotion.o"
 	@echo "... src/modelTranslator/locomotion.i"
 	@echo "... src/modelTranslator/locomotion.s"
@@ -1100,9 +1103,6 @@ help:
 	@echo "... src/modelTranslator/reaching.o"
 	@echo "... src/modelTranslator/reaching.i"
 	@echo "... src/modelTranslator/reaching.s"
-	@echo "... src/modelTranslator/spherePush.o"
-	@echo "... src/modelTranslator/spherePush.i"
-	@echo "... src/modelTranslator/spherePush.s"
 	@echo "... src/modelTranslator/twoDPushing.o"
 	@echo "... src/modelTranslator/twoDPushing.i"
 	@echo "... src/modelTranslator/twoDPushing.s"

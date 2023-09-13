@@ -278,22 +278,9 @@ CMakeFiles/automaticTOTaskSpecification.dir/src/optimiser/gradDescent.cpp.s: cma
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/automaticTOTaskSpecification.dir/src/optimiser/gradDescent.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/optimiser/gradDescent.cpp -o CMakeFiles/automaticTOTaskSpecification.dir/src/optimiser/gradDescent.cpp.s
 
-CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.o: CMakeFiles/automaticTOTaskSpecification.dir/flags.make
-CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.o: ../src/modelTranslator/spherePush.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.o -c /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/modelTranslator/spherePush.cpp
-
-CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/modelTranslator/spherePush.cpp > CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.i
-
-CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/modelTranslator/spherePush.cpp -o CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.s
-
 CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/boxSweep.cpp.o: CMakeFiles/automaticTOTaskSpecification.dir/flags.make
 CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/boxSweep.cpp.o: ../src/modelTranslator/boxSweep.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/boxSweep.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/boxSweep.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/boxSweep.cpp.o -c /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/modelTranslator/boxSweep.cpp
 
 CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/boxSweep.cpp.i: cmake_force
@@ -306,7 +293,7 @@ CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/boxSweep.cpp.s: 
 
 CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.o: CMakeFiles/automaticTOTaskSpecification.dir/flags.make
 CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.o: ../src/modelTranslator/acrobot.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.o -c /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/modelTranslator/acrobot.cpp
 
 CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.i: cmake_force
@@ -316,6 +303,19 @@ CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.i: c
 CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/modelTranslator/acrobot.cpp -o CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.s
+
+CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.o: CMakeFiles/automaticTOTaskSpecification.dir/flags.make
+CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.o: ../src/modelTranslator/hopper.cpp
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.o"
+	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.o -c /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/modelTranslator/hopper.cpp
+
+CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/modelTranslator/hopper.cpp > CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.i
+
+CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/davidrussell/catkin_ws/src/automaticTOTaskSpecification/src/modelTranslator/hopper.cpp -o CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.s
 
 # Object files for target automaticTOTaskSpecification
 automaticTOTaskSpecification_OBJECTS = \
@@ -336,9 +336,9 @@ automaticTOTaskSpecification_OBJECTS = \
 "CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/locomotion.cpp.o" \
 "CMakeFiles/automaticTOTaskSpecification.dir/src/fileHandler/fileHandler.cpp.o" \
 "CMakeFiles/automaticTOTaskSpecification.dir/src/optimiser/gradDescent.cpp.o" \
-"CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.o" \
 "CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/boxSweep.cpp.o" \
-"CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.o"
+"CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.o" \
+"CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.o"
 
 # External object files for target automaticTOTaskSpecification
 automaticTOTaskSpecification_EXTERNAL_OBJECTS =
@@ -360,9 +360,9 @@ devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: CMakeFiles/
 devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/locomotion.cpp.o
 devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: CMakeFiles/automaticTOTaskSpecification.dir/src/fileHandler/fileHandler.cpp.o
 devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: CMakeFiles/automaticTOTaskSpecification.dir/src/optimiser/gradDescent.cpp.o
-devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/spherePush.cpp.o
 devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/boxSweep.cpp.o
 devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/acrobot.cpp.o
+devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: CMakeFiles/automaticTOTaskSpecification.dir/src/modelTranslator/hopper.cpp.o
 devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: CMakeFiles/automaticTOTaskSpecification.dir/build.make
 devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: /opt/ros/noetic/lib/libroscpp.so
 devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification: /usr/lib/x86_64-linux-gnu/libpthread.so

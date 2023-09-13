@@ -562,8 +562,6 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     timeIndicesGlobal = timeIndices;
     keypointsGlobal = keyPoints;
 
-    cout << "num time indices: " << num_threads_iterations << "\n";
-
     // Setup all the required tasks
     for (int i = 0; i < keyPoints.size(); ++i) {
         int timeIndex = timeIndices[i];
@@ -580,8 +578,6 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     for (std::thread& thread : thread_pool) {
         thread.join();
     }
-
-    cout << "threads finished \n";
 
 //    #pragma omp parallel for
 //    for(int i = 0; i < keyPoints.size(); i++){
