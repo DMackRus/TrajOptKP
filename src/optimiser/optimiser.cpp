@@ -97,7 +97,13 @@ void optimiser::generateDerivatives(){
 //        interpolateDerivatives(keyPoints);
 //    }
 
+    auto start_time = high_resolution_clock::now();
+
     interpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
+
+    auto stop_time = high_resolution_clock::now();
+    auto duration_time = duration_cast<microseconds>(stop_time - start_time);
+    std::cout << "time of interpolation: " << duration_time.count() / 1000.0f << " ms" << std::endl;
 
     int totalNumColumnsDerivs = 0;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -197,14 +203,14 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
         keypoints.back().push_back(i);
     }
 
-    // Print out the key points
-//    for(int i = 0; i < keypoints.size(); i++){
-//        cout << "timestep " << i << ": ";
-//        for(int j = 0; j < keypoints[i].size(); j++){
-//            cout << keypoints[i][j] << " ";
-//        }
-//        cout << "\n";
-//    }
+//     Print out the key points
+    for(int i = 0; i < keypoints.size(); i++){
+        cout << "timestep " << i << ": ";
+        for(int j = 0; j < keypoints[i].size(); j++){
+            cout << keypoints[i][j] << " ";
+        }
+        cout << "\n";
+    }
 
     return keypoints;
 }
@@ -556,13 +562,13 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         }
     }
 
-
     current_iteration = 0;
     num_threads_iterations = keyPoints.size();
     timeIndicesGlobal = timeIndices;
     keypointsGlobal = keyPoints;
 
-    cout << "num time indices: " << num_threads_iterations << "\n";
+    // time the threading code
+    auto start = std::chrono::high_resolution_clock::now();
 
     // Setup all the required tasks
     for (int i = 0; i < keyPoints.size(); ++i) {
@@ -581,37 +587,15 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         thread.join();
     }
 
-    cout << "threads finished \n";
-
-//    #pragma omp parallel for
-//    for(int i = 0; i < keyPoints.size(); i++){
-//
-//        int timeIndex = timeIndices[i];
-//        std::vector<int> columns = keyPoints[i];
-//
-////        if(columns.size() == 0){
-////            continue;
-////        }
-//
-//        bool terminal = false;
-//        if(timeIndex == horizonLength - 1){
-//            terminal = true;
-//        }
-//        activeDifferentiator->getDerivatives(A[timeIndex], B[timeIndex], columns,
-//                                             l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex],
-//                                             activeYamlReader->costDerivsFD, timeIndex, terminal);
-//    }
-
-//    cout << "A[0]: \n" << A[0] << "\n";
-//    cout << "B[0]: \n" << B[0] << "\n";
-
-//    activeYamlReader->generalSaveMatrices(l_x, "l_x_fd");
-//    activeYamlReader->generalSaveMatrices(l_xx, "l_xx_fd");
+    auto finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = finish - start;
+    std::cout << "Time taken of threads calc derivs: " << elapsed.count() * 1000 << " ms\n";
 
     activePhysicsSimulator->resetModelAfterFiniteDifferencing();
 
+    auto time_cost_start = std::chrono::high_resolution_clock::now();
     if(!activeYamlReader->costDerivsFD){
-        #pragma omp parallel for
+//        #pragma omp parallel for
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
                 activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
@@ -623,6 +607,9 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
         activeModelTranslator->costDerivatives(horizonLength - 1,
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
     }
+    auto time_cost_finish = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> time_cost_elapsed = time_cost_finish - time_cost_start;
+    std::cout << "Time taken of cost derivs: " << time_cost_elapsed.count() * 1000 << " ms\n";
 }
 
 void optimiser::worker(int threadId) {
@@ -686,6 +673,7 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, 
                 // If there is a match, interpolate between the start index and the current index
                 // For the given columns
                 if(i == columns[j]){
+//                    cout << "dof: " << i << " end index: " << t << " start index: " << startIndices[i] << "\n";
                     MatrixXd startACol1 = A[startIndices[i]].block(dof, i, dof, 1);
                     MatrixXd endACol1 = A[t].block(dof, i, dof, 1);
                     MatrixXd addACol1 = (endACol1 - startACol1) / (t - startIndices[i]);
