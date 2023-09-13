@@ -257,7 +257,7 @@ int main(int argc, char **argv) {
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1200, 1, 50);
+        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1200, 1, 80);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -913,7 +913,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
         MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
         double stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
-        trajecCost += stateCost * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep();
+        trajecCost += stateCost; // * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep();
 
         activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
