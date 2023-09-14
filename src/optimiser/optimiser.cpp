@@ -64,36 +64,16 @@ void optimiser::generateDerivatives(){
         getDerivativesAtSpecifiedIndices(keyPoints);
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
-//        std::cout << "Time taken to get derivatives: " << duration_fd_time.count() / 1000.0f << " ms" << std::endl;
     }
     else{
         getCostDerivs();
     }
-
-//    cout << "A[0] " << A[0] << endl;
-//    cout << "A[horizonLength - 1] " << A[horizonLength - 1] << endl;
-
-//    activeYamlReader->generalSaveMatrices(l_x, "l_x");
-//    activeYamlReader->generalSaveMatrices(l_xx, "l_xx");
-
-//    cout << "l_x: " << l_x[0] << endl;
-//    cout << "l_x[horizonLength]: " << l_x[horizonLength] << endl;
-//
-//    cout << "l_u: " << l_u[0] << endl;
-//    cout << "l_u[horizonLength]: " << l_u[horizonLength] << endl;
-//
-//    cout << "l_uu: " << l_uu[0] << endl;
-//    cout << "l_uu[horizonLength]: " << l_uu[horizonLength] << endl;
-//
-//    cout << "l_xx: " << l_xx[0] << endl;
-//    cout << "l_xx[horizonLength]: " << l_xx[horizonLength] << endl;
 
     interpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
 
     int totalNumColumnsDerivs = 0;
     for(int i = 0; i < keyPoints.size(); i++){
         totalNumColumnsDerivs += keyPoints[i].size();
-
     }
 
     double percentDerivsCalculated = ((double) totalNumColumnsDerivs / (double)numberOfTotalDerivs) * 100.0f;
@@ -102,28 +82,9 @@ void optimiser::generateDerivatives(){
         cout << "percentage of derivs calculated: " << percentDerivsCalculated << endl;
     }
 
-//        A.resize(initControls.size());
-//        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 1);
-
     if(filteringMethod != "none"){
         filterDynamicsMatrices();
     }
-
-//        A.resize(initControls.size());
-//        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, 2);
-
-//    cout << "l_xx[horizonLength - 1]: " << l_xx[horizonLength - 1] << endl;
-//    cout << "l_xx[horizonLength]: " << l_xx[horizonLength] << endl;
-//    cout << "l_x[horizonLength]: " << l_x[horizonLength] << endl;
-//    cout << "l_u[horizonLength - 1]: " << l_u[horizonLength - 1] << endl;
-//    cout << "l_uu[horizonLength - 1]: " << l_uu[horizonLength - 1] << endl;
-
-//    cout << "A[0]: " << endl << A[0] << endl;
-//    cout << "A[1]: " << endl << A[1] << endl;
-//    cout << "A[horizon - 2]" << endl << A[horizonLength - 2] << endl;
-//
-//    cout << "B[horizonLength - 1]: " << B[horizonLength - 1] << endl;
-
 }
 
 std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
@@ -554,7 +515,6 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
 
     // Setup all the required tasks
     for (int i = 0; i < keyPoints.size(); ++i) {
-        int timeIndex = timeIndices[i];
         tasks.push_back(&differentiator::getDerivatives);
     }
 
@@ -570,6 +530,8 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     }
       
     activePhysicsSimulator->resetModelAfterFiniteDifferencing();
+
+    auto time_cost_start = std::chrono::high_resolution_clock::now();
 
     if(!activeYamlReader->costDerivsFD){
         for(int i = 0; i < horizonLength; i++){
@@ -599,7 +561,9 @@ void optimiser::worker(int threadId) {
         }
 
         std::vector<int> keyPoints;
-        (activeDifferentiator.get()->*(tasks[iteration]))(A[timeIndex], B[timeIndex], keypointsGlobal[iteration], l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex], activeYamlReader->costDerivsFD, timeIndex, terminal, threadId);
+        (activeDifferentiator.get()->*(tasks[iteration]))(A[timeIndex], B[timeIndex],
+                                        keypointsGlobal[iteration], l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex],
+                                        activeYamlReader->costDerivsFD, timeIndex, terminal, threadId);
     }
 }
 

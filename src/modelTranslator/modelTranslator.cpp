@@ -236,6 +236,10 @@ void modelTranslator::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_
     l_u = 2 * R * Ut;
     l_uu = 2 * R;
 
+//    l_x *= activePhysicsSimulator->returnModelTimeStep();
+//    l_xx *= activePhysicsSimulator->returnModelTimeStep();
+//    l_u *= activePhysicsSimulator->returnModelTimeStep();
+//    l_uu *= activePhysicsSimulator->returnModelTimeStep();
 }
 
 bool modelTranslator::taskComplete(int dataIndex, double &dist){

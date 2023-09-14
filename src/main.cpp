@@ -257,7 +257,7 @@ int main(int argc, char **argv) {
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1200, 1, 80);
+        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1500, 1, 50);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";

@@ -6,15 +6,6 @@ differentiator::differentiator(std::shared_ptr<modelTranslator> _modelTranslator
 
 }
 
-
-//#pragma GCC push_options
-//#pragma GCC optimize ("O0")
-//void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal){
-//    for(int i = 0; i < cols.size(); i++){
-//        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-//    }
-//}
-
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId){

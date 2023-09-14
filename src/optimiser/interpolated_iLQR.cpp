@@ -104,7 +104,8 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
             }
         }
 
-        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
+//        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
+        cost += stateCost;
     }
 
 //    cout << "cost of initial trajectory was: " << cost << endl;
@@ -483,7 +484,8 @@ double interpolatediLQR::forwardsPass(double oldCost){
                 newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
             }
 
-            newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+//            newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+            newCost += newStateCost;
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
