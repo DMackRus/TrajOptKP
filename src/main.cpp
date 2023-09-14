@@ -87,8 +87,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    // TODO - figure out what this does
-//    omp_set_dynamic(0);     // Explicitly disable dynamic teams
     std::string optimiser;
     int mode;
 
@@ -171,6 +169,7 @@ int main(int argc, char **argv) {
         return generateTestingData_MPCHorizons();
 //        generateTestingData_MPC();
 //        generateTestingData();
+//        return 0;
     }
 
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
@@ -349,17 +348,24 @@ void onetaskGenerateTestingData(){
     std::vector<std::vector<int>> numIterations;
     std::vector<int> numIterationsRow;
 
+    // Object manipulation?
 //    std::vector<std::string> methodNames = {"baseline", "SI5", "SI1000", "adaptive_jerk_5", "iterative_error_5", "magvel_change_5"};
 //    int numMethods = methodNames.size();
 //    std::vector<string> keyPointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
 //    std::vector<int> minN = {1, 5, 1000, 5, 5, 5};
 //    std::vector<int> maxN = {1, 5, 1000, 100, 100, 100};
 
-    std::vector<std::string> methodNames = {"iterative_error"};
+    std::vector<std::string> methodNames = {"baseline", "SI5", "SI1000", "adaptive_jerk_5", "iterative_error_5", "magvel_change_5"};
     int numMethods = methodNames.size();
-    std::vector<std::string> keyPointMethods = {"iterative_error"};
-    std::vector<int> minN = {5};
-    std::vector<int> maxN = {20};
+    std::vector<string> keyPointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
+    std::vector<int> minN = {1, 5, 1000, 5, 5, 5};
+    std::vector<int> maxN = {1, 5, 1000, 100, 100, 100};
+
+//    std::vector<std::string> methodNames = {"iterative_error"};
+//    int numMethods = methodNames.size();
+//    std::vector<std::string> keyPointMethods = {"iterative_error"};
+//    std::vector<int> minN = {5};
+//    std::vector<int> maxN = {20};
 
     // Loop through saved trajectories
     for(int i = 0; i < 100; i++){
@@ -408,7 +414,7 @@ void onetaskGenerateTestingData(){
 
             std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 8, 2, optHorizon);
 
-            yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B, activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->modelName, i, optHorizon);
+//            yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B, activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->modelName, i, optHorizon);
 
             // Return testing data and append appropriately
             activeOptimiser->returnOptimisationData(optTime, costReduction, avgPercentageDerivs, avgTimeForDerivs, numIterationsForConvergence);
@@ -457,14 +463,6 @@ void onetaskGenerateTestingData(){
 }
 
 void generateTestingData(){
-
-//    int configs[3] = {noClutter, lowClutter, heavyClutter};
-    int configs[1] = {heavyClutter};
-
-
-    // start timer here
-    auto startTime = std::chrono::high_resolution_clock::now();
-
     activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 
     MatrixXd startStateVector;
@@ -479,70 +477,7 @@ void generateTestingData(){
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
     activeOptimiser = iLQROptimiser;
 
-    cout << "before one task \n";
     onetaskGenerateTestingData();
-
-
-
-//    for(int i = 0; i < 1; i ++){
-////        std::shared_ptr<pandaReaching> myPandaReaching = std::make_shared<pandaReaching>();
-////        activeModelTranslator = myPandaReaching;
-////        std::shared_ptr<doublePendulum> myDoublePendulum = std::make_shared<doublePendulum>();
-////        activeModelTranslator = myDoublePendulum;
-//
-//
-//    }
-
-//    for(int i = 0; i < 1; i ++){
-////        twoDPushing *myTwoDPushing = new twoDPushing(heavyClutter);
-//        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(noClutter);
-//        activeModelTranslator = myTwoDPushing;
-//        activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
-//
-//        MatrixXd startStateVector;
-//        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-//        startStateVector = activeModelTranslator->X_start;
-//        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
-//        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-//        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-//
-//        activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
-//        yamlReader->readOptimisationSettingsFile(opt_iLQR);
-//        iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
-//        activeOptimiser = iLQROptimiser;
-//
-//        onetaskGenerateTestingData();
-//
-//    }
-
-//    for(int i = 0; i < 3; i ++){
-//        boxFlick *myBoxFlicking = new boxFlick(configs[i]);
-//        activeModelTranslator = myBoxFlicking;
-//        activeDifferentiator = new differentiator(activeModelTranslator, activeModelTranslator->myHelper);
-//
-//        MatrixXd startStateVector;
-//        startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-//        startStateVector = activeModelTranslator->X_start;
-//        activeModelTranslator->setStateVector(startStateVector, MAIN_DATA_STATE);
-//        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-//        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
-//
-//        activeVisualiser = new visualizer(activeModelTranslator);
-//        yamlReader->readOptimisationSettingsFile(opt_iLQR);
-//        iLQROptimiser = new interpolatediLQR(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
-//        activeOptimiser = iLQROptimiser;
-//
-//        onetaskGenerateTestingData();
-//
-//    }
-
-    auto stopTimer = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stopTimer - startTime);
-    double timeForTesting = duration.count() / 1000.0;
-    timeForTesting = timeForTesting / 3600.0;
-    cout << "time taken: " << timeForTesting << " h" << endl;
-//    double predictedTimeFor100Scenes = timeForTesting * (100.0 / 3600.0);
-//    cout << "predicted time taken: " << predictedTimeFor100Scenes << " h" << endl;
 }
 
 void generateFilteringData(){
@@ -1272,7 +1207,7 @@ int generateTestingData_MPCHorizons(){
                 cout << "current horizon: " << horizonNames[j] << "\n";
 
                 activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
-                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1200, 1, horizons[j]);
+                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1500, 1, horizons[j]);
 
                 finalCostsRow.push_back(finalCost);
                 avgHZRow.push_back(avgHz);
