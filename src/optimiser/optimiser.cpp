@@ -687,7 +687,7 @@ std::vector<MatrixXd> optimiser::generateJerkProfile(){
         MatrixXd accell2 = state3 - state2;
 
         for(int j = 0; j < activeModelTranslator->dof; j++){
-            jerk(j, 0) = accell2(j+dof, 0) - accell1(j+dof, 0);
+            jerk(j, 0) = abs(accell2(j+dof, 0) - accell1(j+dof, 0));
         }
 
         jerkProfile.push_back(jerk);

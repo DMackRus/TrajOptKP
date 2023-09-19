@@ -252,11 +252,11 @@ int main(int argc, char **argv) {
         // No clutter - 1800 - 500 - 1800
 
         if(task == walker_locomotion){
-            activeModelTranslator->X_desired(10) = 0.3;
+            activeModelTranslator->X_desired(10) = 0.28;
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1500, 1, 50);
+        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1500, 1, 80);
     }
     else if(mode == GENERATE_TEST_SCENES){
         cout << "TASK INIT MODE \n";
@@ -848,11 +848,10 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
         MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
         double stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
-        trajecCost += stateCost; // * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep();
+        trajecCost += stateCost  * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep();
 
         activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-
     }
 
     cout << "trajec cost: " << trajecCost << endl;
@@ -1126,7 +1125,7 @@ int generateTestingData_MPCHorizons(){
 
 
     std::vector<int> minN = {1, 5, 10, 20, 1, 1, 1};
-    std::vector<int> maxN = {1, 5, 10, 20, 5, 5, 5};
+    std::vector<int> maxN = {1, 5, 10, 20, 10, 5, 5};
     std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
 
     std::vector<double> targetVelocities;
