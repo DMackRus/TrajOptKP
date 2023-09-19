@@ -166,10 +166,10 @@ int main(int argc, char **argv) {
     }
 
     if(mode == GENERATE_TESTING_DATA){
-        return generateTestingData_MPCHorizons();
+    	 return generateTestingData_MPCHorizons();
 //        generateTestingData_MPC();
-//        generateTestingData();
-//        return 0;
+        //generateTestingData();
+        //return 0;
     }
 
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
         // No clutter - 1800 - 500 - 1800
 
         if(task == walker_locomotion){
-            activeModelTranslator->X_desired(10) = 0.1;
+            activeModelTranslator->X_desired(10) = 0.3;
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
@@ -358,8 +358,8 @@ void onetaskGenerateTestingData(){
     std::vector<std::string> methodNames = {"baseline", "SI5", "SI1000", "adaptive_jerk_5", "iterative_error_5", "magvel_change_5"};
     int numMethods = methodNames.size();
     std::vector<string> keyPointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
-    std::vector<int> minN = {1, 5, 1000, 5, 5, 5};
-    std::vector<int> maxN = {1, 5, 1000, 100, 100, 100};
+    std::vector<int> minN = {1, 5, 1000, 2, 2, 2};
+    std::vector<int> maxN = {1, 5, 1000, 10, 10, 10};
 
 //    std::vector<std::string> methodNames = {"iterative_error"};
 //    int numMethods = methodNames.size();

@@ -1,3 +1,4 @@
+sleep 4h
 cd build
 cmake --build .
 cd ..
