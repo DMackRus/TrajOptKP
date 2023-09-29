@@ -1105,7 +1105,7 @@ int generateTestingData_MPCHorizons(){
         return 0;
     }
 
-    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk", "iterative_error", "magvel_change"};
+    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk2", "iterative_error", "magvel_change2"};
     std::vector<int> testIndices;
     bool anyMatch = false;
     for(int i = 0; i < testingMethods.size(); i++){
@@ -1123,9 +1123,8 @@ int generateTestingData_MPCHorizons(){
         return 0;
     }
 
-
-    std::vector<int> minN = {1, 5, 10, 20, 1, 1, 1};
-    std::vector<int> maxN = {1, 5, 10, 20, 10, 5, 5};
+    std::vector<int> minN = {1, 5, 10, 20, 2, 2, 2};
+    std::vector<int> maxN = {1, 5, 10, 20, 20, 5, 10};
     std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
 
     std::vector<double> targetVelocities;

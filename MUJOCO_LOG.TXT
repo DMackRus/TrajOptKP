@@ -28,3 +28,9 @@ WARNING: Nan, Inf or huge value in QACC at DOF 0. The simulation is unstable. Ti
 Tue Sep 19 12:22:02 2023
 ERROR: stack overflow: max = 8589934592, available = 8589930260, requested = 8589930336 (ne = 0, nf = 0, nefc = 9, ncon = 2)
 
+Wed Sep 20 11:44:23 2023
+ERROR: stack overflow: max = 8589934592, available = 8589930260, requested = 8589930336 (ne = 0, nf = 0, nefc = 9, ncon = 2)
+
+Thu Sep 21 01:34:10 2023
+ERROR: stack overflow: max = 8589934592, available = 8589928672, requested = 8589928680 (ne = 0, nf = 0, nefc = 12, ncon = 3)
+
