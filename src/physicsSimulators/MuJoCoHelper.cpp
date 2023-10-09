@@ -53,28 +53,6 @@ bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> join
         d->qpos[qposIndex] = jointPositions[i];
     }
 
-    // Get the body id of the base link of the robot
-//    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
-//
-//    if(jointId == -1){
-//        cout << "Base link of robot not found\n";
-//        return false;
-//    }
-//
-//
-//    int startIndex = model.get()->jnt_qposadr[jointId];
-//
-//    if(startIndex == MAIN_DATA_STATE){
-//        cout << "Invalid bodyId for robot\n";
-//        return false;
-//    }
-//
-//
-//
-//    for(int i = 0; i < jointPositions.size(); i++){
-//        d->qpos[startIndex + i] = jointPositions[i];
-//    }
-
     return true;
 }
 
@@ -106,26 +84,6 @@ bool MuJoCoHelper::setRobotJointsVelocities(string robotName, vector<double> joi
         d->qvel[qposIndex] = jointVelocities[i];
     }
 
-//    // Get the body id of the base link of the robot
-//    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
-//
-//    if(jointId == -1){
-//        cout << "Base link of robot not found\n";
-//        return false;
-//    }
-//    int startIndex = model.get()->jnt_dofadr[jointId];
-//
-//    if(startIndex == -1){
-//        cout << "Invalid bodyId for robot\n";
-//        return false;
-//    }
-//
-//    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
-//
-//    for(int i = 0; i < jointVelocities.size(); i++){
-//        d->qvel[startIndex + i] = jointVelocities[i];
-//    }
-
     return true;
 }
 
@@ -156,23 +114,6 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
         d->ctrl[qposIndex] = jointControls[i];
     }
 
-//    if(jointId == -1){
-//        cout << "Base link of robot not found\n";
-//        return false;
-//    }
-//    int startIndex = model.get()->jnt_dofadr[jointId];
-//
-//    if(startIndex == -1){
-//        cout << "Invalid bodyId for robot\n";
-//        return false;
-//    }
-//
-//    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
-//
-//    for(int i = 0; i < jointControls.size(); i++){
-//        d->ctrl[startIndex + i] = jointControls[i];
-//    }
-
     return true;
 }
 
@@ -197,26 +138,6 @@ bool MuJoCoHelper::getRobotJointsPositions(string robotName, vector<double> &joi
         jointPositions.push_back(d->qpos[qposIndex]);
     }
 
-    // Get the body id of the base link of the robot
-//    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
-//
-//    if(jointId == -1){
-//        cout << "Base link of robot not found\n";
-//        return false;
-//    }
-//    int startIndex = model.get()->jnt_dofadr[jointId];
-//
-//    if(startIndex == -1){
-//        cout << "Invalid bodyId for robot\n";
-//        return false;
-//    }
-//
-//    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
-//
-//    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-//        jointPositions.push_back(d->qpos[startIndex + i]);
-//    }
-
     return true;
 }
 
@@ -240,26 +161,6 @@ bool MuJoCoHelper::getRobotJointsVelocities(string robotName, vector<double> &jo
         int qposIndex = model.get()->jnt_qposadr[jointId];
         jointVelocities.push_back(d->qvel[qposIndex]);
     }
-
-    // Get the body id of the base link of the robot
-//    int jointId = mj_name2id(model.get(), mjOBJ_JOINT, robotBaseJointName.c_str());
-//
-//    if(jointId == -1){
-//        cout << "Base link of robot not found\n";
-//        return false;
-//    }
-//    int startIndex = model.get()->jnt_dofadr[jointId];
-//
-//    if(startIndex == -1){
-//        cout << "Invalid bodyId for robot\n";
-//        return false;
-//    }
-//
-//    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
-//
-//    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-//        jointVelocities.push_back(d->qvel[startIndex + i]);
-//    }
 
     return true;
 }
@@ -305,30 +206,12 @@ bool MuJoCoHelper::getRobotJointsControls(string robotName, vector<double> &join
         return false;
     }
 
-    // Get the body id of the base link of the robot
-//    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
-
-//    if(jointId == -1){
-//        cout << "Base link of robot not found\n";
-//        return false;
-//    }
-//    int startIndex = model.get()->jnt_dofadr[jointId];
-//
-//    if(startIndex == -1){
-//        cout << "Invalid bodyId for robot\n";
-//        return false;
-//    }
-
     std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
     for(int i = 0; i < robots[robotIndex].actuatorNames.size(); i++){
         int actuatorId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robots[robotIndex].actuatorNames[i].c_str());
         int ctrlIndex = model.get()->jnt_dofadr[actuatorId];
         jointControls.push_back(d->ctrl[ctrlIndex]);
     }
-
-//    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-//        jointControls.push_back(d->ctrl[startIndex + i]);
-//    }
 
     return true;
 }
@@ -842,12 +725,19 @@ void MuJoCoHelper::initVisualisation() {
     mjv_defaultScene(&scn);
 
 //    cam.distance = 1.66269;
-    cam.azimuth = -118.7;
-    cam.elevation = 3;
-    cam.elevation = -34.7;
-    cam.lookat[0] = 0.4027;
-    cam.lookat[1] = 0.0169;
-    cam.lookat[2] = 0.1067;
+//    cam.azimuth = -118.7;
+//    cam.elevation = -34.7;
+//    cam.lookat[0] = 0.4027;
+//    cam.lookat[1] = 0.0169;
+//    cam.lookat[2] = 0.1067;
+
+    cam.distance = 5.29;
+    cam.azimuth = -117.9;
+    cam.elevation = -20.3;
+    cam.lookat[0] = 1.58;
+    cam.lookat[1] = -0.61;
+    cam.lookat[2] = 0.39;
+
 
     // create scene and context
     mjv_makeScene(model.get(), &scn, 2000);

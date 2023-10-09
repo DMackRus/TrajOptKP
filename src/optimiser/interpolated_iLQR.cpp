@@ -65,6 +65,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
     X_old[0] = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//    std::cout << "X_old[0]: " << X_old[0].transpose() << std::endl;
 
     if(activePhysicsSimulator->checkIfDataIndexExists(0)){
         activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
@@ -520,6 +521,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
         activePhysicsSimulator->copyRolloutBufferToSavedSystemStatesList();
 
         for(int i = 0 ; i < horizonLength; i++){
+            activeModelTranslator->activePhysicsSimulator->forwardSimulator(i + 1);
             X_old.at(i + 1) = activeModelTranslator->returnStateVector(i + 1);
             U_old[i] = U_new[i].replicate(1, 1);
         }
