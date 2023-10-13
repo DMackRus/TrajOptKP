@@ -15,5 +15,5 @@ displayMode: 5
 # Loadmodes can be, "random", "fromCSV", "fromYAML"
 taskInitMode: "fromCSV"
 csvRow: 5
-filtering: "none"
+filtering: "none"    #FIR or low_pass or none
 costDerivsFD: false

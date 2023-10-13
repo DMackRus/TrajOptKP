@@ -328,7 +328,7 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
 
     mainWayPoint(0) = intermediatePointX;
     mainWayPoint(1) = intermediatePointY;
-    mainWayPoint(2) = 0.25f;
+    mainWayPoint(2) = 0.28f;
     mainWayPoints.push_back(mainWayPoint);
     wayPointsTiming.push_back(horizon - 1);
 
@@ -422,7 +422,7 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 //    mainWayPoints.push_back(mainWayPoint);
 //    wayPointsTiming.push_back(3 * horizon / 4);
 
-    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * activePhysicsSimulator->returnModelTimeStep());
+    float maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * activePhysicsSimulator->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
@@ -439,7 +439,7 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 
     mainWayPoint(0) = endPointX;
     mainWayPoint(1) = endPointY;
-    mainWayPoint(2) = 0.25f;
+    mainWayPoint(2) = 0.28f;
 
     mainWayPoints.push_back(mainWayPoint);
     wayPointsTiming.push_back(horizon - 1);
@@ -542,6 +542,7 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
             // Invert the quaternion
             if(dotProduct < 0){
+                desiredQuat(0) = -desiredQuat(0);
                 desiredQuat(1) = -desiredQuat(1);
                 desiredQuat(2) = -desiredQuat(2);
                 desiredQuat(3) = -desiredQuat(3);
