@@ -168,7 +168,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
-//    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
+    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
     initialCost = oldCost;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 

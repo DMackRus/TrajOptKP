@@ -2,7 +2,7 @@ modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing_heavyClutter.
 modelName: "/push_hCl"
 timeStep: 0.004
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
-minN: 1
+minN: 2
 maxN: 50
 iterativeErrorThreshold: 0.0001
 robots:
@@ -28,9 +28,9 @@ bodies:
     startAngularPos: [0, 0, 0]
     goalLinearPos: [0.7, 0.4, 0.0]
     goalAngularPos: [0, 0, 0]
-    linearPosCost: [ 0, 0, 0 ]
-    terminalLinearPosCost: [ 10000, 10000, 0 ]
-    linearVelCost: [ 1, 1, 0 ]
+    linearPosCost: [ 0.1, 0.1, 0 ]
+    terminalLinearPosCost: [ 0, 0, 0 ]
+    linearVelCost: [ 0, 0, 0 ]
     terminalLinearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
     terminalAngularPosCost: [ 0, 0, 0 ]

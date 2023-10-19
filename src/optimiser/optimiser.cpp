@@ -270,19 +270,14 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
         // Loop over the dofs
         for(int j = 0; j < dof; j++){
             // Loop over the computed key points per dof
-//            cout << "Computed key points for dof " << j << " are: ";
             for(int k = 0; k < computedKeyPoints[j].size(); k++){
                 // If the current index is a computed key point
-//                cout << computedKeyPoints[j][k] << " ";
                 if(i == computedKeyPoints[j][k]){
                     keyPoints[i].push_back(j);
                 }
             }
-//            cout << "\n";
         }
     }
-
-
 
     // Sort list into order
     for(int i = 0; i < horizonLength; i++){
@@ -352,8 +347,6 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
                 lastVelDirection[i] = currentVelDirection;
             }
 
-//            cout << " after check direction" << endl;
-
             // If interval is greater than maxN
             if(lastKeypointCounter[i] >= activeDerivativeInterpolator.maxN){
                 keyPoints[t].push_back(i);
@@ -364,7 +357,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
         }
     }
 
-    // Enforce last keypoint for all sofs at horizonLength - 1
+    // Enforce last keypoint for all dofs at horizonLength - 1
     for(int i = 0; i < dof; i++){
         keyPoints[horizonLength-1].push_back(i);
     }
