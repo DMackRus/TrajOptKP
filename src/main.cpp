@@ -166,10 +166,10 @@ int main(int argc, char **argv) {
     }
 
     if(mode == GENERATE_TESTING_DATA){
-        return generateTestingData_MPCHorizons();
+    	 return generateTestingData_MPCHorizons();
 //        generateTestingData_MPC();
-//        generateTestingData();
-//        return 0;
+        //generateTestingData();
+        //return 0;
     }
 
     startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
@@ -358,8 +358,8 @@ void onetaskGenerateTestingData(){
     std::vector<std::string> methodNames = {"baseline", "SI5", "SI1000", "adaptive_jerk_5", "iterative_error_5", "magvel_change_5"};
     int numMethods = methodNames.size();
     std::vector<string> keyPointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
-    std::vector<int> minN = {1, 5, 1000, 5, 5, 5};
-    std::vector<int> maxN = {1, 5, 1000, 100, 100, 100};
+    std::vector<int> minN = {1, 5, 1000, 2, 2, 2};
+    std::vector<int> maxN = {1, 5, 1000, 10, 10, 10};
 
 //    std::vector<std::string> methodNames = {"iterative_error"};
 //    int numMethods = methodNames.size();
@@ -1105,7 +1105,7 @@ int generateTestingData_MPCHorizons(){
         return 0;
     }
 
-    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk", "iterative_error", "magvel_change"};
+    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk2", "iterative_error", "magvel_change2"};
     std::vector<int> testIndices;
     bool anyMatch = false;
     for(int i = 0; i < testingMethods.size(); i++){
@@ -1123,9 +1123,8 @@ int generateTestingData_MPCHorizons(){
         return 0;
     }
 
-
-    std::vector<int> minN = {1, 5, 10, 20, 1, 1, 1};
-    std::vector<int> maxN = {1, 5, 10, 20, 10, 5, 5};
+    std::vector<int> minN = {1, 5, 10, 20, 2, 2, 2};
+    std::vector<int> maxN = {1, 5, 10, 20, 20, 5, 10};
     std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
 
     std::vector<double> targetVelocities;

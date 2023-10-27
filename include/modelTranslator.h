@@ -13,7 +13,8 @@ enum clutterLevels{
     noClutter = 0,
     lowClutter = 1,
     heavyClutter = 2,
-    constrainedClutter = 3
+    constrainedClutter = 3,
+    clutter_realWorld = 4
 };
 
 class modelTranslator {
@@ -67,11 +68,13 @@ public:
     double iterativeErrorThreshold;
     std::vector<double> magVelChangeThresholds;
 
-protected:
     DiagonalMatrix<double, Eigen::Dynamic> Q;
     DiagonalMatrix<double, Eigen::Dynamic> Q_terminal;
     DiagonalMatrix<double, Eigen::Dynamic> R;
     DiagonalMatrix<double, Eigen::Dynamic> J;
+
+protected:
+
 
 private:
 

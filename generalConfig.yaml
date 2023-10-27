@@ -11,9 +11,9 @@ optimiser: "interpolated_iLQR"
 taskNumber: 5
 # init control = 0, optimise once = 1, MPCContinous = 2, MPC_until_completion = 3, generateTestScenes = 4, generateTestingData = 5, generateFilteringData = 6
 # generic testing = 9
-displayMode: 1
+displayMode: 0
 # Loadmodes can be, "random", "fromCSV", "fromYAML"
 taskInitMode: "fromCSV"
-csvRow: 1
-filtering: "none"
+csvRow: 3
+filtering: "none"    #FIR or low_pass or none
 costDerivsFD: false

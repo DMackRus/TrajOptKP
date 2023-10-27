@@ -16,6 +16,9 @@ twoDPushing::twoDPushing(int _clutterLevel){
     else if(clutterLevel == constrainedClutter){
         yamlFilePath = "/taskConfigs/twoDPushingConstrainedClutterConfig.yaml";
     }
+    else if(clutterLevel == clutter_realWorld){
+        yamlFilePath = "/taskConfigs/twoDPushingRealWorldConfig.yaml";
+    }
     else{
         cout << "ERROR: Invalid clutter level" << endl;
     }
@@ -281,6 +284,7 @@ std::vector<MatrixXd> twoDPushing::createInitSetupControls(int horizonLength){
 
 void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
     const std::string goalObject = "blueTin";
+//    const std::string goalObject = "HotChocolate";
     const std::string EE_name = "franka_gripper";
 //    const std::string EE_name = "hand";
 
@@ -324,7 +328,7 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
 
     mainWayPoint(0) = intermediatePointX;
     mainWayPoint(1) = intermediatePointY;
-    mainWayPoint(2) = 0.25f;
+    mainWayPoint(2) = 0.28f;
     mainWayPoints.push_back(mainWayPoint);
     wayPointsTiming.push_back(horizon - 1);
 
@@ -365,6 +369,7 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
 
 void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd, std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
     const std::string goalObject = "blueTin";
+//    const std::string goalObject = "HotChocolate";
     const std::string EE_name = "franka_gripper";
 //    const std::string EE_name = "hand";
 
@@ -387,7 +392,8 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 
     // TODO hard coded - get it programmatically? - also made it slightly bigger so trajectory has room to improve
 //    float cylinder_radius = 0.08;
-    float cylinder_radius = 0.1;
+//    float cylinder_radius = 0.1;
+    float cylinder_radius = 0.01;
     float x_cylinder0ffset = cylinder_radius * cos(angle_EE_push);
     float y_cylinder0ffset = cylinder_radius * sin(angle_EE_push);
 
@@ -416,7 +422,7 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 //    mainWayPoints.push_back(mainWayPoint);
 //    wayPointsTiming.push_back(3 * horizon / 4);
 
-    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * activePhysicsSimulator->returnModelTimeStep());
+    float maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * activePhysicsSimulator->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
@@ -433,7 +439,7 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 
     mainWayPoint(0) = endPointX;
     mainWayPoint(1) = endPointY;
-    mainWayPoint(2) = 0.25f;
+    mainWayPoint(2) = 0.28f;
 
     mainWayPoints.push_back(mainWayPoint);
     wayPointsTiming.push_back(horizon - 1);
@@ -468,6 +474,7 @@ std::vector<m_point> twoDPushing::initControls_createAllWayPoints(std::vector<m_
 std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vector<m_point> initPath){
     std::vector<MatrixXd> initControls;
     std::string goalObjName = "blueTin";
+//    const std::string goalObjName = "HotChocolate";
     std::string EEName = "franka_gripper";
 
     pose_7 EE_start_pose;
@@ -480,18 +487,21 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
     float y_diff = X_desired(8) - goalobj_startPose.position(1);
     angle_EE_push = atan2(y_diff, x_diff);
 
-    if(angle_EE_push < 0){
-        angle_EE_push = angle_EE_push + (2*PI);
-//        cout << "converted angle is: " << convertedAngle << endl;
+    angle_EE_push -= (PI / 4);
+
+    if(angle_EE_push < -(PI/2)){
+        angle_EE_push = (2 * PI) + angle_EE_push;
     }
 
-    double convertedAngle = angle_EE_push - (PI/4);
+    double convertedAngle = angle_EE_push;
 
     // Setup the desired rotation matrix for the end-effector
     m_point xAxis, yAxis, zAxis;
     xAxis << cos(convertedAngle), sin(convertedAngle), 0;
     zAxis << 0, 0, -1;
     yAxis = crossProduct(zAxis, xAxis);
+
+    // End effector parallel to table
     // xAxis << 0, 0, -1;
     // zAxis << cos(convertedAngle), sin(convertedAngle), 0;
     // yAxis = crossProduct(zAxis, xAxis);
@@ -511,6 +521,8 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
         }
     }
 
+    bool quaternion_check = false;
+
     for(int i = 0; i < initPath.size(); i++){
         pose_7 currentEEPose;
         activePhysicsSimulator->getBodyPose_quat(EEName, currentEEPose, MAIN_DATA_STATE);
@@ -519,13 +531,30 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
         currentEEQuat(1) = currentEEPose.quat(1);
         currentEEQuat(2) = currentEEPose.quat(2);
         currentEEQuat(3) = currentEEPose.quat(3);
+
+        if(!quaternion_check){
+            quaternion_check = true;
+            // calculate dot produce between quaternios
+            float dotProduct = 0;
+            for(int j = 0; j < 4; j++){
+                dotProduct += currentEEQuat(j) * desiredQuat(j);
+            }
+
+            // Invert the quaternion
+            if(dotProduct < 0){
+                desiredQuat(0) = -desiredQuat(0);
+                desiredQuat(1) = -desiredQuat(1);
+                desiredQuat(2) = -desiredQuat(2);
+                desiredQuat(3) = -desiredQuat(3);
+            }
+        }
         invertedQuat = invQuat(currentEEQuat);
         quatDiff = multQuat(desiredQuat, invertedQuat);
 
         
         m_point axisDiff = quat2Axis(quatDiff);
         MatrixXd differenceFromPath(6, 1);
-        float gainsTorque[6] = {100, 100, 200, 100, 100, 100};
+        float gainsTorque[6] = {100, 100, 200, 80, 80, 80};
         float gainsPositionControl[6] = {10000, 10000, 30000, 5000, 5000, 5000};
 
         for(int j = 0; j < 3; j++){
