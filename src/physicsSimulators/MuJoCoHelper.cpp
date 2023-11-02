@@ -731,13 +731,12 @@ void MuJoCoHelper::initVisualisation() {
 //    cam.lookat[1] = 0.0169;
 //    cam.lookat[2] = 0.1067;
 
-    cam.distance = 5.29;
-    cam.azimuth = -117.9;
-    cam.elevation = -20.3;
-    cam.lookat[0] = 1.58;
-    cam.lookat[1] = -0.61;
-    cam.lookat[2] = 0.39;
-
+    cam.distance = 0.4449;
+    cam.azimuth = 133.7;
+    cam.elevation = -31.9;
+    cam.lookat[0] = 0.635;
+    cam.lookat[1] = -0.03;
+    cam.lookat[2] = 0.275;
 
     // create scene and context
     mjv_makeScene(model.get(), &scn, 2000);
