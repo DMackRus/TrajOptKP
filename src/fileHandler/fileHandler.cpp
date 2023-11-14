@@ -257,11 +257,10 @@ void fileHandler::readSettingsFile(std::string settingsFilePath){
     filtering = node["filtering"].as<std::string>();
     costDerivsFD = node["costDerivsFD"].as<bool>();
 
-
     // TODO - make these settings?
-    minIter = 3;
-    maxIter = 10;
-    maxHorizon = 4000;
+    minIter = node["minIter"].as<int>();
+    maxIter = node["maxIter"].as<int>();
+    maxHorizon = node["maxHorizon"].as<int>();
 
 }
 

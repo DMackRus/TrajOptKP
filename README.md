@@ -28,7 +28,7 @@ Please note that this code is still under active development.
    ```
 3. Build the package
    ```
-   cd GTOWK
+   cd TrajOptKP
    mkdir build
    cd build
    cmake ..

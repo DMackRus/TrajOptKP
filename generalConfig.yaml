@@ -17,3 +17,7 @@ taskInitMode: "fromCSV"
 csvRow: 1
 filtering: "none"    #FIR or low_pass or none
 costDerivsFD: false
+
+minIter: 3
+maxIter: 10
+maxHorizon: 4000
