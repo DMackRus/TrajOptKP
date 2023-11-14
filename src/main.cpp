@@ -697,21 +697,21 @@ void optimiseOnceandShow(){
 
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-        if(controlCounter == 6){
-            std::cout << "help \n";
-        }
-
-        if(controlCounter == optHorizon / 2){
-            std::cout << "help \n";
-        }
-
-        if(controlCounter == optHorizon){
-            std::cout << "help \n";
-        }
+//        if(controlCounter == 6){
+//            std::cout << "help \n";
+//        }
+//
+//        if(controlCounter == optHorizon / 2){
+//            std::cout << "help \n";
+//        }
+//
+//        if(controlCounter == optHorizon){
+//            std::cout << "help \n";
+//        }
 
         controlCounter++;
         visualCounter++;
-        std::cout << "control counter: " << controlCounter << "\n";
+//        std::cout << "control counter: " << controlCounter << "\n";
 
         if(controlCounter >= finalControls.size()){
             controlCounter = 0;
