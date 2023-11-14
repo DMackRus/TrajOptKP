@@ -6,7 +6,7 @@
 
 fileHandler::fileHandler(){
     // Init Controls
-    project_display_mode = 0;
+    project_run_mode = "Init_controls";
     // Pendulum
     taskName = "double_pendulum";
     // interpolated iLQR

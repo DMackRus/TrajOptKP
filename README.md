@@ -65,8 +65,28 @@ bash run.bash
 ```
 
 ## Examples
+Here are some example trajectories that have been generated using this package.
+
+**Manipulation**
+
+<p align="middle">
+  <img src="media/push_moderate_clutter.gif" width="300"/>
+  <img src="media/push_moderate_clutter.gif" width="300"/>
+</p>
+
+**Locomotion**
+
+**Dynamic motion**
+
 
 ## Key-points
+Description coming soon.
+
+## To-Do
+- [ ] Add more examples
+- [ ] Implement rotation of bodies in state vector and F.D.
+- [ ] Rework main.cpp so that all tasks are their own executable instead.
+- [ ] Improve README readability.
 
 ## Citing
 Coming soon.
