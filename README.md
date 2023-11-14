@@ -70,8 +70,8 @@ Here are some example trajectories that have been generated using this package.
 **Manipulation**
 
 <p align="middle">
-  <img src="media/push_moderate_clutter.gif" width="300"/>
-  <img src="media/push_moderate_clutter.gif" width="300"/>
+  <img src="media/box-sweep.gif" width="300"/>
+  <img src="media/push_low_clutter.gif" width="300"/>
 </p>
 
 **Locomotion**
