@@ -259,7 +259,7 @@ void fileHandler::readSettingsFile(std::string settingsFilePath){
 
 
     // TODO - make these settings?
-    minIter = 0;
+    minIter = 3;
     maxIter = 10;
     maxHorizon = 4000;
 
