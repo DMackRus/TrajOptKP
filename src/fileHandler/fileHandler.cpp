@@ -8,7 +8,7 @@ fileHandler::fileHandler(){
     // Init Controls
     project_display_mode = 0;
     // Pendulum
-    taskNumber = 0;
+    taskName = "double_pendulum";
     // interpolated iLQR
     optimiser = "interpolated_iLQR";
 
@@ -250,18 +250,16 @@ void fileHandler::readSettingsFile(std::string settingsFilePath){
     YAML::Node node = YAML::LoadFile(projectParentPath + settingsFilePath);
 
     optimiser = node["optimiser"].as<std::string>();
-    project_display_mode = node["displayMode"].as<int>();
-    taskNumber = node["taskNumber"].as<int>();
+    project_run_mode = node["runMode"].as<std::string>();
+    taskName = node["task"].as<std::string>();
     taskInitMode = node["taskInitMode"].as<std::string>();
     csvRow = node["csvRow"].as<int>();
     filtering = node["filtering"].as<std::string>();
     costDerivsFD = node["costDerivsFD"].as<bool>();
 
-    // TODO - make these settings?
     minIter = node["minIter"].as<int>();
     maxIter = node["maxIter"].as<int>();
     maxHorizon = node["maxHorizon"].as<int>();
-
 }
 
 void fileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength){

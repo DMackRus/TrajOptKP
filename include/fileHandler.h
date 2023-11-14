@@ -41,8 +41,8 @@ public:
                              std::vector<std::vector<double>> avgHZ, std::vector<std::vector<double>> avgTimeGettingDerivs,
                              std::vector<std::vector<double>> avgTimeBP, std::vector<std::vector<double>> avgTimeFP, std::vector<std::vector<double>> avgPercentDerivs);
 
-    int project_display_mode;
-    int taskNumber;
+    std::string project_run_mode;
+    std::string taskName;
     std::string optimiser;
     std::string taskInitMode;
     int csvRow = 0;

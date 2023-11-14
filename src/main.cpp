@@ -28,26 +28,25 @@
 #define GENERATE_TEST_SCENES        4
 #define GENERATE_TESTING_DATA       5
 #define GENERATE_FILTERING_DATA     6
-#define DEFAULT_KEYBOARD_CONTROL    7
 #define GENERIC_TESTING             9
 
-enum scenes{
-    double_pendulum = 0,
-    acrobot_swing = 1,
-    reaching = 2,
-    cylinder_pushing = 3,
-    cylinder_pushing_mild_clutter = 4,
-    cylinder_pushing_heavy_clutter = 5,
-    cylinder_pushing_mild_clutter_constrained = 6,
-    box_push_toppling = 7,
-    box_flicking = 8,
-    box_flicking_mild_clutter = 9,
-    box_flicking_heavy_clutter = 10,
-    walker_locomotion = 11,
-    hopper_locomotion = 12,
-    humanoid_locomotion = 13,
-    box_sweep = 13
-};
+//enum scenes{
+//    double_pendulum = 0,
+//    acrobot_swing = 1,
+//    reaching = 2,
+//    cylinder_pushing = 3,
+//    cylinder_pushing_mild_clutter = 4,
+//    cylinder_pushing_heavy_clutter = 5,
+//    cylinder_pushing_mild_clutter_constrained = 6,
+//    box_push_toppling = 7,
+//    box_flicking = 8,
+//    box_flicking_mild_clutter = 9,
+//    box_flicking_heavy_clutter = 10,
+//    walker_locomotion = 11,
+//    hopper_locomotion = 12,
+//    humanoid_locomotion = 13,
+//    box_sweep = 13
+//};
 
 // --------------------- Global class instances --------------------------------
 std::shared_ptr<modelTranslator> activeModelTranslator;
@@ -59,7 +58,7 @@ std::shared_ptr<gradDescent> gradDescentOptimiser;
 std::shared_ptr<visualizer> activeVisualiser;
 std::shared_ptr<fileHandler> yamlReader;
 
-int task;
+std::string task;
 bool mpcVisualise = true;
 bool playback = true;
 std::vector<std::string> testingMethods;
@@ -70,7 +69,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHz, double &avgTimeGettingD
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON);
 void MPCContinous();
 void generateTestScenes();
-void keyboardControl();
 
 void generateTestingData_MPC();
 int generateTestingData_MPCHorizons();
@@ -81,6 +79,7 @@ void genericTesting();
 
 int main(int argc, char **argv) {
 
+    // Only used for generating testing data for different key-point methods
     if(argc > 1){
         for (int i = 1; i < argc; i++) {
             testingMethods.push_back(argv[i]);
@@ -88,76 +87,78 @@ int main(int argc, char **argv) {
     }
 
     std::string optimiser;
-    int mode;
+    std::string runMode;
 
     std::string taskInitMode;
 
     yamlReader = std::make_shared<fileHandler>();
     yamlReader->readSettingsFile("/generalConfig.yaml");
     optimiser = yamlReader->optimiser;
-    mode = yamlReader->project_display_mode;
-    task = yamlReader->taskNumber;
+    runMode = yamlReader->project_run_mode;
+    task = yamlReader->taskName;
     taskInitMode = yamlReader->taskInitMode;
 
     MatrixXd startStateVector(1, 1);
 
-    if(task == double_pendulum){
+    if(task == "double_pendulum"){
         std::shared_ptr<doublePendulum> myDoublePendulum = std::make_shared<doublePendulum>();
         activeModelTranslator = myDoublePendulum;
     }
-    else if(task == acrobot_swing){
+    else if(task == "acrobot"){
         std::shared_ptr<acrobot> myAcrobot = std::make_shared<acrobot>();
         activeModelTranslator = myAcrobot;
 
     }
-    else if(task == reaching){
+    else if(task == "reaching"){
         std::shared_ptr<pandaReaching> myReaching = std::make_shared<pandaReaching>();
         activeModelTranslator = myReaching;
     }
-    else if(task == cylinder_pushing){
+    else if(task == "pushing_no_clutter"){
         std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(noClutter);
         activeModelTranslator = myTwoDPushing;
 
     }
-    else if(task == cylinder_pushing_mild_clutter){
+    else if(task == "pushing_low_clutter"){
         std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(lowClutter);
         activeModelTranslator = myTwoDPushing;
 
     }
-    else if(task == cylinder_pushing_heavy_clutter){
+    else if(task == "pushing_moderate_clutter"){
         std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(heavyClutter);
         activeModelTranslator = myTwoDPushing;
 
     }
-    else if(task == cylinder_pushing_mild_clutter_constrained){
+    else if(task == "pushing_moderate_clutter_constrained"){
         std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(constrainedClutter);
         activeModelTranslator = myTwoDPushing;
     }
-    else if(task == box_push_toppling){
+    else if(task == "box_push_toppling"){
         cout << "not implemented task yet " << endl;
         return -1;
     }
-    else if(task == box_flicking){
+    else if(task == "box_flick_no_clutter"){
         std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(noClutter);
         activeModelTranslator = myBoxFlick;
     }
-    else if(task == box_flicking_mild_clutter){
+    else if(task == "box_flick_low_clutter"){
         std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(lowClutter);
         activeModelTranslator = myBoxFlick;
     }
-    else if(task == box_flicking_heavy_clutter){
+    else if(task == "box_flick_moderate_clutter"){
         std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(heavyClutter);
         activeModelTranslator = myBoxFlick;
     }
-    else if(task == walker_locomotion){
+    else if(task == "walker"){
         std::shared_ptr<walker> myLocomotion = std::make_shared<walker>();
         activeModelTranslator = myLocomotion;
     }
-    else if(task == hopper_locomotion){
-        std::shared_ptr<hopper> myHopper = std::make_shared<hopper>();
-        activeModelTranslator = myHopper;
+    else if(task == "hopper"){
+//        std::shared_ptr<hopper> myHopper = std::make_shared<hopper>();
+//        activeModelTranslator = myHopper;
+        cout << "not implemented task yet " << endl;
+        return -1;
     }
-    else if(task == box_sweep){
+    else if(task == "box_sweep"){
         std::shared_ptr<boxSweep> myBoxSweep = std::make_shared<boxSweep>();
         activeModelTranslator = myBoxSweep;
     }
@@ -165,7 +166,7 @@ int main(int argc, char **argv) {
         std::cout << "invalid scene selected, exiting" << std::endl;
     }
 
-    if(mode == GENERATE_TESTING_DATA){
+    if(runMode == "Generate_testing_data"){
     	 return generateTestingData_MPCHorizons();
 //        generateTestingData_MPC();
         //generateTestingData();
@@ -221,22 +222,22 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    if(mode == SHOW_INIT_CONTROLS){
+    if(runMode == "Init_controls"){
         cout << "SHOWING INIT CONTROLS MODE \n";
         showInitControls();
     }
-    else if(mode == ILQR_ONCE){
+    else if(runMode == "Optimise_once"){
         cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
         activeOptimiser->verboseOutput = true;
         optimiseOnceandShow();
     }
-    else if(mode == MPC_CONTINOUS){
+    else if(runMode == "MPC_continuous"){
         cout << "CONTINOUS MPC MODE \n";
         cout << "mode is disabled for now \n";
         return 0;
 //        MPCContinous();
     }
-    else if(mode == MPC_UNTIL_COMPLETE){
+    else if(runMode == "MPC_until_completion"){
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
         double trajecCost, avgHz;
         double avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
@@ -248,79 +249,25 @@ int main(int argc, char **argv) {
 
         // No clutter - 1800 - 500 - 1800
 
-        if(task == walker_locomotion){
+        if(task == "walker"){
             activeModelTranslator->X_desired(10) = 0.28;
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
         MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1500, 1, 80);
     }
-    else if(mode == GENERATE_TEST_SCENES){
+    else if(runMode == "Generate_test_scenes"){
         cout << "TASK INIT MODE \n";
         generateTestScenes();
     }
-    else if(mode == GENERATE_FILTERING_DATA){
+    else if(runMode == "GENERATE_FILTERING_DATA"){
         cout << "GENERATE FILTERING DATA MODE \n";
         generateFilteringData();
-    }
-    else if(mode == DEFAULT_KEYBOARD_CONTROL){
-        cout << "KEYBOARD TESTING MODE \n";
-        keyboardControl();
-    }
-    else if(mode == GENERIC_TESTING){
-        genericTesting();
     }
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
     }
     return 0;
-}
-
-void genericTesting(){
-    // Initialise trajectory from csv and genrate A, B, steta and controls
-    std::string taskPrefix = activeModelTranslator->modelName;
-    MatrixXd startStateVector;
-    startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-
-    derivative_interpolator derivInterpolator = activeOptimiser->returnDerivativeInterpolator();
-    derivInterpolator.keypoint_method = "setInterval";
-    derivInterpolator.minN = 1;
-    derivInterpolator.maxN = 1;
-    activeOptimiser->setDerivativeInterpolator(derivInterpolator);
-
-
-    for(int i = 0; i < 100; i++){
-
-        yamlReader->loadTaskFromFile(taskPrefix, i, startStateVector, activeModelTranslator->X_desired);
-        activeModelTranslator->X_start = startStateVector;
-
-        cout << "start state " << activeModelTranslator->X_start << endl;
-        cout << "modelName: " << activeModelTranslator->modelName << endl;
-
-        activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
-        if(activeModelTranslator->activePhysicsSimulator->checkIfDataIndexExists(0)){
-            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
-        }
-        else{
-
-            activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
-        }
-
-        int setupHorizon = 1000;
-        int optHorizon = 2980;
-        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
-        activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-        std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
-
-        activeOptimiser->horizonLength = optHorizon;
-        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-
-        activeOptimiser->rolloutTrajectory(0, true, initOptimisationControls);
-        activeOptimiser->generateDerivatives();
-
-        yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B, activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->modelName, i, optHorizon);
-    }
 }
 
 void onetaskGenerateTestingData(){
@@ -993,7 +940,7 @@ void generateTestingData_MPC(){
                                          activeModelTranslator->X_desired);
 
             // Walker model where were trying to match a velocity
-            if(task == walker_locomotion){
+            if(task == "walker"){
                 activeModelTranslator->X_desired(10) = targetVelocities[i];
             }
 
@@ -1182,7 +1129,7 @@ int generateTestingData_MPCHorizons(){
                                          activeModelTranslator->X_desired);
 
             // Walker model where were trying to match a velocity
-            if(task == walker_locomotion){
+            if(task == "walker"){
                 activeModelTranslator->X_desired(10) = targetVelocities[i];
             }
 
@@ -1245,42 +1192,49 @@ int generateTestingData_MPCHorizons(){
     return 1;
 }
 
-void keyboardControl(){
-
-    MatrixXd startStateVector;
-    startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-    int dof = activeModelTranslator->stateVectorSize / 2;
-
-//    startStateVector << 0, 1, 0, 0.3, 0, -0.3, -0.3, 0, 0.3,
-//            0, 0, 0, 0, 0, 0, 0, 0, 0;
+//void genericTesting(){
+//    // Initialise trajectory from csv and genrate A, B, steta and controls
+//    std::string taskPrefix = activeModelTranslator->modelName;
+//    MatrixXd startStateVector;
+//    startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+//
+//    derivative_interpolator derivInterpolator = activeOptimiser->returnDerivativeInterpolator();
+//    derivInterpolator.keypoint_method = "setInterval";
+//    derivInterpolator.minN = 1;
+//    derivInterpolator.maxN = 1;
+//    activeOptimiser->setDerivativeInterpolator(derivInterpolator);
 //
 //
+//    for(int i = 0; i < 100; i++){
 //
-//    activeModelTranslator->X_start = startStateVector;
-//    activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
-//    activeModelTranslator->activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
-
-//    double cost = activeModelTranslator->costFunction(MASTER_RESET_DATA, false);
+//        yamlReader->loadTaskFromFile(taskPrefix, i, startStateVector, activeModelTranslator->X_desired);
+//        activeModelTranslator->X_start = startStateVector;
 //
-//    startStateVector << 0, 0, 0, 0, 0, 0,
-//            0, 0, 0, 0, 0, 0;
+//        cout << "start state " << activeModelTranslator->X_start << endl;
+//        cout << "modelName: " << activeModelTranslator->modelName << endl;
 //
-//    activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
+//        activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
+//        activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
+//        if(activeModelTranslator->activePhysicsSimulator->checkIfDataIndexExists(0)){
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
+//        }
+//        else{
 //
-//    activeModelTranslator->activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
+//            activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
+//        }
 //
-//    double cost2 = activeModelTranslator->costFunction(MASTER_RESET_DATA, false);
-
-    activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-
-    activeModelTranslator->activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
-
-    while(activeVisualiser->windowOpen()){
-        vector<double> gravCompensation;
-//        MatrixXd returncontrol = activeModelTranslator->returnControlVector(MAIN_DATA_STATE);
-//        cout << "return control: " << returncontrol << endl;
-
-        activeVisualiser->render("keyboard control");
-    }
-}
+//        int setupHorizon = 1000;
+//        int optHorizon = 2980;
+//        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(setupHorizon);
+//        activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+//        std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
+//
+//        activeOptimiser->horizonLength = optHorizon;
+//        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+//
+//        activeOptimiser->rolloutTrajectory(0, true, initOptimisationControls);
+//        activeOptimiser->generateDerivatives();
+//
+//        yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B, activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->modelName, i, optHorizon);
+//    }
+//}
