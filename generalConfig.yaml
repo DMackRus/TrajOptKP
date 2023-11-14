@@ -2,7 +2,6 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-optimiser: "interpolated_iLQR"  #Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 task: "pushing_no_clutter"
 # Current implemented tasks are:
 # "double_pendulum", "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
@@ -10,10 +9,12 @@ task: "pushing_no_clutter"
 # "box_push_toppling", "box_flick_no_clutter", "box_flick_low_clutter", "box_flick_moderate_clutter",
 # "walker", "hopper", "box_sweep"
 
+optimiser: "interpolated_iLQR"  #Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
+
 # init control = 0, optimise once = 1, MPCContinous = 2, MPC_until_completion = 3, generateTestScenes = 4, generateTestingData = 5, generateFilteringData = 6
 # generic testing = 9
 runMode: "Optimise_once"
-# Valid display modes are:
+# Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
 # "MPC_continuous"          - Perform MPC continuously until program terminated. Display current state of the system.

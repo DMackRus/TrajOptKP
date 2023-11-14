@@ -37,22 +37,36 @@ so you need to clone recursively.
    ```
 
 ## Usage
-To run examples for this repository, there are two main config files you need to be aware of. The first
-is a general config file called generalConfig.yaml. This file determines which task is going to be
-simulated, what type of optimisation will be used, 
+### Setup
+There are two config yaml files that the user can change to run different examples. The first config 
+is called **generalConfig.yaml**. This file determines various high level settings (such as optimiser, task, etc.) which are explained 
+in the configuration file.
 
-For each task, there is a task specific config file. This file determines the parameters of the task,
-including the start and desired state of the task, the cost function, and the key-point method used.
+The second config file is specific to the task being loaded, all task config files are located in **taskConfigs** folder. 
+There are some high level settings, as follows:
+- **modelFile**: Relative path to the model xml file
+- **modelName**: Name of the model, used for saving data
+- **timeStep**: Time step for simulation
+- **keypointMethod**: Key-point method to use in optimisation. See below for more details.
+- **minN**: Minimum interval between key-points
+- **maxN**: Maximum interval between key-points
+- **iterativeErrorThreshold**: Error threshold for iterative error method
 
-To run the code, a bash script is provided in the repository to build the project and then 
-automatically run the generated executable.
+As well as these high level settings, there is the task description. Every task is specified by a collection of **robots** amd **bodies**.
+**Robots** are actuated whereas **bodies** are not. This list of robots and bodies instantiates the trajectory 
+optimisation problem, by defining starting and desired states, as well as cost attributes. Finally, there are also settings
+for each DoF that relate to key-point methods, Please see the [Key-points](#Key-points) section for additional details.
 
+### Run the code
+To run the code, there is a bash script that handles building and running provided. Simply run the
+following command:
 ```
 bash run.bash
 ```
 
-
 ## Examples
+
+## Key-points
 
 ## Citing
 Coming soon.
