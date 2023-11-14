@@ -1,0 +1,3 @@
+[submodule "mujoco_models"]
+	path = mujoco_models
+	url = https://github.com/DMackRus/mujoco_models.git
