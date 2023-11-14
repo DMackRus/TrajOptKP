@@ -25,10 +25,8 @@ public:
     fileHandler();
     void readModelConfigFile(std::string yamlFilePath, task &_taskConfig);
     void readSettingsFile(std::string settingsFilePath);
-    void readOptimisationSettingsFile(int optimiser);
 
     void saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength);
-    void generalSaveMatrices(std::vector<MatrixXd> matrices, std::string fileName);
 
     void saveTaskToFile(std::string filePrefix, int fileNum, MatrixXd startState, MatrixXd goalState);
     void loadTaskFromFile(std::string filePrefix, int fileNum, MatrixXd &startState, MatrixXd &goalState);

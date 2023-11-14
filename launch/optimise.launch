@@ -1,6 +1,0 @@
-<launch>
-    <param name= "optimiser" value="iLQR"/>
-    <param name = "taskNumber" value = "0"/>
-    <param name = "mode" value = "1"/>
-    <node name="optimisation_demo" pkg="autoTOTask" type="autoTOTask" respawn="false" output="screen"/>
-</launch>

@@ -205,17 +205,14 @@ int main(int argc, char **argv) {
 //    activeVisualiser->render("test");
 
     if(optimiser == "interpolated_iLQR"){
-        yamlReader->readOptimisationSettingsFile(opt_iLQR);
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
     }
     else if(optimiser == "stomp"){
-        yamlReader->readOptimisationSettingsFile(opt_stomp);
         stompOptimiser = std::make_shared<stomp>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, yamlReader, activeDifferentiator, yamlReader->maxHorizon, 8);
         activeOptimiser = stompOptimiser;
     }
     else if(optimiser == "gradDescent"){
-        yamlReader->readOptimisationSettingsFile(opt_gradDescent);
         gradDescentOptimiser = std::make_shared<gradDescent>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, activeVisualiser, yamlReader->maxHorizon, yamlReader);
         activeOptimiser = gradDescentOptimiser;
     }
@@ -473,7 +470,6 @@ void generateTestingData(){
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 
     activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
-    yamlReader->readOptimisationSettingsFile(opt_iLQR);
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
     activeOptimiser = iLQROptimiser;
 
@@ -668,7 +664,6 @@ void optimiseOnceandShow(){
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->createInitOptimisationControls(optHorizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
-
 
 //    activeOptimiser->setupTestingExtras(1000, keyPointMethod, activeOptimiser->min_interval);
 
@@ -930,7 +925,6 @@ void generateTestingData_MPC(){
         activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 
         activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
-        yamlReader->readOptimisationSettingsFile(opt_iLQR);
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
                                              activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
                                              yamlReader);
@@ -1081,7 +1075,6 @@ int generateTestingData_MPCHorizons(){
     activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 
     activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
-    yamlReader->readOptimisationSettingsFile(opt_iLQR);
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
                                                        activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
                                                        yamlReader);

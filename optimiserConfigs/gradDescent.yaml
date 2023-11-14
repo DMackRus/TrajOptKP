@@ -1,8 +1,0 @@
-minIter: 50
-maxIter: 100
-maxHorizon: 3000
-# setInterval = 0, adaptive_jerk = 1, iterative_error = 2
-keyPointMethod: 0
-min_interval: 5
-max_interval: 100
-jerkThresh: 0.002

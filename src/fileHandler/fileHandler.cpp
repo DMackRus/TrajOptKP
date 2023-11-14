@@ -257,57 +257,11 @@ void fileHandler::readSettingsFile(std::string settingsFilePath){
     filtering = node["filtering"].as<std::string>();
     costDerivsFD = node["costDerivsFD"].as<bool>();
 
-}
 
-void fileHandler::readOptimisationSettingsFile(int optimiser) {
-    std::string optimisationSettingsFilePath;
-    YAML::Node node;
-
-    if (optimiser == opt_iLQR) {
-        optimisationSettingsFilePath = "/optimiserConfigs/iLQR.yaml";
-    }
-    else if(optimiser == opt_stomp){
-        optimisationSettingsFilePath = "/optimiserConfigs/stomp.yaml";
-    }
-    else if(optimiser == opt_gradDescent){
-        optimisationSettingsFilePath = "/optimiserConfigs/gradDescent.yaml";
-    }
-    else{
-        std::cout << "invalid optimiser selected!!!";
-    }
-
-    node = YAML::LoadFile(projectParentPath + optimisationSettingsFilePath);
-    minIter = node["minIter"].as<int>();
-    maxIter = node["maxIter"].as<int>();
-    maxHorizon = node["maxHorizon"].as<int>();
-
-}
-
-void fileHandler::generalSaveMatrices(std::vector<MatrixXd> matrices, std::string fileName){
-    int size = matrices.size();
-    cout << "trajectory size: " << size << endl;
-    std::string rootPath = projectParentPath;
-    mkdir(rootPath.c_str(), 0777);
-    std::string filename = rootPath + "/" + fileName + ".csv";
-    fileOutput.open(filename);
-    int rows = matrices[0].rows();
-    int cols = matrices[0].cols();
-
-    // trajectory length
-    for(int i = 0; i < size; i++){
-        // Row
-        for(int j = 0; j < (rows); j++){
-            // Column
-            for(int k = 0; k < cols; k++){
-                fileOutput << matrices[i](j, k) << ",";
-            }
-
-        }
-        fileOutput << endl;
-    }
-    fileOutput.close();
-
-
+    // TODO - make these settings?
+    minIter = 0;
+    maxIter = 10;
+    maxHorizon = 4000;
 
 }
 
