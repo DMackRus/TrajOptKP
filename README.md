@@ -103,7 +103,8 @@ faster without noticeable degradation on the performance of the final optimal tr
 
 ![](media/derivative_interpolation.png)
 
-There are four key-point methods implemented in this repository.
+There are four key-point methods implemented in this repository. Code for these key-point methods
+can be found in [optimiser.cpp](https://github.com/DMackRus/TrajOptKP/tree/main/src/optimiser).
 
 ### Set-interval
 The Set-interval method has one parameter (minN)
@@ -128,6 +129,7 @@ This iterative process is repeated until all segments satisfy the error requirem
 - [ ] Implement rotation of bodies in state vector and F.D.
 - [ ] Rework main.cpp so that all tasks are their own executable instead.
 - [ ] Improve optimisation iteration terminal statements.
+- [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.
 - [ ] Add more examples
 
