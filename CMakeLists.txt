@@ -4,13 +4,11 @@ project(TrajOptKP)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-
+set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-
 get_filename_component(PARENT_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
-
 set(MUJOCO_DIR    "$ENV{MJ_HOME}")
 
 find_package(OpenMP)
@@ -30,7 +28,7 @@ else()
     message(STATUS "could not find eigen library")
 endif (TARGET Eigen3::Eigen)
 
-set(Mujoco_INCLUDE_DIRS ${MUJOCO_DIR}/include)
+set(Mujoco_INCLUDE_DIRS ${MUJOCO_DIR}/include/mujoco)
 file(GLOB LIB_MUJOCO ${MUJOCO_DIR}/lib/libmujoco.so.2.3.2)
 message(STATUS "parent directory: " ${PARENT_DIR})
 message(STATUS "MuJoCo lib found at: " ${LIB_MUJOCO})
@@ -71,6 +69,11 @@ add_executable(${PROJECT_NAME} src/main.cpp
 target_link_libraries(${PROJECT_NAME}
   ${Franka_LIBRARIES}
   ${catkin_LIBRARIES}
+)
+
+include_directories(
+        include
+        ${MUJOCO_DIR}/include
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
