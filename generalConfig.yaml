@@ -2,7 +2,7 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "box_sweep"
+task: "walker"
 # Current implemented tasks are:
 # "double_pendulum", "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
 # "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
@@ -13,7 +13,7 @@ optimiser: "interpolated_iLQR"  #Possible optimisers: "interpolated_iLQR", "stom
 
 # init control = 0, optimise once = 1, MPCContinous = 2, MPC_until_completion = 3, generateTestScenes = 4, generateTestingData = 5, generateFilteringData = 6
 # generic testing = 9
-runMode: "Optimise_once"
+runMode: "MPC_until_completion"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
