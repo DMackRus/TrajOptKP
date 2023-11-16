@@ -12,10 +12,33 @@ physics simulator.
 Please note that this code is still under active development.
 
 ## Dependencies
-- [MuJoCo 2.32](http://www.mujoco.org/)
-- [Eigen 3](https://eigen.tuxfamily.org/dox/GettingStarted.html)
-- [YAML](https://github.com/jbeder/yaml-cpp)
-- [GLFW](https://www.glfw.org/)
+### [MuJoCo 2.32](http://www.mujoco.org/) or newer
+This repository used MuJoCo v2.3.2, however newer versions of MuJoCo **should** be compatible. 
+Simply navigate to the download page, download the desired version and unzip it at your desired
+installation location.
+
+### [Eigen 3](https://eigen.tuxfamily.org/index.php?title=Main_Page)
+Eigen is used for matrix computations in trajectory optimisation. Navigate to the desired version 
+and download (source code tar.gz).
+
+### [YAML](https://github.com/jbeder/yaml-cpp)
+This repository uses YAML for configuration files. Download the following GitHub package and build with
+the following commands.
+```
+    git clone git@github.com:jbeder/yaml-cpp.git
+    cd yaml-cpp 
+    mkdir build
+    cd build 
+    cmake ..
+    make 
+    make install 
+```
+
+### [GLFW](https://www.glfw.org/)
+GLFW is used for visualisation. Download with the following command.
+```
+   apt-get install -y --force-yes libglfw3 libglfw3-dev
+```
 
 ## Installation
 
@@ -26,7 +49,8 @@ so you need to clone recursively.
    ```  
 2. Set the following environment variables.
    ```
-   export MJ_HOME=*path to the home directory of MuJoCo*
+   export MJ_HOME=$HOME/*path to the home directory of MuJoCo*
+   (NOTE: "~/" does not work)
    ```
 3. Build the package.
    ```

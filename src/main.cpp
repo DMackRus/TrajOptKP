@@ -856,7 +856,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
                     }
                 }
             }
-            activeVisualiser->render("replay_mode");
+            activeVisualiser->render("replay_mode - (PRESS BACKSPACE)");
         }
     }
 }

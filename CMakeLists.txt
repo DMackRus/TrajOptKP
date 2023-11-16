@@ -29,6 +29,7 @@ else()
 endif (TARGET Eigen3::Eigen)
 
 set(Mujoco_INCLUDE_DIRS ${MUJOCO_DIR}/include/mujoco)
+message(STATUS "Mujoco directory: " ${MUJOCO_DIR})
 file(GLOB LIB_MUJOCO ${MUJOCO_DIR}/lib/libmujoco.so.2.3.2)
 message(STATUS "parent directory: " ${PARENT_DIR})
 message(STATUS "MuJoCo lib found at: " ${LIB_MUJOCO})
