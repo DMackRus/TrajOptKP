@@ -19,7 +19,8 @@ installation location.
 
 ### [Eigen 3](https://eigen.tuxfamily.org/index.php?title=Main_Page)
 Eigen is used for matrix computations in trajectory optimisation. Navigate to the desired version 
-and download (source code tar.gz).
+and download (source code tar.gz). You then need to install Eigen system-wide, so that find_package in
+CMakeLists can find it.
 
 ### [YAML](https://github.com/jbeder/yaml-cpp)
 This repository uses YAML for configuration files. Download the following GitHub package and build with
@@ -130,24 +131,47 @@ faster without noticeable degradation on the performance of the final optimal tr
 There are four key-point methods implemented in this repository. Code for these key-point methods
 can be found in [optimiser.cpp](https://github.com/DMackRus/TrajOptKP/tree/main/src/optimiser).
 
-### Set-interval
+### Set Interval
 The Set-interval method has one parameter (minN)
 
 The Set-interval method is the simplest.The key-points are equally spaces with an interval of minN inbetween them.
 
-### Adaptive-jerk
-The Adpative-jerk method has three parameters (minN, maxN, jerk_threshold)
+### Adaptive Jerk
+The Adaptive jerk method has three parameters (minN, maxN, jerk_threshold)
 
-The Adaptive-jerk method calcualtes the jerk over the trajectory for all the dofs in the state vector. Whenever the jerk threshold is exceeded, the time-step is marked as a "key-point".  New key-points cant be placed within minN steps of another. If the jerk_threshold isnt exceeded within maxN time-steps, another key-point is placed automatically.
+The Adaptive Jerk method calculates the jerk over the trajectory for all the DoFs in the 
+state vector. Whenever the jerk threshold is exceeded, the time-step is marked as a "key-point".  
+New key-points cant be placed within minN steps of another. If the jerk_threshold is not exceeded 
+within maxN time-steps, another key-point is placed automatically.
 
-### Iterative error
+### Velocity Change
+The Velocity-jerk method has three parameters (minN, maxN, velocity_threshold)
+
+The Velocity Change method looks at the velocity profiles for every DoF over the trajectory. 
+Whenever a **turning point** (when the velocity changes direction) is detected, a key-point is
+added for that DoF.
+
+Key-points are also placed when the velocity changes by more than velocity_threshold (since the 
+last key-point). If neither fo these conditions are reached within maxN time-steps, another
+key-point is placed automatically.
+
+### Iterative Error
 The Iterative-error method has two parameters (minN, error_threshold)
 
-The iterative error method works very similarly to adaptive-size cell decomposition (A common path-planning algorithm). It starts out with a bad approximation and iteratively improves it until all segments are below a certain error threshold.
+The iterative error method works very similarly to adaptive-size cell decomposition 
+(A common path-planning algorithm). It starts out with a bad approximation and iteratively 
+improves it until all segments are below a certain error threshold.
 
-It starts with a bad linear approximation (just using the fist and last time-steps). It then checks the middle of the interpolation, by comparing the difference between the true derivatives (computed via autodiff) and the approximated derivatives (computed via linear interpolartion). The error is computed between these matrices (by calculating the mean squared difference of all values in the matrix). If the error is below the error_threshold then the approximation is good. If the approximation is above the threshold, the algorithm further subdivides that section into smaller sections and repeats this process.
+It starts with a bad linear approximation (just using the fist and last time-steps). 
+It then checks the middle of the interpolation, by comparing the difference between the true 
+derivatives (computed via autodiff) and the approximated derivatives (computed via linear 
+interpolation). The error is computed between these matrices (by calculating the mean squared 
+difference of all values in the matrix). If the error is below the error_threshold then the 
+approximation is good. If the approximation is above the threshold, the algorithm further 
+subdivides that section into smaller sections and repeats this process.
 
-This iterative process is repeated until all segments satisfy the error requirement or the minN interval is reached.
+This iterative process is repeated until all segments satisfy the error requirement or the minN 
+interval is reached.
 
 ## To-Do
 - [ ] Implement rotation of bodies in state vector and F.D.
