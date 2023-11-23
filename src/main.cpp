@@ -78,8 +78,22 @@ void genericTesting();
 
 int main(int argc, char **argv) {
 
+    // Expected arguments
+    // 1. Program name
+    // 2. Task name
+    if(argc < 2){
+        std::cout << "No task name provided, exiting" << endl;
+        return -1;
+    }
+
+    std::string configFileName = argv[1];
+    std::cout << "config file name: " << configFileName << endl;
+
+    // Optional arguments
+    // 3. key-point method (only used for generating testing data)
+
     // Only used for generating testing data for different key-point methods
-    if(argc > 1){
+    if(argc > 2){
         for (int i = 1; i < argc; i++) {
             testingMethods.push_back(argv[i]);
         }
@@ -91,7 +105,7 @@ int main(int argc, char **argv) {
     std::string taskInitMode;
 
     yamlReader = std::make_shared<fileHandler>();
-    yamlReader->readSettingsFile("/generalConfig.yaml");
+    yamlReader->readSettingsFile("/generalConfigs/" + configFileName + ".yaml");
     optimiser = yamlReader->optimiser;
     runMode = yamlReader->project_run_mode;
     task = yamlReader->taskName;
@@ -595,7 +609,7 @@ void optimiseOnceandShow(){
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
-    char* label = "Final controls";
+    char* label = "Final trajectory after optimisation";
 
     std::vector<MatrixXd> initControls;
     std::vector<MatrixXd> finalControls;
@@ -659,10 +673,10 @@ void optimiseOnceandShow(){
             activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
             showFinalControls = !showFinalControls;
             if(showFinalControls){
-                label = "Final controls";
+                label = "Final trajectory after optimisation";
             }
             else{
-                label = "Init Controls";
+                label = "Intial trajectory before optimisation";
             }
         }
 

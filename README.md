@@ -93,11 +93,19 @@ optimisation problem, by defining starting and desired states, as well as cost a
 for each DoF that relate to key-point methods, Please see the [Key-points](#Key-points) section for additional details.
 
 ### Run the code
-To run the code, there is a bash script that handles building and running provided. Simply run the
+To run the code, there is a bash script that handles compilation and execution.
+The bash script takes one argument which is the name of the task configSimply run the
 following command:
 ```
-bash run.bash
+bash run.bash <task_name>
 ```
+
+There are four example task configuration files provided in the **generalConfigs** 
+folder. These are:
+- **boxSweep.yaml**: Sweeping a large heavy box to a target location.
+- **pushNoClutter.yaml**: Pushing a small light cylinder to a goal location with no clutter.
+- **PandaMove.yaml**: Moving a Panda robot to a goal location smoothly.
+- **walkerMPC.yaml**: Locomotion of a 9 DoF walker model using MPC.
 
 ## Examples
 Here are some example trajectories that have been generated using this package.
@@ -161,7 +169,7 @@ Whenever a **turning point** (when the velocity changes direction) is detected, 
 added for that DoF.
 
 Key-points are also placed when the velocity changes by more than velocity_threshold (since the 
-last key-point). If neither fo these conditions are reached within maxN time-steps, another
+last key-point). If neither of these conditions are reached within maxN time-steps, another
 key-point is placed automatically.
 
 ### Iterative Error
@@ -183,6 +191,7 @@ This iterative process is repeated until all segments satisfy the error requirem
 interval is reached.
 
 ## To-Do
+- [ ] Change F.D between qacc and qvel methods depending on task
 - [ ] Implement rotation of bodies in state vector and F.D.
 - [ ] Rework main.cpp so that all tasks are their own executable instead.
 - [ ] Improve optimisation iteration terminal statements.

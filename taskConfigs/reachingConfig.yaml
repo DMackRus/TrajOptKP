@@ -2,7 +2,7 @@ modelFile: "/mujoco_models/Franka_emika_scenes_V1/reaching_scene.xml"
 modelName: "/reaching"
 timeStep: 0.004
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
-minN: 100
+minN: 1
 maxN: 50
 iterativeErrorThreshold: 0.001
 robots:
@@ -13,8 +13,8 @@ robots:
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [-1, 0.5, 0, -1, 0, 0.6, 1]
     goalPos: [1, 0.5, 2, -1.4, 0, 0.6, 1]
-    jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
-    jointVelCosts: [1, 1, 1, 1, 1, 1, 1, 1]
+    jointPosCosts: [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+    jointVelCosts: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
     terminalJointPosCosts: [ 100, 100, 100, 100, 100, 100, 100 ]
     terminalJointVelCosts: [ 10, 10, 10, 10, 10, 10, 10 ]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
