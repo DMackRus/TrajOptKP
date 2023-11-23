@@ -67,17 +67,12 @@ add_executable(${PROJECT_NAME} src/main.cpp
                 src/modelTranslator/acrobot.cpp
                 src/modelTranslator/hopper.cpp)
 
-target_link_libraries(${PROJECT_NAME}
-  ${Franka_LIBRARIES}
-  ${catkin_LIBRARIES}
-)
-
 include_directories(
         include
         ${MUJOCO_DIR}/include
 )
 
-target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} ${catkin_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
 target_compile_definitions(${PROJECT_NAME} PUBLIC ${BULLET_DEFINITIONS})
 
