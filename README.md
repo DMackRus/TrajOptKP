@@ -14,31 +14,40 @@ Please note that this code is still under active development.
 ## Dependencies
 ### [MuJoCo 2.32](http://www.mujoco.org/) or newer
 This repository used MuJoCo v2.3.2, however newer versions of MuJoCo **should** be compatible. 
-Simply navigate to the download page, download the desired version and unzip it at your desired
-installation location.
+Use the following commands to install MuJoCo, please change the version number as required (it
+is currently set to download V2.3.2)
+
+```
+   MUJOCO_URL="https://github.com/google-deepmind/mujoco/releases/download/2.3.2/mujoco-2.3.2-linux-x86_64.tar.gz"
+   INSTALL_DIR="$HOME/.mujoco/mujoco-2.3.2"
+   mkdir -p "$INSTALL_DIR"
+   wget "$MUJOCO_URL" -O mujoco.tar.gz
+   tar -xzf mujoco.tar.gz -C "$INSTALL_DIR" --strip-components 1
+   rm mujoco.tar.gz
+   echo 'export MJ_HOME="'$INSTALL_DIR'"' >> ~/.bashrc
+```
+
+These commands also set an environment variable "MJ_HOME" for CMake, if you are installing
+MuJoCo differently, remember to set this variable.
 
 ### [Eigen 3](https://eigen.tuxfamily.org/index.php?title=Main_Page)
-Eigen is used for matrix computations in trajectory optimisation. Navigate to the desired version 
-and download (source code tar.gz). You then need to install Eigen system-wide, so that find_package in
-CMakeLists can find it.
+Eigen is used for matrix computations in trajectory optimisation. Download and install it
+with the following command:
+
+``` 
+   sudo apt install -y libeigen3-dev
+```
 
 ### [YAML](https://github.com/jbeder/yaml-cpp)
-This repository uses YAML for configuration files. Download the following GitHub package and build with
-the following commands.
+This repository uses YAML for configuration files. Install YAML with the following command.
 ```
-    git clone git@github.com:jbeder/yaml-cpp.git
-    cd yaml-cpp 
-    mkdir build
-    cd build 
-    cmake ..
-    make 
-    make install 
+   sudo apt install -y libyaml-cpp-dev
 ```
 
 ### [GLFW](https://www.glfw.org/)
 GLFW is used for visualisation. Download with the following command.
 ```
-   apt-get install -y --force-yes libglfw3 libglfw3-dev
+   sudo apt install -y libglfw3 libglfw3-dev
 ```
 
 ## Installation
