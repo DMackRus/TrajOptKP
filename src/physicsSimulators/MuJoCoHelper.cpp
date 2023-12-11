@@ -731,12 +731,22 @@ void MuJoCoHelper::initVisualisation() {
 //    cam.lookat[1] = 0.0169;
 //    cam.lookat[2] = 0.1067;
 
-    cam.distance = 0.4449;
-    cam.azimuth = 133.7;
-    cam.elevation = -31.9;
-    cam.lookat[0] = 0.635;
-    cam.lookat[1] = -0.03;
-    cam.lookat[2] = 0.275;
+      // Maybe push in clutter?
+//    cam.distance = 1.66269;
+//    cam.distance = 0.4449;
+//    cam.azimuth = 133.7;
+//    cam.elevation = -31.9;
+//    cam.lookat[0] = 0.635;
+//    cam.lookat[1] = -0.03;
+//    cam.lookat[2] = 0.275;
+
+    // Walker
+    cam.distance = 5.79918;
+    cam.azimuth = -117.9;
+    cam.elevation = -20.9;
+    cam.lookat[0] = 1.81681;
+    cam.lookat[1] = -0.380067;
+    cam.lookat[2] =  0.669554;
 
     // create scene and context
     mjv_makeScene(model.get(), &scn, 2000);

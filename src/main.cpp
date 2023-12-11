@@ -267,7 +267,7 @@ int main(int argc, char **argv) {
         }
 
         cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 1500, 1, 80);
+        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 80);
     }
     else if(runMode == "Generate_test_scenes"){
         cout << "TASK INIT MODE \n";
@@ -797,6 +797,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
         if(mpcVisualise){
             if(visualCounter > 10){
+//                activeModelTranslator->activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
                 activeVisualiser->render(label);
                 visualCounter = 0;
             }

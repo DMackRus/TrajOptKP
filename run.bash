@@ -11,5 +11,4 @@ fi
 
 # Access the first argument
 task=$1
-
 ./build/TrajOptKP $task
