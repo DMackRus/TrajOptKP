@@ -15,9 +15,9 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     int tid = threadId;
 
 //    cout << "tid: " << tid << endl;
-    // This seems random, in optimiser we define -1 = "mainData", -2 = "masterData", 0 -> horizon Length = "stored trajectory data"
-    // So we need values below -2 for finite-differencing data
-    int physicsHelperId = -3 - tid;
+    // This seems random, in optimiser we define -1 = "mainData", -2 = "masterData", -3 = "visualisation data", 0 -> horizon Length = "stored trajectory data"
+    // So we need values below -3 for finite-differencing data
+    int physicsHelperId = -4 - tid;
 
     // Initialise sub matrices of A and B matrix
     // ------------ dof x dof ----------------

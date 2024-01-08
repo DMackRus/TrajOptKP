@@ -12,6 +12,7 @@
 
 #define MAIN_DATA_STATE     -1
 #define MASTER_RESET_DATA   -2
+#define VISUALISATION_DATA  -3
 
 struct pose_7{
     m_point position;

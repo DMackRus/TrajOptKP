@@ -656,8 +656,11 @@ std::shared_ptr<mjData> MuJoCoHelper::returnDesiredDataState(int dataIndex){
     else if(dataIndex == MASTER_RESET_DATA){
         return d_master_reset;
     }
-    else if(dataIndex < MASTER_RESET_DATA){
-        int fd_id = -dataIndex - 3;
+    else if(dataIndex == VISUALISATION_DATA){
+        return vis_data;
+    }
+    else if(dataIndex < VISUALISATION_DATA){
+        int fd_id = -dataIndex - 4;
         return fd_data[fd_id];
     }
     else{
@@ -692,12 +695,10 @@ bool MuJoCoHelper::stepSimulator(int steps, int dataIndex){
     return true;
 }
 
-// TODO - this is a bit hardcoded, make it less so
 bool MuJoCoHelper::forwardSimulator(int dataIndex){
 
     std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
-//    mj_forwardSkip(model.get(), d.get(), mjSTAGE_NONE, 1);
     mj_forward(model.get(), d.get());
 
     return true;
@@ -741,12 +742,28 @@ void MuJoCoHelper::initVisualisation() {
 //    cam.lookat[2] = 0.275;
 
     // Walker
-    cam.distance = 5.79918;
-    cam.azimuth = -117.9;
-    cam.elevation = -20.9;
-    cam.lookat[0] = 1.81681;
-    cam.lookat[1] = -0.380067;
-    cam.lookat[2] =  0.669554;
+//    cam.distance = 5.79918;
+//    cam.azimuth = -117.9;
+//    cam.elevation = -20.9;
+//    cam.lookat[0] = 1.81681;
+//    cam.lookat[1] = -0.380067;
+//    cam.lookat[2] =  0.669554;
+
+    // BoxSweep
+//    cam.distance = 1.16;
+//    cam.azimuth = -128.1;
+//    cam.elevation = -21.3;
+//    cam.lookat[0] = 0.601;
+//    cam.lookat[1] = 0.209;
+//    cam.lookat[2] =  0.219;
+
+    // Push heavy clutter
+    cam.distance = 1.16;
+    cam.azimuth = 146.1;
+    cam.elevation = -42.9;
+    cam.lookat[0] = 0.535744;
+    cam.lookat[1] = 0.155588;
+    cam.lookat[2] =  0.236069;
 
     // create scene and context
     mjv_makeScene(model.get(), &scn, 2000);
@@ -757,7 +774,7 @@ void MuJoCoHelper::updateScene(GLFWwindow *window, const char* label){
     // update scene and render
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
-    mjv_updateScene(model.get(), mdata.get(), &opt, NULL, &cam, mjCAT_ALL, &scn);
+    mjv_updateScene(model.get(), vis_data.get(), &opt, NULL, &cam, mjCAT_ALL, &scn);
 
     mjr_render(viewport, &scn, &con);
 
@@ -841,6 +858,7 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     // make data corresponding to model.get()
     mdata = shared_ptr<mjData>(mj_makeData(model.get()));
     d_master_reset = shared_ptr<mjData>(mj_makeData(model.get()));
+    vis_data = shared_ptr<mjData>(mj_makeData(model.get()));
 
     // Get the number of available cores
     int numCores = std::thread::hardware_concurrency();
