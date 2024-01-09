@@ -512,7 +512,8 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     }
 
     // Get the number of threads available
-    const int num_threads = std::thread::hardware_concurrency();  // Get the number of available CPU cores
+    // TODO - subtract 1 if asynchronus visualisation is used?
+    const int num_threads = std::thread::hardware_concurrency() - 1;  // Get the number of available CPU cores
     std::vector<std::thread> thread_pool;
     for (int i = 0; i < num_threads; ++i) {
         thread_pool.push_back(std::thread(&optimiser::worker, this, i));

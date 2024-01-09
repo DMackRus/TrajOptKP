@@ -15,19 +15,16 @@
 #include "visualizer.h"
 #include "MuJoCoHelper.h"
 
+// --------------------- different optimisers -----------------------
 #include "interpolated_iLQR.h"
 #include "stomp.h"
 #include "gradDescent.h"
 
+// --------------------- other -----------------------
+#include <mutex>
+
 // ------------ MODES OF OEPRATION -------------------------------
-#define SHOW_INIT_CONTROLS          0
-#define ILQR_ONCE                   1
-#define MPC_CONTINOUS               2
-#define MPC_UNTIL_COMPLETE          3
-#define GENERATE_TEST_SCENES        4
-#define GENERATE_TESTING_DATA       5
-#define GENERATE_FILTERING_DATA     6
-#define GENERIC_TESTING             9
+#define ASYNC_MPC   true
 
 // --------------------- Global class instances --------------------------------
 std::shared_ptr<modelTranslator> activeModelTranslator;
@@ -57,6 +54,8 @@ void generateTestingData();
 void generateFilteringData();
 
 void genericTesting();
+
+void worker();
 
 int main(int argc, char **argv) {
 
@@ -190,15 +189,7 @@ int main(int argc, char **argv) {
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
 
     //Instantiate my optimiser
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
-
-//    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-//    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-//    activeVisualiser->render("test");
-//
-//    activeModelTranslator->setStateVector(activeModelTranslator->X_desired, MAIN_DATA_STATE);
-//    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-//    activeVisualiser->render("test");
+    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator, ASYNC_MPC);
 
     if(optimiser == "interpolated_iLQR"){
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
@@ -248,8 +239,64 @@ int main(int argc, char **argv) {
             activeModelTranslator->X_desired(10) = 0.28;
         }
 
-        cout << "X_desired: " << activeModelTranslator->X_desired << endl;
-        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 80);
+        if(ASYNC_MPC){
+            std::thread MPC_controls_thread;
+            MPC_controls_thread = std::thread(&worker);
+            int vis_counter = 0;
+            MatrixXd next_control;
+            // timer variables
+            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+            std::chrono::steady_clock::time_point end;
+
+            while(activeVisualiser->windowOpen()){
+                begin = std::chrono::steady_clock::now();
+
+                if(activeVisualiser->controlBuffer.size() > 0){
+                    next_control = activeVisualiser->controlBuffer[0];
+                    // Erase the applied control from the buffer
+                    activeVisualiser->controlBuffer.erase(activeVisualiser->controlBuffer.begin());
+                }
+                else{
+                    MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
+                    empty_control.setZero();
+                    next_control = empty_control;
+                }
+
+                // Set the latest control
+                activeModelTranslator->setControlVector(next_control, VISUALISATION_DATA);
+
+                // Update the simulation
+                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
+
+                // Update the visualisation
+                // Unsure why rendering every time causes it to lag so much more???
+//                activeVisualiser->render("live-MPC");
+                vis_counter++;
+                if(vis_counter > 2){
+                    activeVisualiser->render("live-MPC");
+                    vis_counter = 0;
+                }
+
+                end = std::chrono::steady_clock::now();
+                // time taken
+                auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+
+                // compare how long we took versus the timestep of the model
+
+                int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f);
+
+                if(difference_ms > 0)
+                    std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
+                else
+                    std::cout << "MPC took too long to compute, skipping sleep \n";
+
+            }
+            MPC_controls_thread.join();
+
+        }
+        else{
+            MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 80);
+        }
     }
     else if(runMode == "Generate_test_scenes"){
         cout << "TASK INIT MODE \n";
@@ -411,7 +458,7 @@ void generateTestingData(){
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator, false);
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
     activeOptimiser = iLQROptimiser;
 
@@ -719,6 +766,12 @@ void MPCContinous(){
         }
     }
 }
+
+void worker(){
+    double trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
+    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 5000, 1, 80);
+}
+
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
 // optimiser settings. This function can then return necessary testing data for us to store
 void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
@@ -742,6 +795,10 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     std::vector<MatrixXd> initOptimisationControls;
 
     int horizon = OPT_HORIZON;
+
+    // Copy master into visualisation
+    // TODO -> should this be here?
+    activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
     initOptimisationControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
@@ -769,14 +826,17 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
         optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
 
-        activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+        if(!ASYNC_MPC){
+            activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        }
 
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         reInitialiseCounter++;
         visualCounter++;
 
         if(reInitialiseCounter >= REPLAN_TIME){
+            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, VISUALISATION_DATA);
             activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
 
             optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, OPT_HORIZON);
@@ -787,21 +847,27 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             timeForwardsPass.push_back(activeOptimiser->avgTime_forwardsPass_ms);
             percentagesDerivsCalculated.push_back(activeOptimiser->avgPercentDerivs);
 
+            std::cout << "optimise iteration complete \n";
+
         }
 
-        if(mpcVisualise){
-            if(visualCounter > 10){
-
-//                MatrixXd state_before = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//              act
-                activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MAIN_DATA_STATE);
-                activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
-//                MatrixXd state_after = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//                std::cout << "state before: " << state_before.transpose() << std::endl;
-//                std::cout << "state after: " << state_after.transpose() << std::endl;
-                activeVisualiser->render(label);
-                visualCounter = 0;
+        if(!ASYNC_MPC){
+            if(mpcVisualise){
+                if(visualCounter > 10){
+                    activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MAIN_DATA_STATE);
+                    activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
+                    activeVisualiser->render(label);
+                    visualCounter = 0;
+                }
             }
+        }
+        else{
+            // If we are use Async visualisation, need to copy our control vector to internal control vector for
+            // visualisation class
+//            std::mutex mtx;
+            activeVisualiser->controlBuffer = optimisedControls;
+//            std::cout << "controls " << activeVisualiser->controlBuffer[0];
+
         }
 
         overallTaskCounter++;
@@ -827,7 +893,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
     }
 
-    cout << "trajec cost: " << trajecCost << endl;
+    //cout << "trajec cost: " << trajecCost << endl;
     avgTimeGettingDerivs = 0.0f;
     avgTimeBP = 0.0f;
     avgTimeFP = 0.0f;
@@ -851,7 +917,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
     cout << "average control frequency is: " << avgHZ << endl;
 
-    if(playback){
+    if(playback && !ASYNC_MPC){
         while(activeVisualiser->windowOpen()){
 
             if(activeVisualiser->replayTriggered){
@@ -891,7 +957,7 @@ void generateTestingData_MPC(){
     for(int k = 0; k < 1; k ++) {
         activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 
-        activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+        activeVisualiser = std::make_shared<visualizer>(activeModelTranslator, false);
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
                                              activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
                                              yamlReader);
@@ -1041,7 +1107,7 @@ int generateTestingData_MPCHorizons(){
 
     activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator, false);
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
                                                        activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
                                                        yamlReader);

@@ -771,6 +771,7 @@ void MuJoCoHelper::initVisualisation() {
 }
 
 void MuJoCoHelper::updateScene(GLFWwindow *window, const char* label){
+
     // update scene and render
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(window, &viewport.width, &viewport.height);

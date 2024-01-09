@@ -15,7 +15,7 @@
 
 class visualizer {
 public:
-    visualizer(std::shared_ptr<modelTranslator> _modelTranslator);
+    visualizer(std::shared_ptr<modelTranslator> _modelTranslator, bool asynchonus);
     void init();
     void update();
     void draw();
@@ -52,11 +52,17 @@ public:
     bool windowOpen();
     void render(const char* label);
 
-    int currentShownDataIndex = 0;
     float testVel = 0;
 
     std::vector<MatrixXd> replayControls;
     bool replayTriggered = false;
+
+    // Asynchronus control variables
+    std::vector<MatrixXd> controlBuffer;
+    std::thread visualisation_thread;
+
+
+    void visualisationThreadFunction();
 
 private:
     std::shared_ptr<physicsSimulator> activePhysicsSimulator;
