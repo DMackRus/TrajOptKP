@@ -23,7 +23,7 @@
 // --------------------- other -----------------------
 #include <mutex>
 
-// ------------ MODES OF OEPRATION -------------------------------
+// ------------ MODES OF OPERATION -------------------------------
 #define ASYNC_MPC   true
 
 // --------------------- Global class instances --------------------------------
@@ -45,7 +45,7 @@ void showInitControls();
 void optimiseOnceandShow();
 void MPCUntilComplete(double &trajecCost, double &avgHz, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON);
-void MPCContinous();
+
 void generateTestScenes();
 
 void generateTestingData_MPC();
@@ -54,7 +54,6 @@ void generateTestingData();
 void generateFilteringData();
 
 void genericTesting();
-
 void worker();
 
 int main(int argc, char **argv) {
@@ -72,7 +71,6 @@ int main(int argc, char **argv) {
 
     // Optional arguments
     // 3. key-point method (only used for generating testing data)
-
     // Only used for generating testing data for different key-point methods
     if(argc > 2){
         for (int i = 1; i < argc; i++) {
@@ -189,7 +187,7 @@ int main(int argc, char **argv) {
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
 
     //Instantiate my optimiser
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator, ASYNC_MPC);
+    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
 
     if(optimiser == "interpolated_iLQR"){
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
@@ -216,12 +214,6 @@ int main(int argc, char **argv) {
         cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
         activeOptimiser->verboseOutput = true;
         optimiseOnceandShow();
-    }
-    else if(runMode == "MPC_continuous"){
-        cout << "CONTINOUS MPC MODE \n";
-        cout << "mode is disabled for now \n";
-        return 0;
-//        MPCContinous();
     }
     else if(runMode == "MPC_until_completion"){
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
@@ -271,6 +263,10 @@ int main(int argc, char **argv) {
                     next_control = empty_control;
                 }
 
+                // Store latest control and state in a replay buffer
+                activeVisualiser->trajectory_controls.push_back(next_control);
+                activeVisualiser->trajectory_states.push_back(activeModelTranslator->returnStateVector(VISUALISATION_DATA));
+
                 // Set the latest control
                 activeModelTranslator->setControlVector(next_control, VISUALISATION_DATA);
 
@@ -295,11 +291,26 @@ int main(int argc, char **argv) {
 
                 if(difference_ms > 0)
                     std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
-                else
-                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
+//                else
+//                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
 
+//                std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+                if(activeVisualiser->task_finished){
+                    activeVisualiser->task_finished = false;
+                    // Replay states through cost function
+
+                    double cost = 0.0f;
+                    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+                    for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
+                        activeModelTranslator->setControlVector(activeVisualiser->trajectory_controls[i], MAIN_DATA_STATE);
+                        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+                        cost += (activeModelTranslator->costFunction(MAIN_DATA_STATE, false) * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep());
+
+                    }
+                    std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
+
+                }
 
             }
             MPC_controls_thread.join();
@@ -469,7 +480,7 @@ void generateTestingData(){
     activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator, false);
+    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
     activeOptimiser = iLQROptimiser;
 
@@ -694,21 +705,8 @@ void optimiseOnceandShow(){
 
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
-//        if(controlCounter == 6){
-//            std::cout << "help \n";
-//        }
-//
-//        if(controlCounter == optHorizon / 2){
-//            std::cout << "help \n";
-//        }
-//
-//        if(controlCounter == optHorizon){
-//            std::cout << "help \n";
-//        }
-
         controlCounter++;
         visualCounter++;
-//        std::cout << "control counter: " << controlCounter << "\n";
 
         if(controlCounter >= finalControls.size()){
             controlCounter = 0;
@@ -731,56 +729,9 @@ void optimiseOnceandShow(){
     }
 }
 
-void MPCContinous(){
-    int horizon = 200;
-    bool taskComplete = false;
-    int currentControlCounter = 0;
-    int visualCounter = 0;
-    int overallTaskCounter = 0;
-    int reInitialiseCounter = 0;
-    const char* label = "MPC Continous";
-
-    // Instantiate init controls
-    std::vector<MatrixXd> initControls;
-    initControls = activeModelTranslator->createInitOptimisationControls(horizon);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
-
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initControls, yamlReader->maxIter, yamlReader->minIter, horizon);
-    MatrixXd initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-    cout << "init state in MPC continous: " << initState << endl;
-
-    while(!taskComplete){
-        MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
-
-        optimisedControls.erase(optimisedControls.begin());
-
-        optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
-
-        activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
-
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-
-        reInitialiseCounter++;
-        visualCounter++;
-
-        if(reInitialiseCounter > 10){
-            //initControls = activeModelTranslator->createInitControls(horizon);
-            optimisedControls = activeOptimiser->optimise(MAIN_DATA_STATE, optimisedControls, yamlReader->maxIter, yamlReader->minIter, horizon);
-            //initState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-            //cout << "init state in MPC continous: " << initState << endl;
-            reInitialiseCounter = 0;
-        }
-
-        if(visualCounter > 5){
-            activeVisualiser->render(label);
-            visualCounter = 0;
-        }
-    }
-}
-
 void worker(){
     double trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
-    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 5000, 1, 80);
+    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, 80);
 }
 
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
@@ -873,8 +824,14 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             // visualisation class
             std::mutex mtx;
             mtx.lock();
-            
+
             int optTimeToTimeSteps = activeOptimiser->optTime / (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000);
+            std::cout << "opt time to time steps " << optTimeToTimeSteps << std::endl;
+
+            int low_bound = optTimeToTimeSteps - 3;
+            if (low_bound < 0) low_bound = 0;
+
+            int high_bound = optTimeToTimeSteps + 3;
 
             // By the time we have computed optimal controls, main visualisation will be some number
             // of time-steps ahead. We need to find the correct control to apply.
@@ -884,9 +841,9 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             double smallestError = 1000.00;
             int bestMatchingStateIndex = 0;
             // TODO - possible issue if optimisation time > horizon
-            for(int i = optTimeToTimeSteps - 3; i < optTimeToTimeSteps + 3; i++){
-                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
-                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
+            for(int i = low_bound; i < high_bound; i++){
+//                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
+//                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
                 double currError = 0.0f;
                 for(int j = 0; j < activeModelTranslator->stateVectorSize; j++){
                     currError += abs(activeOptimiser->X_old[i](j) - current_vis_state(j));
@@ -898,10 +855,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
                 }
             }
 
-            std::cout << "best index: " << bestMatchingStateIndex << std::endl;
-
-            // Pop the first few controls.
-//            optimisedControls.erase(optimisedControls.begin(), optimisedControls.begin() + bestMatchingStateIndex);
             activeVisualiser->controlBuffer = optimisedControls;
             activeVisualiser->start_control_index = bestMatchingStateIndex;
             activeVisualiser->new_controls_flag = true;
@@ -985,6 +938,9 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             activeVisualiser->render("replay_mode - (PRESS BACKSPACE)");
         }
     }
+    else{
+        activeVisualiser->task_finished = true;
+    }
 }
 
 void generateTestingData_MPC(){
@@ -997,7 +953,7 @@ void generateTestingData_MPC(){
     for(int k = 0; k < 1; k ++) {
         activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 
-        activeVisualiser = std::make_shared<visualizer>(activeModelTranslator, false);
+        activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
                                              activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
                                              yamlReader);
@@ -1147,7 +1103,7 @@ int generateTestingData_MPCHorizons(){
 
     activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator, false);
+    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
                                                        activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
                                                        yamlReader);
