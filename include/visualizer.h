@@ -59,10 +59,9 @@ public:
 
     // Asynchronus control variables
     std::vector<MatrixXd> controlBuffer;
+    int start_control_index = 0;
+    bool new_controls_flag = false;
     std::thread visualisation_thread;
-
-
-    void visualisationThreadFunction();
 
 private:
     std::shared_ptr<physicsSimulator> activePhysicsSimulator;

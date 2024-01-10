@@ -26,34 +26,6 @@ visualizer::visualizer(std::shared_ptr<modelTranslator> _modelTranslator, bool a
     glfwSetScrollCallback(window, scrollCallbackWrapper);
     glfwSetWindowCloseCallback(window, windowCloseCallbackWrapper);
 
-
-
-    if(asynchronus){
-        // Start the thread
-        //visualisation_thread = std::thread(&visualizer::visualisationThreadFunction, this);
-    }
-}
-
-// Asynchronus visualisation function
-void visualizer::visualisationThreadFunction(){
-    while(true){
-        std::cout << "visualise \n";
-//        activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
-//        // Update the visualisation
-//        render("Visualisation");
-
-        if(controlBuffer.size() > 0){
-            // Set the latest control
-            activeModelTranslator->setControlVector(controlBuffer[0], VISUALISATION_DATA);
-            // Erase the applied control from the buffer
-            controlBuffer.erase(controlBuffer.begin());
-            // Update the simulation
-            activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
-            // Update the visualisation
-            render("Visualisation");
-        }
-
-    }
 }
 
 // ------------------------------- Keyboard Callback -------------------------------------------------

@@ -252,6 +252,15 @@ int main(int argc, char **argv) {
                 begin = std::chrono::steady_clock::now();
 
                 if(activeVisualiser->controlBuffer.size() > 0){
+
+                    if(activeVisualiser->new_controls_flag){
+                        activeVisualiser->new_controls_flag = false;
+
+                        for(int i = 0; i < activeVisualiser->start_control_index; i++){
+                            activeVisualiser->controlBuffer.erase(activeVisualiser->controlBuffer.begin());
+                        }
+                    }
+
                     next_control = activeVisualiser->controlBuffer[0];
                     // Erase the applied control from the buffer
                     activeVisualiser->controlBuffer.erase(activeVisualiser->controlBuffer.begin());
@@ -282,13 +291,15 @@ int main(int argc, char **argv) {
                 auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
                 // compare how long we took versus the timestep of the model
-
                 int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f);
 
                 if(difference_ms > 0)
                     std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
                 else
-                    std::cout << "MPC took too long to compute, skipping sleep \n";
+                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
+
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             }
             MPC_controls_thread.join();
@@ -796,10 +807,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
     int horizon = OPT_HORIZON;
 
-    // Copy master into visualisation
-    // TODO -> should this be here?
-    activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
-
     initOptimisationControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
@@ -807,7 +814,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 5, 4, OPT_HORIZON);
 
     MatrixXd currState;
-    activeOptimiser->verboseOutput = false;
+    activeOptimiser->verboseOutput = true;
 
     while(!taskComplete){
 
@@ -864,9 +871,42 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
         else{
             // If we are use Async visualisation, need to copy our control vector to internal control vector for
             // visualisation class
-//            std::mutex mtx;
+            std::mutex mtx;
+            mtx.lock();
+            
+            int optTimeToTimeSteps = activeOptimiser->optTime / (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000);
+
+            // By the time we have computed optimal controls, main visualisation will be some number
+            // of time-steps ahead. We need to find the correct control to apply.
+
+            MatrixXd current_vis_state = activeModelTranslator->returnStateVector(VISUALISATION_DATA);
+
+            double smallestError = 1000.00;
+            int bestMatchingStateIndex = 0;
+            // TODO - possible issue if optimisation time > horizon
+            for(int i = optTimeToTimeSteps - 3; i < optTimeToTimeSteps + 3; i++){
+                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
+                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
+                double currError = 0.0f;
+                for(int j = 0; j < activeModelTranslator->stateVectorSize; j++){
+                    currError += abs(activeOptimiser->X_old[i](j) - current_vis_state(j));
+                }
+
+                if(currError < smallestError){
+                    smallestError = currError;
+                    bestMatchingStateIndex = i;
+                }
+            }
+
+            std::cout << "best index: " << bestMatchingStateIndex << std::endl;
+
+            // Pop the first few controls.
+//            optimisedControls.erase(optimisedControls.begin(), optimisedControls.begin() + bestMatchingStateIndex);
             activeVisualiser->controlBuffer = optimisedControls;
-//            std::cout << "controls " << activeVisualiser->controlBuffer[0];
+            activeVisualiser->start_control_index = bestMatchingStateIndex;
+            activeVisualiser->new_controls_flag = true;
+
+            mtx.unlock();
 
         }
 

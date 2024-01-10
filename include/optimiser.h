@@ -47,7 +47,6 @@ public:
     void setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator);
 
     void worker(int threadId);
-//    std::vector<std::function<void()>> tasks;  // Stores tasks for each iteration
     std::vector<void (differentiator::*)(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId)> tasks;
     std::atomic<int> current_iteration;
     int num_threads_iterations;
