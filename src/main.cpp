@@ -228,7 +228,7 @@ int main(int argc, char **argv) {
         // No clutter - 1800 - 500 - 1800
 
         if(task == "walker"){
-            activeModelTranslator->X_desired(10) = 0.28;
+            activeModelTranslator->X_desired(10) = 0.3;
         }
 
         if(ASYNC_MPC){
@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
 
         }
         else{
-            MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 80);
+            MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 100);
         }
     }
     else if(runMode == "Generate_test_scenes"){
