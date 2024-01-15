@@ -59,9 +59,8 @@ public:
 
     // Asynchronus control variables
     std::vector<MatrixXd> controlBuffer;
-    int start_control_index = 0;
+    int current_control_index = 0;
     bool new_controls_flag = false;
-//    std::thread visualisation_thread;
     std::vector<MatrixXd> trajectory_states;
     std::vector<MatrixXd> trajectory_controls;
     bool task_finished = false;

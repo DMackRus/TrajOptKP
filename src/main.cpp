@@ -244,19 +244,21 @@ int main(int argc, char **argv) {
             while(activeVisualiser->windowOpen()){
                 begin = std::chrono::steady_clock::now();
 
-                if(activeVisualiser->controlBuffer.size() > 0){
+                if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
 
-                    if(activeVisualiser->new_controls_flag){
-                        activeVisualiser->new_controls_flag = false;
+//                    if(activeVisualiser->new_controls_flag){
+//                        activeVisualiser->new_controls_flag = false;
+//
+//                        for(int i = 0; i < activeVisualiser->current_control_index; i++){
+//                            activeVisualiser->controlBuffer.erase(activeVisualiser->controlBuffer.begin());
+//                        }
+//                    }
 
-                        for(int i = 0; i < activeVisualiser->start_control_index; i++){
-                            activeVisualiser->controlBuffer.erase(activeVisualiser->controlBuffer.begin());
-                        }
-                    }
-
-                    next_control = activeVisualiser->controlBuffer[0];
+                    next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
+                    // Increment the current control index
+                    activeVisualiser->current_control_index++;
                     // Erase the applied control from the buffer
-                    activeVisualiser->controlBuffer.erase(activeVisualiser->controlBuffer.begin());
+//                    activeVisualiser->controlBuffer.erase(activeVisualiser->controlBuffer.begin());
                 }
                 else{
                     MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
@@ -287,17 +289,20 @@ int main(int argc, char **argv) {
                 auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
                 // compare how long we took versus the timestep of the model
-                int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f);
+                int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
-                if(difference_ms > 0)
+                if(difference_ms > 0) {
+                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, sleeping for "
+                              << difference_ms << " ms \n";
                     std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
-//                else
-//                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
+                }
+                else
+                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
 
 
-                activeModelTranslator->X_desired(1) = activeModelTranslator->returnStateVector(VISUALISATION_DATA)(1) + 0.1;
+                activeModelTranslator->X_desired(1) = activeModelTranslator->returnStateVector(VISUALISATION_DATA)(1) + 0.2;
 
-                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+//                std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
                 if(activeVisualiser->task_finished){
                     activeVisualiser->task_finished = false;
@@ -772,7 +777,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
     while(!taskComplete){
 
-        currState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+
 //        cout << "init state in MPC: " << currState.transpose() << endl;
 
 //        if(overallTaskCounter < 20){
@@ -780,14 +785,18 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 //            cout << "init state in MPC: " << currState.transpose() << endl;
 //        }
 
-        MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
-        activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
 
-        optimisedControls.erase(optimisedControls.begin());
-
-        optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
 
         if(!ASYNC_MPC){
+            currState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+
+            MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
+            activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
+
+            optimisedControls.erase(optimisedControls.begin());
+
+            optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
+
             activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
             activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
         }
@@ -800,6 +809,18 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, VISUALISATION_DATA);
             activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
 
+
+
+            if(ASYNC_MPC){
+                int current_control_index = activeVisualiser->current_control_index;
+
+                // Slice the optimised controls to get the current control
+                for(int i = 0; i < current_control_index; i++){
+                    optimisedControls.erase(optimisedControls.begin());
+                    optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
+                }
+                // Pad the end so optimise controls are correct length
+            }
             optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, OPT_HORIZON);
             reInitialiseCounter = 0;
 
@@ -859,7 +880,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             }
 
             activeVisualiser->controlBuffer = optimisedControls;
-            activeVisualiser->start_control_index = bestMatchingStateIndex;
+            activeVisualiser->current_control_index = bestMatchingStateIndex;
             activeVisualiser->new_controls_flag = true;
 
             mtx.unlock();
