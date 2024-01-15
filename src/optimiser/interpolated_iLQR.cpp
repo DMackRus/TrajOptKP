@@ -143,6 +143,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     std::vector<MatrixXd> optimisedControls;
     horizonLength = _horizonLength;
     numberOfTotalDerivs = _horizonLength * dof;
+    // TODO - decide whether to use this or not, it seems to break when i remove it.
     lambda = 0.1;
     double oldCost = 0.0f;
     double newCost = 0.0f;

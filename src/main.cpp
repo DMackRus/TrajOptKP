@@ -228,6 +228,7 @@ int main(int argc, char **argv) {
         // No clutter - 1800 - 500 - 1800
 
         if(task == "walker"){
+            // Setting lateral desired speed
             activeModelTranslator->X_desired(10) = 0.3;
         }
 
@@ -275,9 +276,8 @@ int main(int argc, char **argv) {
 
                 // Update the visualisation
                 // Unsure why rendering every time causes it to lag so much more???
-//                activeVisualiser->render("live-MPC");
                 vis_counter++;
-                if(vis_counter > 2){
+                if(vis_counter > 5){
                     activeVisualiser->render("live-MPC");
                     vis_counter = 0;
                 }
@@ -294,7 +294,10 @@ int main(int argc, char **argv) {
 //                else
 //                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
 
-//                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+                activeModelTranslator->X_desired(1) = activeModelTranslator->returnStateVector(VISUALISATION_DATA)(1) + 0.1;
+
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
                 if(activeVisualiser->task_finished){
                     activeVisualiser->task_finished = false;
