@@ -7,7 +7,7 @@
 #define USE_DQACC 0
 #define HESSIAN_APPROXIMATION 0
 
-#include "modelTranslator.h"
+#include "ModelTranslator.h"
 #include "MuJoCoHelper.h"
 #include "mujoco.h"
 
@@ -15,7 +15,7 @@
 
 class differentiator{
 public:
-    differentiator(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _physicsSimulator);
+    differentiator(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _physicsSimulator);
 
     void getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId);
     MatrixXd calc_dqveldctrl(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal);
@@ -32,7 +32,7 @@ private:
     double epsVelocities = 1e-6;
     double epsPositions = 1e-6;
 
-    std::shared_ptr<modelTranslator> activeModelTranslator;
+    std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<MuJoCoHelper> activePhysicsSimulator;
 };
 

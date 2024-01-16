@@ -1,19 +1,19 @@
 #pragma once
 
-#include "modelTranslator.h"
+#include "ModelTranslator.h"
 
-class walker : public modelTranslator {
+class walker : public ModelTranslator {
 public:
     walker();
 
-    bool taskComplete(int dataIndex, double &dist) override;
-    void generateRandomGoalAndStartState() override;
-    MatrixXd returnRandomStartState() override;
-    MatrixXd returnRandomGoalState(MatrixXd X0) override;
+    bool TaskComplete(int dataIndex, double &dist) override;
+    void GenerateRandomGoalAndStartState() override;
+    MatrixXd ReturnRandomStartState() override;
+    MatrixXd ReturnRandomGoalState(MatrixXd X0) override;
 
-    std::vector<MatrixXd> createInitOptimisationControls(int horizonLength) override;
+    std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
 
-    double costFunction(int dataIndex, bool terminal) override;
-    void costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
+    double CostFunction(int dataIndex, bool terminal) override;
+    void CostDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
 
 };

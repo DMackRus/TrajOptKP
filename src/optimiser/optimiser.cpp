@@ -1,7 +1,7 @@
 
 #include "optimiser.h"
 
-optimiser::optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator){
+optimiser::optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator){
     activeModelTranslator = _modelTranslator;
     activePhysicsSimulator = _physicsSimulator;
     activeYamlReader = _yamlReader;
@@ -11,14 +11,14 @@ optimiser::optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::sha
     num_ctrl = activeModelTranslator->num_ctrl;
 
     // Set up the derivative interpolator from YAML settings
-    activeDerivativeInterpolator.keypoint_method = activeModelTranslator->keypointMethod;
-    activeDerivativeInterpolator.minN = activeModelTranslator->minN;
-    activeDerivativeInterpolator.maxN = activeModelTranslator->maxN;
-    activeDerivativeInterpolator.jerkThresholds = activeModelTranslator->jerkThresholds;
+    activeDerivativeInterpolator.keypoint_method = activeModelTranslator->keypoint_method;
+    activeDerivativeInterpolator.minN = activeModelTranslator->min_N;
+    activeDerivativeInterpolator.maxN = activeModelTranslator->max_N;
+    activeDerivativeInterpolator.jerkThresholds = activeModelTranslator->jerk_thresholds;
     // TODO - fix this - add acell thresholds to yaml
-    activeDerivativeInterpolator.accelThresholds = activeModelTranslator->jerkThresholds;
-    activeDerivativeInterpolator.iterativeErrorThreshold = activeModelTranslator->iterativeErrorThreshold;
-    activeDerivativeInterpolator.magVelChangeThresholds = activeModelTranslator->magVelChangeThresholds;
+    activeDerivativeInterpolator.accelThresholds = activeModelTranslator->jerk_thresholds;
+    activeDerivativeInterpolator.iterativeErrorThreshold = activeModelTranslator->iterative_error_threshold;
+    activeDerivativeInterpolator.magVelChangeThresholds = activeModelTranslator->velocity_change_thresholds;
 
 
 }
@@ -333,7 +333,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
 
 //            cout << " after check mag change" << endl;
 
-            // If the interval is greater than minN
+            // If the interval is greater than min_N
             if(lastKeypointCounter[i] >= activeDerivativeInterpolator.minN){
                 // If the direction of the velocity has changed
                 if(currentVelDirection * lastVelDirection[i] < 0){
@@ -347,7 +347,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
                 lastVelDirection[i] = currentVelDirection;
             }
 
-            // If interval is greater than maxN
+            // If interval is greater than max_N
             if(lastKeypointCounter[i] >= activeDerivativeInterpolator.maxN){
                 keyPoints[t].push_back(i);
                 lastVelValue[i] = velProfile[t](i, 0);
@@ -369,7 +369,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 
     MatrixXd midColumnsApprox[2];
     for(int i = 0; i < 2; i++){
-        midColumnsApprox[i] = MatrixXd::Zero(activeModelTranslator->stateVectorSize, 1);
+        midColumnsApprox[i] = MatrixXd::Zero(activeModelTranslator->state_vector_size, 1);
     }
 
     int midIndex = (indices.startIndex + indices.endIndex) / 2;
@@ -428,7 +428,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 
     for(int i = 0; i < 2; i++){
         int A_col_indices[2] = {dofIndex, dofIndex + dof};
-        for(int j = dof; j < activeModelTranslator->stateVectorSize; j++){
+        for(int j = dof; j < activeModelTranslator->state_vector_size; j++){
             double sqDiff = pow((A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0)),2);
 
             counter++;
@@ -475,10 +475,10 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 void optimiser::getCostDerivs(){
     #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
-        activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+        activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
     }
 
-    activeModelTranslator->costDerivatives(horizonLength-1,
+    activeModelTranslator->CostDerivatives(horizonLength - 1,
                                            l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
 }
 
@@ -530,13 +530,13 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     if(!activeYamlReader->costDerivsFD){
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
-                activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
             else{
-                activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
         }
-        activeModelTranslator->costDerivatives(horizonLength - 1,
+        activeModelTranslator->CostDerivatives(horizonLength - 1,
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
     }
 }
@@ -666,9 +666,9 @@ std::vector<MatrixXd> optimiser::generateJerkProfile(){
 
     MatrixXd jerk(activeModelTranslator->dof, 1);
 
-    MatrixXd state1(activeModelTranslator->stateVectorSize, 1);
-    MatrixXd state2(activeModelTranslator->stateVectorSize, 1);
-    MatrixXd state3(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd state1(activeModelTranslator->state_vector_size, 1);
+    MatrixXd state2(activeModelTranslator->state_vector_size, 1);
+    MatrixXd state3(activeModelTranslator->state_vector_size, 1);
 
     std::vector<MatrixXd> jerkProfile;
 
@@ -693,8 +693,8 @@ std::vector<MatrixXd> optimiser::generateJerkProfile(){
 std::vector<MatrixXd> optimiser::generateAccelProfile(){
     MatrixXd accel(activeModelTranslator->dof, 1);
 
-    MatrixXd state1(activeModelTranslator->stateVectorSize, 1);
-    MatrixXd state2(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd state1(activeModelTranslator->state_vector_size, 1);
+    MatrixXd state2(activeModelTranslator->state_vector_size, 1);
 
     std::vector<MatrixXd> accelProfile;
 

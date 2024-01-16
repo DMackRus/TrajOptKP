@@ -4,9 +4,9 @@
 
 #include "visualizer.h"
 
-visualizer::visualizer(std::shared_ptr<modelTranslator> _modelTranslator){
+visualizer::visualizer(std::shared_ptr<ModelTranslator> _modelTranslator){
 
-    activePhysicsSimulator = _modelTranslator->activePhysicsSimulator;
+    activePhysicsSimulator = _modelTranslator->active_physics_simulator;
     activeModelTranslator = _modelTranslator;
 
     if (!glfwInit())
@@ -53,26 +53,26 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
 
         std::cout << "before ut " << std::endl;
-        MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
-        MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
+        MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
+        MatrixXd X_last(activeModelTranslator->state_vector_size, 1);
         MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
         MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
-        Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+        Xt = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
         X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+        double cost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, false);
         std::cout << "cost: " << cost << std::endl;
 
 
         MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->costDerivatives(MAIN_DATA_STATE, l_x, l_xx, l_u, l_uu, false);
+        activeModelTranslator->CostDerivatives(MAIN_DATA_STATE, l_x, l_xx, l_u, l_uu, false);
         cout << "l_x: " << l_x << endl;
         cout << "l_xx:" << l_xx << endl;
 
         MatrixXd posVector, velVector, accelVec, stateVector;
         posVector = activeModelTranslator->returnPositionVector(MAIN_DATA_STATE);
         velVector = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
-        stateVector = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+        stateVector = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
         accelVec = activeModelTranslator->returnAccelerationVector(MAIN_DATA_STATE);
         cout << "pos Vector: " << posVector << endl;
         cout << "vel vector: " << velVector << endl;
@@ -84,7 +84,7 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         MatrixXd controlVec;
 //        SensorByName(model, data, "torso_position")[2];
         activePhysicsSimulator->sensorState(MAIN_DATA_STATE, "torso_position");
-        controlVec = activeModelTranslator->returnControlVector(0);
+        controlVec = activeModelTranslator->ReturnControlVector(0);
         cout << "control vec: " << controlVec << endl;
 
     }
@@ -95,31 +95,31 @@ void visualizer::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
         int dataIndex = 1;
 
-        MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
-        MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
+        MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
+        MatrixXd X_last(activeModelTranslator->state_vector_size, 1);
         MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
         MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
 
-        Ut = activeModelTranslator->returnControlVector(dataIndex);
-        U_last = activeModelTranslator->returnControlVector(dataIndex);
+        Ut = activeModelTranslator->ReturnControlVector(dataIndex);
+        U_last = activeModelTranslator->ReturnControlVector(dataIndex);
 
-        Xt = activeModelTranslator->returnStateVector(dataIndex);
+        Xt = activeModelTranslator->ReturnStateVector(dataIndex);
         X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->costFunction(dataIndex, false);
+        double cost = activeModelTranslator->CostFunction(dataIndex, false);
         cout << "------------------------------------------------- \n";
         std::cout << "cost: " << cost << std::endl;
 
 
         MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->costDerivatives(dataIndex, l_x, l_xx, l_u, l_uu, false);
+        activeModelTranslator->CostDerivatives(dataIndex, l_x, l_xx, l_u, l_uu, false);
         cout << "l_x: " << l_x << endl;
         cout << "l_xx:" << l_xx << endl;
 
         MatrixXd posVector, velVector, accelVec, stateVector;
         posVector = activeModelTranslator->returnPositionVector(dataIndex);
         velVector = activeModelTranslator->returnVelocityVector(dataIndex);
-        stateVector = activeModelTranslator->returnStateVector(dataIndex);
+        stateVector = activeModelTranslator->ReturnStateVector(dataIndex);
         accelVec = activeModelTranslator->returnAccelerationVector(dataIndex);
         cout << "pos Vector: " << posVector << endl;
         cout << "vel vector: " << velVector << endl;

@@ -1,15 +1,15 @@
 #include "reaching.h"
 
-pandaReaching::pandaReaching(): modelTranslator(){
+pandaReaching::pandaReaching(): ModelTranslator(){
     std::string yamlFilePath = "/taskConfigs/reachingConfig.yaml";
 
-    initModelTranslator(yamlFilePath);
+    InitModelTranslator(yamlFilePath);
 
 }
 
-bool pandaReaching::taskComplete(int dataIndex, double &dist){
+bool pandaReaching::TaskComplete(int dataIndex, double &dist){
     double cumError = 0.0f;
-    MatrixXd X = returnStateVector(dataIndex);
+    MatrixXd X = ReturnStateVector(dataIndex);
 
     for(int i = 0; i < dof; i++){
         double diff = X_desired(i) - X(i);
@@ -26,7 +26,7 @@ bool pandaReaching::taskComplete(int dataIndex, double &dist){
     }
 }
 
-void pandaReaching::generateRandomGoalAndStartState() {
+void pandaReaching::GenerateRandomGoalAndStartState() {
     bool validStartAndGoal = false;
     vector<double> jointStartPositions;
     vector<double> jointGoalPositions;
@@ -49,10 +49,10 @@ void pandaReaching::generateRandomGoalAndStartState() {
                 jointStartPositions[i] = randomJoint;
             }
 
-            activePhysicsSimulator->setRobotJointsPositions(robotName, jointStartPositions, MAIN_DATA_STATE);
+            active_physics_simulator->setRobotJointsPositions(robotName, jointStartPositions, MAIN_DATA_STATE);
 
             // Check if current configuration is valid
-            if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+            if(active_physics_simulator->checkSystemForCollisions(MAIN_DATA_STATE)){
                 cout << "invalid robot position \n";
             }
             else{
@@ -87,10 +87,10 @@ void pandaReaching::generateRandomGoalAndStartState() {
                 jointGoalPositions[i] = randomJoint;
             }
 
-            activePhysicsSimulator->setRobotJointsPositions(robotName, jointGoalPositions, MAIN_DATA_STATE);
+            active_physics_simulator->setRobotJointsPositions(robotName, jointGoalPositions, MAIN_DATA_STATE);
 
             // Check if current configuration is valid
-            if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+            if(active_physics_simulator->checkSystemForCollisions(MAIN_DATA_STATE)){
                 cout << "invalid robot position \n";
                 resetCounter++;
             }
@@ -116,8 +116,8 @@ void pandaReaching::generateRandomGoalAndStartState() {
             0, 0, 0, 0, 0, 0, 0;
 }
 
-MatrixXd pandaReaching::returnRandomStartState(){
-    MatrixXd randomStartState(stateVectorSize, 1);
+MatrixXd pandaReaching::ReturnRandomStartState(){
+    MatrixXd randomStartState(state_vector_size, 1);
 
     bool validStartState = false;
     vector<double> jointPositions;
@@ -134,10 +134,10 @@ MatrixXd pandaReaching::returnRandomStartState(){
             jointPositions[i] = randomJoint;
         }
 
-        activePhysicsSimulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+        active_physics_simulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
 
         // Check if current configuration is valid
-        if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+        if(active_physics_simulator->checkSystemForCollisions(MAIN_DATA_STATE)){
             cout << "invalid robot position \n";
         }
         else{
@@ -151,8 +151,8 @@ MatrixXd pandaReaching::returnRandomStartState(){
     return randomStartState;
 }
 
-MatrixXd pandaReaching::returnRandomGoalState(MatrixXd X0){
-    MatrixXd randomGoalState(stateVectorSize, 1);
+MatrixXd pandaReaching::ReturnRandomGoalState(MatrixXd X0){
+    MatrixXd randomGoalState(state_vector_size, 1);
 
     double jointOffsets[7] = {0.5, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8};
     double jointOffsetNoise[7] = {0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2};
@@ -180,10 +180,10 @@ MatrixXd pandaReaching::returnRandomGoalState(MatrixXd X0){
             jointPositions[i] = randomJoint;
         }
 
-        activePhysicsSimulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+        active_physics_simulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
 
         // Check if current configuration is valid
-        if(activePhysicsSimulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+        if(active_physics_simulator->checkSystemForCollisions(MAIN_DATA_STATE)){
             cout << "invalid robot position \n";
         }
         else{
@@ -198,10 +198,10 @@ MatrixXd pandaReaching::returnRandomGoalState(MatrixXd X0){
     return randomGoalState;
 }
 
-std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonLength){
+std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
-    if(myStateVector.robots[0].torqueControlled){
+    if(state_vector.robots[0].torqueControlled){
 
         MatrixXd control(num_ctrl, 1);
         double gains[7] = {10, 10, 10, 10, 5, 5, 5};
@@ -209,9 +209,9 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
-            activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            active_physics_simulator->getRobotJointsGravityCompensaionControls(state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
 
-            Xt = returnStateVector(MAIN_DATA_STATE);
+            Xt = ReturnStateVector(MAIN_DATA_STATE);
 
             for(int j = 0; j < num_ctrl; j++){
                 control(j) = gravCompensation[j];
@@ -219,13 +219,13 @@ std::vector<MatrixXd> pandaReaching::createInitOptimisationControls(int horizonL
 //                control(j) += diff * gains[j];
             }
 
-            setControlVector(control, MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            SetControlVector(control, MAIN_DATA_STATE);
+            active_physics_simulator->stepSimulator(1, MAIN_DATA_STATE);
             initControls.push_back(control);
         }
     }
     else{
-        MatrixXd startState = returnStateVector(MAIN_DATA_STATE);
+        MatrixXd startState = ReturnStateVector(MAIN_DATA_STATE);
         MatrixXd goalState = X_desired.replicate(1, 1);
         MatrixXd difference = goalState - startState;
 

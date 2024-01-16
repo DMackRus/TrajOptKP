@@ -1,14 +1,14 @@
 #include "acrobot.h"
 
-acrobot::acrobot(): modelTranslator(){
+acrobot::acrobot(): ModelTranslator(){
     std::string yamlFilePath = "/taskConfigs/acrobotConfig.yaml";
-    initModelTranslator(yamlFilePath);
+    InitModelTranslator(yamlFilePath);
 }
 
-bool acrobot::taskComplete(int dataIndex, double &dist){
+bool acrobot::TaskComplete(int dataIndex, double &dist){
     double diff = 0.0f;
 
-    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Xt = ReturnStateVector(dataIndex);
 
     for(int i = 0; i < dof; i++){
         diff += abs(X_desired(i) - Xt(i));
@@ -22,9 +22,9 @@ bool acrobot::taskComplete(int dataIndex, double &dist){
     return false;
 }
 
-void acrobot::generateRandomGoalAndStartState() {
-    X_start.resize(stateVectorSize, 1);
-    X_desired.resize(stateVectorSize, 1);
+void acrobot::GenerateRandomGoalAndStartState() {
+    X_start.resize(state_vector_size, 1);
+    X_desired.resize(state_vector_size, 1);
 
     float arm1Pos = randFloat(0, 3);
     float arm2Pos = randFloat(0, 3);
@@ -47,8 +47,8 @@ void acrobot::generateRandomGoalAndStartState() {
 
 }
 
-MatrixXd acrobot::returnRandomStartState(){
-    MatrixXd randomStartState(stateVectorSize, 1);
+MatrixXd acrobot::ReturnRandomStartState(){
+    MatrixXd randomStartState(state_vector_size, 1);
 
     float arm1Pos = randFloat(0, 3);
     float arm2Pos = randFloat(0, 3);
@@ -58,8 +58,8 @@ MatrixXd acrobot::returnRandomStartState(){
     return randomStartState;
 }
 
-MatrixXd acrobot::returnRandomGoalState(MatrixXd X0){
-    MatrixXd randomGoalState(stateVectorSize, 1);
+MatrixXd acrobot::ReturnRandomGoalState(MatrixXd X0){
+    MatrixXd randomGoalState(state_vector_size, 1);
 
     float randomNum = randFloat(0, 1);
     // stable down position

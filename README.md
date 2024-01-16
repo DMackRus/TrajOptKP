@@ -81,12 +81,12 @@ which are explained in the configuration file.
 The second config file is specific to the task being loaded, all task config files are located in **taskConfigs** folder. 
 There are some high level settings, as follows:
 - **modelFile**: Relative path to the model xml file
-- **modelName**: Name of the model, used for saving data
+- **model_name**: Name of the model, used for saving data
 - **timeStep**: Time step for simulation
-- **keypointMethod**: Key-point method to use in optimisation. See below for more details.
-- **minN**: Minimum interval between key-points
-- **maxN**: Maximum interval between key-points
-- **iterativeErrorThreshold**: Error threshold for iterative error method
+- **keypoint_method**: Key-point method to use in optimisation. See below for more details.
+- **min_N**: Minimum interval between key-points
+- **max_N**: Maximum interval between key-points
+- **iterative_error_threshold**: Error threshold for iterative error method
 
 As well as these high level settings, there is the task description. Every task is specified by a collection of **robots** amd **bodies**.
 **Robots** are actuated whereas **bodies** are not. This list of robots and bodies instantiates the trajectory 
@@ -150,31 +150,31 @@ There are four key-point methods implemented in this repository. Code for these 
 can be found in [optimiser.cpp](https://github.com/DMackRus/TrajOptKP/tree/main/src/optimiser).
 
 ### Set Interval
-The Set-interval method has one parameter (minN)
+The Set-interval method has one parameter (min_N)
 
-The Set-interval method is the simplest.The key-points are equally spaces with an interval of minN inbetween them.
+The Set-interval method is the simplest.The key-points are equally spaces with an interval of min_N inbetween them.
 
 ### Adaptive Jerk
-The Adaptive jerk method has three parameters (minN, maxN, jerk_threshold)
+The Adaptive jerk method has three parameters (min_N, max_N, jerk_threshold)
 
 The Adaptive Jerk method calculates the jerk over the trajectory for all the DoFs in the 
 state vector. Whenever the jerk threshold is exceeded, the time-step is marked as a "key-point".  
-New key-points cant be placed within minN steps of another. If the jerk_threshold is not exceeded 
-within maxN time-steps, another key-point is placed automatically.
+New key-points cant be placed within min_N steps of another. If the jerk_threshold is not exceeded 
+within max_N time-steps, another key-point is placed automatically.
 
 ### Velocity Change
-The Velocity-jerk method has three parameters (minN, maxN, velocity_threshold)
+The Velocity-jerk method has three parameters (min_N, max_N, velocity_threshold)
 
 The Velocity Change method looks at the velocity profiles for every DoF over the trajectory. 
 Whenever a **turning point** (when the velocity changes direction) is detected, a key-point is
 added for that DoF.
 
 Key-points are also placed when the velocity changes by more than velocity_threshold (since the 
-last key-point). If neither of these conditions are reached within maxN time-steps, another
+last key-point). If neither of these conditions are reached within max_N time-steps, another
 key-point is placed automatically.
 
 ### Iterative Error
-The Iterative-error method has two parameters (minN, error_threshold)
+The Iterative-error method has two parameters (min_N, error_threshold)
 
 The iterative error method works very similarly to adaptive-size cell decomposition 
 (A common path-planning algorithm). It starts out with a bad approximation and iteratively 
@@ -188,7 +188,7 @@ difference of all values in the matrix). If the error is below the error_thresho
 approximation is good. If the approximation is above the threshold, the algorithm further 
 subdivides that section into smaller sections and repeats this process.
 
-This iterative process is repeated until all segments satisfy the error requirement or the minN 
+This iterative process is repeated until all segments satisfy the error requirement or the min_N 
 interval is reached.
 
 ## To-Do

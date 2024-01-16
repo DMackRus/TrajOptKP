@@ -3,7 +3,7 @@
 
 
 #include "stdInclude.h"
-#include "modelTranslator.h"
+#include "ModelTranslator.h"
 #include "physicsSimulator.h"
 #include "differentiator.h"
 #include <atomic>
@@ -34,7 +34,7 @@ struct derivative_interpolator{
 
 class optimiser{
 public:
-    optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
+    optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
 
     virtual double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) = 0;
     virtual std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) = 0;
@@ -108,7 +108,7 @@ public:
 
 
 protected:
-    std::shared_ptr<modelTranslator> activeModelTranslator;
+    std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<physicsSimulator> activePhysicsSimulator;
 
     int dof;
