@@ -22,6 +22,7 @@
 
 // --------------------- other -----------------------
 #include <mutex>
+#include <atomic>
 
 // ------------ MODES OF OPERATION -------------------------------
 #define ASYNC_MPC   true
@@ -54,7 +55,13 @@ void generateTestingData();
 void generateFilteringData();
 
 void genericTesting();
+
+void async_MPC_testing();
 void worker();
+
+double avg_opt_time, avg_percent_derivs, avg_time_derivs, avg_time_bp, avg_time_fp;
+
+std::atomic<bool> stopMPC = false;
 
 int main(int argc, char **argv) {
 
@@ -219,109 +226,7 @@ int main(int argc, char **argv) {
     }
     else if(runMode == "MPC_until_completion"){
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
-        double trajecCost, avgHz;
-        double avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
-        activeOptimiser->setTrajecNumber(1000);
-
-        // Some tasks need setup controls to be generated and executed
-        std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
-        activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-
-        // Whether optimiser will output useful information
-        activeOptimiser->verboseOutput = true;
-        // Visualise MPC trajectory live
-        mpcVisualise = true;
-
-        if(task == "walker"){
-            // Setting lateral desired speed
-            activeModelTranslator->X_desired(10) = 0.3;
-        }
-
-        if(ASYNC_MPC){
-            std::thread MPC_controls_thread;
-            MPC_controls_thread = std::thread(&worker);
-            int vis_counter = 0;
-            MatrixXd next_control;
-            // timer variables
-            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-            std::chrono::steady_clock::time_point end;
-
-            while(activeVisualiser->windowOpen()){
-                begin = std::chrono::steady_clock::now();
-
-                if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
-
-                    next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
-                    // Increment the current control index
-                    activeVisualiser->current_control_index++;
-                }
-                else{
-                    MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
-                    empty_control.setZero();
-                    next_control = empty_control;
-                }
-
-                // Store latest control and state in a replay buffer
-                activeVisualiser->trajectory_controls.push_back(next_control);
-                activeVisualiser->trajectory_states.push_back(activeModelTranslator->returnStateVector(VISUALISATION_DATA));
-
-                // Set the latest control
-                activeModelTranslator->setControlVector(next_control, VISUALISATION_DATA);
-
-                // Update the simulation
-                activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
-
-                // Update the visualisation
-                // Unsure why rendering every time causes it to lag so much more???
-                vis_counter++;
-                if(vis_counter > 5){
-                    activeVisualiser->render("live-MPC");
-                    vis_counter = 0;
-                }
-
-                end = std::chrono::steady_clock::now();
-                // time taken
-                auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-
-                // compare how long we took versus the timestep of the model
-                int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
-
-                if(difference_ms > 0) {
-                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, sleeping for "
-                              << difference_ms << " ms \n";
-                    std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
-                }
-                else
-                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
-
-
-                activeModelTranslator->X_desired(1) = activeModelTranslator->returnStateVector(VISUALISATION_DATA)(1) + 0.15;
-
-//                std::this_thread::sleep_for(std::chrono::milliseconds(5));
-
-                if(activeVisualiser->task_finished){
-                    activeVisualiser->task_finished = false;
-                    // Replay states through cost function
-
-                    double cost = 0.0f;
-                    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-                    for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-                        activeModelTranslator->setControlVector(activeVisualiser->trajectory_controls[i], MAIN_DATA_STATE);
-                        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
-                        cost += (activeModelTranslator->costFunction(MAIN_DATA_STATE, false) * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep());
-
-                    }
-                    std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
-
-                }
-
-            }
-            MPC_controls_thread.join();
-
-        }
-        else{
-            MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 100);
-        }
+        async_MPC_testing();
     }
     else if(runMode == "Generate_test_scenes"){
         cout << "TASK INIT MODE \n";
@@ -737,6 +642,115 @@ void worker(){
     MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, 80);
 }
 
+void async_MPC_testing(){
+
+    // Some tasks need setup controls to be generated and executed
+    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+
+    // Whether optimiser will output useful information
+    activeOptimiser->verboseOutput = true;
+    // Visualise MPC trajectory live
+    mpcVisualise = true;
+
+    if(task == "walker"){
+        // Setting lateral desired speed
+        activeModelTranslator->X_desired(10) = 0.3;
+    }
+
+    if(ASYNC_MPC){
+        std::thread MPC_controls_thread;
+        MPC_controls_thread = std::thread(&worker);
+        int vis_counter = 0;
+        MatrixXd next_control;
+        // timer variables
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point end;
+
+        int MAX_TASK_TIME = 1000;
+        int task_time = 0;
+
+        while(task_time++ < MAX_TASK_TIME){
+            begin = std::chrono::steady_clock::now();
+
+            if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
+
+                next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
+                // Increment the current control index
+                activeVisualiser->current_control_index++;
+            }
+            else{
+                MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
+                empty_control.setZero();
+                next_control = empty_control;
+            }
+
+            // Store latest control and state in a replay buffer
+            activeVisualiser->trajectory_controls.push_back(next_control);
+            activeVisualiser->trajectory_states.push_back(activeModelTranslator->returnStateVector(VISUALISATION_DATA));
+
+            // Set the latest control
+            activeModelTranslator->setControlVector(next_control, VISUALISATION_DATA);
+
+            // Update the simulation
+            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
+
+            // Update the visualisation
+            // Unsure why rendering every time causes it to lag so much more???
+            vis_counter++;
+            if(vis_counter > 5){
+                activeVisualiser->render("live-MPC");
+                vis_counter = 0;
+            }
+
+            end = std::chrono::steady_clock::now();
+            // time taken
+            auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+
+            // compare how long we took versus the timestep of the model
+            int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
+
+            if(difference_ms > 0) {
+                std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, sleeping for "
+                          << difference_ms << " ms \n";
+                std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
+            }
+            else
+                std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
+
+
+            activeModelTranslator->X_desired(1) = activeModelTranslator->returnStateVector(VISUALISATION_DATA)(1) + 0.15;
+
+
+        }
+
+        double cost = 0.0f;
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+        for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
+            activeModelTranslator->setControlVector(activeVisualiser->trajectory_controls[i], MAIN_DATA_STATE);
+            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            cost += (activeModelTranslator->costFunction(MAIN_DATA_STATE, false) * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep());
+
+        }
+
+        stopMPC = true;
+        MPC_controls_thread.join();
+
+        std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
+        std::cout << "avg opt time: " << avg_opt_time << " ms \n";
+        std::cout << "avg percent derivs: " << avg_percent_derivs << " % \n";
+        std::cout << "avg time derivs: " << avg_time_derivs << " ms \n";
+        std::cout << "avg time BP: " << avg_time_bp << " ms \n";
+        std::cout << "avg time FP: " << avg_time_fp << " ms \n";
+
+    }
+    else{
+        double trajecCost, avgHz;
+        double avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
+        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 100);
+    }
+}
+
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
 // optimiser settings. This function can then return necessary testing data for us to store
 void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
@@ -772,6 +786,12 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     activeOptimiser->verboseOutput = true;
 
     while(!taskComplete){
+
+        if(stopMPC){
+            taskComplete = true;
+            break;
+        }
+
         if(!ASYNC_MPC){
 //            currState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 
@@ -870,12 +890,15 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
         }
 
-        overallTaskCounter++;
+        if(!ASYNC_MPC){
+            overallTaskCounter++;
 
-        if(overallTaskCounter >= MAX_TASK_TIME){
-            cout << "task time out" << endl;
-            taskComplete = true;
+            if(overallTaskCounter >= MAX_TASK_TIME){
+                cout << "task time out" << endl;
+                taskComplete = true;
+            }
         }
+
     }
 
     trajecCost = 0.0f;
@@ -883,7 +906,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
     for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
         MatrixXd startState = activeModelTranslator->returnStateVector(VISUALISATION_DATA);
-//        std::cout << "start state: " << startState.transpose() << std::endl;
         MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
         double stateCost = activeModelTranslator->costFunction(VISUALISATION_DATA, false);
         trajecCost += stateCost  * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep();
@@ -948,6 +970,12 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     else{
         activeVisualiser->task_finished = true;
     }
+
+    avg_opt_time = avgTimeGettingDerivs + avgTimeBP + avgTimeFP;
+    avg_time_bp = avgTimeBP;
+    avg_time_fp = avgTimeFP;
+    avg_time_derivs = avgTimeGettingDerivs;
+    avg_percent_derivs = avgPercentDerivs;
 }
 
 void generateTestingData_MPC(){
