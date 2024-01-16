@@ -8,49 +8,6 @@ walker::walker(): modelTranslator(){
     initModelTranslator(yamlFilePath);
 }
 
-//double locomotion_anymal::costFunction(int dataIndex, bool terminal){
-//    double cost = 0.0f;
-//
-////    MatrixXd Ut = returnControlVector(dataIndex);
-////    for(int i = 0; i < num_ctrl; i++){
-////        cost += 1e-1 * pow(Ut(i), 2);
-////    }
-//
-//    double height = activePhysicsSimulator->sensorState(dataIndex, "torso_position")[2];
-//    cost += 10.0 * pow((height - 1.3), 2);
-////    cout << "height: " << height << endl;
-//
-//    // ---------- Residual (2) ----------
-//    double torso_up = activePhysicsSimulator->sensorState(dataIndex, "torso_zaxis")[2];
-//    cost += 3.0 * pow((torso_up - 1.0), 2);
-//
-//    double com_vel = activePhysicsSimulator->sensorState(dataIndex, "torso_subtreelinvel")[0];
-//    cost += 0.0 * pow((com_vel - 2.0), 2);
-//
-////    cout << "height: " << height << " torso_up: " << torso_up << " com_vel: " << com_vel << "cost: " << cost << endl;
-//
-////    MatrixXd Xt = returnStateVector(dataIndex);
-////    MatrixXd Ut = returnControlVector(dataIndex);
-////    MatrixXd X_diff = Xt - X_desired;
-////
-////    MatrixXd result = X_diff.transpose() * Q * X_diff + Ut.transpose() * R * Ut;
-////    double cost = result(0);
-//
-//    return cost;
-//}
-//
-//void locomotion_anymal::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-////    MatrixXd Xt = returnStateVector(dataIndex);
-////    MatrixXd Ut = returnControlVector(dataIndex);
-////    MatrixXd X_diff = Xt - X_desired;
-////
-////    l_x = 2 * Q * X_diff;
-////    l_xx = 2 * Q;
-////
-////    l_u = 2 * R * Ut;
-////    l_uu = 2 * R;
-//}
-
 bool walker::taskComplete(int dataIndex, double &dist){
     return false;
 }
@@ -89,4 +46,69 @@ std::vector<MatrixXd> walker::createInitOptimisationControls(int horizonLength){
         initControls.push_back(control);
     }
     return initControls;
+}
+
+double walker::costFunction(int dataIndex, bool terminal){
+    double cost;
+    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Ut = returnControlVector(dataIndex);
+
+    MatrixXd X_diff = Xt - X_desired;
+
+    for(int i = 0; i < 9; i++){
+        //0 = height, 1 = x, 2 = rotation
+        if(i == 0){
+            // Only penalise if height below expected.
+            if(X_diff(i) < 0){
+                if(terminal) cost += X_diff(i) * X_diff(i) * Q_terminal.diagonal()(i);
+                else cost += X_diff(i) * X_diff(i) * Q.diagonal()(i);
+            }
+
+//            if(terminal) cost += exp(-Q_terminal.diagonal()(i) * X_diff(i));
+//            else cost += exp(-Q.diagonal()(i) * X_diff(i));
+        }
+        else{
+            if(terminal) cost += X_diff(i) * X_diff(i) * Q_terminal.diagonal()(i);
+            else cost += X_diff(i) * X_diff(i) * Q.diagonal()(i);
+        }
+    }
+
+
+    return cost;
+}
+
+void walker::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd Xt = returnStateVector(dataIndex);
+    MatrixXd Ut = returnControlVector(dataIndex);
+    MatrixXd X_diff = Xt - X_desired;
+
+    double height_gradient = 0.0f;
+    double height_hessian = 0.0f;
+
+    if(terminal){
+        l_x = 2 * Q_terminal * X_diff;
+        l_xx = 2 * Q_terminal;
+        if(X_diff(0) < 0){
+            height_gradient = 2 * Q_terminal.diagonal()[0] * X_diff(0);
+            height_hessian = 2 * Q_terminal.diagonal()[0];
+        }
+//        height_gradient = -Q_terminal.diagonal()[0] * X_diff(0) * exp(-Q_terminal.diagonal()[0] * X_diff(0));
+//        height_hessian = Q_terminal.diagonal()[0] * exp(-Q_terminal.diagonal()[0] * X_diff(0)) * (Q_terminal.diagonal()[0] * X_diff(0));
+    }
+    else{
+        l_x = 2 * Q * X_diff;
+        l_xx = 2 * Q;
+        if(X_diff(0) < 0){
+            height_gradient = 2 * Q.diagonal()[0] * X_diff(0);
+            height_hessian = 2 * Q.diagonal()[0];
+        }
+//        height_gradient = -Q.diagonal()[0] * X_diff(0) * exp(-Q.diagonal()[0] * X_diff(0));
+//        height_hessian = Q.diagonal()[0] * exp(-Q.diagonal()[0] * X_diff(0)) * (Q.diagonal()[0] * X_diff(0));
+    }
+
+    l_x(0) = l_x(0) + height_gradient;
+    l_xx(0,0) = l_xx(0,0) + height_hessian;
+
+    l_u = 2 * R * Ut;
+    l_uu = 2 * R;
 }

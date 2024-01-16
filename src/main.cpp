@@ -186,9 +186,10 @@ int main(int argc, char **argv) {
     activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
 
-    //Instantiate my optimiser
+    //Instantiate my visualiser
     activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
 
+    // Choose an optimiser
     if(optimiser == "interpolated_iLQR"){
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
@@ -206,6 +207,7 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    // Methods of control / visualisation
     if(runMode == "Init_controls"){
         cout << "SHOWING INIT CONTROLS MODE \n";
         showInitControls();
@@ -220,12 +222,15 @@ int main(int argc, char **argv) {
         double trajecCost, avgHz;
         double avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
         activeOptimiser->setTrajecNumber(1000);
+
+        // Some tasks need setup controls to be generated and executed
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
         activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-        activeOptimiser->verboseOutput = true;
-        mpcVisualise = true;
 
-        // No clutter - 1800 - 500 - 1800
+        // Whether optimiser will output useful information
+        activeOptimiser->verboseOutput = true;
+        // Visualise MPC trajectory live
+        mpcVisualise = true;
 
         if(task == "walker"){
             // Setting lateral desired speed
@@ -246,19 +251,9 @@ int main(int argc, char **argv) {
 
                 if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
 
-//                    if(activeVisualiser->new_controls_flag){
-//                        activeVisualiser->new_controls_flag = false;
-//
-//                        for(int i = 0; i < activeVisualiser->current_control_index; i++){
-//                            activeVisualiser->controlBuffer.erase(activeVisualiser->controlBuffer.begin());
-//                        }
-//                    }
-
                     next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
                     // Increment the current control index
                     activeVisualiser->current_control_index++;
-                    // Erase the applied control from the buffer
-//                    activeVisualiser->controlBuffer.erase(activeVisualiser->controlBuffer.begin());
                 }
                 else{
                     MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
@@ -300,7 +295,7 @@ int main(int argc, char **argv) {
                     std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
 
 
-                activeModelTranslator->X_desired(1) = activeModelTranslator->returnStateVector(VISUALISATION_DATA)(1) + 0.2;
+                activeModelTranslator->X_desired(1) = activeModelTranslator->returnStateVector(VISUALISATION_DATA)(1) + 0.15;
 
 //                std::this_thread::sleep_for(std::chrono::milliseconds(5));
 
@@ -769,6 +764,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     initOptimisationControls = activeModelTranslator->createInitOptimisationControls(horizon);
     activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
     optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 5, 4, OPT_HORIZON);
 
@@ -776,19 +772,8 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     activeOptimiser->verboseOutput = true;
 
     while(!taskComplete){
-
-
-//        cout << "init state in MPC: " << currState.transpose() << endl;
-
-//        if(overallTaskCounter < 20){
-//            currState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-//            cout << "init state in MPC: " << currState.transpose() << endl;
-//        }
-
-
-
         if(!ASYNC_MPC){
-            currState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+//            currState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
 
             MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
             activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
@@ -797,19 +782,18 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
             optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
 
-            activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
-            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            activeModelTranslator->setControlVector(nextControl, VISUALISATION_DATA);
+            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
         }
 
 
         reInitialiseCounter++;
         visualCounter++;
 
+        // Re-optimise evert REPLAN_TIME steps
         if(reInitialiseCounter >= REPLAN_TIME){
             activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, VISUALISATION_DATA);
             activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
-
-
 
             if(ASYNC_MPC){
                 int current_control_index = activeVisualiser->current_control_index;
@@ -819,7 +803,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
                     optimisedControls.erase(optimisedControls.begin());
                     optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
                 }
-                // Pad the end so optimise controls are correct length
             }
             optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, OPT_HORIZON);
             reInitialiseCounter = 0;
@@ -836,8 +819,8 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
         if(!ASYNC_MPC){
             if(mpcVisualise){
                 if(visualCounter > 10){
-                    activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MAIN_DATA_STATE);
-                    activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
+//                    activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MAIN_DATA_STATE);
+//                    activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
                     activeVisualiser->render(label);
                     visualCounter = 0;
                 }
@@ -896,17 +879,17 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     }
 
     trajecCost = 0.0f;
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
     for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
-        MatrixXd startState = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+        MatrixXd startState = activeModelTranslator->returnStateVector(VISUALISATION_DATA);
 //        std::cout << "start state: " << startState.transpose() << std::endl;
         MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
-        double stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+        double stateCost = activeModelTranslator->costFunction(VISUALISATION_DATA, false);
         trajecCost += stateCost  * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep();
 
-        activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        activeModelTranslator->setControlVector(nextControl, VISUALISATION_DATA);
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
 
     }
 
@@ -940,21 +923,21 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             if(activeVisualiser->replayTriggered){
                 activeVisualiser->replayTriggered = false;
 
-                activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+                activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
                 int controlCounter = 0;
                 while(controlCounter < activeVisualiser->replayControls.size()){
                     MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
 
-                    activeModelTranslator->setControlVector(nextControl, MAIN_DATA_STATE);
+                    activeModelTranslator->setControlVector(nextControl, VISUALISATION_DATA);
 
-                    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+                    activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
 
                     controlCounter++;
 
                     if(controlCounter % 5 == 0){
 
-                        activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MAIN_DATA_STATE);
-                        activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
+//                        activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MAIN_DATA_STATE);
+//                        activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
                         activeVisualiser->render("replaying");
                     }
                 }
