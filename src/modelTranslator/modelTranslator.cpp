@@ -1,7 +1,3 @@
-//
-// Created by dave on 03/03/23.
-//
-
 #include "ModelTranslator.h"
 
 ModelTranslator::ModelTranslator(){
@@ -21,13 +17,11 @@ void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
     iterative_error_threshold = taskConfig.iterativeErrorThreshold;
     const char* _modelPath = model_file_path.c_str();
 
-    // initialise physics simulator
+    // Initialise physics simulator
     vector<string> bodyNames;
     for(int i = 0; i < taskConfig.robots.size(); i++){
         bodyNames.push_back(taskConfig.robots[i].name);
-//        cout << "robot names: " << taskConfig.robots[i].name << endl;
         for(int j = 0; j < taskConfig.robots[i].jointNames.size(); j++){
-//            cout << "joint names: " << taskConfig.robots[i].jointNames[j] << endl;
             jerk_thresholds.push_back(taskConfig.robots[i].jointJerkThresholds[j]);
             // TODO fix this dupliate jerk thresholds
             accel_thresholds.push_back(taskConfig.robots[i].jointJerkThresholds[j]);
@@ -38,7 +32,6 @@ void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
 
     for(int i = 0; i < taskConfig.bodiesStates.size(); i++){
         bodyNames.push_back(taskConfig.bodiesStates[i].name);
-//        cout << "body names: " << taskConfig.bodiesStates[i].name << endl;
         for(int j = 0; j < 3; j++){
             jerk_thresholds.push_back(taskConfig.bodiesStates[i].linearJerkThreshold[j]);
             jerk_thresholds.push_back(taskConfig.bodiesStates[i].angularJerkThreshold[j]);
@@ -93,7 +86,6 @@ void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
     //                      Assign cost matrices
     // ------------------------------------------------------------------------------------------
     // Loop through robots and starting assigning state specific costs
-    cout << "befroe assigning Q matrices" << endl;
     int Q_index = 0;
     for(int i = 0; i < state_vector.robots.size(); i++){
         int robotNumJoints = state_vector.robots[i].jointNames.size();
@@ -102,11 +94,9 @@ void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
         for(int j = 0; j < robotNumJoints; j++){
             Q.diagonal()[Q_index + j, Q_index + j] = state_vector.robots[i].jointPosCosts[j];
             Q_terminal.diagonal()[Q_index + j, Q_index + j] = state_vector.robots[i].terminalJointPosCosts[j];
-            cout << "terminal joint pos costs: " << state_vector.robots[i].terminalJointPosCosts[j] << endl;
 
             Q.diagonal()[Q_index + j + dof, Q_index + j + dof] = state_vector.robots[i].jointVelCosts[j];
             Q_terminal.diagonal()[Q_index + j + dof, Q_index + j + dof] = state_vector.robots[i].terminalJointVelCosts[j];
-            cout << "terminal joint vel costs: " << state_vector.robots[i].terminalJointVelCosts[j] << endl;
 
             X_desired(Q_index + j, 0) = state_vector.robots[i].goalPos[j];
             X_desired(Q_index + j + dof, 0) = 0.0f;
@@ -187,8 +177,7 @@ void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
 
     cout << "Q: " << Q.diagonal() << std::endl;
     cout << "R: " << R.diagonal() << std::endl;
-
-   cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
+    cout << "Q_terminal: " << Q_terminal.diagonal() << endl;
 }
 
 double ModelTranslator::CostFunction(int data_index, bool terminal){
@@ -211,9 +200,9 @@ double ModelTranslator::CostFunction(int data_index, bool terminal){
     return cost;
 }
 
-void ModelTranslator::CostDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-    MatrixXd Xt = ReturnStateVector(dataIndex);
-    MatrixXd Ut = ReturnControlVector(dataIndex);
+void ModelTranslator::CostDerivatives(int data_index, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd Xt = ReturnStateVector(data_index);
+    MatrixXd Ut = ReturnControlVector(data_index);
 
     MatrixXd X_diff = Xt - X_desired;
 
@@ -236,13 +225,9 @@ void ModelTranslator::CostDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_
     l_u = 2 * R * Ut;
     l_uu = 2 * R;
 
-//    l_x *= active_physics_simulator->returnModelTimeStep();
-//    l_xx *= active_physics_simulator->returnModelTimeStep();
-//    l_u *= active_physics_simulator->returnModelTimeStep();
-//    l_uu *= active_physics_simulator->returnModelTimeStep();
 }
 
-bool ModelTranslator::TaskComplete(int dataIndex, double &dist){
+bool ModelTranslator::TaskComplete(int data_index, double &dist){
     return false;
 }
 
@@ -252,9 +237,8 @@ std::vector<MatrixXd> ModelTranslator::CreateInitSetupControls(int horizonLength
     return emptyInitSetupControls;
 }
 
-MatrixXd ModelTranslator::ReturnStateVector(int dataIndex){
+MatrixXd ModelTranslator::ReturnStateVector(int data_index){
     MatrixXd stateVector(state_vector_size, 1);
-//    active_physics_simulator->forwardSimulator(dataIndex);
 
     int currentStateIndex = 0;
 
@@ -262,8 +246,8 @@ MatrixXd ModelTranslator::ReturnStateVector(int dataIndex){
     for(int i = 0; i < state_vector.robots.size(); i++){
         vector<double> jointPositions;
         vector<double> jointVelocities;
-        active_physics_simulator->getRobotJointsPositions(state_vector.robots[i].name, jointPositions, dataIndex);
-        active_physics_simulator->getRobotJointsVelocities(state_vector.robots[i].name, jointVelocities, dataIndex);
+        active_physics_simulator->getRobotJointsPositions(state_vector.robots[i].name, jointPositions, data_index);
+        active_physics_simulator->getRobotJointsVelocities(state_vector.robots[i].name, jointVelocities, data_index);
 
         for(int j = 0; j < state_vector.robots[i].jointNames.size(); j++){
             stateVector(j, 0) = jointPositions[j];
@@ -279,12 +263,8 @@ MatrixXd ModelTranslator::ReturnStateVector(int dataIndex){
         // Get the body's position and orientation
         pose_6 bodyPose;
         pose_6 bodyVelocity;
-        active_physics_simulator->getBodyPose_angle(state_vector.bodiesStates[i].name, bodyPose, dataIndex);
-        active_physics_simulator->getBodyVelocity(state_vector.bodiesStates[i].name, bodyVelocity, dataIndex);
-//        cout << "bodyPose: " << bodyPose.position[0] << ", " << bodyPose.position[1] << ", " << bodyPose.position[2] << endl;
-//        cout << "bodyVelocity: " << bodyVelocity.position[0] << ", " << bodyVelocity.position[1] << ", " << bodyVelocity.position[2] << endl;
-//        cout << "bodyPose: " << bodyPose.orientation[0] << ", " << bodyPose.orientation[1] << ", " << bodyPose.orientation[2] << endl;
-//        cout << "bodyVelocity: " << bodyVelocity.orientation[0] << ", " << bodyVelocity.orientation[1] << ", " << bodyVelocity.orientation[2] << endl;
+        active_physics_simulator->getBodyPose_angle(state_vector.bodiesStates[i].name, bodyPose, data_index);
+        active_physics_simulator->getBodyVelocity(state_vector.bodiesStates[i].name, bodyVelocity, data_index);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
@@ -314,39 +294,38 @@ bool ModelTranslator::SetStateVector(MatrixXd state_vector, int data_index){
         return false;
     }
 
-    MatrixXd posVector(state_vector_size / 2, 1);
-    MatrixXd velVector(state_vector_size / 2, 1);
+    MatrixXd position_vector(state_vector_size / 2, 1);
+    MatrixXd velocity_vector(state_vector_size / 2, 1);
 
-    posVector = state_vector.block(0, 0, state_vector_size / 2, 1);
-    velVector = state_vector.block(state_vector_size / 2, 0, state_vector_size / 2, 1);
+    position_vector = state_vector.block(0, 0, state_vector_size / 2, 1);
+    velocity_vector = state_vector.block(state_vector_size / 2, 0, state_vector_size / 2, 1);
 
-    setPositionVector(posVector, data_index);
-    setVelocityVector(velVector, data_index);
+    setPositionVector(position_vector, data_index);
+    setVelocityVector(velocity_vector, data_index);
 
     return true;
 }
 
-MatrixXd ModelTranslator::ReturnControlVector(int dataIndex){
+MatrixXd ModelTranslator::ReturnControlVector(int data_index){
     MatrixXd controlVector(num_ctrl, 1);
     int currentStateIndex = 0;
 
     // loop through all the present robots
     for(int i = 0; i < state_vector.robots.size(); i++){
         vector<double> jointControls;
-        active_physics_simulator->getRobotJointsControls(state_vector.robots[i].name, jointControls, dataIndex);
+        active_physics_simulator->getRobotJointsControls(state_vector.robots[i].name, jointControls, data_index);
         for(int j = 0; j < state_vector.robots[i].actuatorNames.size(); j++){
 
             controlVector(currentStateIndex + j, 0) = jointControls[j];
         }
 
         currentStateIndex += state_vector.robots[i].actuatorNames.size();
-
     }
 
     return controlVector;
 }
 
-bool ModelTranslator::SetControlVector(MatrixXd control_vector, int dataIndex){
+bool ModelTranslator::SetControlVector(MatrixXd control_vector, int data_index){
     if(control_vector.rows() != num_ctrl){
         cout << "ERROR: control vector size does not match the size of the control vector in the model translator" << endl;
         return false;
@@ -362,28 +341,26 @@ bool ModelTranslator::SetControlVector(MatrixXd control_vector, int dataIndex){
             jointControls.push_back(control_vector(currentStateIndex + j));
         }
 
-        active_physics_simulator->setRobotJointsControls(state_vector.robots[i].name, jointControls, dataIndex);
+        active_physics_simulator->setRobotJointsControls(state_vector.robots[i].name, jointControls, data_index);
 
         currentStateIndex += state_vector.robots[i].actuatorNames.size();
-
     }
 
     return true;
 }
 
-MatrixXd ModelTranslator::returnPositionVector(int dataIndex){
-    MatrixXd posVector(dof, 1);
-//    active_physics_simulator->forwardSimulator(dataIndex);
+MatrixXd ModelTranslator::returnPositionVector(int data_index){
+    MatrixXd position_vector(dof, 1);
 
     int currentStateIndex = 0;
 
     // Loop through all robots in the state vector
     for(int i = 0; i < state_vector.robots.size(); i++){
         vector<double> jointPositions;
-        active_physics_simulator->getRobotJointsPositions(state_vector.robots[i].name, jointPositions, dataIndex);
+        active_physics_simulator->getRobotJointsPositions(state_vector.robots[i].name, jointPositions, data_index);
 
         for(int j = 0; j < state_vector.robots[i].jointNames.size(); j++){
-            posVector(j, 0) = jointPositions[j];
+            position_vector(j, 0) = jointPositions[j];
         }
 
         // Increment the current state index by the number of joints in the robot
@@ -394,39 +371,39 @@ MatrixXd ModelTranslator::returnPositionVector(int dataIndex){
     for(int i = 0; i < state_vector.bodiesStates.size(); i++){
         // Get the body's position and orientation
         pose_6 bodyPose;
-        active_physics_simulator->getBodyPose_angle(state_vector.bodiesStates[i].name, bodyPose, dataIndex);
+        active_physics_simulator->getBodyPose_angle(state_vector.bodiesStates[i].name, bodyPose, data_index);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
             if (state_vector.bodiesStates[i].activeLinearDOF[j]) {
-                posVector(currentStateIndex, 0) = bodyPose.position[j];
+                position_vector(currentStateIndex, 0) = bodyPose.position[j];
                 currentStateIndex++;
             }
         }
         for(int j = 0; j < 3; j++) {
             // angular positions
             if(state_vector.bodiesStates[i].activeAngularDOF[j]){
-                posVector(currentStateIndex, 0) = bodyPose.orientation[j];
+                position_vector(currentStateIndex, 0) = bodyPose.orientation[j];
                 currentStateIndex++;
             }
         }
     }
 
-    return posVector;
+    return position_vector;
 }
 
-MatrixXd ModelTranslator::returnVelocityVector(int dataIndex){
-    MatrixXd velVector(dof, 1);
-//    active_physics_simulator->forwardSimulator(dataIndex);
+MatrixXd ModelTranslator::returnVelocityVector(int data_index){
+    MatrixXd velocity_vector(dof, 1);
+//    active_physics_simulator->forwardSimulator(data_index);
     int currentStateIndex = 0;
 
     // Loop through all robots in the state vector
     for(int i = 0; i < state_vector.robots.size(); i++){
         vector<double> jointVelocities;
-        active_physics_simulator->getRobotJointsVelocities(state_vector.robots[i].name, jointVelocities, dataIndex);
+        active_physics_simulator->getRobotJointsVelocities(state_vector.robots[i].name, jointVelocities, data_index);
 
         for(int j = 0; j < state_vector.robots[i].jointNames.size(); j++){
-            velVector(j, 0) = jointVelocities[j];
+            velocity_vector(j, 0) = jointVelocities[j];
         }
 
         // Increment the current state index by the number of joints in the robot
@@ -437,40 +414,40 @@ MatrixXd ModelTranslator::returnVelocityVector(int dataIndex){
     for(int i = 0; i < state_vector.bodiesStates.size(); i++){
         // Get the body's position and orientation
         pose_6 bodyVelocities;
-        active_physics_simulator->getBodyVelocity(state_vector.bodiesStates[i].name, bodyVelocities, dataIndex);
+        active_physics_simulator->getBodyVelocity(state_vector.bodiesStates[i].name, bodyVelocities, data_index);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
             if (state_vector.bodiesStates[i].activeLinearDOF[j]) {
-                velVector(currentStateIndex, 0) = bodyVelocities.position[j];
+                velocity_vector(currentStateIndex, 0) = bodyVelocities.position[j];
                 currentStateIndex++;
             }
         }
         for(int j = 0; j < 3; j++) {
             // angular positions
             if(state_vector.bodiesStates[i].activeAngularDOF[j]){
-                velVector(currentStateIndex, 0) = bodyVelocities.orientation[j];
+                velocity_vector(currentStateIndex, 0) = bodyVelocities.orientation[j];
                 currentStateIndex++;
             }
         }
     }
 
-    return velVector;
+    return velocity_vector;
 }
 
-MatrixXd ModelTranslator::returnAccelerationVector(int dataIndex){
-    MatrixXd accelVector(dof, 1);
-    active_physics_simulator->forwardSimulator(dataIndex);
+MatrixXd ModelTranslator::returnAccelerationVector(int data_index){
+    MatrixXd accel_vector(dof, 1);
+    active_physics_simulator->forwardSimulator(data_index);
 
     int currentStateIndex = 0;
 
     // Loop through all robots in the state vector
     for(int i = 0; i < state_vector.robots.size(); i++){
         vector<double> jointAccelerations;
-        active_physics_simulator->getRobotJointsAccelerations(state_vector.robots[i].name, jointAccelerations, dataIndex);
+        active_physics_simulator->getRobotJointsAccelerations(state_vector.robots[i].name, jointAccelerations, data_index);
 
         for(int j = 0; j < state_vector.robots[i].jointNames.size(); j++){
-            accelVector(j, 0) = jointAccelerations[j];
+            accel_vector(j, 0) = jointAccelerations[j];
         }
 
         // Increment the current state index by the number of joints in the robot
@@ -481,30 +458,30 @@ MatrixXd ModelTranslator::returnAccelerationVector(int dataIndex){
     for(int i = 0; i < state_vector.bodiesStates.size(); i++){
         // Get the body's position and orientation
         pose_6 bodyAccelerations;
-        active_physics_simulator->getBodyAcceleration(state_vector.bodiesStates[i].name, bodyAccelerations, dataIndex);
+        active_physics_simulator->getBodyAcceleration(state_vector.bodiesStates[i].name, bodyAccelerations, data_index);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
             if (state_vector.bodiesStates[i].activeLinearDOF[j]) {
-                accelVector(currentStateIndex, 0) = bodyAccelerations.position[j];
+                accel_vector(currentStateIndex, 0) = bodyAccelerations.position[j];
                 currentStateIndex++;
             }
         }
         for(int j = 0; j < 3; j++) {
             // angular positions
             if(state_vector.bodiesStates[i].activeAngularDOF[j]){
-                accelVector(currentStateIndex, 0) = bodyAccelerations.orientation[j];
+                accel_vector(currentStateIndex, 0) = bodyAccelerations.orientation[j];
                 currentStateIndex++;
             }
         }
     }
 
 
-    return accelVector;
+    return accel_vector;
 }
 
-bool ModelTranslator::setPositionVector(MatrixXd _positionVector, int dataIndex){
-    if(_positionVector.rows() != (state_vector_size / 2)){
+bool ModelTranslator::setPositionVector(MatrixXd position_vector, int data_index){
+    if(position_vector.rows() != (state_vector_size / 2)){
         cout << "ERROR: state vector size does not match the size of the state vector in the model translator" << endl;
         return false;
     }
@@ -516,15 +493,14 @@ bool ModelTranslator::setPositionVector(MatrixXd _positionVector, int dataIndex)
         vector<double> jointPositions;
 
         for(int j = 0; j < state_vector.robots[i].jointNames.size(); j++){
-            jointPositions.push_back(_positionVector(j, 0));
+            jointPositions.push_back(position_vector(j, 0));
         }
 
-        active_physics_simulator->setRobotJointsPositions(state_vector.robots[i].name, jointPositions, dataIndex);
+        active_physics_simulator->setRobotJointsPositions(state_vector.robots[i].name, jointPositions, data_index);
 
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
         currentStateIndex += state_vector.robots[i].jointNames.size();
     }
-
 
     // Loop through all bodies in the state vector
     for(int i = 0; i < state_vector.bodiesStates.size(); i++){
@@ -534,26 +510,26 @@ bool ModelTranslator::setPositionVector(MatrixXd _positionVector, int dataIndex)
         for(int j = 0; j < 3; j++) {
             // Linear positions
             if (state_vector.bodiesStates[i].activeLinearDOF[j]) {
-                bodyPose.position[j] = _positionVector(currentStateIndex, 0);
+                bodyPose.position[j] = position_vector(currentStateIndex, 0);
                 currentStateIndex++;
             }
         }
         for(int j = 0; j < 3; j++) {
             // angular positions
             if(state_vector.bodiesStates[i].activeAngularDOF[j]){
-                bodyPose.orientation[j] = _positionVector(currentStateIndex, 0);
+                bodyPose.orientation[j] = position_vector(currentStateIndex, 0);
                 currentStateIndex++;
             }
         }
 
-        active_physics_simulator->setBodyPose_angle(state_vector.bodiesStates[i].name, bodyPose, dataIndex);
+        active_physics_simulator->setBodyPose_angle(state_vector.bodiesStates[i].name, bodyPose, data_index);
     }
 
     return true;
 }
 
-bool ModelTranslator::setVelocityVector(MatrixXd _velocityVector, int dataIndex){
-    if(_velocityVector.rows() != (state_vector_size / 2)){
+bool ModelTranslator::setVelocityVector(MatrixXd velocity_vector, int data_index){
+    if(velocity_vector.rows() != (state_vector_size / 2)){
         cout << "ERROR: state vector size does not match the size of the state vector in the model translator" << endl;
         return false;
     }
@@ -565,10 +541,10 @@ bool ModelTranslator::setVelocityVector(MatrixXd _velocityVector, int dataIndex)
         vector<double> jointVelocities;
 
         for(int j = 0; j < state_vector.robots[i].jointNames.size(); j++){
-            jointVelocities.push_back(_velocityVector(j, 0));
+            jointVelocities.push_back(velocity_vector(j, 0));
         }
         
-        active_physics_simulator->setRobotJointsVelocities(state_vector.robots[i].name, jointVelocities, dataIndex);
+        active_physics_simulator->setRobotJointsVelocities(state_vector.robots[i].name, jointVelocities, data_index);
 
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
         currentStateIndex += state_vector.robots[i].jointNames.size();
@@ -583,28 +559,28 @@ bool ModelTranslator::setVelocityVector(MatrixXd _velocityVector, int dataIndex)
         for(int j = 0; j < 3; j++) {
             // Linear positions
             if (state_vector.bodiesStates[i].activeLinearDOF[j]) {
-                bodyVelocity.position[j] = _velocityVector(currentStateIndex, 0);
+                bodyVelocity.position[j] = velocity_vector(currentStateIndex, 0);
                 currentStateIndex++;
             }
         }
         for(int j = 0; j < 3; j++) {
             // angular positions
             if(state_vector.bodiesStates[i].activeAngularDOF[j]){
-                bodyVelocity.orientation[j] = _velocityVector(currentStateIndex, 0);
+                bodyVelocity.orientation[j] = velocity_vector(currentStateIndex, 0);
                 currentStateIndex++;
             }
         }
 
-        active_physics_simulator->setBodyVelocity(state_vector.bodiesStates[i].name, bodyVelocity, dataIndex);
+        active_physics_simulator->setBodyVelocity(state_vector.bodiesStates[i].name, bodyVelocity, data_index);
     }
 
     return true;
 }
 
-std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizonLength) {
+std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {
     std::vector<MatrixXd> initControls;
 
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizon_length; i++){
         MatrixXd emptyControl(num_ctrl, 1);
         for(int j = 0; j < num_ctrl; j++){
             emptyControl(j) = 0.0f;
