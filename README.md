@@ -1,4 +1,5 @@
 # Trajectory Optimisation With Key-points (TrajOptKP)
+The project website can be found [here](https://TrajOptKP.github.io).
 This package showcases an efficient method to perform gradient-based trajectory optimisation by reducing 
 the number of expensive finite-differencing computations required to perform optimisation. The basic
 methodology is computing [Key-points](#Key-points) over a trajectory where expensive finite-differencing computations
@@ -198,6 +199,9 @@ interval is reached.
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.
 - [ ] Add more examples
+- [ ] Asynchronus MPC display
+- [ ] starting camera variables in model file
+- [ ] improved parallelisation on iterative error method
 
 ## Citing
 Coming soon.

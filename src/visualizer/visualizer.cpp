@@ -25,6 +25,7 @@ visualizer::visualizer(std::shared_ptr<modelTranslator> _modelTranslator){
     glfwSetMouseButtonCallback(window, mouseButtonCallbackWrapper);
     glfwSetScrollCallback(window, scrollCallbackWrapper);
     glfwSetWindowCloseCallback(window, windowCloseCallbackWrapper);
+
 }
 
 // ------------------------------- Keyboard Callback -------------------------------------------------

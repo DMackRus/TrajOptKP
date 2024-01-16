@@ -323,55 +323,6 @@ bool modelTranslator::setStateVector(MatrixXd _stateVector, int dataIndex){
     setPositionVector(posVector, dataIndex);
     setVelocityVector(velVector, dataIndex);
 
-//    int currentStateIndex = 0;
-//
-//    // Loop through all robots in the state vector
-//    for(int i = 0; i < myStateVector.robots.size(); i++){
-//        vector<double> jointPositions;
-//        vector<double> jointVelocities;
-//
-//        for(int j = 0; j < myStateVector.robots[i].jointNames.size(); j++){
-//            jointPositions.push_back(_stateVector(j, 0));
-//            jointVelocities.push_back(_stateVector(j + (stateVectorSize/2), 0));
-//        }
-//
-//        activePhysicsSimulator->setRobotJointsPositions(myStateVector.robots[i].name, jointPositions, dataIndex);
-//        activePhysicsSimulator->setRobotJointsVelocities(myStateVector.robots[i].name, jointVelocities, dataIndex);
-//
-//        // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
-//        currentStateIndex += myStateVector.robots[i].jointNames.size();
-//    }
-//
-//    // Loop through all bodies in the state vector
-//    for(int i = 0; i < myStateVector.bodiesStates.size(); i++){
-//        // Get the body's position and orientation
-//        pose_6 bodyPose;
-//        pose_6 bodyVelocity;
-//
-//        activePhysicsSimulator->getBodyPose_angle(myStateVector.bodiesStates[i].name, bodyPose, dataIndex);
-//        activePhysicsSimulator->getBodyVelocity(myStateVector.bodiesStates[i].name, bodyVelocity, dataIndex);
-//
-//        for(int j = 0; j < 3; j++) {
-//            // Linear positions
-//            if (myStateVector.bodiesStates[i].activeLinearDOF[j]) {
-//                bodyPose.position[j] = _stateVector(currentStateIndex, 0);
-//                bodyVelocity.position[j] = _stateVector(currentStateIndex + (stateVectorSize/2), 0);
-//                currentStateIndex++;
-//            }
-//        }
-//        for(int j = 0; j < 3; j++) {
-//            // angular positions
-//            if(myStateVector.bodiesStates[i].activeAngularDOF[j]){
-//                bodyPose.orientation[j] = _stateVector(currentStateIndex, 0);
-//                bodyVelocity.orientation[j] = _stateVector(currentStateIndex + (stateVectorSize/2), 0);
-//                currentStateIndex++;
-//            }
-//        }
-//
-//        activePhysicsSimulator->setBodyPose_angle(myStateVector.bodiesStates[i].name, bodyPose, dataIndex);
-//        activePhysicsSimulator->setBodyVelocity(myStateVector.bodiesStates[i].name, bodyVelocity, dataIndex);
-//    }
-
     return true;
 }
 

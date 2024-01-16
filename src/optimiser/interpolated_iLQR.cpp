@@ -143,7 +143,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     std::vector<MatrixXd> optimisedControls;
     horizonLength = _horizonLength;
     numberOfTotalDerivs = _horizonLength * dof;
-    lambda = 0.1;
+    // TODO - decide whether to use this or not, it seems to break when i remove it.
+//    lambda = 0.1;
     double oldCost = 0.0f;
     double newCost = 0.0f;
     bool costReducedLastIter = true;
@@ -169,7 +170,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
-    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
+//    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
     initialCost = oldCost;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 

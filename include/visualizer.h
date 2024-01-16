@@ -52,11 +52,18 @@ public:
     bool windowOpen();
     void render(const char* label);
 
-    int currentShownDataIndex = 0;
     float testVel = 0;
 
     std::vector<MatrixXd> replayControls;
     bool replayTriggered = false;
+
+    // Asynchronus control variables
+    std::vector<MatrixXd> controlBuffer;
+    int current_control_index = 0;
+    bool new_controls_flag = false;
+    std::vector<MatrixXd> trajectory_states;
+    std::vector<MatrixXd> trajectory_controls;
+    bool task_finished = false;
 
 private:
     std::shared_ptr<physicsSimulator> activePhysicsSimulator;

@@ -24,8 +24,8 @@ public:
 
 private:
     double lambda = 0.1;
-    double maxLambda = 0.1;
-    double minLambda = 0.0001;
+    double maxLambda = 10.0;
+    double minLambda = 0.01;
     double lambdaFactor = 10;
     int maxHorizon = 0;
 
