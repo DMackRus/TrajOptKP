@@ -15,7 +15,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     int tid = threadId;
 
 //    cout << "tid: " << tid << endl;
-    // This seems random, in optimiser we define -1 = "mainData", -2 = "masterData", -3 = "visualisation data", 0 -> horizon Length = "stored trajectory data"
+    // This seems random, in Optimiser we define -1 = "mainData", -2 = "masterData", -3 = "visualisation data", 0 -> horizon Length = "stored trajectory data"
     // So we need values below -3 for finite-differencing data
     int physicsHelperId = -4 - tid;
 
@@ -46,7 +46,7 @@ void differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
 //    mj_forward(m, active_physics_simulator->savedSystemStatesList[dataIndex].get());
 
 
-    // Compute mj_forward a few times to allow optimiser to get a more accurate value for qacc
+    // Compute mj_forward a few times to allow Optimiser to get a more accurate value for qacc
     // skips position and velocity stages (TODO LOOK INTO IF THIS IS NEEDED FOR MY METHOD)
 
 //    for( int rep=1; rep<5; rep++ )

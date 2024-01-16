@@ -29,7 +29,7 @@
 // --------------------- Global class instances --------------------------------
 std::shared_ptr<ModelTranslator> activeModelTranslator;
 std::shared_ptr<differentiator> activeDifferentiator;
-std::shared_ptr<optimiser> activeOptimiser;
+std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<interpolatediLQR> iLQROptimiser;
 std::shared_ptr<stomp> stompOptimiser;
 std::shared_ptr<gradDescent> gradDescentOptimiser;
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     //Instantiate my visualiser
     activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
 
-    // Choose an optimiser
+    // Choose an Optimiser
     if(optimiser == "interpolated_iLQR"){
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
@@ -203,7 +203,7 @@ int main(int argc, char **argv) {
         activeOptimiser = gradDescentOptimiser;
     }
     else{
-        cout << "invalid optimiser selected, exiting" << endl;
+        cout << "invalid Optimiser selected, exiting" << endl;
         return -1;
     }
 
@@ -227,7 +227,7 @@ int main(int argc, char **argv) {
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
         activeModelTranslator->active_physics_simulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
 
-        // Whether optimiser will output useful information
+        // Whether Optimiser will output useful information
         activeOptimiser->verboseOutput = true;
         // Visualise MPC trajectory live
         mpcVisualise = true;
@@ -738,7 +738,7 @@ void worker(){
 }
 
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
-// optimiser settings. This function can then return necessary testing data for us to store
+// Optimiser settings. This function can then return necessary testing data for us to store
 void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
     bool taskComplete = false;

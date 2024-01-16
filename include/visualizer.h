@@ -11,7 +11,7 @@
 #include "stdInclude.h"
 #include "ModelTranslator.h"
 #include "differentiator.h"
-#include "optimiser.h"
+#include "Optimiser.h"
 
 class visualizer {
 public:

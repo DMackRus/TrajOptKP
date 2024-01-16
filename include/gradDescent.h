@@ -5,13 +5,13 @@
 #ifndef AUTOTOTASK_GRADDESCENT_H
 #define AUTOTOTASK_GRADDESCENT_H
 
-#include "optimiser.h"
+#include "Optimiser.h"
 #include "ModelTranslator.h"
 #include "physicsSimulator.h"
 #include "visualizer.h"
 #include "differentiator.h"
 
-class gradDescent: public optimiser{
+class gradDescent: public Optimiser{
 public:
     gradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, std::shared_ptr<visualizer> _visualizer, int _maxHorizon, std::shared_ptr<fileHandler> _yamlReader);
 

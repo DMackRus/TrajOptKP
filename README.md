@@ -75,7 +75,7 @@ so you need to clone recursively.
 ## Usage
 ### Setup
 There are two config yaml files that the user can change to run different examples. The first config 
-is called **generalConfig.yaml**. This file determines various high level settings (such as optimiser, task, etc.)
+is called **generalConfig.yaml**. This file determines various high level settings (such as Optimiser, task, etc.)
 which are explained in the configuration file.
 
 The second config file is specific to the task being loaded, all task config files are located in **taskConfigs** folder. 
@@ -147,7 +147,7 @@ faster without noticeable degradation on the performance of the final optimal tr
 ![](media/derivative_interpolation.png)
 
 There are four key-point methods implemented in this repository. Code for these key-point methods
-can be found in [optimiser.cpp](https://github.com/DMackRus/TrajOptKP/tree/main/src/optimiser).
+can be found in [Optimiser.cpp](https://github.com/DMackRus/TrajOptKP/tree/main/src/Optimiser).
 
 ### Set Interval
 The Set-interval method has one parameter (min_N)

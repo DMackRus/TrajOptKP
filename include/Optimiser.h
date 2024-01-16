@@ -1,20 +1,25 @@
-#ifndef OPTIMISER_H
-#define OPTIMISER_H
+/*
+================================================================================
+    File: Optimiser.h
+    Author: David Russell
+    Date: January 16, 2024
+    Description:
+        Optimiser is a default class for optimisation algorithms to inherit from.
+        Provides basic utility functions used for most optimisers, like computing
+        gradients.
 
+        Contains key_point functions that are used to determine keypoint placement
+        over the trajectory where we will compute dynamics derivatives via
+        expensive finite-differencing.
+================================================================================
+*/
+#pragma once
 
 #include "stdInclude.h"
 #include "ModelTranslator.h"
 #include "physicsSimulator.h"
 #include "differentiator.h"
 #include <atomic>
-
-enum keyPointsMethod{
-    setInterval = 0,
-    adaptive_jerk = 1,
-    adaptive_accel = 2,
-    iterative_error = 3,
-    magvel_change = 4
-};
 
 struct indexTuple{
     int startIndex;
@@ -32,9 +37,9 @@ struct derivative_interpolator{
 
 };
 
-class optimiser{
+class Optimiser{
 public:
-    optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
+    Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
 
     virtual double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) = 0;
     virtual std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) = 0;
@@ -145,7 +150,3 @@ private:
     double epsConverge = 0.02;
 
 };
-
-
-
-#endif

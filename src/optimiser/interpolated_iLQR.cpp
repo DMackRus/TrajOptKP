@@ -1,7 +1,7 @@
 #include "interpolated_iLQR.h"
 
 interpolatediLQR::interpolatediLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, std::shared_ptr<visualizer> _visualizer, std::shared_ptr<fileHandler> _yamlReader) :
-                                    optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+        Optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
 
     maxHorizon = _maxHorizon;
     activeVisualizer = _visualizer;
@@ -15,7 +15,7 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<ModelTranslator> _modelTransl
         l_uu.push_back(MatrixXd(num_ctrl, num_ctrl));
 
         // Dynamics derivatives matrices
-        // TODO - Move this to optimiser constructor
+        // TODO - Move this to Optimiser constructor
         A.push_back(MatrixXd(2*dof, 2*dof));
         B.push_back(MatrixXd(2*dof, num_ctrl));
 
@@ -123,7 +123,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 //  initialDataIndex - the data index of the system state that the optimisation problem should start from
 //  initControls - The initial controls for the problem
 //  maxIterations - The maximum iterations of the solver before it should return a new set of controls
-//  horizonLength - How far into the future the optimiser should look when optimising the controls
+//  horizonLength - How far into the future the Optimiser should look when optimising the controls
 //
 //  @Returns:
 //  optimisedControls - New optimised controls that give a lower cost than the initial controls

@@ -4,7 +4,7 @@
 
 #include "gradDescent.h"
 
-gradDescent::gradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, std::shared_ptr<visualizer> _visualizer, int _maxHorizon, std::shared_ptr<fileHandler> _yamlReader) : optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+gradDescent::gradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, std::shared_ptr<visualizer> _visualizer, int _maxHorizon, std::shared_ptr<fileHandler> _yamlReader) : Optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
 //    activeDifferentiator = _differentiator;
     activeVisualizer = _visualizer;
 
@@ -130,7 +130,7 @@ std::vector<MatrixXd> gradDescent::optimise(int initialDataIndex, std::vector<Ma
         // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
         // generate the dynamics evaluation waypoints
 
-        // TODO - use optimiser class get derivatives function
+        // TODO - use Optimiser class get derivatives function
         generateDerivatives();
 
         auto stop = high_resolution_clock::now();
