@@ -114,8 +114,10 @@ int main(int argc, char **argv) {
 //    	 return generateTestingData_MPCHorizons();
 //         return generateTestingData_MPC_asynchronous();
         Testing myTestingObject(iLQROptimiser, activeModelTranslator, activeDifferentiator, activeVisualiser, yamlReader);
-        std::vector<std::string> key_point_methods = {"SI5"};
-        return myTestingObject.testing_asynchronus_mpc(key_point_methods);
+        derivative_interpolator test;
+        test.keypoint_method = "SetInterval";
+        test.minN = 5;
+        return myTestingObject.testing_asynchronus_mpc(test);
 //        generateTestingData_MPC();
         //generateTestingData();
         //return 0;

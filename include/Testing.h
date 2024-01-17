@@ -19,7 +19,7 @@ public:
             std::shared_ptr<fileHandler> yamlReader_);
 
 
-    int testing_asynchronus_mpc(std::vector<std::string> keypoint_methods);
+    int testing_asynchronus_mpc(derivative_interpolator keypoint_method);
     int single_asynchronus_run(bool visualise);
 
     void asynchronus_optimiser_worker();
@@ -36,6 +36,7 @@ private:
 
     bool stop_opt_thread = false;
 
+    double final_cost = 0.0f;
     double average_opt_time_ms = 0.0f;
     double average_percent_derivs = 0.0f;
     double average_time_derivs_ms = 0.0f;

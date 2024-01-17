@@ -24,7 +24,7 @@ Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
                                                        yamlReader);
 }
 
-int Testing::testing_asynchronus_mpc(std::vector<std::string> keypoint_methods){
+int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
 
     std::string task_prefix = activeModelTranslator->modelName;
     std::cout << "beginning testing asynchronus MPC for " << task_prefix << std::endl;
@@ -52,27 +52,12 @@ int Testing::testing_asynchronus_mpc(std::vector<std::string> keypoint_methods){
     std::vector<double> avgTimeFPRow;
     // -----------------------------------------------------------------------------
 
-    // ------------------------- Check tested methods match allowed methods -------
-    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20",
-                                            "adaptive_jerk", "iterative_error", "velocity_change"};
-    std::vector<int> testIndices;
-    for(int i = 0; i < keypoint_methods.size(); i++){
-        for(int j = 0; j < methodNames.size(); j++){
-            if(keypoint_methods[i] == methodNames[j]){
-                testIndices.push_back(j);
-            }
-        }
-
+    std::string method_name;
+    if(keypoint_method.keypoint_method == "setInterval") {
+        method_name = keypoint_method.keypoint_method + "_" + std::to_string(keypoint_method.minN);
     }
-    // -----------------------------------------------------------------------------
-
-    std::vector<int> minN = {1, 5, 10, 20, 2, 2, 2};
-    std::vector<int> maxN = {1, 5, 10, 20, 20, 5, 10};
-    std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
-
-    if(testIndices.size() == 0){
-        cout << "passed testing arguments didnt match any allowed methods \n";
-        return 0;
+    else{
+        method_name = keypoint_method.keypoint_method + "_" + std::to_string(keypoint_method.minN) + "_" + std::to_string(keypoint_method.maxN);
     }
 
     std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
@@ -86,7 +71,7 @@ int Testing::testing_asynchronus_mpc(std::vector<std::string> keypoint_methods){
     std::vector<double> targetVelocities;
     double minTarget = 0.1;
     double maxTarget = 0.3;
-    int numTests = 100;
+    int numTests = 5;
     double currentVel = minTarget;
 
     for(int i = 0; i < numTests; i++){
@@ -97,45 +82,74 @@ int Testing::testing_asynchronus_mpc(std::vector<std::string> keypoint_methods){
     auto startTimer = std::chrono::high_resolution_clock::now();
     iLQROptimiser->verboseOutput = false;
 
-    // Different testing methods
-    for(int k = 0; k < testIndices.size(); k++) {
-        int testIndex = testIndices[k];
-        cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
+    // Setup the derivative interpolator object
+    derivative_interpolator currentInterpolator = iLQROptimiser->returnDerivativeInterpolator();
+    keypoint_method.jerkThresholds = currentInterpolator.jerkThresholds;
+    keypoint_method.magVelChangeThresholds = currentInterpolator.magVelChangeThresholds;
+    keypoint_method.iterativeErrorThreshold = currentInterpolator.iterativeErrorThreshold;
 
-        // Setup the derivative interpolator object
-        derivative_interpolator currentInterpolator = iLQROptimiser->returnDerivativeInterpolator();
-        currentInterpolator.minN = minN[testIndex];
-        currentInterpolator.maxN = maxN[testIndex];
-        currentInterpolator.keypoint_method = keypoint_method[testIndex];
-        iLQROptimiser->setDerivativeInterpolator(currentInterpolator);
+    finalCosts.clear();
+    avgTimeForDerivs.clear();
+    avgTimeBP.clear();
+    avgTimeFP.clear();
+    avgPercentDerivs.clear();
 
-        finalCosts.clear();
-        avgTimeForDerivs.clear();
-        avgTimeBP.clear();
-        avgTimeFP.clear();
-        avgPercentDerivs.clear();
+    for (int i = 0; i < targetVelocities.size(); i++) {
+        // Load start and desired state from csv file
+        MatrixXd X_start(activeModelTranslator->stateVectorSize, 1);
+        yamlReader->loadTaskFromFile(task_prefix, i, X_start, activeModelTranslator->X_desired);
+        activeModelTranslator->X_start = X_start;
 
-        for (int i = 0; i < targetVelocities.size(); i++) {
-            // Load start and desired state from csv file
-            MatrixXd X_start(activeModelTranslator->stateVectorSize, 1);
-            yamlReader->loadTaskFromFile(task_prefix, yamlReader->csvRow, X_start, activeModelTranslator->X_desired);
-            activeModelTranslator->X_start = X_start;
+        // TODO - make this better
+        // Change walker desired velocity
+        activeModelTranslator->X_desired(10) = targetVelocities[i];
 
-            cout << "start state " << activeModelTranslator->X_start << endl;
-            cout << "desired state " << activeModelTranslator->X_desired << endl;
+        cout << "start state " << activeModelTranslator->X_start << endl;
+        cout << "desired state " << activeModelTranslator->X_desired << endl;
 
-            activeModelTranslator->setStateVector(X_start, MASTER_RESET_DATA);
-            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MASTER_RESET_DATA);
-            activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
-            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-            activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+        activeModelTranslator->setStateVector(X_start, MASTER_RESET_DATA);
+        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MASTER_RESET_DATA);
+        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
+        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+        activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
-            // Perform the optimisation MPC test here asynchronously
-            single_asynchronus_run(true);
+        // Perform the optimisation MPC test here asynchronously
+        single_asynchronus_run(true);
+        stop_opt_thread = false;
 
-        }
+        // ------------------------- data storage -------------------------------------
+        finalCostsRow.push_back(final_cost);
+        avgOptTimesRow.push_back(average_opt_time_ms);
+        avgPercentDerivsRow.push_back(average_percent_derivs);
+        avgTimeForDerivsRow.push_back(average_time_derivs_ms);
+        avgTimeBPRow.push_back(average_time_bp_ms);
+        avgTimeFPRow.push_back(average_time_fp_ms);
+
     }
 
+    // ----------------------- Save data to file -------------------------------------
+    std::string projectParentPath = __FILE__;
+    projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
+    projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
+
+    std::string rootPath = projectParentPath + "/testingData/" + task_prefix + "/";
+    std::string filename = rootPath + task_prefix + "_" + method_name + "_testingData.csv";
+
+    ofstream file_output;
+    file_output.open(filename);
+
+    // Make header
+    file_output << "Final cost" << "," << "Average optimisation time" << "," << "Average percent derivs" << ",";
+    file_output << "Average time derivs" << "," << "Average time BP" << "," << "Average time FP" << std::endl;
+
+
+    // Loop through rows
+    for(int i = 0; i < numTests; i++){
+        file_output << finalCostsRow[i] << "," << avgOptTimesRow[i] << "," << avgPercentDerivsRow[i] << ",";
+        file_output << avgTimeForDerivsRow[i] << "," << avgTimeBPRow[i] << "," << avgTimeFPRow[i] << std::endl;
+    }
+
+    file_output.close();
 
     return 1;
 }
@@ -197,13 +211,10 @@ int Testing::single_asynchronus_run(bool visualise){
         int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-            std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, sleeping for "
-                      << difference_ms << " ms \n";
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
-        else
-            std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
-
+//        else
+//            std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
     }
 
     std::mutex mtx;
@@ -212,28 +223,25 @@ int Testing::single_asynchronus_run(bool visualise){
     mtx.unlock();
     MPC_controls_thread.join();
 
-    double cost = 0.0f;
+    final_cost = 0.0f;
     activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
     for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
         activeModelTranslator->setControlVector(activeVisualiser->trajectory_controls[i], VISUALISATION_DATA);
         activeModelTranslator->setStateVector(activeVisualiser->trajectory_states[i], VISUALISATION_DATA);
         activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
-//            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
-        cost += (activeModelTranslator->costFunction(VISUALISATION_DATA, false) * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep());
 
-//            activeVisualiser->render("live-MPC");
-
-
+        final_cost += (activeModelTranslator->costFunction(VISUALISATION_DATA, false) * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep());
 
     }
 
-//    std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
-//    std::cout << "avg opt time: " << avg_opt_time << " ms \n";
-//    std::cout << "avg percent derivs: " << avg_percent_derivs << " % \n";
-//    std::cout << "avg time derivs: " << avg_time_derivs << " ms \n";
-//    std::cout << "avg time BP: " << avg_time_bp << " ms \n";
-//    std::cout << "avg time FP: " << avg_time_fp << " ms \n";
+    std::cout << "final cost of entire MPC trajectory was: " << final_cost << "\n";
+    std::cout << "avg opt time: " << average_opt_time_ms << " ms \n";
+    std::cout << "avg percent derivs: " << average_percent_derivs << " % \n";
+    std::cout << "avg time derivs: " << average_time_derivs_ms << " ms \n";
+    std::cout << "avg time BP: " << average_time_bp_ms << " ms \n";
+    std::cout << "avg time FP: " << average_time_fp_ms << " ms \n";
 
+    return 1;
 }
 
 void Testing::asynchronus_optimiser_worker(){
@@ -241,9 +249,6 @@ void Testing::asynchronus_optimiser_worker(){
 //                          int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
     bool taskComplete = false;
     int visualCounter = 0;
-    int overallTaskCounter = 0;
-    int reInitialiseCounter = 0;
-    const char* label = "MPC until complete";
 
     std::vector<double> timeGettingDerivs;
     std::vector<double> timeBackwardsPass;
@@ -265,12 +270,10 @@ void Testing::asynchronus_optimiser_worker(){
     optimisedControls = iLQROptimiser->optimise(0, initOptimisationControls, 5, 4, horizon);
 
     MatrixXd currState;
-    iLQROptimiser->verboseOutput = true;
 
     while(!taskComplete){
 
         if(stop_opt_thread){
-            taskComplete = true;
             break;
         }
 
@@ -289,7 +292,6 @@ void Testing::asynchronus_optimiser_worker(){
         }
 
         optimisedControls = iLQROptimiser->optimise(0, optimisedControls, 1, 1, horizon);
-        reInitialiseCounter = 0;
 
         timeGettingDerivs.push_back(iLQROptimiser->avgTime_getDerivs_ms);
         timeBackwardsPass.push_back(iLQROptimiser->avgTime_backwardsPass_ms);
@@ -303,7 +305,6 @@ void Testing::asynchronus_optimiser_worker(){
         mtx.lock();
 
         int optTimeToTimeSteps = iLQROptimiser->optTime / (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000);
-        std::cout << "opt time to time steps " << optTimeToTimeSteps << std::endl;
 
         int low_bound = optTimeToTimeSteps - 3;
         if (low_bound < 0) low_bound = 0;
