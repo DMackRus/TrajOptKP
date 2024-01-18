@@ -1,7 +1,7 @@
 #include "interpolated_iLQR.h"
 
-interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, std::shared_ptr<visualizer> _visualizer, std::shared_ptr<fileHandler> _yamlReader) :
-                                    optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+interpolatediLQR::interpolatediLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, std::shared_ptr<visualizer> _visualizer, std::shared_ptr<fileHandler> _yamlReader) :
+        Optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
 
     maxHorizon = _maxHorizon;
     activeVisualizer = _visualizer;
@@ -15,7 +15,7 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<modelTranslator> _modelTransl
         l_uu.push_back(MatrixXd(num_ctrl, num_ctrl));
 
         // Dynamics derivatives matrices
-        // TODO - Move this to optimiser constructor
+        // TODO - Move this to Optimiser constructor
         A.push_back(MatrixXd(2*dof, 2*dof));
         B.push_back(MatrixXd(2*dof, num_ctrl));
 
@@ -59,12 +59,12 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
         activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, initialDataIndex);
     }
 
-    MatrixXd Xt(activeModelTranslator->stateVectorSize, 1);
-    MatrixXd X_last(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
+    MatrixXd X_last(activeModelTranslator->state_vector_size, 1);
     MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
-    X_old[0] = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+    X_old[0] = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
 //    std::cout << "X_old[0]: " << X_old[0].transpose() << std::endl;
 
     if(activePhysicsSimulator->checkIfDataIndexExists(0)){
@@ -76,21 +76,21 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 
     for(int i = 0; i < horizonLength; i++){
         // set controls
-        activeModelTranslator->setControlVector(initControls[i], MAIN_DATA_STATE);
+        activeModelTranslator->SetControlVector(initControls[i], MAIN_DATA_STATE);
 
         // Integrate simulator
         activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
         // return cost for this state
-        Xt = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
-        Ut = activeModelTranslator->returnControlVector(MAIN_DATA_STATE);
+        Xt = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
+        Ut = activeModelTranslator->ReturnControlVector(MAIN_DATA_STATE);
         double stateCost;
         
         if(i == horizonLength - 1){
-            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
+            stateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, true);
         }
         else{
-            stateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+            stateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, false);
         }
 
         // If required to save states to trajectory tracking, then save state
@@ -105,7 +105,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
             }
         }
 
-//        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
+//        cost += (stateCost * active_physics_simulator->returnModelTimeStep());
         cost += stateCost;
     }
 
@@ -123,7 +123,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 //  initialDataIndex - the data index of the system state that the optimisation problem should start from
 //  initControls - The initial controls for the problem
 //  maxIterations - The maximum iterations of the solver before it should return a new set of controls
-//  horizonLength - How far into the future the optimiser should look when optimising the controls
+//  horizonLength - How far into the future the Optimiser should look when optimising the controls
 //
 //  @Returns:
 //  optimisedControls - New optimised controls that give a lower cost than the initial controls
@@ -132,8 +132,8 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
     if(verboseOutput) {
         cout << " ---------------- optimisation begins -------------------" << endl;
-        cout << " ------ " << activeModelTranslator->modelName << " ------ " << endl;
-        cout << "minN " << activeDerivativeInterpolator.minN << "  keypointsMethod: " << activeDerivativeInterpolator.keypoint_method;
+        cout << " ------ " << activeModelTranslator->model_name << " ------ " << endl;
+        cout << "min_N " << activeDerivativeInterpolator.minN << "  keypointsMethod: " << activeDerivativeInterpolator.keypoint_method;
         cout << " filtering: " << filteringMethod << endl;
     }
 
@@ -190,7 +190,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
         if(saveTrajecInfomation){
 
-            activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, activeYamlReader->csvRow, horizonLength);
+            activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
         }
 
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
@@ -306,7 +306,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     }
 
     if(saveTrajecInfomation){
-        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->modelName, activeYamlReader->csvRow, horizonLength);
+        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
     }
 
 
@@ -456,7 +456,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
             _X = X_old[t].replicate(1, 1);
             _U = U_old[t].replicate(1, 1);
 
-            X_new = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            X_new = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
             // Calculate difference from new state to old state
             stateFeedback = X_new - _X;
 
@@ -466,27 +466,27 @@ double interpolatediLQR::forwardsPass(double oldCost){
             U_new[t] = _U + (alphas[alphaCount] * k[t]) + feedBackGain;
 
             // Clamp torque within limits
-            if(activeModelTranslator->myStateVector.robots[0].torqueControlled){
+            if(activeModelTranslator->state_vector.robots[0].torqueControlled){
                 for(int i = 0; i < num_ctrl; i++){
-                    if (U_new[t](i) > activeModelTranslator->myStateVector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->myStateVector.robots[0].torqueLimits[i];
-                    if (U_new[t](i) < -activeModelTranslator->myStateVector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->myStateVector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) > activeModelTranslator->state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->state_vector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) < -activeModelTranslator->state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->state_vector.robots[0].torqueLimits[i];
                 }
             }
 
-            activeModelTranslator->setControlVector(U_new[t], MAIN_DATA_STATE);
+            activeModelTranslator->SetControlVector(U_new[t], MAIN_DATA_STATE);
 
             Ut = U_new[t].replicate(1, 1);
 
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, true);
+                newStateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(MAIN_DATA_STATE, false);
+                newStateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, false);
             }
 
-//            newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+//            newCost += (newStateCost * active_physics_simulator->returnModelTimeStep());
             newCost += newStateCost;
 
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
@@ -522,8 +522,8 @@ double interpolatediLQR::forwardsPass(double oldCost){
         activePhysicsSimulator->copyRolloutBufferToSavedSystemStatesList();
 
         for(int i = 0 ; i < horizonLength; i++){
-            activeModelTranslator->activePhysicsSimulator->forwardSimulator(i + 1);
-            X_old.at(i + 1) = activeModelTranslator->returnStateVector(i + 1);
+            activeModelTranslator->active_physics_simulator->forwardSimulator(i + 1);
+            X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(i + 1);
             U_old[i] = U_new[i].replicate(1, 1);
         }
 
@@ -550,7 +550,7 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
         activePhysicsSimulator->copySystemState(i+1, 0);
     }
 
-    MatrixXd initState = activeModelTranslator->returnStateVector(1);
+    MatrixXd initState = activeModelTranslator->ReturnStateVector(1);
     auto end = std::chrono::high_resolution_clock::now();
     auto copy_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
     cout << "copy duration: " << copy_duration.count() / 1000.0f << endl;
@@ -568,10 +568,10 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
         for(int t = 0; t < horizonLength; t++) {
             // Step 1 - get old state and old control that were linearised around
 //            _X = X_old[t].replicate(1, 1);
-            //_U = activeModelTranslator->returnControlVector(t);
+            //_U = activeModelTranslator->ReturnControlVector(t);
 //            _U = U_old[t].replicate(1, 1);
 
-            X_new = activeModelTranslator->returnStateVector(i+1);
+            X_new = activeModelTranslator->ReturnStateVector(i + 1);
 
             // Calculate difference from new state to old state
 //            stateFeedback = X_new - _X;
@@ -584,25 +584,25 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
             U_alpha[t][i] = U_old[t] + (alphas[i] * k[t]) + feedBackGain;
 
             // Clamp torque within limits
-            if(activeModelTranslator->myStateVector.robots[0].torqueControlled){
+            if(activeModelTranslator->state_vector.robots[0].torqueControlled){
                 for(int k = 0; k < num_ctrl; k++){
-                    if (U_alpha[t][i](k) > activeModelTranslator->myStateVector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = activeModelTranslator->myStateVector.robots[0].torqueLimits[k];
-                    if (U_alpha[t][i](k) < -activeModelTranslator->myStateVector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = -activeModelTranslator->myStateVector.robots[0].torqueLimits[k];
+                    if (U_alpha[t][i](k) > activeModelTranslator->state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = activeModelTranslator->state_vector.robots[0].torqueLimits[k];
+                    if (U_alpha[t][i](k) < -activeModelTranslator->state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = -activeModelTranslator->state_vector.robots[0].torqueLimits[k];
                 }
             }
 
-            activeModelTranslator->setControlVector(U_alpha[t][i], i+1);
-//            Xt = activeModelTranslator->returnStateVector(i+1);
+            activeModelTranslator->SetControlVector(U_alpha[t][i], i + 1);
+//            Xt = activeModelTranslator->ReturnStateVector(i+1);
 //            //cout << "Xt: " << Xt << endl;
 //
 //
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->costFunction(i+1, true);
+                newStateCost = activeModelTranslator->CostFunction(i + 1, true);
             }
             else{
-                newStateCost = activeModelTranslator->costFunction(i+1, false);
+                newStateCost = activeModelTranslator->CostFunction(i + 1, false);
             }
 
             newCosts[i] += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
@@ -633,11 +633,11 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
     if(newCost < oldCost){
         for(int i = 0; i < horizonLength; i++){
 
-            activeModelTranslator->setControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
+            activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
             activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
 
             // Log the old state
-            X_old.at(i + 1) = activeModelTranslator->returnStateVector(MAIN_DATA_STATE);
+            X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
 
             activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
 
@@ -645,7 +645,7 @@ double interpolatediLQR::forwardsPassParallel(double oldCost){
 
         }
 
-        MatrixXd testState = activeModelTranslator->returnStateVector(horizonLength - 1);
+        MatrixXd testState = activeModelTranslator->ReturnStateVector(horizonLength - 1);
 //        cout << "final state after FP: " << testState.transpose() << endl;
 
         return newCost;

@@ -5,17 +5,17 @@
 #ifndef PHYSICSSIMSWITCHING_REACHING_H
 #define PHYSICSSIMSWITCHING_REACHING_H
 
-#include "modelTranslator.h"
+#include "ModelTranslator.h"
 
-class pandaReaching : public modelTranslator {
+class pandaReaching : public ModelTranslator {
 public:
     pandaReaching();
 
-    bool taskComplete(int dataIndex, double &dist) override;
-    void generateRandomGoalAndStartState() override;
-    MatrixXd returnRandomStartState() override;
-    MatrixXd returnRandomGoalState(MatrixXd X0) override;
-    std::vector<MatrixXd> createInitOptimisationControls(int horizonLength) override;
+    bool TaskComplete(int dataIndex, double &dist) override;
+    void GenerateRandomGoalAndStartState() override;
+    MatrixXd ReturnRandomStartState() override;
+    MatrixXd ReturnRandomGoalState(MatrixXd X0) override;
+    std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
 
     double jointLimsMax[7] = {2.2, 0.6, 2.97, 0, 2.97, 1.5, 2.5};
     double jointLimsMin[7] = {-2.2, -0.6, -2.97, -1.5, -2.97, -1.1, -2.5};

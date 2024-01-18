@@ -1,7 +1,7 @@
 
-#include "optimiser.h"
+#include "Optimiser.h"
 
-optimiser::optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator){
+Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator){
     activeModelTranslator = _modelTranslator;
     activePhysicsSimulator = _physicsSimulator;
     activeYamlReader = _yamlReader;
@@ -11,19 +11,19 @@ optimiser::optimiser(std::shared_ptr<modelTranslator> _modelTranslator, std::sha
     num_ctrl = activeModelTranslator->num_ctrl;
 
     // Set up the derivative interpolator from YAML settings
-    activeDerivativeInterpolator.keypoint_method = activeModelTranslator->keypointMethod;
-    activeDerivativeInterpolator.minN = activeModelTranslator->minN;
-    activeDerivativeInterpolator.maxN = activeModelTranslator->maxN;
-    activeDerivativeInterpolator.jerkThresholds = activeModelTranslator->jerkThresholds;
+    activeDerivativeInterpolator.keypoint_method = activeModelTranslator->keypoint_method;
+    activeDerivativeInterpolator.minN = activeModelTranslator->min_N;
+    activeDerivativeInterpolator.maxN = activeModelTranslator->max_N;
+    activeDerivativeInterpolator.jerkThresholds = activeModelTranslator->jerk_thresholds;
     // TODO - fix this - add acell thresholds to yaml
-    activeDerivativeInterpolator.accelThresholds = activeModelTranslator->jerkThresholds;
-    activeDerivativeInterpolator.iterativeErrorThreshold = activeModelTranslator->iterativeErrorThreshold;
-    activeDerivativeInterpolator.magVelChangeThresholds = activeModelTranslator->magVelChangeThresholds;
+    activeDerivativeInterpolator.accelThresholds = activeModelTranslator->jerk_thresholds;
+    activeDerivativeInterpolator.iterativeErrorThreshold = activeModelTranslator->iterative_error_threshold;
+    activeDerivativeInterpolator.magVelChangeThresholds = activeModelTranslator->velocity_change_thresholds;
 
 
 }
 
-bool optimiser::checkForConvergence(double oldCost, double newCost){
+bool Optimiser::checkForConvergence(double oldCost, double newCost){
     double costGrad = (oldCost - newCost)/newCost;
 
     if(costGrad < epsConverge){
@@ -32,11 +32,11 @@ bool optimiser::checkForConvergence(double oldCost, double newCost){
     return false;
 }
 
-void optimiser::setTrajecNumber(int _trajecNumber) {
+void Optimiser::setTrajecNumber(int _trajecNumber) {
     currentTrajecNumber = _trajecNumber;
 }
 
-void optimiser::returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
+void Optimiser::returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
 
     _optTime = optTime;
     _costReduction = costReduction;
@@ -45,15 +45,15 @@ void optimiser::returnOptimisationData(double &_optTime, double &_costReduction,
     _numIterations = numIterationsForConvergence;
 }
 
-derivative_interpolator optimiser::returnDerivativeInterpolator(){
+derivative_interpolator Optimiser::returnDerivativeInterpolator(){
     return activeDerivativeInterpolator;
 }
 
-void optimiser::setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator){
+void Optimiser::setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator){
     activeDerivativeInterpolator = _derivativeInterpolator;
 }
 
-void optimiser::generateDerivatives(){
+void Optimiser::generateDerivatives(){
     // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
     // generate the dynamics evaluation waypoints
     std::vector<std::vector<int>> keyPoints = generateKeyPoints(X_old, U_old);
@@ -87,7 +87,7 @@ void optimiser::generateDerivatives(){
     }
 }
 
-std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
+std::vector<std::vector<int>> Optimiser::generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls){
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
     std::vector<std::vector<int>> keypoints;
     std::vector<int> oneRow;
@@ -161,7 +161,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPoints(std::vector<MatrixXd>
     return keypoints;
 }
 
-std::vector<std::vector<int>> optimiser::generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile){
+std::vector<std::vector<int>> Optimiser::generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile){
     std::vector<std::vector<int>> keypoints;
 
     for(int t = 0; t < horizonLength; t++){
@@ -198,7 +198,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsAdaptive(std::vector<M
     return keypoints;
 }
 
-std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
+std::vector<std::vector<int>> Optimiser::generateKeyPointsIteratively(){
     std::vector<std::vector<int>> keyPoints;
     bool binsComplete[dof];
     std::vector<indexTuple> indexTuples;
@@ -292,7 +292,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsIteratively(){
     return keyPoints;
 }
 
-std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vector<MatrixXd> velProfile){
+std::vector<std::vector<int>> Optimiser::generateKeyPointsMagVelChange(std::vector<MatrixXd> velProfile){
     std::vector<std::vector<int>> keyPoints;
 
     for(int t = 0; t < horizonLength; t++){
@@ -333,7 +333,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
 
 //            cout << " after check mag change" << endl;
 
-            // If the interval is greater than minN
+            // If the interval is greater than min_N
             if(lastKeypointCounter[i] >= activeDerivativeInterpolator.minN){
                 // If the direction of the velocity has changed
                 if(currentVelDirection * lastVelDirection[i] < 0){
@@ -347,7 +347,7 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
                 lastVelDirection[i] = currentVelDirection;
             }
 
-            // If interval is greater than maxN
+            // If interval is greater than max_N
             if(lastKeypointCounter[i] >= activeDerivativeInterpolator.maxN){
                 keyPoints[t].push_back(i);
                 lastVelValue[i] = velProfile[t](i, 0);
@@ -365,11 +365,11 @@ std::vector<std::vector<int>> optimiser::generateKeyPointsMagVelChange(std::vect
     return keyPoints;
 }
 
-bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
+bool Optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 
     MatrixXd midColumnsApprox[2];
     for(int i = 0; i < 2; i++){
-        midColumnsApprox[i] = MatrixXd::Zero(activeModelTranslator->stateVectorSize, 1);
+        midColumnsApprox[i] = MatrixXd::Zero(activeModelTranslator->state_vector_size, 1);
     }
 
     int midIndex = (indices.startIndex + indices.endIndex) / 2;
@@ -428,7 +428,7 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
 
     for(int i = 0; i < 2; i++){
         int A_col_indices[2] = {dofIndex, dofIndex + dof};
-        for(int j = dof; j < activeModelTranslator->stateVectorSize; j++){
+        for(int j = dof; j < activeModelTranslator->state_vector_size; j++){
             double sqDiff = pow((A[midIndex](j, A_col_indices[i]) - midColumnsApprox[i](j, 0)),2);
 
             counter++;
@@ -472,17 +472,17 @@ bool optimiser::checkDoFColumnError(indexTuple indices, int dofIndex){
     return approximationGood;
 }
 
-void optimiser::getCostDerivs(){
+void Optimiser::getCostDerivs(){
     #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
-        activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+        activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
     }
 
-    activeModelTranslator->costDerivatives(horizonLength-1,
+    activeModelTranslator->CostDerivatives(horizonLength - 1,
                                            l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
 }
 
-void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
+void Optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
 
     activePhysicsSimulator->initModelForFiniteDifferencing();
 
@@ -516,7 +516,7 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     const int num_threads = std::thread::hardware_concurrency();  // Get the number of available CPU cores
     std::vector<std::thread> thread_pool;
     for (int i = 0; i < num_threads; ++i) {
-        thread_pool.push_back(std::thread(&optimiser::worker, this, i));
+        thread_pool.push_back(std::thread(&Optimiser::worker, this, i));
     }
 
     for (std::thread& thread : thread_pool) {
@@ -530,18 +530,18 @@ void optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     if(!activeYamlReader->costDerivsFD){
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
-                activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
             else{
-                activeModelTranslator->costDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
         }
-        activeModelTranslator->costDerivatives(horizonLength - 1,
+        activeModelTranslator->CostDerivatives(horizonLength - 1,
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
     }
 }
 
-void optimiser::worker(int threadId) {
+void Optimiser::worker(int threadId) {
     while (true) {
         int iteration = current_iteration.fetch_add(1);
         if (iteration >= num_threads_iterations) {
@@ -561,7 +561,7 @@ void optimiser::worker(int threadId) {
     }
 }
 
-void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs){
+void Optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs){
     MatrixXd startB;
     MatrixXd endB;
     MatrixXd addB;
@@ -662,13 +662,13 @@ void optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, 
     }
 }
 
-std::vector<MatrixXd> optimiser::generateJerkProfile(){
+std::vector<MatrixXd> Optimiser::generateJerkProfile(){
 
     MatrixXd jerk(activeModelTranslator->dof, 1);
 
-    MatrixXd state1(activeModelTranslator->stateVectorSize, 1);
-    MatrixXd state2(activeModelTranslator->stateVectorSize, 1);
-    MatrixXd state3(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd state1(activeModelTranslator->state_vector_size, 1);
+    MatrixXd state2(activeModelTranslator->state_vector_size, 1);
+    MatrixXd state3(activeModelTranslator->state_vector_size, 1);
 
     std::vector<MatrixXd> jerkProfile;
 
@@ -690,11 +690,11 @@ std::vector<MatrixXd> optimiser::generateJerkProfile(){
     return jerkProfile;
 }
 
-std::vector<MatrixXd> optimiser::generateAccelProfile(){
+std::vector<MatrixXd> Optimiser::generateAccelProfile(){
     MatrixXd accel(activeModelTranslator->dof, 1);
 
-    MatrixXd state1(activeModelTranslator->stateVectorSize, 1);
-    MatrixXd state2(activeModelTranslator->stateVectorSize, 1);
+    MatrixXd state1(activeModelTranslator->state_vector_size, 1);
+    MatrixXd state2(activeModelTranslator->state_vector_size, 1);
 
     std::vector<MatrixXd> accelProfile;
 
@@ -714,7 +714,7 @@ std::vector<MatrixXd> optimiser::generateAccelProfile(){
     return accelProfile;
 }
 
-std::vector<MatrixXd> optimiser::generateVelProfile(){
+std::vector<MatrixXd> Optimiser::generateVelProfile(){
     std::vector<MatrixXd> velProfile;
     MatrixXd velocities(activeModelTranslator->dof, 1);
 
@@ -730,7 +730,7 @@ std::vector<MatrixXd> optimiser::generateVelProfile(){
     return velProfile;
 }
 
-void optimiser::filterDynamicsMatrices() {
+void Optimiser::filterDynamicsMatrices() {
 
     for(int i = dof; i < 2 * dof; i++){
         for(int j = 0; j < 2 * dof; j++){
@@ -759,7 +759,7 @@ void optimiser::filterDynamicsMatrices() {
     }
 }
 
-std::vector<double> optimiser::filterIndValLowPass(std::vector<double> unfiltered){
+std::vector<double> Optimiser::filterIndValLowPass(std::vector<double> unfiltered){
     double yn1 = unfiltered[0];
     double xn1 = unfiltered[0];
 
@@ -777,7 +777,7 @@ std::vector<double> optimiser::filterIndValLowPass(std::vector<double> unfiltere
     return filtered;
 }
 
-std::vector<double> optimiser::filterIndValFIRFilter(std::vector<double> unfiltered, std::vector<double> filterCoefficients){
+std::vector<double> Optimiser::filterIndValFIRFilter(std::vector<double> unfiltered, std::vector<double> filterCoefficients){
     std::vector<double> filtered;
 
     for(int i = 0; i < unfiltered.size(); i++){
@@ -795,7 +795,7 @@ std::vector<double> optimiser::filterIndValFIRFilter(std::vector<double> unfilte
     return filtered;
 }
 
-void optimiser::setFIRFilter(std::vector<double> _FIRCoefficients){
+void Optimiser::setFIRFilter(std::vector<double> _FIRCoefficients){
     FIRCoefficients.clear();
 
     for(int i = 0; i < _FIRCoefficients.size(); i++){

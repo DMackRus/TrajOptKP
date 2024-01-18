@@ -1,13 +1,13 @@
 #pragma once
-#include "modelTranslator.h"
+#include "ModelTranslator.h"
 
-class acrobot : public modelTranslator {
+class acrobot : public ModelTranslator {
 public:
     acrobot();
 
-    bool taskComplete(int dataIndex, double &dist) override;
-    void generateRandomGoalAndStartState() override;
-    MatrixXd returnRandomStartState() override;
-    MatrixXd returnRandomGoalState(MatrixXd X0) override;
+    bool TaskComplete(int dataIndex, double &dist) override;
+    void GenerateRandomGoalAndStartState() override;
+    MatrixXd ReturnRandomStartState() override;
+    MatrixXd ReturnRandomGoalState(MatrixXd X0) override;
 
 };

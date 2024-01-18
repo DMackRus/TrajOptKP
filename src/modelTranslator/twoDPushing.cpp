@@ -23,16 +23,16 @@ twoDPushing::twoDPushing(int _clutterLevel){
         cout << "ERROR: Invalid clutter level" << endl;
     }
 
-    initModelTranslator(yamlFilePath);
+    InitModelTranslator(yamlFilePath);
 }
 
-void twoDPushing::generateRandomGoalAndStartState() {
-    X_start = returnRandomStartState();
-    X_desired = returnRandomGoalState(X_start);
+void twoDPushing::GenerateRandomGoalAndStartState() {
+    X_start = ReturnRandomStartState();
+    X_desired = ReturnRandomGoalState(X_start);
 }
 
-MatrixXd twoDPushing::returnRandomStartState(){
-    MatrixXd randomStartState(stateVectorSize, 1);
+MatrixXd twoDPushing::ReturnRandomStartState(){
+    MatrixXd randomStartState(state_vector_size, 1);
 
     float startX;
     float startY;
@@ -63,14 +63,14 @@ MatrixXd twoDPushing::returnRandomStartState(){
 
     // Set start position of pushed object
     pose_6 pushedObjectStartPose;
-    activePhysicsSimulator->getBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
+    active_physics_simulator->getBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
     pushedObjectStartPose.position(0) = startX;
     pushedObjectStartPose.position(1) = startY;
     pushedObjectStartPose.position(2) = 0.032;
-    activePhysicsSimulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MAIN_DATA_STATE);
-    activePhysicsSimulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
-    activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
-    activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
+    active_physics_simulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MAIN_DATA_STATE);
+    active_physics_simulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
+    active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
+    active_physics_simulator->forwardSimulator(MASTER_RESET_DATA);
 
 
     randomGoalX = goalX;
@@ -112,14 +112,14 @@ MatrixXd twoDPushing::returnRandomStartState(){
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MAIN_DATA_STATE);
+                active_physics_simulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MAIN_DATA_STATE);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
-                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
-                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
+                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
 
-                if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                if(active_physics_simulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
@@ -154,20 +154,20 @@ MatrixXd twoDPushing::returnRandomStartState(){
             pose_6 objectCurrentPose;
             pose_6 newObjectPose;
 
-            activePhysicsSimulator->getBodyPose_angle("obstacle5", objectCurrentPose, MASTER_RESET_DATA);
+            active_physics_simulator->getBodyPose_angle("obstacle5", objectCurrentPose, MASTER_RESET_DATA);
             newObjectPose = objectCurrentPose;
             newObjectPose.position(0) = randX;
             newObjectPose.position(1) = randY;
             newObjectPose.position(2) = objectCurrentPose.position(2);
-            activePhysicsSimulator->setBodyPose_angle("obstacle5", newObjectPose, MAIN_DATA_STATE);
-            activePhysicsSimulator->setBodyPose_angle("obstacle5", newObjectPose, MASTER_RESET_DATA);
+            active_physics_simulator->setBodyPose_angle("obstacle5", newObjectPose, MAIN_DATA_STATE);
+            active_physics_simulator->setBodyPose_angle("obstacle5", newObjectPose, MASTER_RESET_DATA);
 
-            if(activePhysicsSimulator->checkBodyForCollisions("obstacle5", MAIN_DATA_STATE)){
+            if(active_physics_simulator->checkBodyForCollisions("obstacle5", MAIN_DATA_STATE)){
                 cout << "first object invalid placement : " << randX << ", " << randY << endl;
             }
             else{
-                activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
-                activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
+                active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
+                active_physics_simulator->forwardSimulator(MASTER_RESET_DATA);
                 validPlacement = true;
                 objectXPos.push_back(randX);
                 objectYPos.push_back(randY);
@@ -190,20 +190,20 @@ MatrixXd twoDPushing::returnRandomStartState(){
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                activePhysicsSimulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                active_physics_simulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
                 newObjectPose.position(2) = objectCurrentPose.position(2);
-                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
-                activePhysicsSimulator->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
+                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
 
-                if(activePhysicsSimulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                if(active_physics_simulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
-                    activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
-                    activePhysicsSimulator->forwardSimulator(MASTER_RESET_DATA);
+                    active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
+                    active_physics_simulator->forwardSimulator(MASTER_RESET_DATA);
                     validPlacement = true;
                     objectXPos.push_back(randX);
                     objectYPos.push_back(randY);
@@ -224,8 +224,8 @@ MatrixXd twoDPushing::returnRandomStartState(){
     return randomStartState;
 }
 
-MatrixXd twoDPushing::returnRandomGoalState(MatrixXd X0){
-    MatrixXd randomGoalState(stateVectorSize, 1);
+MatrixXd twoDPushing::ReturnRandomGoalState(MatrixXd X0){
+    MatrixXd randomGoalState(state_vector_size, 1);
 
     if(clutterLevel == noClutter){
         randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
@@ -255,11 +255,11 @@ MatrixXd twoDPushing::returnRandomGoalState(MatrixXd X0){
     return randomGoalState;
 }
 
-std::vector<MatrixXd> twoDPushing::createInitSetupControls(int horizonLength){
+std::vector<MatrixXd> twoDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
 
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-    activePhysicsSimulator->forwardSimulator(MAIN_DATA_STATE);
+    active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
 
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -290,8 +290,8 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    activePhysicsSimulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
-    activePhysicsSimulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+    active_physics_simulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
+    active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
 //    cout << "goalobj_startPose: " << goalobj_startPose.position(0) << ", " << goalobj_startPose.position(1) << endl;
 
     m_point mainWayPoint;
@@ -334,7 +334,7 @@ void twoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
 
 }
 
-std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLength){
+std::vector<MatrixXd> twoDPushing::CreateInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
     // Set the goal position so that we can see where we are pushing to
@@ -343,7 +343,7 @@ std::vector<MatrixXd> twoDPushing::createInitOptimisationControls(int horizonLen
     displayBodyPose.position[0] = X_desired(7);
     displayBodyPose.position[1] = X_desired(8);
     displayBodyPose.position[2] = 0.0f;
-    activePhysicsSimulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+    active_physics_simulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -375,8 +375,8 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    activePhysicsSimulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
-    activePhysicsSimulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+    active_physics_simulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
+    active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -422,7 +422,7 @@ void twoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 //    mainWayPoints.push_back(mainWayPoint);
 //    wayPointsTiming.push_back(3 * horizon / 4);
 
-    float maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * activePhysicsSimulator->returnModelTimeStep());
+    float maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * active_physics_simulator->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
@@ -479,8 +479,8 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
     pose_7 EE_start_pose;
     pose_6 goalobj_startPose;
-    activePhysicsSimulator->getBodyPose_quat(EEName, EE_start_pose, MAIN_DATA_STATE);
-    activePhysicsSimulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
+    active_physics_simulator->getBodyPose_quat(EEName, EE_start_pose, MAIN_DATA_STATE);
+    active_physics_simulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
 
     float angle_EE_push;
     float x_diff = X_desired(7) - goalobj_startPose.position(0);
@@ -514,7 +514,7 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
     m_quat desiredQuat = rotMat2Quat(rotMat);
 
     MatrixXd currentControl(num_ctrl, 1);
-    if(myStateVector.robots[0].torqueControlled){
+    if(state_vector.robots[0].torqueControlled){
         MatrixXd robotPos = returnPositionVector(MAIN_DATA_STATE);
         for(int i = 0; i < num_ctrl; i++){
             currentControl(i) = robotPos(i);
@@ -525,7 +525,7 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
     for(int i = 0; i < initPath.size(); i++){
         pose_7 currentEEPose;
-        activePhysicsSimulator->getBodyPose_quat(EEName, currentEEPose, MAIN_DATA_STATE);
+        active_physics_simulator->getBodyPose_quat(EEName, currentEEPose, MAIN_DATA_STATE);
         m_quat currentEEQuat, invertedQuat, quatDiff;
         currentEEQuat(0) = currentEEPose.quat(0);
         currentEEQuat(1) = currentEEPose.quat(1);
@@ -564,13 +564,13 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
         MatrixXd Jac, JacInv;
 
-        Jac = activePhysicsSimulator->calculateJacobian(EEName, MAIN_DATA_STATE);
+        Jac = active_physics_simulator->calculateJacobian(EEName, MAIN_DATA_STATE);
         JacInv = Jac.completeOrthogonalDecomposition().pseudoInverse();
 
         MatrixXd desiredEEForce(6, 1);
         MatrixXd desiredControls(num_ctrl, 1);
 
-        if(myStateVector.robots[0].torqueControlled){
+        if(state_vector.robots[0].torqueControlled){
             for(int j = 0; j < 6; j++) {
                 desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
             }
@@ -578,7 +578,7 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
             std::vector<double> gravCompensation;
             MatrixXd gravCompControl(num_ctrl, 1);
-            activePhysicsSimulator->getRobotJointsGravityCompensaionControls(myStateVector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            active_physics_simulator->getRobotJointsGravityCompensaionControls(state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
             for(int j = 0; j < num_ctrl; j++){
                 gravCompControl(j) = gravCompensation[j];
             }
@@ -596,18 +596,18 @@ std::vector<MatrixXd> twoDPushing::generate_initControls_fromWayPoints(std::vect
 
         initControls.push_back(desiredControls);
 
-        setControlVector(desiredControls, MAIN_DATA_STATE);
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        SetControlVector(desiredControls, MAIN_DATA_STATE);
+        active_physics_simulator->stepSimulator(1, MAIN_DATA_STATE);
 
     }
 
     return initControls;
 }
 
-bool twoDPushing::taskComplete(int dataIndex, double &dist){
+bool twoDPushing::TaskComplete(int dataIndex, double &dist){
     bool taskComplete = false;
 
-    MatrixXd currentState = returnStateVector(dataIndex);
+    MatrixXd currentState = ReturnStateVector(dataIndex);
 
     float x_diff = currentState(7) - X_desired(7);
     float y_diff = currentState(8) - X_desired(8);

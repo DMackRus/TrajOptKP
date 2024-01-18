@@ -3,20 +3,20 @@
 //
 #include "locomotion.h"
 
-walker::walker(): modelTranslator(){
+walker::walker(): ModelTranslator(){
     std::string yamlFilePath = "/taskConfigs/locomotionConfig.yaml";
-    initModelTranslator(yamlFilePath);
+    InitModelTranslator(yamlFilePath);
 }
 
-bool walker::taskComplete(int dataIndex, double &dist){
+bool walker::TaskComplete(int dataIndex, double &dist){
     return false;
 }
 
-void walker::generateRandomGoalAndStartState(){
+void walker::GenerateRandomGoalAndStartState(){
     MatrixXd test;
 }
 
-MatrixXd walker::returnRandomStartState(){
+MatrixXd walker::ReturnRandomStartState(){
     MatrixXd startState;
 
     startState << 0, 0, 0, 1, -1, 0.2, 0, 0, 0,
@@ -25,7 +25,7 @@ MatrixXd walker::returnRandomStartState(){
     return startState;
 }
 
-MatrixXd walker::returnRandomGoalState(MatrixXd X0){
+MatrixXd walker::ReturnRandomGoalState(MatrixXd X0){
     MatrixXd goalState;
 
     goalState << 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -34,7 +34,7 @@ MatrixXd walker::returnRandomGoalState(MatrixXd X0){
     return goalState;
 }
 
-std::vector<MatrixXd> walker::createInitOptimisationControls(int horizonLength){
+std::vector<MatrixXd> walker::CreateInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
     MatrixXd control(num_ctrl, 1);
@@ -48,10 +48,10 @@ std::vector<MatrixXd> walker::createInitOptimisationControls(int horizonLength){
     return initControls;
 }
 
-double walker::costFunction(int dataIndex, bool terminal){
+double walker::CostFunction(int dataIndex, bool terminal){
     double cost;
-    MatrixXd Xt = returnStateVector(dataIndex);
-    MatrixXd Ut = returnControlVector(dataIndex);
+    MatrixXd Xt = ReturnStateVector(dataIndex);
+    MatrixXd Ut = ReturnControlVector(dataIndex);
 
     MatrixXd X_diff = Xt - X_desired;
 
@@ -77,9 +77,9 @@ double walker::costFunction(int dataIndex, bool terminal){
     return cost;
 }
 
-void walker::costDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-    MatrixXd Xt = returnStateVector(dataIndex);
-    MatrixXd Ut = returnControlVector(dataIndex);
+void walker::CostDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd Xt = ReturnStateVector(dataIndex);
+    MatrixXd Ut = ReturnControlVector(dataIndex);
     MatrixXd X_diff = Xt - X_desired;
 
     double height_gradient = 0.0f;

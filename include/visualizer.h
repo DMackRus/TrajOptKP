@@ -9,13 +9,13 @@
 #include "MuJoCoHelper.h"
 #include <GLFW/glfw3.h>
 #include "stdInclude.h"
-#include "modelTranslator.h"
+#include "ModelTranslator.h"
 #include "differentiator.h"
-#include "optimiser.h"
+#include "Optimiser.h"
 
 class visualizer {
 public:
-    visualizer(std::shared_ptr<modelTranslator> _modelTranslator);
+    visualizer(std::shared_ptr<ModelTranslator> _modelTranslator);
     void init();
     void update();
     void draw();
@@ -67,7 +67,7 @@ public:
 
 private:
     std::shared_ptr<physicsSimulator> activePhysicsSimulator;
-    std::shared_ptr<modelTranslator> activeModelTranslator;
+    std::shared_ptr<ModelTranslator> activeModelTranslator;
 };
 
 #endif //PHYSICSSIMSWITCHING_VISUALIZER_H

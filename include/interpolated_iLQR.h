@@ -1,15 +1,15 @@
 #ifndef INTERPOLATED_ILQR_H
 #define INTERPOLATED_ILQR_H
 
-#include "optimiser.h"
+#include "Optimiser.h"
 #include "differentiator.h"
 #include "visualizer.h"
 #include "fileHandler.h"
 #include <algorithm>
 
-class interpolatediLQR: public optimiser{
+class interpolatediLQR: public Optimiser{
 public:
-    interpolatediLQR(std::shared_ptr<modelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, std::shared_ptr<visualizer> _visualizer, std::shared_ptr<fileHandler> _yamlReader);
+    interpolatediLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<differentiator> _differentiator, int _maxHorizon, std::shared_ptr<visualizer> _visualizer, std::shared_ptr<fileHandler> _yamlReader);
 
     double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
     std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
