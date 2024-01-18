@@ -6,7 +6,7 @@
     Description:
         Optimiser is a default class for optimisation algorithms to inherit from.
         Provides basic utility functions used for most optimisers, like computing
-        gradients.
+        gradients, performing rollouts, checking for convergence, etc.
 
         Contains key_point functions that are used to determine keypoint placement
         over the trajectory where we will compute dynamics derivatives via
@@ -15,10 +15,10 @@
 */
 #pragma once
 
-#include "stdInclude.h"
+#include "StdInclude.h"
 #include "ModelTranslator.h"
-#include "physicsSimulator.h"
-#include "differentiator.h"
+#include "PhysicsSimulator.h"
+#include "Differentiator.h"
 #include <atomic>
 
 struct indexTuple{
@@ -39,7 +39,7 @@ struct derivative_interpolator{
 
 class Optimiser{
 public:
-    Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<physicsSimulator> _physicsSimulator, std::shared_ptr<fileHandler> _yamlReader, std::shared_ptr<differentiator> _differentiator);
+    Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<FileHandler> _yamlReader, std::shared_ptr<Differentiator> _differentiator);
 
     virtual double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) = 0;
     virtual std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) = 0;
@@ -52,7 +52,7 @@ public:
     void setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator);
 
     void worker(int threadId);
-    std::vector<void (differentiator::*)(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId)> tasks;
+    std::vector<void (Differentiator::*)(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId)> tasks;
     std::atomic<int> current_iteration;
     int num_threads_iterations;
     std::vector<int> timeIndicesGlobal;
@@ -114,14 +114,14 @@ public:
 
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
-    std::shared_ptr<physicsSimulator> activePhysicsSimulator;
+    std::shared_ptr<PhysicsSimulator> activePhysicsSimulator;
 
     int dof;
     int num_ctrl;
     derivative_interpolator activeDerivativeInterpolator;
 
-    std::shared_ptr<fileHandler> activeYamlReader;
-    std::shared_ptr<differentiator> activeDifferentiator;
+    std::shared_ptr<FileHandler> activeYamlReader;
+    std::shared_ptr<Differentiator> activeDifferentiator;
 
     std::vector<std::vector<int>> computedKeyPoints;
 

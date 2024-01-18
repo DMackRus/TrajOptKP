@@ -22,9 +22,9 @@
 */
 #pragma once
 
-#include "stdInclude.h"
+#include "StdInclude.h"
 #include "MuJoCoHelper.h"
-#include "fileHandler.h"
+#include "FileHandler.h"
 
 enum clutterLevels{
     noClutter = 0,
@@ -258,7 +258,7 @@ public:
     MatrixXd X_start;
 
     // physics simulator object
-    std::shared_ptr<physicsSimulator> active_physics_simulator;
+    std::shared_ptr<PhysicsSimulator> active_physics_simulator;
 
     // mujoco helper object
     std::shared_ptr<MuJoCoHelper> mujoco_helper;

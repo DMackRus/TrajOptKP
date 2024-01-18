@@ -4,8 +4,8 @@
 
 #pragma once
 
-#include "stdInclude.h"
-#include "interpolated_iLQR.h"
+#include "StdInclude.h"
+#include "iLQR.h"
 #include <thread>
 #include <mutex>
 
@@ -14,9 +14,9 @@ class Testing{
 public:
     Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
             std::shared_ptr<ModelTranslator> activeModelTranslator_,
-            std::shared_ptr<differentiator> activeDifferentiator_,
-            std::shared_ptr<visualizer> activeVisualiser_,
-            std::shared_ptr<fileHandler> yamlReader_);
+            std::shared_ptr<Differentiator> activeDifferentiator_,
+            std::shared_ptr<Visualiser> activeVisualiser_,
+            std::shared_ptr<FileHandler> yamlReader_);
 
 
     /**
@@ -62,9 +62,9 @@ public:
 
     std::shared_ptr<interpolatediLQR> iLQROptimiser;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
-    std::shared_ptr<differentiator> activeDifferentiator;
-    std::shared_ptr<visualizer> activeVisualiser;
-    std::shared_ptr<fileHandler> yamlReader;
+    std::shared_ptr<Differentiator> activeDifferentiator;
+    std::shared_ptr<Visualiser> activeVisualiser;
+    std::shared_ptr<FileHandler> yamlReader;
 
 
 private:

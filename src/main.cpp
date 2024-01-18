@@ -1,24 +1,24 @@
-#include "stdInclude.h"
-#include "fileHandler.h"
+#include "StdInclude.h"
+#include "FileHandler.h"
 
 // --------------------- different scenes -----------------------
-#include "doublePendulum.h"
-#include "acrobot.h"
-#include "reaching.h"
-#include "twoDPushing.h"
-#include "boxFlick.h"
-#include "locomotion.h"
-#include "hopper.h"
+#include "DoublePendulum.h"
+#include "Acrobot.h"
+#include "Reaching.h"
+#include "TwoDPushing.h"
+#include "BoxFlick.h"
+#include "Walker.h"
+#include "Hopper.h"
 #include "humanoid.h"
-#include "boxSweep.h"
+#include "BoxSweep.h"
 
-#include "visualizer.h"
+#include "Visualiser.h"
 #include "MuJoCoHelper.h"
 
 // --------------------- different optimisers -----------------------
-#include "interpolated_iLQR.h"
-#include "stomp.h"
-#include "gradDescent.h"
+#include "iLQR.h"
+#include "PredictiveSampling.h"
+#include "GradDescent.h"
 
 //----------------------- Testing methods ---------------------------
 #include "Testing.h"
@@ -32,13 +32,13 @@
 
 // --------------------- Global class instances --------------------------------
 std::shared_ptr<ModelTranslator> activeModelTranslator;
-std::shared_ptr<differentiator> activeDifferentiator;
+std::shared_ptr<Differentiator> activeDifferentiator;
 std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<interpolatediLQR> iLQROptimiser;
-std::shared_ptr<stomp> stompOptimiser;
-std::shared_ptr<gradDescent> gradDescentOptimiser;
-std::shared_ptr<visualizer> activeVisualiser;
-std::shared_ptr<fileHandler> yamlReader;
+std::shared_ptr<PredictiveSampling> stompOptimiser;
+std::shared_ptr<GradDescent> gradDescentOptimiser;
+std::shared_ptr<Visualiser> activeVisualiser;
+std::shared_ptr<FileHandler> yamlReader;
 
 std::string task;
 bool mpcVisualise = true;
@@ -96,7 +96,7 @@ int main(int argc, char **argv) {
 
     std::string taskInitMode;
 
-    yamlReader = std::make_shared<fileHandler>();
+    yamlReader = std::make_shared<FileHandler>();
     yamlReader->readSettingsFile("/generalConfigs/" + configFileName + ".yaml");
     optimiser = yamlReader->optimiser;
     runMode = yamlReader->project_run_mode;
@@ -141,25 +141,25 @@ int main(int argc, char **argv) {
     cout << "start state " << activeModelTranslator->X_start << endl;
     cout << "desired state " << activeModelTranslator->X_desired << endl;
 
-    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
     activeModelTranslator->SetStateVector(startStateVector, MASTER_RESET_DATA);
     activeModelTranslator->active_physics_simulator->stepSimulator(5, MASTER_RESET_DATA);
     activeModelTranslator->active_physics_simulator->appendSystemStateToEnd(MASTER_RESET_DATA);
 
     //Instantiate my visualiser
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
 
     // Choose an Optimiser
     if(optimiser == "interpolated_iLQR"){
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
     }
-    else if(optimiser == "stomp"){
-        stompOptimiser = std::make_shared<stomp>(activeModelTranslator, activeModelTranslator->active_physics_simulator, yamlReader, activeDifferentiator, yamlReader->maxHorizon, 8);
+    else if(optimiser == "PredictiveSampling"){
+        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->active_physics_simulator, yamlReader, activeDifferentiator, yamlReader->maxHorizon, 8);
         activeOptimiser = stompOptimiser;
     }
-    else if(optimiser == "gradDescent"){
-        gradDescentOptimiser = std::make_shared<gradDescent>(activeModelTranslator, activeModelTranslator->active_physics_simulator, activeDifferentiator, activeVisualiser, yamlReader->maxHorizon, yamlReader);
+    else if(optimiser == "GradDescent"){
+        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator, activeModelTranslator->active_physics_simulator, activeDifferentiator, activeVisualiser, yamlReader->maxHorizon, yamlReader);
         activeOptimiser = gradDescentOptimiser;
     }
     else{
@@ -332,7 +332,7 @@ void onetaskGenerateTestingData(){
 }
 
 void generateTestingData(){
-    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
 
     MatrixXd startStateVector;
     startStateVector.resize(activeModelTranslator->state_vector_size, 1);
@@ -341,7 +341,7 @@ void generateTestingData(){
     activeModelTranslator->active_physics_simulator->stepSimulator(1, MAIN_DATA_STATE);
     activeModelTranslator->active_physics_simulator->appendSystemStateToEnd(MAIN_DATA_STATE);
 
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
     activeOptimiser = iLQROptimiser;
 
@@ -601,7 +601,7 @@ void async_MPC_testing(){
 //    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
     activeModelTranslator->active_physics_simulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
 
-    // Whether optimiser will output useful information
+    // Whether Optimiser will output useful information
     activeOptimiser->verboseOutput = true;
     // Visualise MPC trajectory live
     mpcVisualise = true;
@@ -948,9 +948,9 @@ void generateTestingData_MPC(){
     auto startTime = std::chrono::high_resolution_clock::now();
 
     for(int k = 0; k < 1; k ++) {
-        activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
+        activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
 
-        activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+        activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
         iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator,
                                              activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
                                              yamlReader);
@@ -1098,9 +1098,9 @@ void generateTestingData_MPC(){
 //    // start timer here
 //    auto startTime = std::chrono::high_resolution_clock::now();
 //
-//    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
+//    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
 //
-//    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+//    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
 //    iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
 //                                                       activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
 //                                                       yamlReader);
@@ -1275,9 +1275,9 @@ int generateTestingData_MPCHorizons(){
     // start timer here
     auto startTime = std::chrono::high_resolution_clock::now();
 
-    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
 
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator,
                                                        activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
                                                        yamlReader);
@@ -1450,11 +1450,11 @@ int generateTestingData_MPCHorizons(){
 
 int assign_task(){
     if(task == "double_pendulum"){
-        std::shared_ptr<doublePendulum> myDoublePendulum = std::make_shared<doublePendulum>();
+        std::shared_ptr<DoublePendulum> myDoublePendulum = std::make_shared<DoublePendulum>();
         activeModelTranslator = myDoublePendulum;
     }
-    else if(task == "acrobot"){
-        std::shared_ptr<acrobot> myAcrobot = std::make_shared<acrobot>();
+    else if(task == "Acrobot"){
+        std::shared_ptr<Acrobot> myAcrobot = std::make_shared<Acrobot>();
         activeModelTranslator = myAcrobot;
 
     }
@@ -1463,22 +1463,22 @@ int assign_task(){
         activeModelTranslator = myReaching;
     }
     else if(task == "pushing_no_clutter"){
-        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(noClutter);
+        std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(noClutter);
         activeModelTranslator = myTwoDPushing;
 
     }
     else if(task == "pushing_low_clutter"){
-        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(lowClutter);
+        std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(lowClutter);
         activeModelTranslator = myTwoDPushing;
 
     }
     else if(task == "pushing_moderate_clutter"){
-        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(heavyClutter);
+        std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(heavyClutter);
         activeModelTranslator = myTwoDPushing;
 
     }
     else if(task == "pushing_moderate_clutter_constrained"){
-        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(constrainedClutter);
+        std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(constrainedClutter);
         activeModelTranslator = myTwoDPushing;
     }
     else if(task == "box_push_toppling"){
@@ -1486,29 +1486,29 @@ int assign_task(){
         return EXIT_FAILURE;
     }
     else if(task == "box_flick_no_clutter"){
-        std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(noClutter);
+        std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(noClutter);
         activeModelTranslator = myBoxFlick;
     }
     else if(task == "box_flick_low_clutter"){
-        std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(lowClutter);
+        std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(lowClutter);
         activeModelTranslator = myBoxFlick;
     }
     else if(task == "box_flick_moderate_clutter"){
-        std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(heavyClutter);
+        std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(heavyClutter);
         activeModelTranslator = myBoxFlick;
     }
     else if(task == "walker"){
         std::shared_ptr<walker> myLocomotion = std::make_shared<walker>();
         activeModelTranslator = myLocomotion;
     }
-    else if(task == "hopper"){
-//        std::shared_ptr<hopper> myHopper = std::make_shared<hopper>();
+    else if(task == "Hopper"){
+//        std::shared_ptr<Hopper> myHopper = std::make_shared<Hopper>();
 //        activeModelTranslator = myHopper;
         cout << "not implemented task yet " << endl;
         return EXIT_FAILURE;
     }
     else if(task == "box_sweep"){
-        std::shared_ptr<boxSweep> myBoxSweep = std::make_shared<boxSweep>();
+        std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
         activeModelTranslator = myBoxSweep;
     }
     else{

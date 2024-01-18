@@ -6,9 +6,9 @@
 
 Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
                  std::shared_ptr<ModelTranslator> activeModelTranslator_,
-                 std::shared_ptr<differentiator> activeDifferentiator_,
-                 std::shared_ptr<visualizer> activeVisualiser_,
-                 std::shared_ptr<fileHandler> yamlReader_) {
+                 std::shared_ptr<Differentiator> activeDifferentiator_,
+                 std::shared_ptr<Visualiser> activeVisualiser_,
+                 std::shared_ptr<FileHandler> yamlReader_) {
 
     iLQROptimiser = iLQROptimiser_;
     activeModelTranslator = activeModelTranslator_;
@@ -16,9 +16,9 @@ Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
     activeVisualiser = activeVisualiser_;
     yamlReader = yamlReader_;
 
-    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
 
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
     iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator,
                                                        activeDifferentiator, yamlReader_->maxHorizon, activeVisualiser,
                                                        yamlReader);
@@ -170,7 +170,7 @@ int Testing::single_asynchronus_run(bool visualise){
     activeVisualiser->trajectory_controls.clear();
     activeVisualiser->trajectory_states.clear();
 
-    // Make a thread for the optimiser
+    // Make a thread for the Optimiser
     std::thread MPC_controls_thread;
     // Start the thread running
     MPC_controls_thread = std::thread(&Testing::asynchronus_optimiser_worker, this);

@@ -48,26 +48,27 @@ set(PROJECT_INCLUDE_DIR ${PARENT_DIR}/${PROJECT_NAME}/include)
 message(STATUS "project include directory: " ${PROJECT_INCLUDE_DIR})
 
 add_executable(${PROJECT_NAME} src/main.cpp
-                src/physicsSimulators/physicsSimulator.cpp
-                src/stdInclude/stdInclude.cpp
-                src/physicsSimulators/MuJoCoHelper.cpp 
-                src/modelTranslator/modelTranslator.cpp 
-                src/visualizer/visualizer.cpp
-                src/modelTranslator/doublePendulum.cpp
-                src/modelTranslator/reaching.cpp
-                src/modelTranslator/twoDPushing.cpp
-                src/differentiator/differentiator.cpp
-                src/optimiser/optimiser.cpp
-                src/optimiser/interpolated_iLQR.cpp
-                src/optimiser/stomp.cpp
-                src/modelTranslator/boxFlick.cpp
-                src/modelTranslator/locomotion.cpp
-                src/fileHandler/fileHandler.cpp
-                src/optimiser/gradDescent.cpp
-                src/modelTranslator/boxSweep.cpp
-                src/modelTranslator/acrobot.cpp
-                src/modelTranslator/hopper.cpp
-                src/Testing.cpp)
+            src/PhysicsSimulators/PhysicsSimulator.cpp
+            src/StdInclude/StdInclude.cpp
+            src/PhysicsSimulators/MuJoCoHelper.cpp
+            src/ModelTranslator/ModelTranslator.cpp
+            src/Visualiser/Visualiser.cpp
+            src/ModelTranslator/DoublePendulum.cpp
+            src/ModelTranslator/Reaching.cpp
+            src/ModelTranslator/TwoDPushing.cpp
+            src/Differentiator/Differentiator.cpp
+            src/Optimiser/Optimiser.cpp
+            src/Optimiser/iLQR.cpp
+            src/Optimiser/PredictiveSampling.cpp
+            src/ModelTranslator/BoxFlick.cpp
+            src/ModelTranslator/Walker.cpp
+            src/FileHandler/FileHandler.cpp
+            src/Optimiser/GradDescent.cpp
+            src/ModelTranslator/BoxSweep.cpp
+            src/ModelTranslator/Acrobot.cpp
+            src/ModelTranslator/Hopper.cpp
+                src/Testing.cpp
+                src/KeyPointGenerator/KeyPointGenerator.cpp)
 
 include_directories(
         include
