@@ -20,8 +20,12 @@
 #include "stomp.h"
 #include "gradDescent.h"
 
+//----------------------- Testing methods ---------------------------
+#include "Testing.h"
+
 // --------------------- other -----------------------
 #include <mutex>
+#include <atomic>
 
 // ------------ MODES OF OPERATION -------------------------------
 #define ASYNC_MPC   true
@@ -41,6 +45,8 @@ bool mpcVisualise = true;
 bool playback = true;
 std::vector<std::string> testingMethods;
 
+int assign_task();
+
 void showInitControls();
 void optimiseOnceandShow();
 void MPCUntilComplete(double &trajecCost, double &avgHz, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
@@ -50,11 +56,18 @@ void generateTestScenes();
 
 void generateTestingData_MPC();
 int generateTestingData_MPCHorizons();
+int generateTestingData_MPC_asynchronous();
 void generateTestingData();
 void generateFilteringData();
 
 void genericTesting();
+
+void async_MPC_testing();
 void worker();
+
+double avg_opt_time, avg_percent_derivs, avg_time_derivs, avg_time_bp, avg_time_fp;
+
+bool stopMPC = false;
 
 int main(int argc, char **argv) {
 
@@ -92,74 +105,21 @@ int main(int argc, char **argv) {
 
     MatrixXd startStateVector(1, 1);
 
-    if(task == "double_pendulum"){
-        std::shared_ptr<doublePendulum> myDoublePendulum = std::make_shared<doublePendulum>();
-        activeModelTranslator = myDoublePendulum;
-    }
-    else if(task == "acrobot"){
-        std::shared_ptr<acrobot> myAcrobot = std::make_shared<acrobot>();
-        activeModelTranslator = myAcrobot;
-
-    }
-    else if(task == "reaching"){
-        std::shared_ptr<pandaReaching> myReaching = std::make_shared<pandaReaching>();
-        activeModelTranslator = myReaching;
-    }
-    else if(task == "pushing_no_clutter"){
-        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(noClutter);
-        activeModelTranslator = myTwoDPushing;
-
-    }
-    else if(task == "pushing_low_clutter"){
-        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(lowClutter);
-        activeModelTranslator = myTwoDPushing;
-
-    }
-    else if(task == "pushing_moderate_clutter"){
-        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(heavyClutter);
-        activeModelTranslator = myTwoDPushing;
-
-    }
-    else if(task == "pushing_moderate_clutter_constrained"){
-        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(constrainedClutter);
-        activeModelTranslator = myTwoDPushing;
-    }
-    else if(task == "box_push_toppling"){
-        cout << "not implemented task yet " << endl;
-        return -1;
-    }
-    else if(task == "box_flick_no_clutter"){
-        std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(noClutter);
-        activeModelTranslator = myBoxFlick;
-    }
-    else if(task == "box_flick_low_clutter"){
-        std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(lowClutter);
-        activeModelTranslator = myBoxFlick;
-    }
-    else if(task == "box_flick_moderate_clutter"){
-        std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(heavyClutter);
-        activeModelTranslator = myBoxFlick;
-    }
-    else if(task == "walker"){
-        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>();
-        activeModelTranslator = myLocomotion;
-    }
-    else if(task == "hopper"){
-//        std::shared_ptr<hopper> myHopper = std::make_shared<hopper>();
-//        activeModelTranslator = myHopper;
-        cout << "not implemented task yet " << endl;
-        return -1;
-    }
-    else if(task == "box_sweep"){
-        std::shared_ptr<boxSweep> myBoxSweep = std::make_shared<boxSweep>();
-        activeModelTranslator = myBoxSweep;
-    }
-    else{
-        std::cout << "invalid scene selected, exiting" << std::endl;
+    // Instantiate model translator as specified by the config file.
+    if(assign_task() == EXIT_FAILURE){
+        return EXIT_FAILURE;
     }
 
     if(runMode == "Generate_testing_data"){
-    	 return generateTestingData_MPCHorizons();
+//    	 return generateTestingData_MPCHorizons();
+//         return generateTestingData_MPC_asynchronous();
+        Testing myTestingObject(iLQROptimiser, activeModelTranslator, activeDifferentiator, activeVisualiser, yamlReader);
+//        derivative_interpolator test;
+//        test.keypoint_method = "SetInterval";
+//        test.minN = 5;
+//        return myTestingObject.testing_asynchronus_mpc(test);
+
+        return myTestingObject.testing_different_minN_asynchronus_mpc(1, 20, 1);
 //        generateTestingData_MPC();
         //generateTestingData();
         //return 0;
@@ -219,109 +179,7 @@ int main(int argc, char **argv) {
     }
     else if(runMode == "MPC_until_completion"){
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
-        double trajecCost, avgHz;
-        double avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
-        activeOptimiser->setTrajecNumber(1000);
-
-        // Some tasks need setup controls to be generated and executed
-        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
-        activeModelTranslator->active_physics_simulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-
-        // Whether Optimiser will output useful information
-        activeOptimiser->verboseOutput = true;
-        // Visualise MPC trajectory live
-        mpcVisualise = true;
-
-        if(task == "walker"){
-            // Setting lateral desired speed
-            activeModelTranslator->X_desired(10) = 0.3;
-        }
-
-        if(ASYNC_MPC){
-            std::thread MPC_controls_thread;
-            MPC_controls_thread = std::thread(&worker);
-            int vis_counter = 0;
-            MatrixXd next_control;
-            // timer variables
-            std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-            std::chrono::steady_clock::time_point end;
-
-            while(activeVisualiser->windowOpen()){
-                begin = std::chrono::steady_clock::now();
-
-                if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
-
-                    next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
-                    // Increment the current control index
-                    activeVisualiser->current_control_index++;
-                }
-                else{
-                    MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
-                    empty_control.setZero();
-                    next_control = empty_control;
-                }
-
-                // Store latest control and state in a replay buffer
-                activeVisualiser->trajectory_controls.push_back(next_control);
-                activeVisualiser->trajectory_states.push_back(activeModelTranslator->ReturnStateVector(VISUALISATION_DATA));
-
-                // Set the latest control
-                activeModelTranslator->SetControlVector(next_control, VISUALISATION_DATA);
-
-                // Update the simulation
-                activeModelTranslator->active_physics_simulator->stepSimulator(1, VISUALISATION_DATA);
-
-                // Update the visualisation
-                // Unsure why rendering every time causes it to lag so much more???
-                vis_counter++;
-                if(vis_counter > 5){
-                    activeVisualiser->render("live-MPC");
-                    vis_counter = 0;
-                }
-
-                end = std::chrono::steady_clock::now();
-                // time taken
-                auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-
-                // compare how long we took versus the timestep of the model
-                int difference_ms = (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
-
-                if(difference_ms > 0) {
-//                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, sleeping for "
-//                              << difference_ms << " ms \n";
-                    std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
-                }
-//                else
-//                    std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
-
-
-                activeModelTranslator->X_desired(1) = activeModelTranslator->ReturnStateVector(VISUALISATION_DATA)(1) + 0.15;
-
-//                std::this_thread::sleep_for(std::chrono::milliseconds(5));
-
-                if(activeVisualiser->task_finished){
-                    activeVisualiser->task_finished = false;
-                    // Replay states through cost function
-
-                    double cost = 0.0f;
-                    activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-                    for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-                        activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], MAIN_DATA_STATE);
-                        activeModelTranslator->active_physics_simulator->stepSimulator(1, MAIN_DATA_STATE);
-                        cost += (activeModelTranslator->CostFunction(MAIN_DATA_STATE, false) * activeModelTranslator->active_physics_simulator->returnModelTimeStep());
-
-                    }
-                    std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
-
-                }
-
-            }
-            MPC_controls_thread.join();
-
-        }
-        else{
-            MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 100);
-        }
+        async_MPC_testing();
     }
     else if(runMode == "Generate_test_scenes"){
         cout << "TASK INIT MODE \n";
@@ -734,7 +592,125 @@ void optimiseOnceandShow(){
 
 void worker(){
     double trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
-    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, 80);
+    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, 100);
+}
+
+void async_MPC_testing(){
+
+    // Some tasks need setup controls to be generated and executed
+//    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
+    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+
+    // Whether optimiser will output useful information
+    activeOptimiser->verboseOutput = true;
+    // Visualise MPC trajectory live
+    mpcVisualise = true;
+
+    if(task == "walker"){
+        // Setting lateral desired speed
+        activeModelTranslator->X_desired(10) = 0.3;
+    }
+
+    if(ASYNC_MPC){
+        std::thread MPC_controls_thread;
+        MPC_controls_thread = std::thread(&worker);
+        int vis_counter = 0;
+        MatrixXd next_control;
+        // timer variables
+        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
+        std::chrono::steady_clock::time_point end;
+
+        int MAX_TASK_TIME = 2500;
+        int task_time = 0;
+
+        while(task_time++ < MAX_TASK_TIME){
+            std::cout << "task time: " << task_time << "\n";
+            begin = std::chrono::steady_clock::now();
+
+            if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
+
+                next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
+                // Increment the current control index
+                activeVisualiser->current_control_index++;
+            }
+            else{
+                MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
+                empty_control.setZero();
+                next_control = empty_control;
+            }
+
+            // Store latest control and state in a replay buffer
+            activeVisualiser->trajectory_controls.push_back(next_control);
+            activeVisualiser->trajectory_states.push_back(activeModelTranslator->returnStateVector(VISUALISATION_DATA));
+
+            // Set the latest control
+            activeModelTranslator->setControlVector(next_control, VISUALISATION_DATA);
+
+            // Update the simulation
+            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
+
+            // Update the visualisation
+            // Unsure why rendering every time causes it to lag so much more???
+            vis_counter++;
+            if(vis_counter > 5){
+                activeVisualiser->render("live-MPC");
+                vis_counter = 0;
+            }
+
+            end = std::chrono::steady_clock::now();
+            // time taken
+            auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+
+            // compare how long we took versus the timestep of the model
+            int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
+
+            if(difference_ms > 0) {
+                std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, sleeping for "
+                          << difference_ms << " ms \n";
+                std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
+            }
+            else
+                std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
+
+
+            activeModelTranslator->X_desired(1) = activeModelTranslator->returnStateVector(VISUALISATION_DATA)(1) + 0.15;
+
+        }
+
+        std::mutex mtx;
+        mtx.lock();
+        stopMPC = true;
+        mtx.unlock();
+        MPC_controls_thread.join();
+
+        double cost = 0.0f;
+        activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+        for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
+            activeModelTranslator->setControlVector(activeVisualiser->trajectory_controls[i], VISUALISATION_DATA);
+            activeModelTranslator->setStateVector(activeVisualiser->trajectory_states[i], VISUALISATION_DATA);
+            activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
+//            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
+            cost += (activeModelTranslator->costFunction(VISUALISATION_DATA, false) * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep());
+
+//            activeVisualiser->render("live-MPC");
+
+
+
+        }
+
+        std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
+        std::cout << "avg opt time: " << avg_opt_time << " ms \n";
+        std::cout << "avg percent derivs: " << avg_percent_derivs << " % \n";
+        std::cout << "avg time derivs: " << avg_time_derivs << " ms \n";
+        std::cout << "avg time BP: " << avg_time_bp << " ms \n";
+        std::cout << "avg time FP: " << avg_time_fp << " ms \n";
+
+    }
+    else{
+        double trajecCost, avgHz;
+        double avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
+        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 100);
+    }
 }
 
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
@@ -772,6 +748,12 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     activeOptimiser->verboseOutput = true;
 
     while(!taskComplete){
+
+        if(stopMPC){
+            taskComplete = true;
+            break;
+        }
+
         if(!ASYNC_MPC){
 //            currState = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
 
@@ -870,28 +852,32 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
         }
 
-        overallTaskCounter++;
+        if(!ASYNC_MPC){
+            overallTaskCounter++;
 
-        if(overallTaskCounter >= MAX_TASK_TIME){
-            cout << "task time out" << endl;
-            taskComplete = true;
+            if(overallTaskCounter >= MAX_TASK_TIME){
+                cout << "task time out" << endl;
+                taskComplete = true;
+            }
+        }
+
+    }
+
+    if(!ASYNC_MPC){
+        trajecCost = 0.0f;
+        activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+
+        for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
+            MatrixXd startState = activeModelTranslator->returnStateVector(VISUALISATION_DATA);
+            MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
+            double stateCost = activeModelTranslator->costFunction(VISUALISATION_DATA, false);
+            trajecCost += stateCost  * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep();
+
+            activeModelTranslator->setControlVector(nextControl, VISUALISATION_DATA);
+            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
         }
     }
 
-    trajecCost = 0.0f;
-    activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
-
-    for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
-        MatrixXd startState = activeModelTranslator->ReturnStateVector(VISUALISATION_DATA);
-//        std::cout << "start state: " << startState.transpose() << std::endl;
-        MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
-        double stateCost = activeModelTranslator->CostFunction(VISUALISATION_DATA, false);
-        trajecCost += stateCost  * activeModelTranslator->active_physics_simulator->returnModelTimeStep();
-
-        activeModelTranslator->SetControlVector(nextControl, VISUALISATION_DATA);
-        activeModelTranslator->active_physics_simulator->stepSimulator(1, VISUALISATION_DATA);
-
-    }
 
     //cout << "trajec cost: " << trajecCost << endl;
     avgTimeGettingDerivs = 0.0f;
@@ -936,8 +922,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
                     if(controlCounter % 5 == 0){
 
-//                        activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MAIN_DATA_STATE);
-//                        activeModelTranslator->active_physics_simulator->forwardSimulator(VISUALISATION_DATA);
                         activeVisualiser->render("replaying");
                     }
                 }
@@ -948,6 +932,12 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     else{
         activeVisualiser->task_finished = true;
     }
+
+    avg_opt_time = avgTimeGettingDerivs + avgTimeBP + avgTimeFP;
+    avg_time_bp = avgTimeBP;
+    avg_time_fp = avgTimeFP;
+    avg_time_derivs = avgTimeGettingDerivs;
+    avg_percent_derivs = avgPercentDerivs;
 }
 
 void generateTestingData_MPC(){
@@ -1100,6 +1090,183 @@ void generateTestingData_MPC(){
                                         avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
     }
 }
+
+//int generateTestingData_MPC_asynchronous(){
+//    playback = false;
+//    mpcVisualise = false;
+//
+//    // start timer here
+//    auto startTime = std::chrono::high_resolution_clock::now();
+//
+//    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
+//
+//    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
+//    iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
+//                                                       activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
+//                                                       yamlReader);
+//    activeOptimiser = iLQROptimiser;
+//
+//    // ------------------------- data storage -------------------------------------
+//    std::vector<std::vector<double>> finalCosts;
+//    std::vector<double> finalCostsRow;
+//
+//    std::vector<std::vector<double>> avgTimeForDerivs;
+//    std::vector<double> avgTimeForDerivsRow;
+//
+//    std::vector<std::vector<double>> avgTimeBP;
+//    std::vector<double> avgTimeBPRow;
+//
+//    std::vector<std::vector<double>> avgTimeFP;
+//    std::vector<double> avgTimeFPRow;
+//
+//    std::vector<std::vector<double>> avgPercentDerivs;
+//    std::vector<double> avgPercentDerivsRow;
+//
+//    std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
+//    std::vector<std::string> horizonNames;
+//    int numHorizons = horizons.size();
+//
+//    for(int i = 0; i < horizons.size(); i++){
+//        horizonNames.push_back(std::to_string(horizons[i]));
+//    }
+//
+//    if(testingMethods.size() == 0){
+//        return 0;
+//    }
+//
+//    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk2", "iterative_error", "magvel_change2"};
+//    std::vector<int> testIndices;
+//    bool anyMatch = false;
+//    for(int i = 0; i < testingMethods.size(); i++){
+//        for(int j = 0; j < methodNames.size(); j++){
+//            if(testingMethods[i] == methodNames[j]){
+//                anyMatch = true;
+//                testIndices.push_back(j);
+//            }
+//        }
+//
+//    }
+//
+//    if(anyMatch == false){
+//        cout << "passed testing arguments didnt match any allowed methods \n";
+//        return 0;
+//    }
+//
+//    std::vector<int> minN = {1, 5, 10, 20, 2, 2, 2};
+//    std::vector<int> maxN = {1, 5, 10, 20, 20, 5, 10};
+//    std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
+//
+//    std::vector<double> targetVelocities;
+//    double minTarget = 0.1;
+//    double maxTarget = 0.3;
+//    int numTests = 100;
+//    double currentVel = minTarget;
+//
+//    for(int i = 0; i < numTests; i++){
+//        targetVelocities.push_back(currentVel);
+//        currentVel += (maxTarget - minTarget) / (numTests - 1);
+//    }
+//
+//    auto startTimer = std::chrono::high_resolution_clock::now();
+//    activeOptimiser->verboseOutput = false;
+//
+//    for(int k = 0; k < testIndices.size(); k++) {
+//        int testIndex = testIndices[k];
+//        cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
+//
+//        derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+//        currentInterpolator.minN = minN[testIndex];
+//        currentInterpolator.maxN = maxN[testIndex];
+//        currentInterpolator.keypoint_method = keypoint_method[testIndex];
+//        activeOptimiser->setDerivativeInterpolator(currentInterpolator);
+//
+//        finalCosts.clear();
+//        avgHzs.clear();
+//        avgTimeForDerivs.clear();
+//        avgTimeBP.clear();
+//        avgTimeFP.clear();
+//        avgPercentDerivs.clear();
+//
+//        for (int i = 0; i < targetVelocities.size(); i++) {
+//            cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
+//
+//            // Loop through our interpolating derivatives methods
+//            finalCostsRow.clear();
+//            avgHZRow.clear();
+//            avgTimeForDerivsRow.clear();
+//            avgTimeBPRow.clear();
+//            avgTimeFPRow.clear();
+//            avgPercentDerivsRow.clear();
+//
+//            MatrixXd startStateVector;
+//            startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
+//
+//            yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector,
+//                                         activeModelTranslator->X_desired);
+//
+//            // Walker model where were trying to match a velocity
+//            if(task == "walker"){
+//                activeModelTranslator->X_desired(10) = targetVelocities[i];
+//            }
+//
+//            activeModelTranslator->X_start = startStateVector;
+//            activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
+//            activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
+//
+//            if(activeModelTranslator->activePhysicsSimulator->checkIfDataIndexExists(0) == false){
+//                activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
+//            }
+//
+//            // Move the end-effector to a decent starting position
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+//            std::vector<MatrixXd> setupControls = activeModelTranslator->createInitSetupControls(1000);
+//            activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+//
+//            for (int j = 0; j < numHorizons; j++) {
+//                double avgHz = 0.0f;
+//                double finalCost = 0.0f;
+//                double avgPercentageDerivs = 0.0f;
+//                double avgTimeForDerivs = 0.0f;
+//                double avgTimeBP = 0.0f;
+//                double avgTimeFP = 0.0f;
+//
+//                cout << "--------------------------------------------------------------------------------\n";
+//                cout << "current horizon: " << horizonNames[j] << "\n";
+//
+//                activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
+//                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1500, 1, horizons[j]);
+//
+//                finalCostsRow.push_back(finalCost);
+//                avgHZRow.push_back(avgHz);
+//                avgTimeForDerivsRow.push_back(avgTimeForDerivs);
+//                avgTimeBPRow.push_back(avgTimeBP);
+//                avgTimeFPRow.push_back(avgTimeFP);
+//                avgPercentDerivsRow.push_back(avgPercentageDerivs);
+//            }
+//
+//            // New row of data added
+//            finalCosts.push_back(finalCostsRow);
+//            avgHzs.push_back(avgHZRow);
+//            avgTimeForDerivs.push_back(avgTimeForDerivsRow);
+//            avgTimeBP.push_back(avgTimeBPRow);
+//            avgTimeFP.push_back(avgTimeFPRow);
+//            avgPercentDerivs.push_back(avgPercentDerivsRow);
+//
+//            auto currentTime = std::chrono::high_resolution_clock::now();
+//            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTimer).count();
+//
+//            cout << "Time taken so far: " << duration/ 1000.0f << " s" << endl;
+//        }
+//        // Save data to csv
+//        cout << "save data to file for " << methodNames[testIndex] << endl;
+//        std::string taskPrefix = activeModelTranslator->modelName + "_" + methodNames[testIndex];
+//        yamlReader->saveResultsData_MPC(taskPrefix, horizonNames, finalCosts, avgHzs,
+//                                        avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
+//    }
+//
+//    cout << "tests exited correctly \n";
+//    return 1;
+//}
 
 int generateTestingData_MPCHorizons(){
     playback = false;
@@ -1281,49 +1448,71 @@ int generateTestingData_MPCHorizons(){
     return 1;
 }
 
-//void genericTesting(){
-//    // Initialise trajectory from csv and genrate A, B, steta and controls
-//    std::string taskPrefix = activeModelTranslator->model_name;
-//    MatrixXd startStateVector;
-//    startStateVector.resize(activeModelTranslator->state_vector_size, 1);
-//
-//    derivative_interpolator derivInterpolator = activeOptimiser->returnDerivativeInterpolator();
-//    derivInterpolator.keypoint_method = "setInterval";
-//    derivInterpolator.min_N = 1;
-//    derivInterpolator.max_N = 1;
-//    activeOptimiser->setDerivativeInterpolator(derivInterpolator);
-//
-//
-//    for(int i = 0; i < 100; i++){
-//
-//        yamlReader->loadTaskFromFile(taskPrefix, i, startStateVector, activeModelTranslator->X_desired);
-//        activeModelTranslator->X_start = startStateVector;
-//
-//        cout << "start state " << activeModelTranslator->X_start << endl;
-//        cout << "model_name: " << activeModelTranslator->model_name << endl;
-//
-//        activeModelTranslator->SetStateVector(startStateVector, MASTER_RESET_DATA);
-//        activeModelTranslator->active_physics_simulator->stepSimulator(5, MASTER_RESET_DATA);
-//        if(activeModelTranslator->active_physics_simulator->checkIfDataIndexExists(0)){
-//            activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
-//        }
-//        else{
-//
-//            activeModelTranslator->active_physics_simulator->appendSystemStateToEnd(MASTER_RESET_DATA);
-//        }
-//
-//        int setupHorizon = 1000;
-//        int optHorizon = 2980;
-//        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(setupHorizon);
-//        activeModelTranslator->active_physics_simulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-//        std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(optHorizon);
-//
-//        activeOptimiser->horizonLength = optHorizon;
-//        activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-//
-//        activeOptimiser->rolloutTrajectory(0, true, initOptimisationControls);
-//        activeOptimiser->generateDerivatives();
-//
-//        yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B, activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->model_name, i, optHorizon);
-//    }
-//}
+int assign_task(){
+    if(task == "double_pendulum"){
+        std::shared_ptr<doublePendulum> myDoublePendulum = std::make_shared<doublePendulum>();
+        activeModelTranslator = myDoublePendulum;
+    }
+    else if(task == "acrobot"){
+        std::shared_ptr<acrobot> myAcrobot = std::make_shared<acrobot>();
+        activeModelTranslator = myAcrobot;
+
+    }
+    else if(task == "reaching"){
+        std::shared_ptr<pandaReaching> myReaching = std::make_shared<pandaReaching>();
+        activeModelTranslator = myReaching;
+    }
+    else if(task == "pushing_no_clutter"){
+        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(noClutter);
+        activeModelTranslator = myTwoDPushing;
+
+    }
+    else if(task == "pushing_low_clutter"){
+        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(lowClutter);
+        activeModelTranslator = myTwoDPushing;
+
+    }
+    else if(task == "pushing_moderate_clutter"){
+        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(heavyClutter);
+        activeModelTranslator = myTwoDPushing;
+
+    }
+    else if(task == "pushing_moderate_clutter_constrained"){
+        std::shared_ptr<twoDPushing> myTwoDPushing = std::make_shared<twoDPushing>(constrainedClutter);
+        activeModelTranslator = myTwoDPushing;
+    }
+    else if(task == "box_push_toppling"){
+        cout << "not implemented task yet " << endl;
+        return EXIT_FAILURE;
+    }
+    else if(task == "box_flick_no_clutter"){
+        std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(noClutter);
+        activeModelTranslator = myBoxFlick;
+    }
+    else if(task == "box_flick_low_clutter"){
+        std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(lowClutter);
+        activeModelTranslator = myBoxFlick;
+    }
+    else if(task == "box_flick_moderate_clutter"){
+        std::shared_ptr<boxFlick> myBoxFlick = std::make_shared<boxFlick>(heavyClutter);
+        activeModelTranslator = myBoxFlick;
+    }
+    else if(task == "walker"){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>();
+        activeModelTranslator = myLocomotion;
+    }
+    else if(task == "hopper"){
+//        std::shared_ptr<hopper> myHopper = std::make_shared<hopper>();
+//        activeModelTranslator = myHopper;
+        cout << "not implemented task yet " << endl;
+        return EXIT_FAILURE;
+    }
+    else if(task == "box_sweep"){
+        std::shared_ptr<boxSweep> myBoxSweep = std::make_shared<boxSweep>();
+        activeModelTranslator = myBoxSweep;
+    }
+    else{
+        std::cout << "invalid scene selected, exiting" << std::endl;
+    }
+    return EXIT_SUCCESS;
+}
