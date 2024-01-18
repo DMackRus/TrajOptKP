@@ -114,10 +114,12 @@ int main(int argc, char **argv) {
 //    	 return generateTestingData_MPCHorizons();
 //         return generateTestingData_MPC_asynchronous();
         Testing myTestingObject(iLQROptimiser, activeModelTranslator, activeDifferentiator, activeVisualiser, yamlReader);
-        derivative_interpolator test;
-        test.keypoint_method = "SetInterval";
-        test.minN = 5;
-        return myTestingObject.testing_asynchronus_mpc(test);
+//        derivative_interpolator test;
+//        test.keypoint_method = "SetInterval";
+//        test.minN = 5;
+//        return myTestingObject.testing_asynchronus_mpc(test);
+
+        return myTestingObject.testing_different_minN_asynchronus_mpc(1, 20, 1);
 //        generateTestingData_MPC();
         //generateTestingData();
         //return 0;

@@ -24,6 +24,20 @@ Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
                                                        yamlReader);
 }
 
+int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size){
+
+    for(int i = lowest_minN; i <= higherst_minN; i += step_size){
+        derivative_interpolator keypoint_method;
+        keypoint_method.keypoint_method = "setInterval";
+        keypoint_method.minN = i;
+        keypoint_method.maxN = i;
+
+        testing_asynchronus_mpc(keypoint_method);
+    }
+
+    return EXIT_SUCCESS;
+}
+
 int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
 
     std::string task_prefix = activeModelTranslator->modelName;
@@ -71,7 +85,7 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
     std::vector<double> targetVelocities;
     double minTarget = 0.1;
     double maxTarget = 0.3;
-    int numTests = 5;
+    int numTests = 100;
     double currentVel = minTarget;
 
     for(int i = 0; i < numTests; i++){
@@ -87,6 +101,7 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
     keypoint_method.jerkThresholds = currentInterpolator.jerkThresholds;
     keypoint_method.magVelChangeThresholds = currentInterpolator.magVelChangeThresholds;
     keypoint_method.iterativeErrorThreshold = currentInterpolator.iterativeErrorThreshold;
+    iLQROptimiser->setDerivativeInterpolator(keypoint_method);
 
     finalCosts.clear();
     avgTimeForDerivs.clear();
@@ -100,12 +115,9 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
         yamlReader->loadTaskFromFile(task_prefix, i, X_start, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = X_start;
 
-        // TODO - make this better
+        // TODO - make this better, hard coded for walker atm
         // Change walker desired velocity
         activeModelTranslator->X_desired(10) = targetVelocities[i];
-
-        cout << "start state " << activeModelTranslator->X_start << endl;
-        cout << "desired state " << activeModelTranslator->X_desired << endl;
 
         activeModelTranslator->setStateVector(X_start, MASTER_RESET_DATA);
         activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MASTER_RESET_DATA);
@@ -124,7 +136,6 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
         avgTimeForDerivsRow.push_back(average_time_derivs_ms);
         avgTimeBPRow.push_back(average_time_bp_ms);
         avgTimeFPRow.push_back(average_time_fp_ms);
-
     }
 
     // ----------------------- Save data to file -------------------------------------
@@ -155,6 +166,9 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
 }
 
 int Testing::single_asynchronus_run(bool visualise){
+
+    activeVisualiser->trajectory_controls.clear();
+    activeVisualiser->trajectory_states.clear();
 
     // Make a thread for the optimiser
     std::thread MPC_controls_thread;
@@ -231,7 +245,6 @@ int Testing::single_asynchronus_run(bool visualise){
         activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
 
         final_cost += (activeModelTranslator->costFunction(VISUALISATION_DATA, false) * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep());
-
     }
 
     std::cout << "final cost of entire MPC trajectory was: " << final_cost << "\n";
