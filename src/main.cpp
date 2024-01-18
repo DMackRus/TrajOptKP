@@ -599,7 +599,7 @@ void async_MPC_testing(){
 
     // Some tasks need setup controls to be generated and executed
 //    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+    activeModelTranslator->active_physics_simulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
 
     // Whether optimiser will output useful information
     activeOptimiser->verboseOutput = true;
@@ -641,13 +641,13 @@ void async_MPC_testing(){
 
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
-            activeVisualiser->trajectory_states.push_back(activeModelTranslator->returnStateVector(VISUALISATION_DATA));
+            activeVisualiser->trajectory_states.push_back(activeModelTranslator->ReturnStateVector(VISUALISATION_DATA));
 
             // Set the latest control
-            activeModelTranslator->setControlVector(next_control, VISUALISATION_DATA);
+            activeModelTranslator->SetControlVector(next_control, VISUALISATION_DATA);
 
             // Update the simulation
-            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
+            activeModelTranslator->active_physics_simulator->stepSimulator(1, VISUALISATION_DATA);
 
             // Update the visualisation
             // Unsure why rendering every time causes it to lag so much more???
@@ -662,7 +662,7 @@ void async_MPC_testing(){
             auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
             // compare how long we took versus the timestep of the model
-            int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
+            int difference_ms = (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
             if(difference_ms > 0) {
                 std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, sleeping for "
@@ -673,7 +673,7 @@ void async_MPC_testing(){
                 std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
 
 
-            activeModelTranslator->X_desired(1) = activeModelTranslator->returnStateVector(VISUALISATION_DATA)(1) + 0.15;
+            activeModelTranslator->X_desired(1) = activeModelTranslator->ReturnStateVector(VISUALISATION_DATA)(1) + 0.15;
 
         }
 
@@ -684,13 +684,13 @@ void async_MPC_testing(){
         MPC_controls_thread.join();
 
         double cost = 0.0f;
-        activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+        activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
         for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-            activeModelTranslator->setControlVector(activeVisualiser->trajectory_controls[i], VISUALISATION_DATA);
-            activeModelTranslator->setStateVector(activeVisualiser->trajectory_states[i], VISUALISATION_DATA);
-            activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
+            activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], VISUALISATION_DATA);
+            activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], VISUALISATION_DATA);
+            activeModelTranslator->active_physics_simulator->forwardSimulator(VISUALISATION_DATA);
 //            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
-            cost += (activeModelTranslator->costFunction(VISUALISATION_DATA, false) * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep());
+            cost += (activeModelTranslator->CostFunction(VISUALISATION_DATA, false) * activeModelTranslator->active_physics_simulator->returnModelTimeStep());
 
 //            activeVisualiser->render("live-MPC");
 
@@ -865,16 +865,16 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
     if(!ASYNC_MPC){
         trajecCost = 0.0f;
-        activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+        activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
         for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
-            MatrixXd startState = activeModelTranslator->returnStateVector(VISUALISATION_DATA);
+            MatrixXd startState = activeModelTranslator->ReturnStateVector(VISUALISATION_DATA);
             MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
-            double stateCost = activeModelTranslator->costFunction(VISUALISATION_DATA, false);
-            trajecCost += stateCost  * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep();
+            double stateCost = activeModelTranslator->CostFunction(VISUALISATION_DATA, false);
+            trajecCost += stateCost  * activeModelTranslator->active_physics_simulator->returnModelTimeStep();
 
-            activeModelTranslator->setControlVector(nextControl, VISUALISATION_DATA);
-            activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
+            activeModelTranslator->SetControlVector(nextControl, VISUALISATION_DATA);
+            activeModelTranslator->active_physics_simulator->stepSimulator(1, VISUALISATION_DATA);
         }
     }
 

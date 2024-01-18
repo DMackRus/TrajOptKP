@@ -13,7 +13,7 @@ class Testing{
 
 public:
     Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
-            std::shared_ptr<modelTranslator> activeModelTranslator_,
+            std::shared_ptr<ModelTranslator> activeModelTranslator_,
             std::shared_ptr<differentiator> activeDifferentiator_,
             std::shared_ptr<visualizer> activeVisualiser_,
             std::shared_ptr<fileHandler> yamlReader_);
@@ -61,7 +61,7 @@ public:
 
 
     std::shared_ptr<interpolatediLQR> iLQROptimiser;
-    std::shared_ptr<modelTranslator> activeModelTranslator;
+    std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<differentiator> activeDifferentiator;
     std::shared_ptr<visualizer> activeVisualiser;
     std::shared_ptr<fileHandler> yamlReader;

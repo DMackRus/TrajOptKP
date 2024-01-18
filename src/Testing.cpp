@@ -5,7 +5,7 @@
 #include "Testing.h"
 
 Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
-                 std::shared_ptr<modelTranslator> activeModelTranslator_,
+                 std::shared_ptr<ModelTranslator> activeModelTranslator_,
                  std::shared_ptr<differentiator> activeDifferentiator_,
                  std::shared_ptr<visualizer> activeVisualiser_,
                  std::shared_ptr<fileHandler> yamlReader_) {
@@ -16,10 +16,10 @@ Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
     activeVisualiser = activeVisualiser_;
     yamlReader = yamlReader_;
 
-    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
+    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
 
     activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
-    iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
+    iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator,
                                                        activeDifferentiator, yamlReader_->maxHorizon, activeVisualiser,
                                                        yamlReader);
 }
@@ -40,7 +40,7 @@ int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int highers
 
 int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
 
-    std::string task_prefix = activeModelTranslator->modelName;
+    std::string task_prefix = activeModelTranslator->model_name;
     std::cout << "beginning testing asynchronus MPC for " << task_prefix << std::endl;
 
     // start timer here
@@ -111,7 +111,7 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
 
     for (int i = 0; i < targetVelocities.size(); i++) {
         // Load start and desired state from csv file
-        MatrixXd X_start(activeModelTranslator->stateVectorSize, 1);
+        MatrixXd X_start(activeModelTranslator->state_vector_size, 1);
         yamlReader->loadTaskFromFile(task_prefix, i, X_start, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = X_start;
 
@@ -119,11 +119,11 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
         // Change walker desired velocity
         activeModelTranslator->X_desired(10) = targetVelocities[i];
 
-        activeModelTranslator->setStateVector(X_start, MASTER_RESET_DATA);
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, MASTER_RESET_DATA);
-        activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
-        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-        activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+        activeModelTranslator->SetStateVector(X_start, MASTER_RESET_DATA);
+        activeModelTranslator->active_physics_simulator->stepSimulator(1, MASTER_RESET_DATA);
+        activeModelTranslator->active_physics_simulator->appendSystemStateToEnd(MASTER_RESET_DATA);
+        activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+        activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
         // Perform the optimisation MPC test here asynchronously
         single_asynchronus_run(true);
@@ -201,13 +201,13 @@ int Testing::single_asynchronus_run(bool visualise){
 
         // Store latest control and state in a replay buffer
         activeVisualiser->trajectory_controls.push_back(next_control);
-        activeVisualiser->trajectory_states.push_back(activeModelTranslator->returnStateVector(VISUALISATION_DATA));
+        activeVisualiser->trajectory_states.push_back(activeModelTranslator->ReturnStateVector(VISUALISATION_DATA));
 
         // Set the latest control
-        activeModelTranslator->setControlVector(next_control, VISUALISATION_DATA);
+        activeModelTranslator->SetControlVector(next_control, VISUALISATION_DATA);
 
         // Update the simulation
-        activeModelTranslator->activePhysicsSimulator->stepSimulator(1, VISUALISATION_DATA);
+        activeModelTranslator->active_physics_simulator->stepSimulator(1, VISUALISATION_DATA);
 
         // Update the visualisation
         // Unsure why rendering every time causes it to lag so much more???
@@ -222,7 +222,7 @@ int Testing::single_asynchronus_run(bool visualise){
         auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
         // compare how long we took versus the timestep of the model
-        int difference_ms = (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
+        int difference_ms = (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
@@ -238,13 +238,13 @@ int Testing::single_asynchronus_run(bool visualise){
     MPC_controls_thread.join();
 
     final_cost = 0.0f;
-    activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+    activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
     for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-        activeModelTranslator->setControlVector(activeVisualiser->trajectory_controls[i], VISUALISATION_DATA);
-        activeModelTranslator->setStateVector(activeVisualiser->trajectory_states[i], VISUALISATION_DATA);
-        activeModelTranslator->activePhysicsSimulator->forwardSimulator(VISUALISATION_DATA);
+        activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], VISUALISATION_DATA);
+        activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], VISUALISATION_DATA);
+        activeModelTranslator->active_physics_simulator->forwardSimulator(VISUALISATION_DATA);
 
-        final_cost += (activeModelTranslator->costFunction(VISUALISATION_DATA, false) * activeModelTranslator->activePhysicsSimulator->returnModelTimeStep());
+        final_cost += (activeModelTranslator->CostFunction(VISUALISATION_DATA, false) * activeModelTranslator->active_physics_simulator->returnModelTimeStep());
     }
 
     std::cout << "final cost of entire MPC trajectory was: " << final_cost << "\n";
@@ -275,10 +275,10 @@ void Testing::asynchronus_optimiser_worker(){
 
     int horizon = 80;
 
-    initOptimisationControls = activeModelTranslator->createInitOptimisationControls(horizon);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(0, MASTER_RESET_DATA);
-    activeModelTranslator->activePhysicsSimulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+    initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(horizon);
+    activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
+    activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
     optimisedControls = iLQROptimiser->optimise(0, initOptimisationControls, 5, 4, horizon);
 
@@ -292,8 +292,8 @@ void Testing::asynchronus_optimiser_worker(){
 
         visualCounter++;
 
-        activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, VISUALISATION_DATA);
-        activeModelTranslator->activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+        activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, VISUALISATION_DATA);
+        activeModelTranslator->active_physics_simulator->copySystemState(0, MAIN_DATA_STATE);
 
 
         int current_control_index = activeVisualiser->current_control_index;
@@ -317,7 +317,7 @@ void Testing::asynchronus_optimiser_worker(){
         std::mutex mtx;
         mtx.lock();
 
-        int optTimeToTimeSteps = iLQROptimiser->optTime / (activeModelTranslator->activePhysicsSimulator->returnModelTimeStep() * 1000);
+        int optTimeToTimeSteps = iLQROptimiser->optTime / (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000);
 
         int low_bound = optTimeToTimeSteps - 3;
         if (low_bound < 0) low_bound = 0;
@@ -327,14 +327,14 @@ void Testing::asynchronus_optimiser_worker(){
         // By the time we have computed optimal controls, main visualisation will be some number
         // of time-steps ahead. We need to find the correct control to apply.
 
-        MatrixXd current_vis_state = activeModelTranslator->returnStateVector(VISUALISATION_DATA);
+        MatrixXd current_vis_state = activeModelTranslator->ReturnStateVector(VISUALISATION_DATA);
 
         double smallestError = 1000.00;
         int bestMatchingStateIndex = 0;
         // TODO - possible issue if optimisation time > horizon
         for(int i = low_bound; i < high_bound; i++){
             double currError = 0.0f;
-            for(int j = 0; j < activeModelTranslator->stateVectorSize; j++){
+            for(int j = 0; j < activeModelTranslator->state_vector_size; j++){
                 currError += abs(iLQROptimiser->X_old[i](j) - current_vis_state(j));
             }
 
