@@ -66,7 +66,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
                 src/optimiser/gradDescent.cpp
                 src/modelTranslator/boxSweep.cpp
                 src/modelTranslator/acrobot.cpp
-                src/modelTranslator/hopper.cpp)
+                src/modelTranslator/hopper.cpp
+                src/Testing.cpp)
 
 include_directories(
         include
