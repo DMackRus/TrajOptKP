@@ -18,7 +18,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
     // TODO - fix this - add acell thresholds to yaml
     activeKeyPointMethod.accell_thresholds = activeModelTranslator->jerk_thresholds;
     activeKeyPointMethod.iterative_error_threshold = activeModelTranslator->iterative_error_threshold;
-    activeKeyPointMethod.velocity_change_threshold = activeModelTranslator->velocity_change_thresholds;
+    activeKeyPointMethod.velocity_change_thresholds = activeModelTranslator->velocity_change_thresholds;
 
     keypoint_generator = std::make_shared<KeyPointGenerator>(activeDifferentiator, activePhysicsSimulator);
 

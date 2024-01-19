@@ -99,7 +99,7 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method){
     // Setup the derivative interpolator object
     struct keypoint_method currentInterpolator = iLQROptimiser->returnDerivativeInterpolator();
     keypoint_method.jerk_thresholds = currentInterpolator.jerk_thresholds;
-    keypoint_method.velocity_change_threshold = currentInterpolator.velocity_change_threshold;
+    keypoint_method.velocity_change_thresholds = currentInterpolator.velocity_change_thresholds;
     keypoint_method.iterative_error_threshold = currentInterpolator.iterative_error_threshold;
     iLQROptimiser->setDerivativeInterpolator(keypoint_method);
 
