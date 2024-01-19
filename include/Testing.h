@@ -38,7 +38,7 @@ public:
      *
      * @Return: 1 if successful, 0 if not
      */
-    int testing_asynchronus_mpc(derivative_interpolator keypoint_method);
+    int testing_asynchronus_mpc(keypoint_method keypoint_method);
 
     /**
      * This function performs an asynchronus MPC optimisation for a set number of time-steps

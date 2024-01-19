@@ -20,8 +20,7 @@ FileHandler::FileHandler(){
 
 }
 
-
-void FileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfig){
+void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_taskConfig){
     YAML::Node node = YAML::LoadFile(projectParentPath + yamlFilePath);
 
     // General task settings
@@ -240,7 +239,6 @@ void FileHandler::readModelConfigFile(std::string yamlFilePath, task &_taskConfi
             tempBody.linearMagVelThreshold[i] = linearMagVelThreshold[i];
             tempBody.angularMagVelThreshold[i] = angularMagVelThreshold[i];
         }
-
         _taskConfig.bodiesStates.push_back(tempBody);
     }
 }

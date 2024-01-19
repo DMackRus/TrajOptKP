@@ -275,10 +275,10 @@ void onetaskGenerateTestingData(){
             activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
 
             // Setup interpolation method
-            derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
-            currentInterpolator.keypoint_method = keyPointMethods[j];
-            currentInterpolator.minN = minN[j];
-            currentInterpolator.maxN = maxN[j];
+            keypoint_method currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+            currentInterpolator.name = keyPointMethods[j];
+            currentInterpolator.min_N = minN[j];
+            currentInterpolator.max_N = maxN[j];
             activeOptimiser->setDerivativeInterpolator(currentInterpolator);
 
             std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 8, 2, optHorizon);
@@ -364,9 +364,9 @@ void generateFilteringData(){
     FIRTests.push_back({0.05, 0.05, 0.15, 0.2, 0.2, 0.2, 0.15, 0.05, 0.05});
     FIRTests.push_back({0.05, 0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05});
 
-    derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
-    currentInterpolator.keypoint_method = "setInterval";
-    currentInterpolator.minN = 1;
+    keypoint_method currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+    currentInterpolator.name = "setInterval";
+    currentInterpolator.min_N = 1;
     activeOptimiser->setDerivativeInterpolator(currentInterpolator);
 
     for (int i = 0; i < numTests; i++) {
@@ -1053,10 +1053,10 @@ void generateTestingData_MPC(){
                 cout << "current method: " << methodNames[j] << "\n";
 
                 // Setup the keypoint method
-                derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
-                currentInterpolator.minN = minN[j];
-                currentInterpolator.maxN = maxN[j];
-                currentInterpolator.keypoint_method = keypointMethods[j];
+                keypoint_method currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+                currentInterpolator.min_N = minN[j];
+                currentInterpolator.max_N = maxN[j];
+                currentInterpolator.name = keypointMethods[j];
                 activeOptimiser->setDerivativeInterpolator(currentInterpolator);
 
                 activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
@@ -1354,10 +1354,10 @@ int generateTestingData_MPCHorizons(){
         int testIndex = testIndices[k];
         cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
 
-        derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
-        currentInterpolator.minN = minN[testIndex];
-        currentInterpolator.maxN = maxN[testIndex];
-        currentInterpolator.keypoint_method = keypoint_method[testIndex];
+        struct keypoint_method currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+        currentInterpolator.min_N = minN[testIndex];
+        currentInterpolator.max_N = maxN[testIndex];
+        currentInterpolator.name = keypoint_method[testIndex];
         activeOptimiser->setDerivativeInterpolator(currentInterpolator);
 
         finalCosts.clear();

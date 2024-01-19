@@ -6,6 +6,8 @@ Differentiator::Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator
 
 }
 
+// Hack to prevent strange segmentation faults I was epxeriecning when running my code with O3 optimisation flag.
+// If anyone can find a way to remove these pragma commands without it breaking the code that would be fantastic  ... :).
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId){

@@ -27,10 +27,10 @@ Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
 int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size){
 
     for(int i = lowest_minN; i <= higherst_minN; i += step_size){
-        derivative_interpolator keypoint_method;
-        keypoint_method.keypoint_method = "setInterval";
-        keypoint_method.minN = i;
-        keypoint_method.maxN = i;
+        keypoint_method keypoint_method;
+        keypoint_method.name = "setInterval";
+        keypoint_method.min_N = i;
+        keypoint_method.max_N = i;
 
         testing_asynchronus_mpc(keypoint_method);
     }
@@ -38,7 +38,7 @@ int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int highers
     return EXIT_SUCCESS;
 }
 
-int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
+int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method){
 
     std::string task_prefix = activeModelTranslator->model_name;
     std::cout << "beginning testing asynchronus MPC for " << task_prefix << std::endl;
@@ -67,11 +67,11 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
     // -----------------------------------------------------------------------------
 
     std::string method_name;
-    if(keypoint_method.keypoint_method == "setInterval") {
-        method_name = keypoint_method.keypoint_method + "_" + std::to_string(keypoint_method.minN);
+    if(keypoint_method.name == "setInterval") {
+        method_name = keypoint_method.name + "_" + std::to_string(keypoint_method.min_N);
     }
     else{
-        method_name = keypoint_method.keypoint_method + "_" + std::to_string(keypoint_method.minN) + "_" + std::to_string(keypoint_method.maxN);
+        method_name = keypoint_method.name + "_" + std::to_string(keypoint_method.min_N) + "_" + std::to_string(keypoint_method.max_N);
     }
 
     std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
@@ -97,10 +97,10 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
     iLQROptimiser->verboseOutput = false;
 
     // Setup the derivative interpolator object
-    derivative_interpolator currentInterpolator = iLQROptimiser->returnDerivativeInterpolator();
-    keypoint_method.jerkThresholds = currentInterpolator.jerkThresholds;
-    keypoint_method.magVelChangeThresholds = currentInterpolator.magVelChangeThresholds;
-    keypoint_method.iterativeErrorThreshold = currentInterpolator.iterativeErrorThreshold;
+    struct keypoint_method currentInterpolator = iLQROptimiser->returnDerivativeInterpolator();
+    keypoint_method.jerk_thresholds = currentInterpolator.jerk_thresholds;
+    keypoint_method.velocity_change_threshold = currentInterpolator.velocity_change_threshold;
+    keypoint_method.iterative_error_threshold = currentInterpolator.iterative_error_threshold;
     iLQROptimiser->setDerivativeInterpolator(keypoint_method);
 
     finalCosts.clear();

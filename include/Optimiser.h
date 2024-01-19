@@ -19,23 +19,8 @@
 #include "ModelTranslator.h"
 #include "PhysicsSimulator.h"
 #include "Differentiator.h"
+#include "KeyPointGenerator.h"
 #include <atomic>
-
-struct indexTuple{
-    int startIndex;
-    int endIndex;
-};
-
-struct derivative_interpolator{
-    std::string keypoint_method;
-    int minN;
-    int maxN;
-    std::vector<double> jerkThresholds;
-    std::vector<double> accelThresholds;
-    double iterativeErrorThreshold;
-    std::vector<double> magVelChangeThresholds;
-
-};
 
 class Optimiser{
 public:
@@ -48,18 +33,18 @@ public:
 
     void returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
-    derivative_interpolator returnDerivativeInterpolator();
-    void setDerivativeInterpolator(derivative_interpolator _derivativeInterpolator);
+    keypoint_method returnDerivativeInterpolator();
+    void setDerivativeInterpolator(keypoint_method _derivativeInterpolator);
 
     void worker(int threadId);
     std::vector<void (Differentiator::*)(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId)> tasks;
     std::atomic<int> current_iteration;
     int num_threads_iterations;
     std::vector<int> timeIndicesGlobal;
-    std::vector<std::vector<int>> keypointsGlobal;
+
 
     int currentTrajecNumber = 0;
-    std::string keyPointsMethodsStrings[5] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error", "magVel_change"};
+//    std::string keyPointsMethodsStrings[5] = {"setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error", "magVel_change"};
 
     double optTime;
 
@@ -115,25 +100,16 @@ public:
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<PhysicsSimulator> activePhysicsSimulator;
+    std::shared_ptr<KeyPointGenerator> keypoint_generator;
 
     int dof;
     int num_ctrl;
-    derivative_interpolator activeDerivativeInterpolator;
+
+    keypoint_method activeKeyPointMethod;
+    std::vector<std::vector<int>> keypointsGlobal;
 
     std::shared_ptr<FileHandler> activeYamlReader;
     std::shared_ptr<Differentiator> activeDifferentiator;
-
-    std::vector<std::vector<int>> computedKeyPoints;
-
-    // Generate keypoints we will calculate derivatives at
-    std::vector<std::vector<int>> generateKeyPoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
-    std::vector<std::vector<int>> generateKeyPointsIteratively();
-    bool checkDoFColumnError(indexTuple indices, int dof);
-    std::vector<std::vector<int>> generateKeyPointsAdaptive(std::vector<MatrixXd> trajecProfile);
-    std::vector<std::vector<int>> generateKeyPointsMagVelChange(std::vector<MatrixXd> velProfile);
-    std::vector<MatrixXd> generateJerkProfile();
-    std::vector<MatrixXd> generateAccelProfile();
-    std::vector<MatrixXd> generateVelProfile();
 
     // Calculate derivatives at key points
     void getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints);
