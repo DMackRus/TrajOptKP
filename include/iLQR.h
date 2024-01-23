@@ -51,28 +51,28 @@ public:
      * Rollout the trajectory from an initial starting state and control sequence. Return the cost of the trajectory.
      *
      *
-     * @param initialDataIndex - The data index of the simulation data which should be the starting state of this rollout.
-     * @param saveStates - Whether or not to save the states of the rollout to both X_old, and the simulator data vector.
-     * @param initControls - The control sequence to apply from the initial state.
+     * @param initial_data_index - The data index of the simulation data which should be the starting state of this rollout.
+     * @param save_states - Whether or not to save the states of the rollout to both X_old, and the simulator data vector.
+     * @param initial_controls - The control sequence to apply from the initial state.
      *
      * @return double - The rolling cost of the trajectory.
      */
-    double RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
+    double RolloutTrajectory(int initial_data_index, bool save_states, std::vector<MatrixXd> initial_controls) override;
 
     /**
      * Optimise the current trajectory until convergence, or max iterations has been reached. Uses the normal iLQR algorithm
      * to optimsie the trajectory. Step 1 - Compute derivatives, Step 2 - backwards pass, Step 3 - forwards pass with linesearch.
      * Step 4 - check for convergence.
      *
-     * @param initialDataIndex - The data index of the simulation data which should be the starting state of optimisation.
-     * @param initControls - The initial "warm start" trajectory to optimise from.
-     * @param maxIter - Maximum number of optimisation iterations.
-     * @param minIter - Minimum number of optimisation iterations.
-     * @param _horizonLength - Horizon length to optimise to.
+     * @param initial_data_index - The data index of the simulation data which should be the starting state of optimisation.
+     * @param initial_controls - The initial "warm start" trajectory to optimise from.
+     * @param max_iterations - Maximum number of optimisation iterations.
+     * @param min_iterations - Minimum number of optimisation iterations.
+     * @param horizon_length - Horizon length to optimise to.
      *
      * @return std::vector<MatrixXd> - The new optimal control sequence.
      */
-    std::vector<MatrixXd> Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
+    std::vector<MatrixXd> Optimise(int initial_data_index, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length) override;
 
     /**
      * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
@@ -92,21 +92,21 @@ public:
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
      * sequentially over different alpha values to try find a new optimal sequence of controls.
      *
-     * @param oldCost - Previous cost of the old trajectory.
+     * @param old_cost - Previous cost of the old trajectory.
      *
      * @return double - The cost of the new trajectory.
      */
-    double ForwardsPass(double oldCost);
+    double ForwardsPass(double old_cost);
 
     /**
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
      * in parallel over different alpha values to try find a new optimal sequence of controls.
      *
-     * @param oldCost - Previous cost of the old trajectory.
+     * @param old_cost - Previous cost of the old trajectory.
      *
      * @return double - The cost of the new trajectory.
      */
-    double ForwardsPassParallel(double oldCost);
+    double ForwardsPassParallel(double old_cost);
 
     // Whether to save trajectory information to file
     bool save_trajec_information = false;
@@ -122,7 +122,9 @@ private:
     int maxHorizon = 0;
 
     // Feedback gains matrices
+    // open loop feedback gains
     vector<MatrixXd> k;
+    // State dependant feedback matrices
     vector<MatrixXd> K;
 
     // Visualiser object

@@ -52,11 +52,11 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Ph
 
 }
 
-double iLQR::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
+double iLQR::RolloutTrajectory(int initial_data_index, bool save_states, std::vector<MatrixXd> initial_controls){
     double cost = 0.0f;
 
-    if(initialDataIndex != MAIN_DATA_STATE){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, initialDataIndex);
+    if(initial_data_index != MAIN_DATA_STATE){
+        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, initial_data_index);
     }
 
     MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
@@ -76,7 +76,7 @@ double iLQR::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vecto
 
     for(int i = 0; i < horizonLength; i++){
         // set controls
-        activeModelTranslator->SetControlVector(initControls[i], MAIN_DATA_STATE);
+        activeModelTranslator->SetControlVector(initial_controls[i], MAIN_DATA_STATE);
 
         // Integrate simulator
         activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
@@ -94,7 +94,7 @@ double iLQR::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vecto
         }
 
         // If required to save states to trajectory tracking, then save state
-        if(saveStates){
+        if(save_states){
             X_old[i + 1] = Xt.replicate(1, 1);
             U_old[i] = Ut.replicate(1, 1);
             if(activePhysicsSimulator->checkIfDataIndexExists(i + 1)){
@@ -120,8 +120,8 @@ double iLQR::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vecto
 //
 //  Optimise - Optimise a sequence of controls for a given problem
 //  @Params:
-//  initialDataIndex - the data index of the system state that the optimisation problem should start from
-//  initControls - The initial controls for the problem
+//  initial_data_index - the data index of the system state that the optimisation problem should start from
+//  initial_controls - The initial controls for the problem
 //  maxIterations - The maximum iterations of the solver before it should return a new set of controls
 //  horizonLength - How far into the future the Optimiser should look when optimising the controls
 //
@@ -129,7 +129,7 @@ double iLQR::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vecto
 //  optimisedControls - New optimised controls that give a lower cost than the initial controls
 //
 // -------------------------------------------------------------------------------------------------------
-std::vector<MatrixXd> iLQR::Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
+std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length){
     if(verbose_output) {
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << " ------ " << activeModelTranslator->model_name << " ------ " << endl;
@@ -141,8 +141,8 @@ std::vector<MatrixXd> iLQR::Optimise(int initialDataIndex, std::vector<MatrixXd>
     
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls;
-    horizonLength = _horizonLength;
-    numberOfTotalDerivs = _horizonLength * dof;
+    horizonLength = horizon_length;
+    numberOfTotalDerivs = horizon_length * dof;
     // TODO - decide whether to use this or not, it seems to break when i remove it.
 //    lambda = 0.1;
     double oldCost = 0.0f;
@@ -167,7 +167,7 @@ std::vector<MatrixXd> iLQR::Optimise(int initialDataIndex, std::vector<MatrixXd>
     // ------------------------------------------------------------------------
 
     auto time_start = high_resolution_clock::now();
-    oldCost = RolloutTrajectory(initialDataIndex, true, initControls);
+    oldCost = RolloutTrajectory(initial_data_index, true, initial_controls);
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
 //    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
@@ -175,7 +175,7 @@ std::vector<MatrixXd> iLQR::Optimise(int initialDataIndex, std::vector<MatrixXd>
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     // Optimise for a set number of iterations
-    for(int i = 0; i < maxIter; i++){
+    for(int i = 0; i < max_iterations; i++){
         numIterationsForConvergence++;
 
         //STEP 1 - If forwards pass changed the trajectory, -
@@ -253,7 +253,7 @@ std::vector<MatrixXd> iLQR::Optimise(int initialDataIndex, std::vector<MatrixXd>
                 }
             }
 
-            if(converged && (i >= minIter))
+            if(converged && (i >= min_iterations))
             {
                 break;
             }
@@ -414,7 +414,7 @@ bool iLQR::CheckMatrixPD(Ref<MatrixXd> matrix){
 }
 
 // ------------------------------------------- STEP 3 FUNCTIONS (FORWARDS PASS) ----------------------------------------------
-double iLQR::ForwardsPass(double oldCost){
+double iLQR::ForwardsPass(double old_cost){
     double newCost;
     bool costReduction = false;
     int alphaCount = 0;
@@ -487,7 +487,7 @@ double iLQR::ForwardsPass(double oldCost){
 
 //        cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
 
-        if(newCost < oldCost){
+        if(newCost < old_cost){
             costReduction = true;
         }
         else{
@@ -499,7 +499,7 @@ double iLQR::ForwardsPass(double oldCost){
     }
 
     // If the cost was reduced
-    if(newCost < oldCost){
+    if(newCost < old_cost){
         activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
         //Copy the rollout buffer to saved systems state list, prevents recomputation using optimal controls
@@ -514,10 +514,10 @@ double iLQR::ForwardsPass(double oldCost){
         return newCost;
     }
 
-    return oldCost;
+    return old_cost;
 }
 
-double iLQR::ForwardsPassParallel(double oldCost){
+double iLQR::ForwardsPassParallel(double old_cost){
     auto start = std::chrono::high_resolution_clock::now();
     double newCost = 0.0;
     bool costReduction = false;
@@ -614,7 +614,7 @@ double iLQR::ForwardsPassParallel(double oldCost){
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     // If the cost was reduced - update all the data states
-    if(newCost < oldCost){
+    if(newCost < old_cost){
         for(int i = 0; i < horizonLength; i++){
 
             activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
@@ -635,6 +635,6 @@ double iLQR::ForwardsPassParallel(double oldCost){
         return newCost;
     }
 
-    return oldCost;
+    return old_cost;
 }
 
