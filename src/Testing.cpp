@@ -4,7 +4,7 @@
 
 #include "Testing.h"
 
-Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
+Testing::Testing(std::shared_ptr<iLQR> iLQROptimiser_,
                  std::shared_ptr<ModelTranslator> activeModelTranslator_,
                  std::shared_ptr<Differentiator> activeDifferentiator_,
                  std::shared_ptr<Visualiser> activeVisualiser_,
@@ -19,9 +19,9 @@ Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
 
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
-    iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator,
-                                                       activeDifferentiator, yamlReader_->maxHorizon, activeVisualiser,
-                                                       yamlReader);
+    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator,
+                                           activeDifferentiator, yamlReader_->maxHorizon, activeVisualiser,
+                                           yamlReader);
 }
 
 int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size){

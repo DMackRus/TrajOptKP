@@ -12,7 +12,7 @@
 class Testing{
 
 public:
-    Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
+    Testing(std::shared_ptr<iLQR> iLQROptimiser_,
             std::shared_ptr<ModelTranslator> activeModelTranslator_,
             std::shared_ptr<Differentiator> activeDifferentiator_,
             std::shared_ptr<Visualiser> activeVisualiser_,
@@ -60,7 +60,7 @@ public:
     void asynchronus_optimiser_worker();
 
 
-    std::shared_ptr<interpolatediLQR> iLQROptimiser;
+    std::shared_ptr<iLQR> iLQROptimiser;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<Differentiator> activeDifferentiator;
     std::shared_ptr<Visualiser> activeVisualiser;

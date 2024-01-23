@@ -148,7 +148,7 @@ std::vector<MatrixXd> GradDescent::Optimise(int initialDataIndex, std::vector<Ma
         // STEP 3 - rollout new trajectory with line searching parameter for optimal sequence of controls
         bool costReduced;
         auto fp_start = high_resolution_clock::now();
-//        newCost = forwardsPass(oldCost, costReduced);
+//        newCost = ForwardsPass(oldCost, costReduced);
         newCost = forwardsPassParallel(oldCost, costReduced);
         auto fp_stop = high_resolution_clock::now();
         auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);

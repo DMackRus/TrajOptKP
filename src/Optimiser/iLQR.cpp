@@ -1,10 +1,10 @@
 #include "iLQR.h"
 
-interpolatediLQR::interpolatediLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<Differentiator> _differentiator, int _maxHorizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
+iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<Differentiator> _differentiator, int _maxHorizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
         Optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
 
     maxHorizon = _maxHorizon;
-    activeVisualizer = _visualizer;
+    active_visualiser = _visualizer;
 
     // initialise all vectors of matrices
     for(int i = 0; i < maxHorizon; i++){
@@ -52,7 +52,7 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<ModelTranslator> _modelTransl
 
 }
 
-double interpolatediLQR::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
+double iLQR::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
     double cost = 0.0f;
 
     if(initialDataIndex != MAIN_DATA_STATE){
@@ -129,7 +129,7 @@ double interpolatediLQR::RolloutTrajectory(int initialDataIndex, bool saveStates
 //  optimisedControls - New optimised controls that give a lower cost than the initial controls
 //
 // -------------------------------------------------------------------------------------------------------
-std::vector<MatrixXd> interpolatediLQR::Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
+std::vector<MatrixXd> iLQR::Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
     if(verbose_output) {
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << " ------ " << activeModelTranslator->model_name << " ------ " << endl;
@@ -188,7 +188,7 @@ std::vector<MatrixXd> interpolatediLQR::Optimise(int initialDataIndex, std::vect
         time_get_derivs_ms.push_back(linDuration.count() / 1000.0f);
         timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 
-        if(saveTrajecInfomation){
+        if(save_trajec_information){
 
             activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
         }
@@ -199,11 +199,11 @@ std::vector<MatrixXd> interpolatediLQR::Optimise(int initialDataIndex, std::vect
 
         auto bp_start = high_resolution_clock::now();
         while(!validBackwardsPass){
-            validBackwardsPass = backwardsPass_Quu_reg();
+            validBackwardsPass = BackwardsPassQuuRegularisation();
 
             if(!validBackwardsPass){
-                if(lambda < maxLambda){
-                    lambda *= lambdaFactor;
+                if(lambda < max_lambda){
+                    lambda *= lambda_factor;
                 }
                 else{
                     lambdaExit = true;
@@ -211,8 +211,8 @@ std::vector<MatrixXd> interpolatediLQR::Optimise(int initialDataIndex, std::vect
                 }
             }
             else{
-                if(lambda > minLambda){
-                    lambda /= lambdaFactor;
+                if(lambda > min_lambda){
+                    lambda /= lambda_factor;
                 }
             }
         }
@@ -224,14 +224,14 @@ std::vector<MatrixXd> interpolatediLQR::Optimise(int initialDataIndex, std::vect
         if(!lambdaExit){
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
             auto fp_start = high_resolution_clock::now();
-            newCost = forwardsPass(oldCost);
-//            newCost = forwardsPassParallel(oldCost);
+            newCost = ForwardsPass(oldCost);
+//            newCost = ForwardsPassParallel(oldCost);
             auto fp_stop = high_resolution_clock::now();
             auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
             time_forwardsPass_ms.push_back(fpDuration.count() / 1000.0f);
 
             if(verbose_output){
-                cout << "| derivs: " << time_get_derivs_ms[i] << " | backwardsPass: " << time_backwards_pass_ms[i] << " | forwardsPass: " << time_forwardsPass_ms[i] << " ms |\n";
+                cout << "| derivs: " << time_get_derivs_ms[i] << " | backwardsPass: " << time_backwards_pass_ms[i] << " | ForwardsPass: " << time_forwardsPass_ms[i] << " ms |\n";
                 cout << "| Cost went from " << oldCost << " ---> " << newCost << " | \n";
             }
 
@@ -247,9 +247,9 @@ std::vector<MatrixXd> interpolatediLQR::Optimise(int initialDataIndex, std::vect
             }
             else{
                 costReducedLastIter = false;
-                if(lambda < maxLambda){
-                    lambda *= lambdaFactor;
-                    lambda *= lambdaFactor;
+                if(lambda < max_lambda){
+                    lambda *= lambda_factor;
+                    lambda *= lambda_factor;
                 }
             }
 
@@ -305,7 +305,7 @@ std::vector<MatrixXd> interpolatediLQR::Optimise(int initialDataIndex, std::vect
         optimisedControls.push_back(U_old[i]);
     }
 
-    if(saveTrajecInfomation){
+    if(save_trajec_information){
         activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
     }
 
@@ -315,15 +315,13 @@ std::vector<MatrixXd> interpolatediLQR::Optimise(int initialDataIndex, std::vect
 
 
 // ------------------------------------------- STEP 2 FUNCTIONS (BACKWARDS PASS) ----------------------------------------------
-bool interpolatediLQR::backwardsPass_Quu_reg(){
+bool iLQR::BackwardsPassQuuRegularisation(){
     MatrixXd V_x(2*dof, 2*dof);
     V_x = l_x[horizonLength - 1];
     MatrixXd V_xx(2*dof, 2*dof);
     V_xx = l_xx[horizonLength - 1];
     int Quu_pd_check_counter = 0;
     int number_steps_between_pd_checks = 100;
-
-    double timeInverse = 0.0f;
 
     MatrixXd Q_x(2*dof, 1);
     MatrixXd Q_u(num_ctrl, 1);
@@ -360,34 +358,22 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
         }
 
         if(Quu_pd_check_counter >= number_steps_between_pd_checks){
-            if(!isMatrixPD(Q_uu_reg)){
-                cout << "non PD matrix encountered at t = " << t << endl;
+            if(!CheckMatrixPD(Q_uu_reg)){
+                if(verbose_output){
+                    cout << "non PD matrix encountered at t = " << t << endl;
+                }
                 return false;
             }
             Quu_pd_check_counter = 0;
         }
-
-        //  time this using chrono
-//        auto timeStart = std::chrono::high_resolution_clock::now();
 
         auto temp = (Q_uu_reg).ldlt();
         MatrixXd I(num_ctrl, num_ctrl);
         I.setIdentity();
         MatrixXd Q_uu_inv = temp.solve(I);
 
-//        auto timeEnd = std::chrono::high_resolution_clock::now();
-//        auto timeTaken = std::chrono::duration_cast<std::chrono::microseconds>(timeEnd - timeStart);
-//        timeInverse += timeTaken.count()/ 1000000.0f;
-
         k[t] = -Q_uu_inv * Q_u;
         K[t] = -Q_uu_inv * Q_ux;
-
-//        auto temp1 = Q_u.transpose() * Q_uu_inv * Q_ux;
-//        cout << "temp1: " << temp1 << endl;
-//        cout << "Q_x: " << Q_x << endl;
-
-//        V_x = Q_x - (Q_u.transpose() * Q_uu_inv * Q_ux).transpose();
-//        V_xx = Q_xx - (Q_ux.transpose() * Q_uu_inv * Q_ux);
 
         V_x = Q_x + (K[t].transpose() * (Q_uu * k[t])) + (K[t].transpose() * Q_u) + (Q_ux.transpose() * k[t]);
         V_xx = Q_xx + (K[t].transpose() * (Q_uu * K[t])) + (K[t].transpose() * Q_ux) + (Q_ux.transpose() * K[t]);
@@ -410,13 +396,11 @@ bool interpolatediLQR::backwardsPass_Quu_reg(){
         //     cout << "V_x " << V_x << endl;
         //     cout << "K[t] " << K[t] << endl;
         // }
-       
     }
-
     return true;
 }
 
-bool interpolatediLQR::isMatrixPD(Ref<MatrixXd> matrix){
+bool iLQR::CheckMatrixPD(Ref<MatrixXd> matrix){
     bool matrixPD = true;
     //TODO - implement cholesky decomp for PD check and maybe use result for inverse Q_uu
 
@@ -430,7 +414,7 @@ bool interpolatediLQR::isMatrixPD(Ref<MatrixXd> matrix){
 }
 
 // ------------------------------------------- STEP 3 FUNCTIONS (FORWARDS PASS) ----------------------------------------------
-double interpolatediLQR::forwardsPass(double oldCost){
+double iLQR::ForwardsPass(double oldCost){
     double newCost;
     bool costReduction = false;
     int alphaCount = 0;
@@ -496,7 +480,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
 
 //             if(t % 5 == 0){
 //                 const char* fplabel = "fp";
-//                 activeVisualizer->render(fplabel);
+//                 active_visualiser->render(fplabel);
 //             }
 
         }
@@ -533,7 +517,7 @@ double interpolatediLQR::forwardsPass(double oldCost){
     return oldCost;
 }
 
-double interpolatediLQR::forwardsPassParallel(double oldCost){
+double iLQR::ForwardsPassParallel(double oldCost){
     auto start = std::chrono::high_resolution_clock::now();
     double newCost = 0.0;
     bool costReduction = false;
