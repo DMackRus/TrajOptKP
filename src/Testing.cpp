@@ -83,8 +83,8 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method){
     }
 
     std::vector<double> targetVelocities;
-    double minTarget = 0.1;
-    double maxTarget = 0.3;
+    double minTarget = 0.2;
+    double maxTarget = 0.5;
     int numTests = 100;
     double currentVel = minTarget;
 
@@ -94,14 +94,14 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method){
     }
 
     auto startTimer = std::chrono::high_resolution_clock::now();
-    iLQROptimiser->verboseOutput = false;
+    iLQROptimiser->verbose_output = false;
 
     // Setup the derivative interpolator object
-    struct keypoint_method currentInterpolator = iLQROptimiser->returnDerivativeInterpolator();
+    struct keypoint_method currentInterpolator = iLQROptimiser->ReturnCurrentKeypointMethod();
     keypoint_method.jerk_thresholds = currentInterpolator.jerk_thresholds;
     keypoint_method.velocity_change_thresholds = currentInterpolator.velocity_change_thresholds;
     keypoint_method.iterative_error_threshold = currentInterpolator.iterative_error_threshold;
-    iLQROptimiser->setDerivativeInterpolator(keypoint_method);
+    iLQROptimiser->SetCurrentKeypointMethod(keypoint_method);
 
     finalCosts.clear();
     avgTimeForDerivs.clear();
@@ -258,7 +258,7 @@ int Testing::single_asynchronus_run(bool visualise){
 }
 
 void Testing::asynchronus_optimiser_worker(){
-//    void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
+//    void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avg_percent_derivs, double &avgTimeBP, double &avgTimeFP,
 //                          int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
     bool taskComplete = false;
     int visualCounter = 0;
@@ -273,14 +273,14 @@ void Testing::asynchronus_optimiser_worker(){
     // Instantiate init controls
     std::vector<MatrixXd> initOptimisationControls;
 
-    int horizon = 80;
+    int horizon = 100;
 
     initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(horizon);
     activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
     activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
-    optimisedControls = iLQROptimiser->optimise(0, initOptimisationControls, 5, 4, horizon);
+    optimisedControls = iLQROptimiser->Optimise(0, initOptimisationControls, 5, 4, horizon);
 
     MatrixXd currState;
 
@@ -304,12 +304,12 @@ void Testing::asynchronus_optimiser_worker(){
             optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
         }
 
-        optimisedControls = iLQROptimiser->optimise(0, optimisedControls, 1, 1, horizon);
+        optimisedControls = iLQROptimiser->Optimise(0, optimisedControls, 1, 1, horizon);
 
-        timeGettingDerivs.push_back(iLQROptimiser->avgTime_getDerivs_ms);
-        timeBackwardsPass.push_back(iLQROptimiser->avgTime_backwardsPass_ms);
-        timeForwardsPass.push_back(iLQROptimiser->avgTime_forwardsPass_ms);
-        percentagesDerivsCalculated.push_back(iLQROptimiser->avgPercentDerivs);
+        timeGettingDerivs.push_back(iLQROptimiser->avg_time_get_derivs_ms);
+        timeBackwardsPass.push_back(iLQROptimiser->avg_time_backwards_pass_ms);
+        timeForwardsPass.push_back(iLQROptimiser->avg_time_forwards_pass_ms);
+        percentagesDerivsCalculated.push_back(iLQROptimiser->avg_percent_derivs);
 
 
         // If we are use Async visualisation, need to copy our control vector to internal control vector for
@@ -317,7 +317,7 @@ void Testing::asynchronus_optimiser_worker(){
         std::mutex mtx;
         mtx.lock();
 
-        int optTimeToTimeSteps = iLQROptimiser->optTime / (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000);
+        int optTimeToTimeSteps = iLQROptimiser->opt_time_ms / (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000);
 
         int low_bound = optTimeToTimeSteps - 3;
         if (low_bound < 0) low_bound = 0;

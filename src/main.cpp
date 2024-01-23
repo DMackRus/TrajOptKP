@@ -174,7 +174,7 @@ int main(int argc, char **argv) {
     }
     else if(runMode == "Optimise_once"){
         cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
-        activeOptimiser->verboseOutput = true;
+        activeOptimiser->verbose_output = true;
         optimiseOnceandShow();
     }
     else if(runMode == "MPC_until_completion"){
@@ -275,18 +275,18 @@ void onetaskGenerateTestingData(){
             activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
 
             // Setup interpolation method
-            keypoint_method currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+            keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
             currentInterpolator.name = keyPointMethods[j];
             currentInterpolator.min_N = minN[j];
             currentInterpolator.max_N = maxN[j];
-            activeOptimiser->setDerivativeInterpolator(currentInterpolator);
+            activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
 
-            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 8, 2, optHorizon);
+            std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(0, initOptimisationControls, 8, 2, optHorizon);
 
 //            yamlReader->saveTrajecInfomation(activeOptimiser->A, activeOptimiser->B, activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->model_name, i, optHorizon);
 
             // Return testing data and append appropriately
-            activeOptimiser->returnOptimisationData(optTime, costReduction, avgPercentageDerivs, avgTimeForDerivs, numIterationsForConvergence);
+            activeOptimiser->ReturnOptimisationData(optTime, costReduction, avgPercentageDerivs, avgTimeForDerivs, numIterationsForConvergence);
             optTimesRow.push_back(optTime);
             costReductionsRow.push_back(costReduction);
             avgPercentageDerivsRow.push_back(avgPercentageDerivs);
@@ -364,10 +364,10 @@ void generateFilteringData(){
     FIRTests.push_back({0.05, 0.05, 0.15, 0.2, 0.2, 0.2, 0.15, 0.05, 0.05});
     FIRTests.push_back({0.05, 0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05});
 
-    keypoint_method currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+    keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
     currentInterpolator.name = "setInterval";
     currentInterpolator.min_N = 1;
-    activeOptimiser->setDerivativeInterpolator(currentInterpolator);
+    activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
 
     for (int i = 0; i < numTests; i++) {
         yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, startStateVector,
@@ -390,7 +390,7 @@ void generateFilteringData(){
         activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
         activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
 
-        std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0,
+        std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(0,
                                                                             initOptimisationControls,
                                                                             yamlReader->maxIter,
                                                                             yamlReader->minIter,
@@ -411,7 +411,7 @@ void generateFilteringData(){
             activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
             activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
 
-            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0,
+            std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(0,
                                                                                 initOptimisationControls,
                                                                                 yamlReader->maxIter,
                                                                                 yamlReader->minIter,
@@ -433,7 +433,7 @@ void generateFilteringData(){
             activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
             activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
 
-            std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0,
+            std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(0,
                                                                                 initOptimisationControls,
                                                                                 yamlReader->maxIter,
                                                                                 yamlReader->minIter,
@@ -542,7 +542,7 @@ void optimiseOnceandShow(){
 //    activeOptimiser->setupTestingExtras(1000, keyPointMethod, activeOptimiser->min_interval);
 
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
     cout << "optimisation took: " << linDuration.count() / 1000000.0f << " ms\n";
@@ -602,13 +602,13 @@ void async_MPC_testing(){
     activeModelTranslator->active_physics_simulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
 
     // Whether Optimiser will output useful information
-    activeOptimiser->verboseOutput = true;
+    activeOptimiser->verbose_output = true;
     // Visualise MPC trajectory live
     mpcVisualise = true;
 
     if(task == "walker"){
         // Setting lateral desired speed
-        activeModelTranslator->X_desired(10) = 0.3;
+        activeModelTranslator->X_desired(10) = 0.5;
     }
 
     if(ASYNC_MPC){
@@ -694,8 +694,6 @@ void async_MPC_testing(){
 
 //            activeVisualiser->render("live-MPC");
 
-
-
         }
 
         std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
@@ -742,10 +740,10 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
     activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
-    optimisedControls = activeOptimiser->optimise(0, initOptimisationControls, 5, 4, OPT_HORIZON);
+    optimisedControls = activeOptimiser->Optimise(0, initOptimisationControls, 5, 4, OPT_HORIZON);
 
     MatrixXd currState;
-    activeOptimiser->verboseOutput = true;
+    activeOptimiser->verbose_output = true;
 
     while(!taskComplete){
 
@@ -772,7 +770,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
         reInitialiseCounter++;
         visualCounter++;
 
-        // Re-optimise evert REPLAN_TIME steps
+        // Re-Optimise evert REPLAN_TIME steps
         if(reInitialiseCounter >= REPLAN_TIME){
             activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, VISUALISATION_DATA);
             activeModelTranslator->active_physics_simulator->copySystemState(0, MAIN_DATA_STATE);
@@ -786,15 +784,15 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
                     optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
                 }
             }
-            optimisedControls = activeOptimiser->optimise(0, optimisedControls, 1, 1, OPT_HORIZON);
+            optimisedControls = activeOptimiser->Optimise(0, optimisedControls, 1, 1, OPT_HORIZON);
             reInitialiseCounter = 0;
 
-            timeGettingDerivs.push_back(activeOptimiser->avgTime_getDerivs_ms);
-            timeBackwardsPass.push_back(activeOptimiser->avgTime_backwardsPass_ms);
-            timeForwardsPass.push_back(activeOptimiser->avgTime_forwardsPass_ms);
-            percentagesDerivsCalculated.push_back(activeOptimiser->avgPercentDerivs);
+            timeGettingDerivs.push_back(activeOptimiser->avg_time_get_derivs_ms);
+            timeBackwardsPass.push_back(activeOptimiser->avg_time_backwards_pass_ms);
+            timeForwardsPass.push_back(activeOptimiser->avg_time_forwards_pass_ms);
+            percentagesDerivsCalculated.push_back(activeOptimiser->avg_percent_derivs);
 
-            std::cout << "optimise iteration complete \n";
+            std::cout << "Optimise iteration complete \n";
 
         }
 
@@ -814,7 +812,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             std::mutex mtx;
             mtx.lock();
 
-            int optTimeToTimeSteps = activeOptimiser->optTime / (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000);
+            int optTimeToTimeSteps = activeOptimiser->opt_time_ms / (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000);
             std::cout << "opt time to time steps " << optTimeToTimeSteps << std::endl;
 
             int low_bound = optTimeToTimeSteps - 3;
@@ -999,7 +997,7 @@ void generateTestingData_MPC(){
         }
 
         auto startTimer = std::chrono::high_resolution_clock::now();
-        activeOptimiser->verboseOutput = false;
+        activeOptimiser->verbose_output = false;
 
         for (int i = 0; i < targetVelocities.size(); i++) {
             cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
@@ -1053,11 +1051,11 @@ void generateTestingData_MPC(){
                 cout << "current method: " << methodNames[j] << "\n";
 
                 // Setup the keypoint method
-                keypoint_method currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+                keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
                 currentInterpolator.min_N = minN[j];
                 currentInterpolator.max_N = maxN[j];
                 currentInterpolator.name = keypointMethods[j];
-                activeOptimiser->setDerivativeInterpolator(currentInterpolator);
+                activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
 
                 activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
                 MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1000, 1, 50);
@@ -1119,7 +1117,7 @@ void generateTestingData_MPC(){
 //    std::vector<std::vector<double>> avgTimeFP;
 //    std::vector<double> avgTimeFPRow;
 //
-//    std::vector<std::vector<double>> avgPercentDerivs;
+//    std::vector<std::vector<double>> avg_percent_derivs;
 //    std::vector<double> avgPercentDerivsRow;
 //
 //    std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
@@ -1168,24 +1166,24 @@ void generateTestingData_MPC(){
 //    }
 //
 //    auto startTimer = std::chrono::high_resolution_clock::now();
-//    activeOptimiser->verboseOutput = false;
+//    activeOptimiser->verbose_output = false;
 //
 //    for(int k = 0; k < testIndices.size(); k++) {
 //        int testIndex = testIndices[k];
 //        cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
 //
-//        derivative_interpolator currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+//        derivative_interpolator currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
 //        currentInterpolator.minN = minN[testIndex];
 //        currentInterpolator.maxN = maxN[testIndex];
 //        currentInterpolator.keypoint_method = keypoint_method[testIndex];
-//        activeOptimiser->setDerivativeInterpolator(currentInterpolator);
+//        activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
 //
 //        finalCosts.clear();
 //        avgHzs.clear();
 //        avgTimeForDerivs.clear();
 //        avgTimeBP.clear();
 //        avgTimeFP.clear();
-//        avgPercentDerivs.clear();
+//        avg_percent_derivs.clear();
 //
 //        for (int i = 0; i < targetVelocities.size(); i++) {
 //            cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
@@ -1250,7 +1248,7 @@ void generateTestingData_MPC(){
 //            avgTimeForDerivs.push_back(avgTimeForDerivsRow);
 //            avgTimeBP.push_back(avgTimeBPRow);
 //            avgTimeFP.push_back(avgTimeFPRow);
-//            avgPercentDerivs.push_back(avgPercentDerivsRow);
+//            avg_percent_derivs.push_back(avgPercentDerivsRow);
 //
 //            auto currentTime = std::chrono::high_resolution_clock::now();
 //            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTimer).count();
@@ -1261,7 +1259,7 @@ void generateTestingData_MPC(){
 //        cout << "save data to file for " << methodNames[testIndex] << endl;
 //        std::string taskPrefix = activeModelTranslator->modelName + "_" + methodNames[testIndex];
 //        yamlReader->saveResultsData_MPC(taskPrefix, horizonNames, finalCosts, avgHzs,
-//                                        avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
+//                                        avgTimeForDerivs, avgTimeBP, avgTimeFP, avg_percent_derivs);
 //    }
 //
 //    cout << "tests exited correctly \n";
@@ -1348,17 +1346,17 @@ int generateTestingData_MPCHorizons(){
     }
 
     auto startTimer = std::chrono::high_resolution_clock::now();
-    activeOptimiser->verboseOutput = false;
+    activeOptimiser->verbose_output = false;
 
     for(int k = 0; k < testIndices.size(); k++) {
         int testIndex = testIndices[k];
         cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
 
-        struct keypoint_method currentInterpolator = activeOptimiser->returnDerivativeInterpolator();
+        struct keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
         currentInterpolator.min_N = minN[testIndex];
         currentInterpolator.max_N = maxN[testIndex];
         currentInterpolator.name = keypoint_method[testIndex];
-        activeOptimiser->setDerivativeInterpolator(currentInterpolator);
+        activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
 
         finalCosts.clear();
         avgHzs.clear();

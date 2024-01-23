@@ -408,9 +408,9 @@ void FileHandler::saveResultsDataForMethods(std::string taskPrefix, std::vector<
     fileOutput << std::endl;
 
     for(int i = 0; i < methodNames.size(); i++){
-        fileOutput << "optTime" << ",";
+        fileOutput << "opt_time_ms" << ",";
         fileOutput << "Cost reduction" << ",";
-        fileOutput << "avgPercentDerivs" << ",";
+        fileOutput << "avg_percent_derivs" << ",";
         fileOutput << "avgTimeDerivs" << ",";
         fileOutput << "numIterations" << ",";
     }

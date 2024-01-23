@@ -10,7 +10,6 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPoints(int horizon, 
                                                                    keypoint_method keypoint_method, std::vector<MatrixXd> &A, std::vector<MatrixXd> &B){
     int dof = trajectory_states[0].rows() / 2;
 
-    std::cout << "Generating key-points using method: " << keypoint_method.name << "\n";
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
     std::vector<std::vector<int>> keypoints;
     std::vector<int> one_row;
@@ -414,7 +413,7 @@ std::vector<MatrixXd> KeyPointGenerator::GenerateJerkProfile(int horizon, std::v
     MatrixXd state2(trajectory_states[0].rows(), 1);
     MatrixXd state3(trajectory_states[0].rows(), 1);
 
-    std::vector<MatrixXd> jerkProfile;
+    std::vector<MatrixXd> jerk_profile;
 
     for(int i = 0; i < horizon - 2; i++){
         state1 = trajectory_states[i];
@@ -428,10 +427,10 @@ std::vector<MatrixXd> KeyPointGenerator::GenerateJerkProfile(int horizon, std::v
             jerk(j, 0) = abs(accell2(j+dof, 0) - accell1(j+dof, 0));
         }
 
-        jerkProfile.push_back(jerk);
+        jerk_profile.push_back(jerk);
     }
 
-    return jerkProfile;
+    return jerk_profile;
 }
 
 std::vector<MatrixXd> KeyPointGenerator::GenerateAccellerationProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
@@ -441,7 +440,7 @@ std::vector<MatrixXd> KeyPointGenerator::GenerateAccellerationProfile(int horizo
     MatrixXd state1(trajectory_states[0].rows(), 1);
     MatrixXd state2(trajectory_states[0].rows(), 1);
 
-    std::vector<MatrixXd> accelProfile;
+    std::vector<MatrixXd> accelleration_profile;
 
     for(int i = 0; i < horizon - 1; i++){
         state1 = trajectory_states[i];
@@ -453,16 +452,16 @@ std::vector<MatrixXd> KeyPointGenerator::GenerateAccellerationProfile(int horizo
             accel(j, 0) = accell_states(j + dof, 0);
         }
 
-        accelProfile.push_back(accel);
+        accelleration_profile.push_back(accel);
     }
 
-    return accelProfile;
+    return accelleration_profile;
 }
 
 std::vector<MatrixXd> KeyPointGenerator::GenerateVelocityProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
     int dof = trajectory_states[0].rows() / 2;
 
-    std::vector<MatrixXd> velProfile;
+    std::vector<MatrixXd> velocity_profile;
     MatrixXd velocities(dof, 1);
 
     for(int t = 0; t < horizon; t++){
@@ -471,8 +470,8 @@ std::vector<MatrixXd> KeyPointGenerator::GenerateVelocityProfile(int horizon, st
             velocities(i, 0) = trajectory_states[t](i+dof, 0);
         }
 
-        velProfile.push_back(velocities);
+        velocity_profile.push_back(velocities);
     }
 
-    return velProfile;
+    return velocity_profile;
 }

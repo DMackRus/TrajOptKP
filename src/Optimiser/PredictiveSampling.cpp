@@ -29,7 +29,7 @@ PredictiveSampling::PredictiveSampling(std::shared_ptr<ModelTranslator> _modelTr
     }
 }
 
-double PredictiveSampling::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
+double PredictiveSampling::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
     double cost = 0.0f;
 //
 //    if(initialDataIndex != MAIN_DATA_STATE){
@@ -74,7 +74,7 @@ double PredictiveSampling::rolloutTrajectory(int initialDataIndex, bool saveStat
     return cost;
 }
 
-std::vector<MatrixXd> PredictiveSampling::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
+std::vector<MatrixXd> PredictiveSampling::Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
 
     std::vector<MatrixXd> optimisedControls;
     double bestCost;
@@ -85,7 +85,7 @@ std::vector<MatrixXd> PredictiveSampling::optimise(int initialDataIndex, std::ve
     }
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
     MatrixXd testStart = activeModelTranslator->ReturnStateVector(0);
-    bestCost = rolloutTrajectory(0, true, initControls);
+    bestCost = RolloutTrajectory(0, true, initControls);
 //    active_physics_simulator->copySystemState(0, MAIN_DATA_STATE);
     cout << "cost of initial trajectory: " << bestCost << endl;
     cout << "min iter: " << minIter << endl;
@@ -96,7 +96,7 @@ std::vector<MatrixXd> PredictiveSampling::optimise(int initialDataIndex, std::ve
         #pragma omp parallel for
         for (int j = 0; j < rolloutsPerIter; j++) {
             U_noisy[j] = createNoisyTrajec(U_best);
-            costs[j] = rolloutTrajectory(j, false, U_noisy[j]);
+            costs[j] = RolloutTrajectory(j, false, U_noisy[j]);
         }
 
         double bestCostThisIter = costs[0];
@@ -109,7 +109,7 @@ std::vector<MatrixXd> PredictiveSampling::optimise(int initialDataIndex, std::ve
             }
         }
 
-        bool converged = checkForConvergence(bestCost, bestCostThisIter);
+        bool converged = CheckForConvergence(bestCost, bestCostThisIter);
 
 //        cout << "best cost this iteration: " << bestCostThisIter << endl;
 

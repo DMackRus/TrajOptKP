@@ -25,8 +25,8 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
 
 }
 
-bool Optimiser::checkForConvergence(double oldCost, double newCost){
-    double costGrad = (oldCost - newCost)/newCost;
+bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
+    double costGrad = (old_cost - new_cost) / new_cost;
 
     if(costGrad < epsConverge){
         return true;
@@ -34,45 +34,45 @@ bool Optimiser::checkForConvergence(double oldCost, double newCost){
     return false;
 }
 
-void Optimiser::setTrajecNumber(int _trajecNumber) {
-    currentTrajecNumber = _trajecNumber;
+void Optimiser::SetTrajecNumber(int trajec_number) {
+    currentTrajecNumber = trajec_number;
 }
 
-void Optimiser::returnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
+void Optimiser::ReturnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
 
-    _optTime = optTime;
+    _optTime = opt_time_ms;
     _costReduction = costReduction;
-    _avgPercentageDerivs = avgPercentDerivs;
-    _avgTimeGettingDerivs = avgTime_getDerivs_ms;
+    _avgPercentageDerivs = avg_percent_derivs;
+    _avgTimeGettingDerivs = avg_time_get_derivs_ms;
     _numIterations = numIterationsForConvergence;
 }
 
-keypoint_method Optimiser::returnDerivativeInterpolator(){
+keypoint_method Optimiser::ReturnCurrentKeypointMethod(){
     return activeKeyPointMethod;
 }
 
-void Optimiser::setDerivativeInterpolator(keypoint_method _keypoint_method){
+void Optimiser::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
     activeKeyPointMethod = _keypoint_method;
 }
 
-void Optimiser::generateDerivatives(){
+void Optimiser::GenerateDerivatives(){
     // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
     // generate the dynamics evaluation waypoints
-    std::cout << "before gen keypoints \n";
+//    std::cout << "before gen keypoints \n";
     std::vector<std::vector<int>> keyPoints = keypoint_generator->GenerateKeyPoints(horizonLength, X_old, U_old, activeKeyPointMethod, A, B);
 
-    // Calculate derivatives via finite differnecing / analytically for cost functions if available
+    // Calculate derivatives via finite differencing / analytically for cost functions if available
     if(activeKeyPointMethod.name != "iterative_error"){
         auto start_fd_time = high_resolution_clock::now();
-        getDerivativesAtSpecifiedIndices(keyPoints);
+        ComputeDerivativesAtSpecifiedIndices(keyPoints);
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
     }
     else{
-        getCostDerivs();
+        ComputeCostDerivatives();
     }
 
-    interpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
+    InterpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
 
     int totalNumColumnsDerivs = 0;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -80,17 +80,17 @@ void Optimiser::generateDerivatives(){
     }
 
     double percentDerivsCalculated = ((double) totalNumColumnsDerivs / (double)numberOfTotalDerivs) * 100.0f;
-    percentDerivsPerIter.push_back(percentDerivsCalculated);
-    if(verboseOutput){
+    percentage_derivs_per_iteration.push_back(percentDerivsCalculated);
+    if(verbose_output){
         cout << "percentage of derivs calculated: " << percentDerivsCalculated << endl;
     }
 
     if(filteringMethod != "none"){
-        filterDynamicsMatrices();
+        FilterDynamicsMatrices();
     }
 }
 
-void Optimiser::getCostDerivs(){
+void Optimiser::ComputeCostDerivatives(){
     #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
         activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
@@ -100,7 +100,7 @@ void Optimiser::getCostDerivs(){
                                            l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
 }
 
-void Optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
+void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
 
     activePhysicsSimulator->initModelForFiniteDifferencing();
 
@@ -123,7 +123,7 @@ void Optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     num_threads_iterations = keyPoints.size();
     timeIndicesGlobal = timeIndices;
 
-    // TODO - remove this? It is used for worker function to compute derivatives in parallel
+    // TODO - remove this? It is used for WorkerComputeDerivatives function to compute derivatives in parallel
     keypointsGlobal = keyPoints;
 
     // Setup all the required tasks
@@ -135,7 +135,7 @@ void Optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     const int num_threads = std::thread::hardware_concurrency();  // Get the number of available CPU cores
     std::vector<std::thread> thread_pool;
     for (int i = 0; i < num_threads; ++i) {
-        thread_pool.push_back(std::thread(&Optimiser::worker, this, i));
+        thread_pool.push_back(std::thread(&Optimiser::WorkerComputeDerivatives, this, i));
     }
 
     for (std::thread& thread : thread_pool) {
@@ -160,7 +160,7 @@ void Optimiser::getDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> k
     }
 }
 
-void Optimiser::worker(int threadId) {
+void Optimiser::WorkerComputeDerivatives(int threadId) {
     while (true) {
         int iteration = current_iteration.fetch_add(1);
         if (iteration >= num_threads_iterations) {
@@ -180,7 +180,7 @@ void Optimiser::worker(int threadId) {
     }
 }
 
-void Optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs){
+void Optimiser::InterpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs){
     MatrixXd startB;
     MatrixXd endB;
     MatrixXd addB;
@@ -281,7 +281,7 @@ void Optimiser::interpolateDerivatives(std::vector<std::vector<int>> keyPoints, 
     }
 }
 
-void Optimiser::filterDynamicsMatrices() {
+void Optimiser::FilterDynamicsMatrices() {
 
     for(int i = dof; i < 2 * dof; i++){
         for(int j = 0; j < 2 * dof; j++){
@@ -293,10 +293,10 @@ void Optimiser::filterDynamicsMatrices() {
             }
 
             if(filteringMethod == "low_pass"){
-                filtered = filterIndValLowPass(unfiltered);
+                filtered = FilterIndValLowPass(unfiltered);
             }
             else if(filteringMethod == "FIR"){
-                filtered = filterIndValFIRFilter(unfiltered, FIRCoefficients);
+                filtered = FilterIndValFIRFilter(unfiltered, FIRCoefficients);
             }
             else{
                 std::cerr << "Filtering method not recognised" << std::endl;
@@ -310,7 +310,7 @@ void Optimiser::filterDynamicsMatrices() {
     }
 }
 
-std::vector<double> Optimiser::filterIndValLowPass(std::vector<double> unfiltered){
+std::vector<double> Optimiser::FilterIndValLowPass(std::vector<double> unfiltered){
     double yn1 = unfiltered[0];
     double xn1 = unfiltered[0];
 
@@ -328,7 +328,7 @@ std::vector<double> Optimiser::filterIndValLowPass(std::vector<double> unfiltere
     return filtered;
 }
 
-std::vector<double> Optimiser::filterIndValFIRFilter(std::vector<double> unfiltered, std::vector<double> filterCoefficients){
+std::vector<double> Optimiser::FilterIndValFIRFilter(std::vector<double> unfiltered, std::vector<double> filterCoefficients){
     std::vector<double> filtered;
 
     for(int i = 0; i < unfiltered.size(); i++){

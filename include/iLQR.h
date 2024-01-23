@@ -11,8 +11,8 @@ class interpolatediLQR: public Optimiser{
 public:
     interpolatediLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<Differentiator> _differentiator, int _maxHorizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader);
 
-    double rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
-    std::vector<MatrixXd> optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
+    double RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
+    std::vector<MatrixXd> Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
 
     bool backwardsPass_Quu_reg();
     bool isMatrixPD(Ref<MatrixXd> matrix);

@@ -119,12 +119,12 @@ public:
     virtual std::vector<MatrixXd> CreateInitSetupControls(int horizon_length);
 
     /**
-     * Computes an initial sequence of controls for the system to optimise from. This is used to
+     * Computes an initial sequence of controls for the system to Optimise from. This is used to
      * setup the optimisation problem.
      *
      * @param  horizon_length The length of the horizon of the optimisation problem.
      *
-     * @return std::vector<MatrixXd> The sequence of control vectors to optimise from.
+     * @return std::vector<MatrixXd> The sequence of control vectors to Optimise from.
      *
      */
     virtual std::vector<MatrixXd> CreateInitOptimisationControls(int horizon_length);

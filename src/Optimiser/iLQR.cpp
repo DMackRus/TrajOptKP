@@ -52,7 +52,7 @@ interpolatediLQR::interpolatediLQR(std::shared_ptr<ModelTranslator> _modelTransl
 
 }
 
-double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
+double interpolatediLQR::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
     double cost = 0.0f;
 
     if(initialDataIndex != MAIN_DATA_STATE){
@@ -118,7 +118,7 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 
 // ------------------------------------------------------------------------------------------------------
 //
-//  optimise - Optimise a sequence of controls for a given problem
+//  Optimise - Optimise a sequence of controls for a given problem
 //  @Params:
 //  initialDataIndex - the data index of the system state that the optimisation problem should start from
 //  initControls - The initial controls for the problem
@@ -129,8 +129,8 @@ double interpolatediLQR::rolloutTrajectory(int initialDataIndex, bool saveStates
 //  optimisedControls - New optimised controls that give a lower cost than the initial controls
 //
 // -------------------------------------------------------------------------------------------------------
-std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
-    if(verboseOutput) {
+std::vector<MatrixXd> interpolatediLQR::Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
+    if(verbose_output) {
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << " ------ " << activeModelTranslator->model_name << " ------ " << endl;
         cout << "min_N " << activeKeyPointMethod.min_N << "  keypointsMethod: " << activeKeyPointMethod.name;
@@ -151,26 +151,26 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
     // ---------------------- Clear data saving variables ----------------------
     costHistory.clear();
-    optTime = 0.0f;
-    percentDerivsPerIter.clear();
+    opt_time_ms = 0.0f;
+    percentage_derivs_per_iteration.clear();
     timeDerivsPerIter.clear();
-    avgPercentDerivs = 0;
+    avg_percent_derivs = 0;
     numIterationsForConvergence = 0;
 
-    avgTime_getDerivs_ms = 0.0f;
-    avgTime_forwardsPass_ms = 0.0f;
-    avgTime_backwardsPass_ms = 0.0f;
-    percentDerivsPerIter.clear();
-    time_backwardsPass_ms.clear();
+    avg_time_get_derivs_ms = 0.0f;
+    avg_time_forwards_pass_ms = 0.0f;
+    avg_time_backwards_pass_ms = 0.0f;
+    percentage_derivs_per_iteration.clear();
+    time_backwards_pass_ms.clear();
     time_forwardsPass_ms.clear();
-    time_getDerivs_ms.clear();
+    time_get_derivs_ms.clear();
     // ------------------------------------------------------------------------
 
     auto time_start = high_resolution_clock::now();
-    oldCost = rolloutTrajectory(initialDataIndex, true, initControls);
+    oldCost = RolloutTrajectory(initialDataIndex, true, initControls);
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
-    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
+//    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
     initialCost = oldCost;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
@@ -181,11 +181,11 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         //STEP 1 - If forwards pass changed the trajectory, -
         auto derivsstart = high_resolution_clock::now();
         if(costReducedLastIter){
-            generateDerivatives();
+            GenerateDerivatives();
         }
         auto derivsstop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(derivsstop - derivsstart);
-        time_getDerivs_ms.push_back(linDuration.count() / 1000.0f);
+        time_get_derivs_ms.push_back(linDuration.count() / 1000.0f);
         timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 
         if(saveTrajecInfomation){
@@ -219,7 +219,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
         auto bp_stop = high_resolution_clock::now();
         auto bpDuration = duration_cast<microseconds>(bp_stop - bp_start);
 
-        time_backwardsPass_ms.push_back(bpDuration.count() / 1000.0f);
+        time_backwards_pass_ms.push_back(bpDuration.count() / 1000.0f);
 
         if(!lambdaExit){
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
@@ -230,8 +230,8 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
             auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
             time_forwardsPass_ms.push_back(fpDuration.count() / 1000.0f);
 
-            if(verboseOutput){
-                cout << "| derivs: " << time_getDerivs_ms[i] << " | backwardsPass: " << time_backwardsPass_ms[i] << " | forwardsPass: " << time_forwardsPass_ms[i] << " ms |\n";
+            if(verbose_output){
+                cout << "| derivs: " << time_get_derivs_ms[i] << " | backwardsPass: " << time_backwards_pass_ms[i] << " | forwardsPass: " << time_forwardsPass_ms[i] << " ms |\n";
                 cout << "| Cost went from " << oldCost << " ---> " << newCost << " | \n";
             }
 
@@ -239,7 +239,7 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
 
             // STEP 4 - Check for convergence
             bool converged;
-            converged = checkForConvergence(oldCost, newCost);
+            converged = CheckForConvergence(oldCost, newCost);
 
             if(newCost < oldCost){
                 oldCost = newCost;
@@ -267,35 +267,35 @@ std::vector<MatrixXd> interpolatediLQR::optimise(int initialDataIndex, std::vect
     costReduction = 1 - (newCost / initialCost);
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
-    optTime = optDuration.count() / 1000.0f;
-    if(verboseOutput){
-        cout << "optimisation took: " << optTime<< " ms\n";
+    opt_time_ms = optDuration.count() / 1000.0f;
+    if(verbose_output){
+        cout << "optimisation took: " << opt_time_ms << " ms\n";
         cout << " ---------------- optimisation complete -------------------" << endl;
     }
 
-    for(int i = 0; i < time_getDerivs_ms.size(); i++){
-        avgTime_getDerivs_ms += time_getDerivs_ms[i];
+    for(int i = 0; i < time_get_derivs_ms.size(); i++){
+        avg_time_get_derivs_ms += time_get_derivs_ms[i];
     }
 
-    for(int i = 0; i < percentDerivsPerIter.size(); i++){
-        avgPercentDerivs += percentDerivsPerIter[i];
+    for(int i = 0; i < percentage_derivs_per_iteration.size(); i++){
+        avg_percent_derivs += percentage_derivs_per_iteration[i];
     }
 
-    avgTime_getDerivs_ms /= time_getDerivs_ms.size();
-    avgPercentDerivs /= percentDerivsPerIter.size();
+    avg_time_get_derivs_ms /= time_get_derivs_ms.size();
+    avg_percent_derivs /= percentage_derivs_per_iteration.size();
 
-    for(int i = 0; i < time_backwardsPass_ms.size(); i++){
-        avgTime_backwardsPass_ms += time_backwardsPass_ms[i];
+    for(int i = 0; i < time_backwards_pass_ms.size(); i++){
+        avg_time_backwards_pass_ms += time_backwards_pass_ms[i];
     }
 
-    avgTime_backwardsPass_ms /= time_backwardsPass_ms.size();
+    avg_time_backwards_pass_ms /= time_backwards_pass_ms.size();
 
     for(int i = 0; i < time_forwardsPass_ms.size(); i++){
-        avgTime_forwardsPass_ms += time_forwardsPass_ms[i];
+        avg_time_forwards_pass_ms += time_forwardsPass_ms[i];
     }
 
     if(time_forwardsPass_ms.size() != 0){
-        avgTime_forwardsPass_ms /= time_forwardsPass_ms.size();
+        avg_time_forwards_pass_ms /= time_forwardsPass_ms.size();
     }
 
     // Load the initial data back into main data

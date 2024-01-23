@@ -51,7 +51,7 @@ GradDescent::GradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std:
     intervalSize = _yamlReader->minInterval;
 }
 
-double GradDescent::rolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
+double GradDescent::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
     double cost = 0.0f;
 
     if(initialDataIndex != MAIN_DATA_STATE){
@@ -111,7 +111,7 @@ double GradDescent::rolloutTrajectory(int initialDataIndex, bool saveStates, std
     return cost;
 }
 
-std::vector<MatrixXd> GradDescent::optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
+std::vector<MatrixXd> GradDescent::Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
     cout << " ---------------- optimisation begins -------------------" << endl;
     auto optStart = high_resolution_clock::now();
 
@@ -121,7 +121,7 @@ std::vector<MatrixXd> GradDescent::optimise(int initialDataIndex, std::vector<Ma
     double oldCost = 0.0f;
     double newCost = 0.0f;
 
-    oldCost = rolloutTrajectory(MAIN_DATA_STATE, true, initControls);
+    oldCost = RolloutTrajectory(MAIN_DATA_STATE, true, initControls);
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
     for(int i = 0; i < maxIter; i++){
@@ -131,7 +131,7 @@ std::vector<MatrixXd> GradDescent::optimise(int initialDataIndex, std::vector<Ma
         // generate the dynamics evaluation waypoints
 
         // TODO - use Optimiser class get derivatives function
-        generateDerivatives();
+        GenerateDerivatives();
 
         auto stop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(stop - start);
@@ -156,7 +156,7 @@ std::vector<MatrixXd> GradDescent::optimise(int initialDataIndex, std::vector<Ma
         cout << " ---------------- new cost is: " << newCost << " -------------------" << endl;
 
         // STEP 4 - Check for convergence
-        bool converged = checkForConvergence(oldCost, newCost);
+        bool converged = CheckForConvergence(oldCost, newCost);
 
         if(newCost < oldCost){
             oldCost = newCost;
