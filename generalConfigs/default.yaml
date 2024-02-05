@@ -9,7 +9,7 @@ task: "walker"
 # "box_push_toppling", "box_flick_no_clutter", "box_flick_low_clutter", "box_flick_moderate_clutter",
 # "walker", "hopper", "box_sweep"
 
-optimiser: "interpolated_iLQR"  #Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
+optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
 # init control = 0, optimise once = 1, MPCContinous = 2, MPC_until_completion = 3, generateTestScenes = 4, generateTestingData = 5, generateFilteringData = 6
 # generic testing = 9
@@ -21,7 +21,7 @@ runMode: "MPC_until_completion"
 # "MPC_until_completion"    - Perform MPC until the task is completed. Display current state of the system.
 # Extra testing modes for debugging/generating testing data
 # "Generate_test_scenes"    - Generate a set of randomly generated test scenes for the task.
-# "Generate_testing_data"   - Loop through all test scenes and evaluate the optimiser and key-point performance.
+# "Generate_testing_data"   - Loop through all test scenes and evaluate the Optimiser and key-point performance.
 # "Generate_filtering_data" - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 
 taskInitMode: "fromCSV"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
@@ -30,6 +30,6 @@ csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99
 filtering: "none"         # FIR or low_pass or none - Filterting of derivative values over trajectory length.
 costDerivsFD: false       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
-minIter: 3                # Minimum number of iterations to run optimiser for
-maxIter: 10               # Maximum number of iterations to run optimiser for
+minIter: 3                # Minimum number of iterations to run Optimiser for
+maxIter: 10               # Maximum number of iterations to run Optimiser for
 maxHorizon: 4000          # Maximum number of times-steps for optimisation horizon

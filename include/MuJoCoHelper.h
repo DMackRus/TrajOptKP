@@ -5,11 +5,11 @@
 #ifndef PHYSICSSIMSWITCHING_MUJOCOHELPER_H
 #define PHYSICSSIMSWITCHING_MUJOCOHELPER_H
 
-#include "physicsSimulator.h"
+#include "PhysicsSimulator.h"
 #include "mujoco.h"
 #include <GLFW/glfw3.h>
 
-class MuJoCoHelper : public physicsSimulator {
+class MuJoCoHelper : public PhysicsSimulator {
 public:
     // Constructor
     MuJoCoHelper(vector<robot> robots, vector<string> _bodies);

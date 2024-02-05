@@ -4,11 +4,11 @@
 
 #include "Testing.h"
 
-Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
+Testing::Testing(std::shared_ptr<iLQR> iLQROptimiser_,
                  std::shared_ptr<ModelTranslator> activeModelTranslator_,
-                 std::shared_ptr<differentiator> activeDifferentiator_,
-                 std::shared_ptr<visualizer> activeVisualiser_,
-                 std::shared_ptr<fileHandler> yamlReader_) {
+                 std::shared_ptr<Differentiator> activeDifferentiator_,
+                 std::shared_ptr<Visualiser> activeVisualiser_,
+                 std::shared_ptr<FileHandler> yamlReader_) {
 
     iLQROptimiser = iLQROptimiser_;
     activeModelTranslator = activeModelTranslator_;
@@ -16,21 +16,21 @@ Testing::Testing(std::shared_ptr<interpolatediLQR> iLQROptimiser_,
     activeVisualiser = activeVisualiser_;
     yamlReader = yamlReader_;
 
-    activeDifferentiator = std::make_shared<differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
 
-    activeVisualiser = std::make_shared<visualizer>(activeModelTranslator);
-    iLQROptimiser = std::make_shared<interpolatediLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator,
-                                                       activeDifferentiator, yamlReader_->maxHorizon, activeVisualiser,
-                                                       yamlReader);
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
+    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator,
+                                           activeDifferentiator, yamlReader_->maxHorizon, activeVisualiser,
+                                           yamlReader);
 }
 
 int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size){
 
     for(int i = lowest_minN; i <= higherst_minN; i += step_size){
-        derivative_interpolator keypoint_method;
-        keypoint_method.keypoint_method = "setInterval";
-        keypoint_method.minN = i;
-        keypoint_method.maxN = i;
+        keypoint_method keypoint_method;
+        keypoint_method.name = "setInterval";
+        keypoint_method.min_N = i;
+        keypoint_method.max_N = i;
 
         testing_asynchronus_mpc(keypoint_method);
     }
@@ -38,7 +38,7 @@ int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int highers
     return EXIT_SUCCESS;
 }
 
-int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
+int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method){
 
     std::string task_prefix = activeModelTranslator->model_name;
     std::cout << "beginning testing asynchronus MPC for " << task_prefix << std::endl;
@@ -67,11 +67,11 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
     // -----------------------------------------------------------------------------
 
     std::string method_name;
-    if(keypoint_method.keypoint_method == "setInterval") {
-        method_name = keypoint_method.keypoint_method + "_" + std::to_string(keypoint_method.minN);
+    if(keypoint_method.name == "setInterval") {
+        method_name = keypoint_method.name + "_" + std::to_string(keypoint_method.min_N);
     }
     else{
-        method_name = keypoint_method.keypoint_method + "_" + std::to_string(keypoint_method.minN) + "_" + std::to_string(keypoint_method.maxN);
+        method_name = keypoint_method.name + "_" + std::to_string(keypoint_method.min_N) + "_" + std::to_string(keypoint_method.max_N);
     }
 
     std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
@@ -83,8 +83,8 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
     }
 
     std::vector<double> targetVelocities;
-    double minTarget = 0.1;
-    double maxTarget = 0.3;
+    double minTarget = 0.2;
+    double maxTarget = 0.5;
     int numTests = 100;
     double currentVel = minTarget;
 
@@ -94,14 +94,14 @@ int Testing::testing_asynchronus_mpc(derivative_interpolator keypoint_method){
     }
 
     auto startTimer = std::chrono::high_resolution_clock::now();
-    iLQROptimiser->verboseOutput = false;
+    iLQROptimiser->verbose_output = false;
 
     // Setup the derivative interpolator object
-    derivative_interpolator currentInterpolator = iLQROptimiser->returnDerivativeInterpolator();
-    keypoint_method.jerkThresholds = currentInterpolator.jerkThresholds;
-    keypoint_method.magVelChangeThresholds = currentInterpolator.magVelChangeThresholds;
-    keypoint_method.iterativeErrorThreshold = currentInterpolator.iterativeErrorThreshold;
-    iLQROptimiser->setDerivativeInterpolator(keypoint_method);
+    struct keypoint_method currentInterpolator = iLQROptimiser->ReturnCurrentKeypointMethod();
+    keypoint_method.jerk_thresholds = currentInterpolator.jerk_thresholds;
+    keypoint_method.velocity_change_thresholds = currentInterpolator.velocity_change_thresholds;
+    keypoint_method.iterative_error_threshold = currentInterpolator.iterative_error_threshold;
+    iLQROptimiser->SetCurrentKeypointMethod(keypoint_method);
 
     finalCosts.clear();
     avgTimeForDerivs.clear();
@@ -170,7 +170,7 @@ int Testing::single_asynchronus_run(bool visualise){
     activeVisualiser->trajectory_controls.clear();
     activeVisualiser->trajectory_states.clear();
 
-    // Make a thread for the optimiser
+    // Make a thread for the Optimiser
     std::thread MPC_controls_thread;
     // Start the thread running
     MPC_controls_thread = std::thread(&Testing::asynchronus_optimiser_worker, this);
@@ -258,7 +258,7 @@ int Testing::single_asynchronus_run(bool visualise){
 }
 
 void Testing::asynchronus_optimiser_worker(){
-//    void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
+//    void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avg_percent_derivs, double &avgTimeBP, double &avgTimeFP,
 //                          int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
     bool taskComplete = false;
     int visualCounter = 0;
@@ -273,14 +273,14 @@ void Testing::asynchronus_optimiser_worker(){
     // Instantiate init controls
     std::vector<MatrixXd> initOptimisationControls;
 
-    int horizon = 80;
+    int horizon = 100;
 
     initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(horizon);
     activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
     activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
-    optimisedControls = iLQROptimiser->optimise(0, initOptimisationControls, 5, 4, horizon);
+    optimisedControls = iLQROptimiser->Optimise(0, initOptimisationControls, 5, 4, horizon);
 
     MatrixXd currState;
 
@@ -304,12 +304,12 @@ void Testing::asynchronus_optimiser_worker(){
             optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
         }
 
-        optimisedControls = iLQROptimiser->optimise(0, optimisedControls, 1, 1, horizon);
+        optimisedControls = iLQROptimiser->Optimise(0, optimisedControls, 1, 1, horizon);
 
-        timeGettingDerivs.push_back(iLQROptimiser->avgTime_getDerivs_ms);
-        timeBackwardsPass.push_back(iLQROptimiser->avgTime_backwardsPass_ms);
-        timeForwardsPass.push_back(iLQROptimiser->avgTime_forwardsPass_ms);
-        percentagesDerivsCalculated.push_back(iLQROptimiser->avgPercentDerivs);
+        timeGettingDerivs.push_back(iLQROptimiser->avg_time_get_derivs_ms);
+        timeBackwardsPass.push_back(iLQROptimiser->avg_time_backwards_pass_ms);
+        timeForwardsPass.push_back(iLQROptimiser->avg_time_forwards_pass_ms);
+        percentagesDerivsCalculated.push_back(iLQROptimiser->avg_percent_derivs);
 
 
         // If we are use Async visualisation, need to copy our control vector to internal control vector for
@@ -317,7 +317,7 @@ void Testing::asynchronus_optimiser_worker(){
         std::mutex mtx;
         mtx.lock();
 
-        int optTimeToTimeSteps = iLQROptimiser->optTime / (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000);
+        int optTimeToTimeSteps = iLQROptimiser->opt_time_ms / (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000);
 
         int low_bound = optTimeToTimeSteps - 3;
         if (low_bound < 0) low_bound = 0;

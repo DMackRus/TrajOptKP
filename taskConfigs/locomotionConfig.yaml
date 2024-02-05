@@ -1,10 +1,11 @@
 modelFile: "/mujoco_models/walker.xml"
 modelName: "/walker"
 timeStep: 0.005
-keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
-minN: 5
+keypointMethod: "magvel_change"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+minN: 1
 maxN: 20
 iterativeErrorThreshold: 0.1
+
 robots:
   walker:
     jointNames: ["rootz", "rootx", "rooty", "right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"]
