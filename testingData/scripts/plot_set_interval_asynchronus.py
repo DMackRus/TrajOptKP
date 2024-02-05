@@ -36,28 +36,40 @@ def main():
         # mean.append(mean_)
         # std_deviation.append(std_deviation_)
 
-    plt.figure(figsize=(8, 12))  # Adjust the figure size as needed
+    x_ticks = list(range(1, file_count + 1))
+
+    # plt.figure(figsize=(8, 12))  # Adjust the figure size as needed
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=False, figsize = (8, 12))
 
     # Plot the first line
-    plt.subplot(3, 1, 1)
-    plt.plot(mean_final_cost, label='Final costs')
+    # plt.subplot(3, 1, 1)
+    ax1.plot(mean_final_cost)
+    ax1.set_xticks(x_ticks)
+    ax1.set_xlabel("Set interval size")
+    ax1.set_ylabel("Final trajectory cost")
     # plt.title('Plot 1')
-    plt.legend()
+    # ax1.legend()
 
     # Plot the second line
-    plt.subplot(3, 1, 2)
-    plt.plot(mean_opt_time, label = 'Optimisation times (ms)')
+    # ax2.subplot(3, 1, 2)
+    ax2.plot(mean_opt_time)
+    ax2.set_xticks(x_ticks)
+    ax2.set_xlabel("Set interval size")
+    ax2.set_ylabel("Mean optimisation time (ms)")
     # plt.title('Plot 2')
-    plt.legend()
+    # ax2.legend()
 
     # Plot the third line
-    plt.subplot(3, 1, 3)
-    plt.plot(mean_percent_derivs , label='Mean percent derivatives')
+    # plt.subplot(3, 1, 3)
+    ax3.plot(mean_percent_derivs)
+    ax3.set_xticks(x_ticks)
+    ax3.set_xlabel("Set interval size")
+    ax3.set_ylabel("Mean percent derivatives")
     # plt.title('Plot 3')
-    plt.legend()
+    # ax3.legend()
 
     # Adjust layout to prevent overlapping
-    plt.tight_layout()
+    # plt.tight_layout()
 
     plt.show()
 

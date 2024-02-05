@@ -5,6 +5,7 @@ keypointMethod: "magvel_change"   # Possible values: "setInterval", "adaptive_je
 minN: 1
 maxN: 20
 iterativeErrorThreshold: 0.1
+
 robots:
   walker:
     jointNames: ["rootz", "rootx", "rooty", "right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"]
