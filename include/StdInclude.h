@@ -62,7 +62,6 @@ struct task{
     std::string modelName;
     std::string modelFilePath;
     std::string keypointMethod;
-    bool auto_adjust;
     int minN;
     int maxN;
     std::vector<double> jerkThresholds;

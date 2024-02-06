@@ -1,4 +1,4 @@
-#include "KeypointGenerator.h"
+#include "KeyPointGenerator.h"
 
 KeypointGenerator::KeypointGenerator(std::shared_ptr<Differentiator> _differentiator,
                                      std::shared_ptr<PhysicsSimulator> _physics_simulator) {
@@ -12,12 +12,12 @@ KeypointGenerator::KeypointGenerator(std::shared_ptr<Differentiator> _differenti
 
 }
 
-keypoint_method KeypointGenerator::ReturnCurrentKeypointMethod(){
+keypoint_method KeypointGenerator::ReturnCurrentKeypointMethod() {
     return current_keypoint_method;
 }
 
-void KeypointGenerator::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
-    current_keypoint_method = _keypoint_method;
+void KeypointGenerator::SetKeypointMethod(keypoint_method method){
+    current_keypoint_method = method;
 }
 
 std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states, std::vector<MatrixXd> trajec_controls,
@@ -82,10 +82,6 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPoints(int horizon, 
     for(int i = 0; i < dof; i++){
         keypoints.back().push_back(i);
     }
-
-    // Compute the percentages of derivatives per degree of freedom
-    UpdateLastPercentageDerivatives(keypoints, horizon);
-
 
 //     Print out the key points
 //    for(int i = 0; i < keypoints.size(); i++){
@@ -403,6 +399,8 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsVelocityChange
                     continue;
                 }
             }
+
+//            cout << " after check mag change" << endl;
 
             // If the interval is greater than min_N
             if(last_keypoint_counter[i] >= current_keypoint_method.min_N){

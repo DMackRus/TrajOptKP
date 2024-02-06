@@ -7,7 +7,6 @@
 
 #include "StdInclude.h"
 #include "PhysicsSimulator.h"
-#include "KeypointGenerator.h"
 #include <yaml-cpp/yaml.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -15,6 +14,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+enum optimisers{
+        opt_iLQR = 0,
+        opt_stomp = 1,
+        opt_gradDescent = 2
+};
 
 class FileHandler{
 public:
@@ -50,15 +54,10 @@ public:
     int maxIter;
     int maxHorizon;
 
-
-    // Keypoint parameters from yaml file_taskConfig
-    keypoint_method file_keypoint_method;
-//    std::string keypoint_name;
-//    int min_N;
-//    int max_N;
-//    std::vector<double> jerk_thresholds;
-//    std::vector<double> velocity_change_thresholds;
-//    bool auto_adjust;
+    int keyPointMethod;
+    int interpolationMethod;
+    int minInterval;
+    int maxInterval;
 
 private:
     std::string projectParentPath;

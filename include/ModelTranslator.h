@@ -40,7 +40,7 @@ public:
      * Construct a new Model Translator object.
      *
      */
-    ModelTranslator() = default;
+    ModelTranslator();
 
     //--------------------------------------------------------------------------------
     // Pure virtual functions that HAVE to be implemented by the child class
@@ -268,6 +268,15 @@ public:
 
     // model name
     std::string model_name;
+
+    // Keypoint hyper parameters
+    std::string keypoint_method;
+    int min_N;
+    int max_N;
+    std::vector<double> jerk_thresholds;
+    std::vector<double> accel_thresholds;
+    double iterative_error_threshold;
+    std::vector<double> velocity_change_thresholds;
 
     // Cost function matrices, Q is the state cost, R is the control cost, J is the terminal cost
     DiagonalMatrix<double, Eigen::Dynamic> Q;

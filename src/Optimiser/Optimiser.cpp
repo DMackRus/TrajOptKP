@@ -1,10 +1,7 @@
 
 #include "Optimiser.h"
 
-Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator,
-                     std::shared_ptr<PhysicsSimulator> _physicsSimulator,
-                     std::shared_ptr<FileHandler> _yamlReader,
-                     std::shared_ptr<Differentiator> _differentiator){
+Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<FileHandler> _yamlReader, std::shared_ptr<Differentiator> _differentiator){
     activeModelTranslator = _modelTranslator;
     activePhysicsSimulator = _physicsSimulator;
     activeYamlReader = _yamlReader;
@@ -13,13 +10,20 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator,
     dof = activeModelTranslator->dof;
     num_ctrl = activeModelTranslator->num_ctrl;
 
-//    keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
-//                                                             activePhysicsSimulator,
-//                                                             activeModelTranslator);
-    keypoint_generator = KeypointGenerator(activeDifferentiator,
-                                           activePhysicsSimulator);
+    // Set up the derivative interpolator from YAML settings
+    activeKeyPointMethod.name = activeModelTranslator->keypoint_method;
+    activeKeyPointMethod.min_N = activeModelTranslator->min_N;
+    activeKeyPointMethod.max_N = activeModelTranslator->max_N;
+    activeKeyPointMethod.jerk_thresholds = activeModelTranslator->jerk_thresholds;
+    // TODO - fix this - add acell thresholds to yaml
+    activeKeyPointMethod.accell_thresholds = activeModelTranslator->jerk_thresholds;
+    activeKeyPointMethod.iterative_error_threshold = activeModelTranslator->iterative_error_threshold;
+    activeKeyPointMethod.velocity_change_thresholds = activeModelTranslator->velocity_change_thresholds;
 
-    keypoint_generator->SetCurrentKeypointMethod(activeYamlReader->file_keypoint_method);
+    keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator, activePhysicsSimulator);
+
+    keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
+
 
 }
 
@@ -45,6 +49,14 @@ void Optimiser::ReturnOptimisationData(double &_optTime, double &_costReduction,
     _numIterations = numIterationsForConvergence;
 }
 
+keypoint_method Optimiser::ReturnCurrentKeypointMethod(){
+    return activeKeyPointMethod;
+}
+
+void Optimiser::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
+    activeKeyPointMethod = _keypoint_method;
+}
+
 void Optimiser::GenerateDerivatives(){
     // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
     // generate the dynamics evaluation waypoints
@@ -52,7 +64,7 @@ void Optimiser::GenerateDerivatives(){
     std::vector<std::vector<int>> keyPoints = keypoint_generator->GenerateKeyPoints(horizonLength, X_old, U_old, A, B);
 
     // Calculate derivatives via finite differencing / analytically for cost functions if available
-    if(keypoint_generator.current_keypoint_method.name != "iterative_error"){
+    if(activeKeyPointMethod.name != "iterative_error"){
         auto start_fd_time = high_resolution_clock::now();
         ComputeDerivativesAtSpecifiedIndices(keyPoints);
         auto stop_fd_time = high_resolution_clock::now();

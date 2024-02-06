@@ -16,7 +16,7 @@
 #include "ModelTranslator.h"
 #include "PhysicsSimulator.h"
 #include "Differentiator.h"
-#include "KeypointGenerator.h"
+#include "KeyPointGenerator.h"
 #include <atomic>
 
 class Optimiser{
@@ -102,6 +102,21 @@ public:
      *
      */
     void ReturnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
+
+    /**
+     * Returns the current active keypoint method, and its associating parameters.
+     *
+     * @return keypoint_method The current active keypoint method.
+     */
+    keypoint_method ReturnCurrentKeypointMethod();
+
+    /**
+     * Sets the current active keypoint method, and its associating parameters.
+     *
+     * @param _derivativeInterpolator - The keypoint method to set as the current active keypoint method.
+     *
+     */
+    void SetCurrentKeypointMethod(keypoint_method _derivativeInterpolator);
 
     /**
      * Worker function for computing dynamics derivatives in parallel. Uses a global variable of the keypoints
@@ -196,6 +211,7 @@ protected:
     int dof;
     int num_ctrl;
 
+    keypoint_method activeKeyPointMethod;
     std::vector<std::vector<int>> keypointsGlobal;
 
     std::shared_ptr<FileHandler> activeYamlReader;

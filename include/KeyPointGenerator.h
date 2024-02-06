@@ -1,6 +1,6 @@
 /*
 ================================================================================
-    File: KeypointGenerator.h
+    File: KeyPointGenerator.h
     Author: David Russell
     Date: January 18, 2024
     Description:
@@ -32,7 +32,6 @@
 
 struct keypoint_method{
     std::string name;
-    bool auto_adjust;
     int min_N;
     int max_N;
     std::vector<double> jerk_thresholds;
@@ -56,6 +55,16 @@ public:
                       std::shared_ptr<PhysicsSimulator> _physics_simulator);
 
     /**
+     * Returns the current active keypoint method
+     *
+     * @return keypoint_method
+     */
+    keypoint_method ReturnCurrentKeypointMethod();
+
+    void SetKeypointMethod(keypoint_method method);
+
+
+    /**
      * Generates a set of key-points per degree of freedom over a trajectory depending on the
      * key-point method specified. Usually takes into account the trajectory_states of the system.
      *
@@ -70,36 +79,10 @@ public:
      * @return std::vector<std::vector<int>> A set of key-points (integer indices over the trajectory) per
      * degree of freedom.
      */
-    std::vector<std::vector<int>> GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states,
-                                                    std::vector<MatrixXd> trajec_controls,
+    std::vector<std::vector<int>> GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states, std::vector<MatrixXd> trajec_controls,
                                                     std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
 
-    /**
-     * Returns the current active keypoint method, and its associating parameters.
-     *
-     * @return keypoint_method The current active keypoint method.
-     */
-    keypoint_method ReturnCurrentKeypointMethod();
-
-    /**
-     * Sets the current active keypoint method, and its associating parameters.
-     *
-     * @param _derivativeInterpolator - The keypoint method to set as the current active keypoint method.
-     *
-     */
-    void SetCurrentKeypointMethod(keypoint_method _derivativeInterpolator);
-
-
-    /**
-     * Dependant on the cost improvement of the trajectory, this method will adjust the key-point method
-     * automatically, either making it more greedy or more conservative.
-     *
-     * @param old_cost - The cost of the trajectory before optimisation.
-     * @param new_cost - The cost of the trajectory after optimisation.
-     * @param trajectory_states - The states of the system over the trajectory.
-     */
-    void AdjustKeyPointMethod(double old_cost, double new_cost,
-                              std::vector<MatrixXd> &trajectory_states);
+    void AdjustKeyPointMethod(double old_cost, double new_cost, std::vector<MatrixXd> &trajectory_states);
 
 private:
 
@@ -202,8 +185,6 @@ private:
 
     void UpdateLastPercentageDerivatives(std::vector<std::vector<int>> keypoints, int horizon);
 
-    std::vector<double> last_percentages;
-
     // Differentiator object, computes specific columns of the A and B matrices as desired.
     std::shared_ptr<Differentiator> differentiator;
 
@@ -213,6 +194,8 @@ private:
     // Stored keypoints for the iterative error method so we know where we have already computed keypoints. Prevents recomputation.
     std::vector<std::vector<int>> computed_keypoints;
 
+
+    std::vector<double> last_percentages;
     int dof = 9;
 
     // Current keypoint method
