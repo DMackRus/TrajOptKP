@@ -54,10 +54,7 @@ public:
     int maxIter;
     int maxHorizon;
 
-    int keyPointMethod;
-    int interpolationMethod;
-    int minInterval;
-    int maxInterval;
+    int min_interval;
 
 private:
     std::string projectParentPath;

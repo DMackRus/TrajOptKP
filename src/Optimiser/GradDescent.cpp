@@ -47,8 +47,7 @@ GradDescent::GradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std:
     X_old.push_back(MatrixXd(2*dof, 1));
     X_new.push_back(MatrixXd(2*dof, 1));
 
-    //setIntervalMethod = _yamlReader->keyPointMethod;
-    intervalSize = _yamlReader->minInterval;
+    intervalSize = _yamlReader->min_interval;
 }
 
 double GradDescent::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){

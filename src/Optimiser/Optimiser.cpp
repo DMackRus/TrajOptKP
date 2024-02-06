@@ -21,7 +21,9 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
     activeKeyPointMethod.iterative_error_threshold = activeModelTranslator->iterative_error_threshold;
     activeKeyPointMethod.velocity_change_thresholds = activeModelTranslator->velocity_change_thresholds;
 
-    keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator, activePhysicsSimulator);
+    keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
+                                                             activePhysicsSimulator,
+                                                             activeModelTranslator->dof);
 
     keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
 

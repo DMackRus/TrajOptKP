@@ -53,7 +53,8 @@ public:
      *
      */
     KeypointGenerator(std::shared_ptr<Differentiator> _differentiator,
-                      std::shared_ptr<PhysicsSimulator> _physics_simulator);
+                      std::shared_ptr<PhysicsSimulator> _physics_simulator,
+                      int _dof);
 
     /**
      * Returns the current active keypoint method
@@ -118,6 +119,8 @@ private:
      * @return std::vector<std::vector<MatrixXd>> A velocity profile for each degree of freedom.
      */
     std::vector<MatrixXd> GenerateVelocityProfile(int horizon, std::vector<MatrixXd> trajectory_states);
+
+    std::vector<std::vector<int>> GenerateKeyPointsSetInterval(int horizon);
 
     /**
      * Computes keypoints over a trajectory per degree of freedom. THis method begins with a coarse approximations
