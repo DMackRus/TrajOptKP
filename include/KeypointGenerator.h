@@ -1,6 +1,6 @@
 /*
 ================================================================================
-    File: KeyPointGenerator.h
+    File: KeypointGenerator.h
     Author: David Russell
     Date: January 18, 2024
     Description:
@@ -32,6 +32,7 @@
 
 struct keypoint_method{
     std::string name;
+    bool auto_adjust;
     int min_N;
     int max_N;
     std::vector<double> jerk_thresholds;
@@ -45,13 +46,15 @@ struct index_tuple{
     int end_index;
 };
 
-class KeyPointGenerator{
+class KeypointGenerator{
 public:
     /**
      * Construct a new KeyPoint Generator object.
      *
      */
-    KeyPointGenerator(std::shared_ptr<Differentiator> _differentiator, std::shared_ptr<PhysicsSimulator> _physics_simulator);
+    KeypointGenerator(std::shared_ptr<Differentiator> _differentiator,
+                      std::shared_ptr<PhysicsSimulator> _physics_simulator,
+                      std::shared_ptr<ModelTranslator> _model_translator);
 
     /**
      * Generates a set of key-points per degree of freedom over a trajectory depending on the
@@ -60,7 +63,6 @@ public:
      * @param  horizon The length of the trajectory.
      * @param  trajectory_states A sequence of states of the system over a trajectory.
      * @param  trajectory_controls A sequence of controls of the system over a trajectory.
-     * @param  keypoint_method The method and parameters used to generate key-points.
      * @param  A A vector of matrices containing the dynamics gradients per time-step with respect
      *           to the state vector. Passed by reference so they can be updated by the "Iterative Error" method.
      * @param  B A vector of matrices containing the dynamics gradients per time-step with respect
@@ -69,8 +71,36 @@ public:
      * @return std::vector<std::vector<int>> A set of key-points (integer indices over the trajectory) per
      * degree of freedom.
      */
-    std::vector<std::vector<int>> GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states, std::vector<MatrixXd> trajec_controls,
-                                                    keypoint_method keypoint_method, std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
+    std::vector<std::vector<int>> GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states,
+                                                    std::vector<MatrixXd> trajec_controls,
+                                                    std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
+
+    /**
+     * Returns the current active keypoint method, and its associating parameters.
+     *
+     * @return keypoint_method The current active keypoint method.
+     */
+    keypoint_method ReturnCurrentKeypointMethod();
+
+    /**
+     * Sets the current active keypoint method, and its associating parameters.
+     *
+     * @param _derivativeInterpolator - The keypoint method to set as the current active keypoint method.
+     *
+     */
+    void SetCurrentKeypointMethod(keypoint_method _derivativeInterpolator);
+
+
+    /**
+     * Dependant on the cost improvement of the trajectory, this method will adjust the key-point method
+     * automatically, either making it more greedy or more conservative.
+     *
+     * @param old_cost - The cost of the trajectory before optimisation.
+     * @param new_cost - The cost of the trajectory after optimisation.
+     * @param trajectory_states - The states of the system over the trajectory.
+     */
+    void AdjustKeyPointMethod(double old_cost, double new_cost,
+                              std::vector<MatrixXd> &trajectory_states);
 
 private:
 
@@ -116,7 +146,6 @@ private:
      *
      * @param  horizon The length of the trajectory.
      * @param  trajectory_states A sequence of states of the system over a trajectory.
-     * @param  keypoint_method Contains the hyper parameters for the iterative error method.
      * @param  A A vector of matrices containing the dynamics gradients per time-step with respect to the state vector.
      *           This values is passed by reference as this method actually performs some F.D computations and we
      *           might as well store them.
@@ -126,7 +155,7 @@ private:
      *
      * @return std::vector<std::vector<MatrixXd>> A set of key-points (integer indices over the trajectory) per degree of freedom.
      */
-    std::vector<std::vector<int>> GenerateKeyPointsIteratively(int horizon, keypoint_method keypoint_method, std::vector<MatrixXd> trajectory_states,
+    std::vector<std::vector<int>> GenerateKeyPointsIteratively(int horizon, std::vector<MatrixXd> trajectory_states,
                                                                std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
 
     /**
@@ -136,7 +165,6 @@ private:
      *
      * @param indices Start and end index of the current linear approximation.
      * @param dof_index The current degree of freedom of index that we are computing the error for.
-     * @param keypoint_method Contains the hyper parameters for the key-point method.
      * @param num_dofs The number of dofs in the system, important so we update the correct column of the dynamics gradient matrix.
      * @param A A vector of all the dynamics gradients matrix with respect to the state vector. Since this method has to compute
      *         some F.D values, we cache them for later so we dont need to re-compute them.
@@ -145,7 +173,7 @@ private:
      *
      * @return true if error < "Iterative_Error_Threshold", false otherwise.
      */
-    bool CheckDOFColumnError(index_tuple indices, int dof_index, keypoint_method keypoint_method, int num_dofs,
+    bool CheckDOFColumnError(index_tuple indices, int dof_index, int num_dofs,
                              std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
 
     /**
@@ -156,11 +184,10 @@ private:
      *
      * @param horizon The horizon of the trajectory.
      * @param trajec_profile The dynamics quality we are currently assessing, either acceleration or jerk., for each degree of freedom.
-     * @param keypoint_method  Stores the hyper parameters for this method.
      *
      * @return std::vector<std::vector<int>> A set of key-points (integer indices over the trajectory) per degree of freedom.
      */
-    std::vector<std::vector<int>> GenerateKeyPointsAdaptive(int horizon, std::vector<MatrixXd> trajec_profile, keypoint_method keypoint_method);
+    std::vector<std::vector<int>> GenerateKeyPointsAdaptive(int horizon, std::vector<MatrixXd> trajec_profile);
 
     /**
      * This method of generating keypoints considers the velocity profile for each degree of freedom. When the velocity has changed substantially
@@ -169,11 +196,14 @@ private:
      *
      * @param horizon The horizon of the trajectory.
      * @param velocity_profile A velocity profile (per degree of freedom) over the trajectory.
-     * @param keypoint_method  Stores the hyper parameters for this method.
      *
      * @return std::vector<std::vector<int>> A set of key-points (integer indices over the trajectory) per degree of freedom.
      */
-    std::vector<std::vector<int>> GenerateKeyPointsVelocityChange(int horizon, std::vector<MatrixXd> velocity_profile, keypoint_method keypoint_method);
+    std::vector<std::vector<int>> GenerateKeyPointsVelocityChange(int horizon, std::vector<MatrixXd> velocity_profile);
+
+    void UpdateLastPercentageDerivatives(std::vector<std::vector<int>> keypoints, int horizon);
+
+    std::vector<double> last_percentages;
 
     // Differentiator object, computes specific columns of the A and B matrices as desired.
     std::shared_ptr<Differentiator> differentiator;
@@ -181,6 +211,15 @@ private:
     // Physics simulator object, computes the dynamics of the system.
     std::shared_ptr<PhysicsSimulator> physics_simulator;
 
+    // Model translator object.
+    std::shared_ptr<ModelTranslator> model_translator;
+
     // Stored keypoints for the iterative error method so we know where we have already computed keypoints. Prevents recomputation.
     std::vector<std::vector<int>> computed_keypoints;
+
+    // Current keypoint method
+    keypoint_method current_keypoint_method;
+
+    double desired_percentage_derivative_adjustment_factor = 1.1;
+    bool auto_adjust_initialisation_occured = false;
 };

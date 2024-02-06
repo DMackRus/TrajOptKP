@@ -1,13 +1,27 @@
-#include "KeyPointGenerator.h"
+#include "KeypointGenerator.h"
 
-KeyPointGenerator::KeyPointGenerator(std::shared_ptr<Differentiator> _differentiator, std::shared_ptr<PhysicsSimulator> _physics_simulator) {
+KeypointGenerator::KeypointGenerator(std::shared_ptr<Differentiator> _differentiator,
+                                     std::shared_ptr<PhysicsSimulator> _physics_simulator,
+                                     std::shared_ptr<ModelTranslator> _model_translator) {
     differentiator = _differentiator;
     physics_simulator = _physics_simulator;
+    model_translator = _model_translator;
+
+    // Allocate static arrays
+    last_percentages.reserve(model_translator->dof);
 
 }
 
-std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states, std::vector<MatrixXd> trajec_controls,
-                                                                   keypoint_method keypoint_method, std::vector<MatrixXd> &A, std::vector<MatrixXd> &B){
+keypoint_method KeypointGenerator::ReturnCurrentKeypointMethod(){
+    return current_keypoint_method;
+}
+
+void KeypointGenerator::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
+    current_keypoint_method = _keypoint_method;
+}
+
+std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states, std::vector<MatrixXd> trajec_controls,
+                                                                   std::vector<MatrixXd> &A, std::vector<MatrixXd> &B){
     int dof = trajectory_states[0].rows() / 2;
 
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
@@ -24,10 +38,10 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPoints(int horizon, 
         return keypoints;
     }
 
-    if(keypoint_method.name == "setInterval"){
+    if(current_keypoint_method.name == "setInterval"){
         for(int i = 1; i < horizon; i++){
 
-            if(i % keypoint_method.min_N == 0){
+            if(i % current_keypoint_method.min_N == 0){
                 std::vector<int> one_row;
                 for(int j = 0; j < dof; j++){
                     one_row.push_back(j);
@@ -40,24 +54,24 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPoints(int horizon, 
             }
         }
     }
-    else if(keypoint_method.name == "adaptive_jerk"){
+    else if(current_keypoint_method.name == "adaptive_jerk"){
         std::vector<MatrixXd> jerk_profile = GenerateJerkProfile(horizon, trajectory_states);
-        keypoints = GenerateKeyPointsAdaptive(horizon, jerk_profile, keypoint_method);
+        keypoints = GenerateKeyPointsAdaptive(horizon, jerk_profile);
     }
-    else if(keypoint_method.name == "adaptive_accel"){
+    else if(current_keypoint_method.name == "adaptive_accel"){
         std::vector<MatrixXd> acceleration_profile = GenerateAccellerationProfile(horizon, trajectory_states);
-        keypoints = GenerateKeyPointsAdaptive(horizon, acceleration_profile, keypoint_method);
+        keypoints = GenerateKeyPointsAdaptive(horizon, acceleration_profile);
     }
-    else if(keypoint_method.name == "iterative_error"){
+    else if(current_keypoint_method.name == "iterative_error"){
         computed_keypoints.clear();
         physics_simulator->initModelForFiniteDifferencing();
-        keypoints = GenerateKeyPointsIteratively(horizon, keypoint_method, trajectory_states, A, B);
+        keypoints = GenerateKeyPointsIteratively(horizon, trajectory_states, A, B);
         physics_simulator->resetModelAfterFiniteDifferencing();
 
     }
-    else if(keypoint_method.name == "magvel_change"){
+    else if(current_keypoint_method.name == "magvel_change"){
         std::vector<MatrixXd> velocity_profile = GenerateVelocityProfile(horizon, trajectory_states);
-        keypoints = GenerateKeyPointsVelocityChange(horizon, velocity_profile, keypoint_method);
+        keypoints = GenerateKeyPointsVelocityChange(horizon, velocity_profile);
     }
     else{
         std::cout << "ERROR: keyPointsMethod not recognised \n";
@@ -68,6 +82,10 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPoints(int horizon, 
     for(int i = 0; i < dof; i++){
         keypoints.back().push_back(i);
     }
+
+    // Compute the percentages of derivatives per degree of freedom
+    UpdateLastPercentageDerivatives(keypoints, horizon);
+
 
 //     Print out the key points
 //    for(int i = 0; i < keypoints.size(); i++){
@@ -81,8 +99,25 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPoints(int horizon, 
     return keypoints;
 }
 
-std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsAdaptive(int horizon, std::vector<MatrixXd> trajec_profile,
-                                                                           keypoint_method keypoint_method) {
+void KeypointGenerator::AdjustKeyPointMethod(double old_cost, double new_cost,
+                                             std::vector<MatrixXd> &trajectory_states){
+
+    std::vector<double> desired_derivative_percentages = std::vector<double>(model_translator->dof, 0.0);
+
+    // If the cost decreased, lets make the key-points more sparse
+    if(new_cost < old_cost){
+
+
+        current_keypoint_method.min_N = std::max(1, current_keypoint_method.min_N - 1);
+    }
+    else{
+
+        current_keypoint_method.min_N = std::min(100, current_keypoint_method.min_N + 1);
+    }
+
+}
+
+std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsAdaptive(int horizon, std::vector<MatrixXd> trajec_profile) {
     int dof = trajec_profile[0].rows() / 2;
 
     std::vector<std::vector<int>> keypoints;
@@ -104,15 +139,15 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsAdaptive(int h
     for(int j = 0; j < dof; j++){
         for(int i = 0; i < trajec_profile.size(); i++){
 
-            if((i - last_indices[j]) >= keypoint_method.min_N) {
+            if((i - last_indices[j]) >= current_keypoint_method.min_N) {
                 // Check if the jerk is above the threshold
-                if (trajec_profile[i](j, 0) > keypoint_method.jerk_thresholds[j]) {
+                if (trajec_profile[i](j, 0) > current_keypoint_method.jerk_thresholds[j]) {
                     keypoints[i].push_back(j);
                     last_indices[j] = i;
                 }
             }
 
-            if((i - last_indices[j]) >= keypoint_method.max_N){
+            if((i - last_indices[j]) >= current_keypoint_method.max_N){
                 keypoints[i].push_back(j);
                 last_indices[j] = i;
             }
@@ -121,7 +156,7 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsAdaptive(int h
     return keypoints;
 }
 
-std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsIteratively(int horizon, keypoint_method keypoint_method, std::vector<MatrixXd> trajectory_states,
+std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsIteratively(int horizon, std::vector<MatrixXd> trajectory_states,
                                                                               std::vector<MatrixXd> &A, std::vector<MatrixXd> &B) {
     int dof = trajectory_states[0].rows() / 2;
 
@@ -161,7 +196,7 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsIteratively(in
 
                 int midIndex = (list_of_indices_check[j].start_index + list_of_indices_check[j].end_index) / 2;
 //                cout <<"dof: " << i <<  ": index tuple: " << list_of_indices_check[j].start_index << " " << list_of_indices_check[j].end_index << endl;
-                bool approximationGood = CheckDOFColumnError(list_of_indices_check[j], i, keypoint_method, dof, A, B);
+                bool approximationGood = CheckDOFColumnError(list_of_indices_check[j], i, dof, A, B);
 
                 if (!approximationGood) {
                     allChecksComplete = false;
@@ -218,7 +253,7 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsIteratively(in
     return keypoints;
 }
 
-bool KeyPointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, keypoint_method keypoint_method, int num_dofs,
+bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, int num_dofs,
                                             std::vector<MatrixXd> &A, std::vector<MatrixXd> &B) {
     int state_vector_size = num_dofs * 2;
 
@@ -230,7 +265,7 @@ bool KeyPointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
 
     // Middle index in trajectory between start and end index passed from "indices" struct
     int mid_index = (indices.start_index + indices.end_index) / 2;
-    if((indices.end_index - indices.start_index) <= keypoint_method.min_N){
+    if((indices.end_index - indices.start_index) <= current_keypoint_method.min_N){
         return true;
     }
 
@@ -311,7 +346,7 @@ bool KeyPointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
 //    cout << "num too small: " << counterTooSmall << "\n";
 //    cout << "num too large: " << counterTooLarge << "\n";
 
-    if(average_error < keypoint_method.iterative_error_threshold){
+    if(average_error < current_keypoint_method.iterative_error_threshold){
         approximation_good = true;
     }
     else{
@@ -328,8 +363,7 @@ bool KeyPointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
     return approximation_good;
 }
 
-std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsVelocityChange(int horizon, std::vector<MatrixXd> velocity_profile,
-                                                                                 keypoint_method keypoint_method) {
+std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsVelocityChange(int horizon, std::vector<MatrixXd> velocity_profile) {
     int dof = velocity_profile[0].rows();
 
     std::vector<std::vector<int>> keypoints;
@@ -361,8 +395,8 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsVelocityChange
             double current_vel_change_since_last_keypoint = velocity_profile[t](i, 0) - last_vel_value[i];
 
             // If the vel change is above the required threshold
-            if(last_keypoint_counter[i] >= keypoint_method.min_N){
-                if(abs(current_vel_change_since_last_keypoint) > keypoint_method.velocity_change_thresholds[i]){
+            if(last_keypoint_counter[i] >= current_keypoint_method.min_N){
+                if(abs(current_vel_change_since_last_keypoint) > current_keypoint_method.velocity_change_thresholds[i]){
                     keypoints[t].push_back(i);
                     last_vel_value[i] = velocity_profile[t](i, 0);
                     last_keypoint_counter[i] = 0;
@@ -370,10 +404,8 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsVelocityChange
                 }
             }
 
-//            cout << " after check mag change" << endl;
-
             // If the interval is greater than min_N
-            if(last_keypoint_counter[i] >= keypoint_method.min_N){
+            if(last_keypoint_counter[i] >= current_keypoint_method.min_N){
                 // If the direction of the velocity has changed
                 if(current_vel_direction * last_vel_direction[i] < 0){
                     keypoints[t].push_back(i);
@@ -387,7 +419,7 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsVelocityChange
             }
 
             // If interval is greater than max_N
-            if(last_keypoint_counter[i] >= keypoint_method.max_N){
+            if(last_keypoint_counter[i] >= current_keypoint_method.max_N){
                 keypoints[t].push_back(i);
                 last_vel_value[i] = velocity_profile[t](i, 0);
                 last_keypoint_counter[i] = 0;
@@ -404,7 +436,7 @@ std::vector<std::vector<int>> KeyPointGenerator::GenerateKeyPointsVelocityChange
     return keypoints;
 }
 
-std::vector<MatrixXd> KeyPointGenerator::GenerateJerkProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
+std::vector<MatrixXd> KeypointGenerator::GenerateJerkProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
 
     int dof = trajectory_states[0].rows() / 2;
     MatrixXd jerk(dof, 1);
@@ -433,7 +465,7 @@ std::vector<MatrixXd> KeyPointGenerator::GenerateJerkProfile(int horizon, std::v
     return jerk_profile;
 }
 
-std::vector<MatrixXd> KeyPointGenerator::GenerateAccellerationProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
+std::vector<MatrixXd> KeypointGenerator::GenerateAccellerationProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
     int dof = trajectory_states[0].rows() / 2;
     MatrixXd accel(dof, 1);
 
@@ -458,7 +490,7 @@ std::vector<MatrixXd> KeyPointGenerator::GenerateAccellerationProfile(int horizo
     return accelleration_profile;
 }
 
-std::vector<MatrixXd> KeyPointGenerator::GenerateVelocityProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
+std::vector<MatrixXd> KeypointGenerator::GenerateVelocityProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
     int dof = trajectory_states[0].rows() / 2;
 
     std::vector<MatrixXd> velocity_profile;
@@ -474,4 +506,26 @@ std::vector<MatrixXd> KeyPointGenerator::GenerateVelocityProfile(int horizon, st
     }
 
     return velocity_profile;
+}
+
+void KeypointGenerator::UpdateLastPercentageDerivatives(std::vector<std::vector<int>> keypoints, int horizon){
+    std::vector<int> dof_count = std::vector<int>(model_translator->dof, 0);
+    for(int t = 0; t < keypoints.size(); t++){
+        for(int i = 0; i < keypoints[t].size(); i++){
+            for(int dof = 0; dof < model_translator->dof; dof++){
+                // if match between keypoint and dof
+                if(dof == keypoints[t][i]){
+                    dof_count[dof]++;
+                    break;
+                }
+            }
+        }
+    }
+
+    std::cout << "percentages: ";
+    for(int i = 0; i < model_translator->dof; i++){
+        last_percentages[i] = (double)dof_count[i] / (double)(horizon);
+        std::cout << " " << last_percentages[i];
+    }
+    std::cout << "\n";
 }

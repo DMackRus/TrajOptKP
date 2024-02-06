@@ -1,9 +1,5 @@
 #include "ModelTranslator.h"
 
-ModelTranslator::ModelTranslator(){
-
-}
-
 void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
     task taskConfig;
 
@@ -11,37 +7,37 @@ void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
     yamlReader.readModelConfigFile(yamlFilePath, taskConfig);
     model_file_path = taskConfig.modelFilePath;
     model_name = taskConfig.modelName;
-    min_N = taskConfig.minN;
-    max_N = taskConfig.maxN;
-    keypoint_method = taskConfig.keypointMethod;
-    iterative_error_threshold = taskConfig.iterativeErrorThreshold;
+//    min_N = taskConfig.minN;
+//    max_N = taskConfig.maxN;
+//    keypoint_method = taskConfig.keypointMethod;
+//    iterative_error_threshold = taskConfig.iterativeErrorThreshold;
     const char* _modelPath = model_file_path.c_str();
 
     // Initialise physics simulator
     vector<string> bodyNames;
     for(int i = 0; i < taskConfig.robots.size(); i++){
         bodyNames.push_back(taskConfig.robots[i].name);
-        for(int j = 0; j < taskConfig.robots[i].jointNames.size(); j++){
-            jerk_thresholds.push_back(taskConfig.robots[i].jointJerkThresholds[j]);
-            // TODO fix this dupliate jerk thresholds
-            accel_thresholds.push_back(taskConfig.robots[i].jointJerkThresholds[j]);
-            velocity_change_thresholds.push_back(taskConfig.robots[i].magVelThresholds[j]);
-        }
+//        for(int j = 0; j < taskConfig.robots[i].jointNames.size(); j++){
+//            jerk_thresholds.push_back(taskConfig.robots[i].jointJerkThresholds[j]);
+//            // TODO fix this dupliate jerk thresholds
+//            accel_thresholds.push_back(taskConfig.robots[i].jointJerkThresholds[j]);
+//            velocity_change_thresholds.push_back(taskConfig.robots[i].magVelThresholds[j]);
+//        }
 
     }
 
     for(int i = 0; i < taskConfig.bodiesStates.size(); i++){
         bodyNames.push_back(taskConfig.bodiesStates[i].name);
         for(int j = 0; j < 3; j++){
-            jerk_thresholds.push_back(taskConfig.bodiesStates[i].linearJerkThreshold[j]);
-            jerk_thresholds.push_back(taskConfig.bodiesStates[i].angularJerkThreshold[j]);
-
-            // TODO fix this dupliate jerk thresholds
-            accel_thresholds.push_back(taskConfig.bodiesStates[i].linearJerkThreshold[j]);
-            accel_thresholds.push_back(taskConfig.bodiesStates[i].angularJerkThreshold[j]);
-
-            velocity_change_thresholds.push_back(taskConfig.bodiesStates[i].linearMagVelThreshold[j]);
-            velocity_change_thresholds.push_back(taskConfig.bodiesStates[i].angularMagVelThreshold[j]);
+//            jerk_thresholds.push_back(taskConfig.bodiesStates[i].linearJerkThreshold[j]);
+//            jerk_thresholds.push_back(taskConfig.bodiesStates[i].angularJerkThreshold[j]);
+//
+//            // TODO fix this dupliate jerk thresholds
+//            accel_thresholds.push_back(taskConfig.bodiesStates[i].linearJerkThreshold[j]);
+//            accel_thresholds.push_back(taskConfig.bodiesStates[i].angularJerkThreshold[j]);
+//
+//            velocity_change_thresholds.push_back(taskConfig.bodiesStates[i].linearMagVelThreshold[j]);
+//            velocity_change_thresholds.push_back(taskConfig.bodiesStates[i].angularMagVelThreshold[j]);
         }
     }
 
@@ -239,7 +235,6 @@ std::vector<MatrixXd> ModelTranslator::CreateInitSetupControls(int horizonLength
 
 MatrixXd ModelTranslator::ReturnStateVector(int data_index){
     MatrixXd stateVector(state_vector_size, 1);
-
     int currentStateIndex = 0;
 
     // Loop through all robots in the state vector
@@ -351,7 +346,6 @@ bool ModelTranslator::SetControlVector(MatrixXd control_vector, int data_index){
 
 MatrixXd ModelTranslator::returnPositionVector(int data_index){
     MatrixXd position_vector(dof, 1);
-
     int currentStateIndex = 0;
 
     // Loop through all robots in the state vector
@@ -394,7 +388,6 @@ MatrixXd ModelTranslator::returnPositionVector(int data_index){
 
 MatrixXd ModelTranslator::returnVelocityVector(int data_index){
     MatrixXd velocity_vector(dof, 1);
-//    active_physics_simulator->forwardSimulator(data_index);
     int currentStateIndex = 0;
 
     // Loop through all robots in the state vector

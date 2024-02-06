@@ -27,10 +27,21 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
     _taskConfig.modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
     _taskConfig.modelName = node["modelName"].as<std::string>();
     _taskConfig.modelTimeStep = node["timeStep"].as<double>();
-    _taskConfig.keypointMethod = node["keypointMethod"].as<std::string>();
-    _taskConfig.minN = node["minN"].as<int>();
-    _taskConfig.maxN = node["maxN"].as<int>();
-    _taskConfig.iterativeErrorThreshold = node["iterativeErrorThreshold"].as<double>();
+
+    // Keypoint parameters
+    file_keypoint_method.name = node["keypointMethod"].as<std::string>();
+
+    if(node["auto_adjust"]){
+        file_keypoint_method.auto_adjust = node["auto_adjust"].as<bool>();
+    }
+    else{
+        file_keypoint_method.auto_adjust = false;
+    }
+
+    file_keypoint_method.min_N = node["minN"].as<int>();
+    file_keypoint_method.max_N = node["maxN"].as<int>();
+    file_keypoint_method.iterative_error_threshold = node["iterativeErrorThreshold"].as<double>();
+
 
     // Loop through robots
     for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){
