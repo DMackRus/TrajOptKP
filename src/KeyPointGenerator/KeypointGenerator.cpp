@@ -1,14 +1,14 @@
 #include "KeypointGenerator.h"
 
 KeypointGenerator::KeypointGenerator(std::shared_ptr<Differentiator> _differentiator,
-                                     std::shared_ptr<PhysicsSimulator> _physics_simulator,
-                                     std::shared_ptr<ModelTranslator> _model_translator) {
+                                     std::shared_ptr<PhysicsSimulator> _physics_simulator) {
     differentiator = _differentiator;
     physics_simulator = _physics_simulator;
-    model_translator = _model_translator;
+
+    int dof = 9;
 
     // Allocate static arrays
-    last_percentages.reserve(model_translator->dof);
+    last_percentages.reserve(dof);
 
 }
 
@@ -102,7 +102,7 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPoints(int horizon, 
 void KeypointGenerator::AdjustKeyPointMethod(double old_cost, double new_cost,
                                              std::vector<MatrixXd> &trajectory_states){
 
-    std::vector<double> desired_derivative_percentages = std::vector<double>(model_translator->dof, 0.0);
+    std::vector<double> desired_derivative_percentages = std::vector<double>(dof, 0.0);
 
     // If the cost decreased, lets make the key-points more sparse
     if(new_cost < old_cost){
@@ -509,10 +509,10 @@ std::vector<MatrixXd> KeypointGenerator::GenerateVelocityProfile(int horizon, st
 }
 
 void KeypointGenerator::UpdateLastPercentageDerivatives(std::vector<std::vector<int>> keypoints, int horizon){
-    std::vector<int> dof_count = std::vector<int>(model_translator->dof, 0);
+    std::vector<int> dof_count = std::vector<int>(dof, 0);
     for(int t = 0; t < keypoints.size(); t++){
         for(int i = 0; i < keypoints[t].size(); i++){
-            for(int dof = 0; dof < model_translator->dof; dof++){
+            for(int dof = 0; dof < dof; dof++){
                 // if match between keypoint and dof
                 if(dof == keypoints[t][i]){
                     dof_count[dof]++;
@@ -523,7 +523,7 @@ void KeypointGenerator::UpdateLastPercentageDerivatives(std::vector<std::vector<
     }
 
     std::cout << "percentages: ";
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < dof; i++){
         last_percentages[i] = (double)dof_count[i] / (double)(horizon);
         std::cout << " " << last_percentages[i];
     }

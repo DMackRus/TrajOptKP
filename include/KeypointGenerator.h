@@ -53,8 +53,7 @@ public:
      *
      */
     KeypointGenerator(std::shared_ptr<Differentiator> _differentiator,
-                      std::shared_ptr<PhysicsSimulator> _physics_simulator,
-                      std::shared_ptr<ModelTranslator> _model_translator);
+                      std::shared_ptr<PhysicsSimulator> _physics_simulator);
 
     /**
      * Generates a set of key-points per degree of freedom over a trajectory depending on the
@@ -211,11 +210,10 @@ private:
     // Physics simulator object, computes the dynamics of the system.
     std::shared_ptr<PhysicsSimulator> physics_simulator;
 
-    // Model translator object.
-    std::shared_ptr<ModelTranslator> model_translator;
-
     // Stored keypoints for the iterative error method so we know where we have already computed keypoints. Prevents recomputation.
     std::vector<std::vector<int>> computed_keypoints;
+
+    int dof = 9;
 
     // Current keypoint method
     keypoint_method current_keypoint_method;

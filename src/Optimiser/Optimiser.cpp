@@ -17,8 +17,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator,
 //                                                             activePhysicsSimulator,
 //                                                             activeModelTranslator);
     keypoint_generator = KeypointGenerator(activeDifferentiator,
-                                           activePhysicsSimulator,
-                                           activeModelTranslator);
+                                           activePhysicsSimulator);
 
     keypoint_generator->SetCurrentKeypointMethod(activeYamlReader->file_keypoint_method);
 
