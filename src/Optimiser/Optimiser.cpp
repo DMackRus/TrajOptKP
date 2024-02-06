@@ -12,6 +12,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
 
     // Set up the derivative interpolator from YAML settings
     activeKeyPointMethod.name = activeModelTranslator->keypoint_method;
+    activeKeyPointMethod.auto_adjust = activeModelTranslator->auto_adjust;
     activeKeyPointMethod.min_N = activeModelTranslator->min_N;
     activeKeyPointMethod.max_N = activeModelTranslator->max_N;
     activeKeyPointMethod.jerk_thresholds = activeModelTranslator->jerk_thresholds;

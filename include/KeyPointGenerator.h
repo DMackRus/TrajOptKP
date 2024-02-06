@@ -32,6 +32,7 @@
 
 struct keypoint_method{
     std::string name;
+    bool auto_adjust;
     int min_N;
     int max_N;
     std::vector<double> jerk_thresholds;

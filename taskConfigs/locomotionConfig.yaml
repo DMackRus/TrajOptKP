@@ -2,6 +2,7 @@ modelFile: "/mujoco_models/walker.xml"
 modelName: "/walker"
 timeStep: 0.005
 keypointMethod: "magvel_change"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+auto_adjust: true
 minN: 1
 maxN: 20
 iterativeErrorThreshold: 0.1

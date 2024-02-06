@@ -271,6 +271,7 @@ public:
 
     // Keypoint hyper parameters
     std::string keypoint_method;
+    bool auto_adjust;
     int min_N;
     int max_N;
     std::vector<double> jerk_thresholds;

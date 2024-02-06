@@ -14,6 +14,7 @@ void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
     min_N = taskConfig.minN;
     max_N = taskConfig.maxN;
     keypoint_method = taskConfig.keypointMethod;
+    auto_adjust = taskConfig.auto_adjust;
     iterative_error_threshold = taskConfig.iterativeErrorThreshold;
     const char* _modelPath = model_file_path.c_str();
 
