@@ -67,8 +67,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/BoxSweep.cpp
             src/ModelTranslator/Acrobot.cpp
             src/ModelTranslator/Hopper.cpp
-                src/Testing.cpp
-        src/KeyPointGenerator/KeypointGenerator.cpp)
+            src/Testing.cpp
+            src/KeyPointGenerator/KeypointGenerator.cpp)
 
 include_directories(
         include
