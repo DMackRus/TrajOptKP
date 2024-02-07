@@ -133,7 +133,7 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
     if(verbose_output) {
         cout << " ---------------- optimisation begins -------------------" << endl;
         cout << " ------ " << activeModelTranslator->model_name << " ------ " << endl;
-        cout << "min_N " << activeKeyPointMethod.min_N << "  keypointsMethod: " << activeKeyPointMethod.name;
+        keypoint_generator->PrintKeypointMethod();
         cout << " filtering: " << filteringMethod << endl;
     }
 
@@ -236,6 +236,9 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
             }
 
             costHistory.push_back(newCost);
+
+            // Updates the keypoint parameters if auto_adjust is true.
+            keypoint_generator->AdjustKeyPointMethod(oldCost, newCost, horizon_length, X_old);
 
             // STEP 4 - Check for convergence
             bool converged;

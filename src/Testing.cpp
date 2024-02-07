@@ -32,16 +32,49 @@ int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int highers
         keypoint_method.min_N = i;
         keypoint_method.max_N = i;
 
-        testing_asynchronus_mpc(keypoint_method);
+        testing_asynchronus_mpc(keypoint_method, 100);
     }
 
     return EXIT_SUCCESS;
 }
 
-int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method){
+int Testing::testing_different_velocity_change_asynchronus_mpc(){
+
+    std::cout << "beginning testing asynchronus MPC for " << activeModelTranslator->model_name << std::endl;
+
+//    std::vector<int> minN = {1, 2, 3};
+//    std::vector<int> maxN_multiplier = {2, 3, 5, 10, 20};
+//    std::vector<double> velocity_change_thresholds = {0.01, 0.1, 1.0, 2.0};
+
+    std::vector<int> minN = {1};
+    std::vector<int> maxN_multiplier = {2, 3};
+    std::vector<double> velocity_change_thresholds = {1.0};
+
+
+    for(int i = 0; i < minN.size(); i++){
+        for(int j = 0; j < maxN_multiplier.size(); j++){
+            for(int k = 0; k < velocity_change_thresholds.size(); k++){
+                keypoint_method keypoint_method;
+                keypoint_method.name = "magvel_change";
+                keypoint_method.min_N = minN[i];
+                keypoint_method.max_N = minN[i] * maxN_multiplier[j];
+                for(int l = 0; l < activeModelTranslator->dof; l++){
+                    keypoint_method.velocity_change_thresholds.push_back(velocity_change_thresholds[k]);
+                }
+                std::cout << "testing keypoint method: " << keypoint_method.name << " with minN: " << keypoint_method.min_N
+                          << " maxN: " << keypoint_method.max_N << " and velocity change thresholds: " << keypoint_method.velocity_change_thresholds[0] << std::endl;
+
+                testing_asynchronus_mpc(keypoint_method, 5);
+            }
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
+
+int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials){
 
     std::string task_prefix = activeModelTranslator->model_name;
-    std::cout << "beginning testing asynchronus MPC for " << task_prefix << std::endl;
 
     // start timer here
     auto startTime = std::chrono::high_resolution_clock::now();
@@ -71,7 +104,11 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method){
         method_name = keypoint_method.name + "_" + std::to_string(keypoint_method.min_N);
     }
     else{
-        method_name = keypoint_method.name + "_" + std::to_string(keypoint_method.min_N) + "_" + std::to_string(keypoint_method.max_N);
+        double round = std::round(keypoint_method.velocity_change_thresholds[0]);
+        method_name = keypoint_method.name + "_" +
+                std::to_string(keypoint_method.min_N) + "_" +
+                std::to_string(keypoint_method.max_N) + "_" +
+                std::to_string(keypoint_method.velocity_change_thresholds[0]).substr(0, 3);
     }
 
     std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
@@ -85,22 +122,16 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method){
     std::vector<double> targetVelocities;
     double minTarget = 0.2;
     double maxTarget = 0.5;
-    int numTests = 100;
     double currentVel = minTarget;
 
-    for(int i = 0; i < numTests; i++){
+    for(int i = 0; i < num_trials; i++){
         targetVelocities.push_back(currentVel);
-        currentVel += (maxTarget - minTarget) / (numTests - 1);
+        currentVel += (maxTarget - minTarget) / (num_trials - 1);
     }
 
     auto startTimer = std::chrono::high_resolution_clock::now();
     iLQROptimiser->verbose_output = false;
 
-    // Setup the derivative interpolator object
-    struct keypoint_method currentInterpolator = iLQROptimiser->ReturnCurrentKeypointMethod();
-    keypoint_method.jerk_thresholds = currentInterpolator.jerk_thresholds;
-    keypoint_method.velocity_change_thresholds = currentInterpolator.velocity_change_thresholds;
-    keypoint_method.iterative_error_threshold = currentInterpolator.iterative_error_threshold;
     iLQROptimiser->SetCurrentKeypointMethod(keypoint_method);
 
     finalCosts.clear();
@@ -155,7 +186,7 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method){
 
 
     // Loop through rows
-    for(int i = 0; i < numTests; i++){
+    for(int i = 0; i < num_trials; i++){
         file_output << finalCostsRow[i] << "," << avgOptTimesRow[i] << "," << avgPercentDerivsRow[i] << ",";
         file_output << avgTimeForDerivsRow[i] << "," << avgTimeBPRow[i] << "," << avgTimeFPRow[i] << std::endl;
     }

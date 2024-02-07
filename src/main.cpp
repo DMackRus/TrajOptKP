@@ -119,7 +119,9 @@ int main(int argc, char **argv) {
 //        test.minN = 5;
 //        return myTestingObject.testing_asynchronus_mpc(test);
 
-        return myTestingObject.testing_different_minN_asynchronus_mpc(1, 20, 1);
+//        return myTestingObject.testing_different_minN_asynchronus_mpc(1, 20, 1);
+        return myTestingObject.testing_different_velocity_change_asynchronus_mpc();
+
 //        generateTestingData_MPC();
         //generateTestingData();
         //return 0;
@@ -624,7 +626,6 @@ void async_MPC_testing(){
         int task_time = 0;
 
         while(task_time++ < MAX_TASK_TIME){
-            std::cout << "task time: " << task_time << "\n";
             begin = std::chrono::steady_clock::now();
 
             if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
@@ -665,12 +666,8 @@ void async_MPC_testing(){
             int difference_ms = (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
             if(difference_ms > 0) {
-                std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, sleeping for "
-                          << difference_ms << " ms \n";
                 std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
             }
-            else
-                std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
 
 
             activeModelTranslator->X_desired(1) = activeModelTranslator->ReturnStateVector(VISUALISATION_DATA)(1) + 0.15;
@@ -1496,7 +1493,11 @@ int assign_task(){
         activeModelTranslator = myBoxFlick;
     }
     else if(task == "walker"){
-        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>();
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(PLANE);
+        activeModelTranslator = myLocomotion;
+    }
+    else if(task == "walker_uneven"){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN);
         activeModelTranslator = myLocomotion;
     }
     else if(task == "Hopper"){

@@ -1,17 +1,13 @@
-//#ifndef PHYSICSSIMSWITCHING_DIFFERENTIATOR_H
-//#define PHYSICSSIMSWITCHING_DIFFERENTIATOR_H
+#pragma once
 
-#ifndef DIFFERENTIATOR_H
-#define DIFFERENTIATOR_H
-
-#define USE_DQACC 0
+#define USE_DQACC 1
 #define HESSIAN_APPROXIMATION 0
 
 #include "ModelTranslator.h"
 #include "MuJoCoHelper.h"
 #include "mujoco.h"
 
-#define DQACCDQ_MAX 100
+//#define DQACCDQ_MAX 100
 
 class Differentiator{
 public:
@@ -35,5 +31,3 @@ private:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<MuJoCoHelper> activePhysicsSimulator;
 };
-
-#endif

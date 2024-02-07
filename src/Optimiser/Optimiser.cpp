@@ -26,8 +26,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
                                                              activeModelTranslator->dof);
 
     keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
-
-
+    keypoint_generator->PrintKeypointMethod();
 }
 
 bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
@@ -53,11 +52,11 @@ void Optimiser::ReturnOptimisationData(double &_optTime, double &_costReduction,
 }
 
 keypoint_method Optimiser::ReturnCurrentKeypointMethod(){
-    return activeKeyPointMethod;
+    return keypoint_generator->ReturnCurrentKeypointMethod();
 }
 
 void Optimiser::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
-    activeKeyPointMethod = _keypoint_method;
+    keypoint_generator->SetKeypointMethod(_keypoint_method);
 }
 
 void Optimiser::GenerateDerivatives(){

@@ -84,7 +84,9 @@ public:
     std::vector<std::vector<int>> GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states, std::vector<MatrixXd> trajec_controls,
                                                     std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
 
-    void AdjustKeyPointMethod(double old_cost, double new_cost, std::vector<MatrixXd> &trajectory_states);
+    void AdjustKeyPointMethod(double old_cost, double new_cost, int horizon, std::vector<MatrixXd> &trajectory_states);
+
+    void PrintKeypointMethod();
 
 private:
 

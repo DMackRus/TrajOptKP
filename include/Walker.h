@@ -2,9 +2,14 @@
 
 #include "ModelTranslator.h"
 
+enum terrains{
+    PLANE,
+    UNEVEN
+};
+
 class walker : public ModelTranslator {
 public:
-    walker();
+    walker(int terrain);
 
     bool TaskComplete(int dataIndex, double &dist) override;
     void GenerateRandomGoalAndStartState() override;

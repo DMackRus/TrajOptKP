@@ -415,7 +415,7 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
     double costInc;
     double costDec;
 
-    int tid = -3 - physicsHelperId;
+    int tid = -4 - physicsHelperId;
     mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->fd_data[tid].get(), dof);
     mju_copy(warmstart, activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
 
@@ -572,7 +572,7 @@ MatrixXd Differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, i
     MatrixXd dqaccdvel(dof, dof);
     MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(physicsHelperId);
 
-    int tid = -3 - physicsHelperId;
+    int tid = -4 - physicsHelperId;
     mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->fd_data[tid].get(), dof);
     mju_copy(warmstart, activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
 
@@ -719,7 +719,7 @@ MatrixXd Differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, i
     double costDec;
     MatrixXd dqaccdq(dof, dof);
 
-    int tid = -3 - physicsHelperId;
+    int tid = -4 - physicsHelperId;
     mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->fd_data[tid].get(), dof);
     mju_copy(warmstart, activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
 

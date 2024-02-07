@@ -3,9 +3,14 @@
 //
 #include "Walker.h"
 
-walker::walker(): ModelTranslator(){
-    std::string yamlFilePath = "/taskConfigs/locomotionConfig.yaml";
-    InitModelTranslator(yamlFilePath);
+walker::walker(int terrain): ModelTranslator(){
+    std::string yaml_file_path;
+    if(terrain == PLANE)
+        yaml_file_path = "/taskConfigs/locomotionConfig.yaml";
+    else if(terrain == UNEVEN){
+        yaml_file_path = "/taskConfigs/locomotionUnevenConfig.yaml";
+    }
+    InitModelTranslator(yaml_file_path);
 }
 
 bool walker::TaskComplete(int dataIndex, double &dist){

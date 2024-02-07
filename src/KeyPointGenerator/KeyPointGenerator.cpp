@@ -18,7 +18,30 @@ keypoint_method KeypointGenerator::ReturnCurrentKeypointMethod() {
 }
 
 void KeypointGenerator::SetKeypointMethod(keypoint_method method){
-    current_keypoint_method = method;
+    std::cout << "setting keypoint method \n";
+    std::cout << "method vel 0" << method.velocity_change_thresholds[0] << "\n";
+    current_keypoint_method.name = method.name;
+    current_keypoint_method.min_N = method.min_N;
+    current_keypoint_method.max_N = method.max_N;
+    current_keypoint_method.jerk_thresholds = method.jerk_thresholds;
+    current_keypoint_method.velocity_change_thresholds = method.velocity_change_thresholds;
+    current_keypoint_method.auto_adjust = method.auto_adjust;
+    current_keypoint_method.iterative_error_threshold = method.iterative_error_threshold;
+}
+
+void KeypointGenerator::PrintKeypointMethod(){
+    std::cout << "Method: " << current_keypoint_method.name << std::endl;
+    std::cout << "min_N: " << current_keypoint_method.min_N << " max_N: " << current_keypoint_method.max_N << std::endl;
+    std::cout << "jerk thresholds: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << " " << current_keypoint_method.jerk_thresholds[i];
+    }
+    std::cout << "\n ";
+    std::cout << "velocity change thresholds: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << " " << current_keypoint_method.velocity_change_thresholds[i];
+    }
+    std::cout << "\n ";
 }
 
 std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states, std::vector<MatrixXd> trajec_controls,
@@ -31,6 +54,7 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPoints(int horizon, 
 
     // Loop through the trajectory and decide what indices should be evaluated via finite differencing
     std::vector<std::vector<int>> keypoints;
+
     std::vector<int> one_row;
     for(int i = 0; i < dof; i++){
         one_row.push_back(i);
@@ -44,6 +68,7 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPoints(int horizon, 
     }
 
     if(current_keypoint_method.name == "setInterval"){
+        keypoints = GenerateKeyPointsSetInterval(horizon);
 
     }
     else if(current_keypoint_method.name == "adaptive_jerk"){
@@ -89,20 +114,41 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPoints(int horizon, 
     return keypoints;
 }
 
-void KeypointGenerator::AdjustKeyPointMethod(double old_cost, double new_cost,
+void KeypointGenerator::AdjustKeyPointMethod(double old_cost, double new_cost, int horizon,
                                              std::vector<MatrixXd> &trajectory_states){
+
+
+    // If we are not in auto-adjust mode, then return
+    if(current_keypoint_method.auto_adjust == false){
+        return;
+    }
+
+    double min_percentage = (2.0 / horizon) * 100.0;
 
     std::vector<double> desired_derivative_percentages = std::vector<double>(dof, 0.0);
 
+    // Calculate new desired derivative percentages based on previous ones
+
     // If the cost decreased, lets make the key-points more sparse
     if(new_cost < old_cost){
+        // Do something basic to begin
+        for(int i = 0; i < dof; i++){
+            current_keypoint_method.velocity_change_thresholds[i] =
+                    current_keypoint_method.velocity_change_thresholds[i] * 1.1;
+        }
 
-
-        current_keypoint_method.min_N = std::max(1, current_keypoint_method.min_N - 1);
     }
     else{
 
-        current_keypoint_method.min_N = std::min(100, current_keypoint_method.min_N + 1);
+        for(int i = 0; i < dof; i++) {
+            current_keypoint_method.velocity_change_thresholds[i] =
+                    current_keypoint_method.velocity_change_thresholds[i] / 1.1;
+        }
+
+//        current_keypoint_method.min_N = std::min(100, current_keypoint_method.min_N - 1);
+//        if(current_keypoint_method.min_N == 0){
+//            current_keypoint_method.min_N = 1;
+//        }
     }
 
 }
@@ -110,7 +156,7 @@ void KeypointGenerator::AdjustKeyPointMethod(double old_cost, double new_cost,
 std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsSetInterval(int horizon){
     std::vector<std::vector<int>> keypoints;
 
-    for(int i = 1; i < horizon; i++){
+    for(int i = 0; i < horizon; i++){
 
         if(i % current_keypoint_method.min_N == 0){
             std::vector<int> one_row;
@@ -535,10 +581,7 @@ void KeypointGenerator::UpdateLastPercentageDerivatives(std::vector<std::vector<
         }
     }
 
-    std::cout << "percentages: ";
     for(int i = 0; i < dof; i++){
-        last_percentages[i] = (double)dof_count[i] / (double)(horizon);
-        std::cout << " " << last_percentages[i];
+        last_percentages[i] = ((double)dof_count[i] / (double)(horizon)) * 100;
     }
-    std::cout << "\n";
 }
