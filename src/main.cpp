@@ -789,8 +789,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             timeForwardsPass.push_back(activeOptimiser->avg_time_forwards_pass_ms);
             percentagesDerivsCalculated.push_back(activeOptimiser->avg_percent_derivs);
 
-            std::cout << "Optimise iteration complete \n";
-
         }
 
         if(!ASYNC_MPC){
@@ -810,7 +808,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             mtx.lock();
 
             int optTimeToTimeSteps = activeOptimiser->opt_time_ms / (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000);
-            std::cout << "opt time to time steps " << optTimeToTimeSteps << std::endl;
 
             int low_bound = optTimeToTimeSteps - 3;
             if (low_bound < 0) low_bound = 0;

@@ -42,14 +42,9 @@ int Testing::testing_different_velocity_change_asynchronus_mpc(){
 
     std::cout << "beginning testing asynchronus MPC for " << activeModelTranslator->model_name << std::endl;
 
-//    std::vector<int> minN = {1, 2, 3};
-//    std::vector<int> maxN_multiplier = {2, 3, 5, 10, 20};
-//    std::vector<double> velocity_change_thresholds = {0.01, 0.1, 1.0, 2.0};
-
     std::vector<int> minN = {1};
-    std::vector<int> maxN_multiplier = {2, 3};
-    std::vector<double> velocity_change_thresholds = {1.0};
-
+    std::vector<int> maxN_multiplier = {20};
+    std::vector<double> velocity_change_thresholds = {0.01, 0.1, 0.5, 1.0, 2.0};
 
     for(int i = 0; i < minN.size(); i++){
         for(int j = 0; j < maxN_multiplier.size(); j++){
@@ -64,7 +59,7 @@ int Testing::testing_different_velocity_change_asynchronus_mpc(){
                 std::cout << "testing keypoint method: " << keypoint_method.name << " with minN: " << keypoint_method.min_N
                           << " maxN: " << keypoint_method.max_N << " and velocity change thresholds: " << keypoint_method.velocity_change_thresholds[0] << std::endl;
 
-                testing_asynchronus_mpc(keypoint_method, 5);
+                testing_asynchronus_mpc(keypoint_method, 200);
             }
         }
     }
@@ -104,11 +99,14 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_tr
         method_name = keypoint_method.name + "_" + std::to_string(keypoint_method.min_N);
     }
     else{
-        double round = std::round(keypoint_method.velocity_change_thresholds[0]);
+        int substring_length = 3;
+        if(keypoint_method.velocity_change_thresholds[0] < 0.1){
+            substring_length = 4;
+        }
         method_name = keypoint_method.name + "_" +
                 std::to_string(keypoint_method.min_N) + "_" +
                 std::to_string(keypoint_method.max_N) + "_" +
-                std::to_string(keypoint_method.velocity_change_thresholds[0]).substr(0, 3);
+                std::to_string(keypoint_method.velocity_change_thresholds[0]).substr(0, substring_length);
     }
 
     std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
@@ -289,8 +287,7 @@ int Testing::single_asynchronus_run(bool visualise){
 }
 
 void Testing::asynchronus_optimiser_worker(){
-//    void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avg_percent_derivs, double &avgTimeBP, double &avgTimeFP,
-//                          int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
+
     bool taskComplete = false;
     int visualCounter = 0;
 
@@ -311,7 +308,7 @@ void Testing::asynchronus_optimiser_worker(){
     activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
     activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
-    optimisedControls = iLQROptimiser->Optimise(0, initOptimisationControls, 5, 4, horizon);
+    optimisedControls = iLQROptimiser->Optimise(0, initOptimisationControls, 1, 1, horizon);
 
     MatrixXd currState;
 

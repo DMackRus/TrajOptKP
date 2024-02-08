@@ -71,12 +71,17 @@ void Optimiser::GenerateDerivatives(){
         ComputeDerivativesAtSpecifiedIndices(keyPoints);
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
+
+        std::cout << "fd time: " << duration_fd_time.count() / 1000.0f << " ms\n";
     }
     else{
         ComputeCostDerivatives();
     }
 
+
+    auto start_interp_time = high_resolution_clock::now();
     InterpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
+    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
     int totalNumColumnsDerivs = 0;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -85,9 +90,6 @@ void Optimiser::GenerateDerivatives(){
 
     double percentDerivsCalculated = ((double) totalNumColumnsDerivs / (double)numberOfTotalDerivs) * 100.0f;
     percentage_derivs_per_iteration.push_back(percentDerivsCalculated);
-    if(verbose_output){
-        cout << "percentage of derivs calculated: " << percentDerivsCalculated << endl;
-    }
 
     if(filteringMethod != "none"){
         FilterDynamicsMatrices();
@@ -162,6 +164,8 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
         activeModelTranslator->CostDerivatives(horizonLength - 1,
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
     }
+
+    std::cout << "time cost derivs: " << duration_cast<microseconds>(high_resolution_clock::now() - time_cost_start).count() / 1000.0f << " ms\n";
 }
 
 void Optimiser::WorkerComputeDerivatives(int threadId) {

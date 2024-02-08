@@ -18,15 +18,7 @@ keypoint_method KeypointGenerator::ReturnCurrentKeypointMethod() {
 }
 
 void KeypointGenerator::SetKeypointMethod(keypoint_method method){
-    std::cout << "setting keypoint method \n";
-    std::cout << "method vel 0" << method.velocity_change_thresholds[0] << "\n";
-    current_keypoint_method.name = method.name;
-    current_keypoint_method.min_N = method.min_N;
-    current_keypoint_method.max_N = method.max_N;
-    current_keypoint_method.jerk_thresholds = method.jerk_thresholds;
-    current_keypoint_method.velocity_change_thresholds = method.velocity_change_thresholds;
-    current_keypoint_method.auto_adjust = method.auto_adjust;
-    current_keypoint_method.iterative_error_threshold = method.iterative_error_threshold;
+    current_keypoint_method = method;
 }
 
 void KeypointGenerator::PrintKeypointMethod(){

@@ -10,14 +10,15 @@ Differentiator::Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator
 // If anyone can find a way to remove these pragma commands without it breaking the code that would be fantastic  ... :).
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
-void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId){
-//    cout << "start of derivs function " << endl;
+void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols,
+                                    MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
+                                    bool costDerivs, int dataIndex, bool terminal, int threadId){
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
     int tid = threadId;
 
-//    cout << "tid: " << tid << endl;
-    // This seems random, in Optimiser we define -1 = "mainData", -2 = "masterData", -3 = "visualisation data", 0 -> horizon Length = "stored trajectory data"
+    // This seems random, in Optimiser we define -1 = "mainData", -2 = "masterData",
+    // -3 = "visualisation data", 0 -> horizon Length = "stored trajectory data"
     // So we need values below -3 for finite-differencing data
     int physicsHelperId = -4 - tid;
 
@@ -44,42 +45,23 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
     activePhysicsSimulator->forwardSimulator(physicsHelperId);
 
-//    // Compute mj_forward once with no skips
-//    mj_forward(m, active_physics_simulator->savedSystemStatesList[dataIndex].get());
-
-
-    // Compute mj_forward a few times to allow Optimiser to get a more accurate value for qacc
-    // skips position and velocity stages (TODO LOOK INTO IF THIS IS NEEDED FOR MY METHOD)
-
-//    for( int rep=1; rep<5; rep++ )
-//        mj_forwardSkip(m, active_physics_simulator->savedSystemStatesList[dataIndex].get(), mjSTAGE_VEL, 1);
-
-    // save output for center point and warmstart (needed in forward only)
-
     if(USE_DQACC){
         dqaccdctrl = calc_dqaccdctrl(cols, dataIndex, physicsHelperId, dcostdctrl, costDerivs, terminal);
 
         dqaccdqvel = calc_dqaccdqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
-//        dqveldqvel = calc_dqveldqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
 
         dqaccdq = calc_dqaccdqpos(cols, dataIndex, physicsHelperId, dcostdpos, costDerivs, terminal);
     }
     else{
         dqveldctrl = calc_dqveldctrl(cols, dataIndex, physicsHelperId, dcostdctrl, costDerivs, terminal);
-//        cout << "after ctrl derivs" << endl;
 
         dqveldq = calc_dqveldqpos(cols, dataIndex, physicsHelperId, dcostdpos, costDerivs, terminal);
-//        cout << "after pos derivs" << endl;
 
         dqveldqvel = calc_dqveldqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
-//        cout << "after vel derivs" << endl;
     }
-
-//    cout << "dqveldqvel: " << endl << dqveldqvel << endl;
 
 
     if(costDerivs) {
-//        cout << "cost derivs" << dcostdpos << endl;
         l_x.block(0, 0, dof, 1) = dcostdpos;
         l_x.block(dof, 0, dof, 1) = dcostdvel;
 
@@ -88,8 +70,6 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
         // --------------------------------------------
         l_u.block(0, 0, numCtrl, 1) = dcostdctrl;
     }
-
-//    cout << "l_x: " << endl << l_x << endl;
 
     MatrixXd l_x_inc(dof*2, 1);
     MatrixXd l_x_dec(dof*2, 1);
@@ -252,41 +232,13 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     }
     // need to set this as zero when reaching but not when pendulum????
     //dqaccdq.setZero();
-    if(USE_DQACC){
-        for(int i = 0; i < dof; i++){
-//            for(int j = 0; j < dof; j++){
-//                if(dqaccdq(i, j) > DQACCDQ_MAX){
-//                    dqaccdq(i, j) = DQACCDQ_MAX;
-//                }
-//                if(dqaccdq(i, j)< -DQACCDQ_MAX){
-//                    dqaccdq(i, j) = -DQACCDQ_MAX;
-//                }
-//            }
-        }
-    }
-    else {
-//        for (int i = 0; i < dof; i++) {
-//            for (int j = 0; j < dof; j++) {
-//                if (dqveldq(i, j) > 2) {
-//                    dqveldq(i, j) = 2;
-//                }
-//                if (dqveldq(i, j) < -2) {
-//                    dqveldq(i, j) = -2;
-//                }
-//            }
-//        }
-    }
 
     // ------------ A -----------------
     // dqposdqpos       dqposdqvel
     //
     // dqveldqpos       dqveldqvel
     // --------------------------------
-//    cout << "dqveldq " << dqveldq << endl;
-//    cout << "dqveldqvel " << dqveldqvel << endl;
-//    cout << "test: " << endl << dqaccdqvel << endl;
 
-    // TODO - check if this code is completely correct
     for(int i = 0; i < cols.size(); i++){
         if(USE_DQACC){
             A.block(dof, cols[i], dof, 1) = dqaccdq.block(0, cols[i], dof, 1) * activePhysicsSimulator->returnModelTimeStep();
@@ -299,7 +251,6 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
                 }
 
             }
-//            A.block(dof, cols[i] + dof, dof, 1) = dqveldqvel.block(0, cols[i], dof, 1);
         }
         else{
             A.block(dof, cols[i], dof, 1) = dqveldq.block(0, cols[i], dof, 1);
@@ -437,7 +388,7 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
             // Integrate the simulator
             mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
 //            active_physics_simulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 0);
+            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_VEL, 0);
             acellInc = activeModelTranslator->returnAccelerationVector(physicsHelperId);
 
             // If calculating cost derivatives
@@ -457,7 +408,7 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
 //            mju_copy(active_physics_simulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
             mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
 //            active_physics_simulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 0);
+            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_VEL, 0);
             acellDec = activeModelTranslator->returnAccelerationVector(physicsHelperId);
 
             // If calculating cost derivatives via finite-differencing

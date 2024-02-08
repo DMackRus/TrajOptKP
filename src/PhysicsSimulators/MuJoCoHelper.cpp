@@ -708,9 +708,7 @@ bool MuJoCoHelper::forwardSimulatorWithSkip(int dataIndex, int skipStage, int sk
 
         std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
-        mjtNum skipStages[3] = {mjSTAGE_NONE, mjSTAGE_VEL, mjSTAGE_POS};
-
-        mj_forwardSkip(model.get(), d.get(), skipStages[skipStage], skipSensor);
+        mj_forwardSkip(model.get(), d.get(), skipStage, skipSensor);
 
         return true;
 }

@@ -1,3 +1,4 @@
+#include <iomanip>
 #include "iLQR.h"
 
 iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<Differentiator> _differentiator, int _maxHorizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
@@ -130,13 +131,6 @@ double iLQR::RolloutTrajectory(int initial_data_index, bool save_states, std::ve
 //
 // -------------------------------------------------------------------------------------------------------
 std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length){
-    if(verbose_output) {
-        cout << " ---------------- optimisation begins -------------------" << endl;
-        cout << " ------ " << activeModelTranslator->model_name << " ------ " << endl;
-        keypoint_generator->PrintKeypointMethod();
-        cout << " filtering: " << filteringMethod << endl;
-    }
-
     auto optStart = high_resolution_clock::now();
     
     // - Initialise variables
@@ -170,7 +164,9 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
     oldCost = RolloutTrajectory(initial_data_index, true, initial_controls);
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
-//    std::cout << "time for rollout: " << duration.count() / 1000.0f << endl;
+    if(verbose_output) {
+        PrintBanner(duration.count() / 1000.0f);
+    }
     initialCost = oldCost;
     activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
@@ -231,8 +227,10 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
             time_forwardsPass_ms.push_back(fpDuration.count() / 1000.0f);
 
             if(verbose_output){
-                cout << "| derivs: " << time_get_derivs_ms[i] << " | backwardsPass: " << time_backwards_pass_ms[i] << " | ForwardsPass: " << time_forwardsPass_ms[i] << " ms |\n";
-                cout << "| Cost went from " << oldCost << " ---> " << newCost << " | \n";
+                PrintBannerIteration(i, newCost, oldCost,
+                                     (newCost / oldCost), lambda, percentage_derivs_per_iteration[i],
+                                     time_get_derivs_ms[i], time_backwards_pass_ms[i], time_forwardsPass_ms[i],
+                                     last_iter_num_linesearches);
             }
 
             costHistory.push_back(newCost);
@@ -262,18 +260,22 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
             }
         }
         else{
-            cout << "exiting optimisation due to lambda > lambdaMax \n";
+            if(verbose_output){
+                cout << "exiting optimisation due to lambda > lambdaMax \n";
+            }
             break;
         }
     }
+
+    // --------------------  Computing testing results ---------------------------
 
     costReduction = 1 - (newCost / initialCost);
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
     opt_time_ms = optDuration.count() / 1000.0f;
+
     if(verbose_output){
-        cout << "optimisation took: " << opt_time_ms << " ms\n";
-        cout << " ---------------- optimisation complete -------------------" << endl;
+        cout << " ----------------------------------------------------- optimisation complete, took: " << opt_time_ms << " --------------------------------------------------" << endl;
     }
 
     for(int i = 0; i < time_get_derivs_ms.size(); i++){
@@ -429,7 +431,7 @@ double iLQR::ForwardsPass(double old_cost){
 
     while(!costReduction){
 
-        // Copy intial data state into main data state for rollout
+        // Copy initial data state into main data state for rollout
         activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
 
         newCost = 0;
@@ -501,6 +503,8 @@ double iLQR::ForwardsPass(double old_cost){
         }
     }
 
+    last_iter_num_linesearches = alphaCount + 1;
+
     // If the cost was reduced
     if(newCost < old_cost){
         activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
@@ -509,7 +513,9 @@ double iLQR::ForwardsPass(double old_cost){
         activePhysicsSimulator->copyRolloutBufferToSavedSystemStatesList();
 
         for(int i = 0 ; i < horizonLength; i++){
-            activeModelTranslator->active_physics_simulator->forwardSimulator(i + 1);
+            // TODO - Removing this might break pushing object cde, i think I need to change return state vector
+            // code to return using qpos rather than xpos
+//            activeModelTranslator->active_physics_simulator->forwardSimulator(i + 1);
             X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(i + 1);
             U_old[i] = U_new[i].replicate(1, 1);
         }
@@ -639,5 +645,45 @@ double iLQR::ForwardsPassParallel(double old_cost){
     }
 
     return old_cost;
+}
+
+void iLQR::PrintBanner(double time_rollout){
+    std::cout << "--------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
+    std::cout << "|                                                   iLQR begins, initial rollout took: " << std::setprecision(4) << time_rollout << "                                               |" << std::endl;
+
+    std::cout << std::left << std::setw(12) << "| Iteration"
+              << std::setw(12) << "| Old Cost"
+              << std::setw(12) << "| New Cost"
+              << std::setw(8)  << "| Eps"
+              << std::setw(10) << "| Lambda"
+              << std::setw(16) << "| % Derivatives"
+              << std::setw(20) << "| Time Derivs (ms)"
+              << std::setw(15) << "| Time BP (ms)"
+              << std::setw(15) << "| Time FP (ms)"
+              << std::setw(18) << "| Num Linesearches" << " |" << std::endl;
+}
+
+void iLQR::PrintBannerIteration(int iteration, double new_cost, double old_cost, double eps,
+                                double lambda, double percent_derivatives, double time_derivs, double time_bp,
+                                double time_fp, int num_linesearches){
+
+    std::cout << std::left << "|" << std::setw(11) << iteration
+              << "|" << std::setw(11) << old_cost
+              << "|" << std::setw(11) << new_cost
+              << "|" << std::setprecision(3) << std::setw(7)  << eps
+              << "|" << std::setw(9) << lambda
+              << "|" << std::setw(15) << percent_derivatives
+              << "|" << std::setw(19) <<time_derivs
+              << "|" << std::setw(14)  << time_bp
+              << "|" << std::setw(14) << time_fp
+              << "|" << std::setw(18) << num_linesearches << "|" << std::endl;
+
+//    std::cout << std::setprecision(4);
+//    std::cout << "|     " << iteration << "     |   " << std::setw(5) << old_cost << "    |    " << std::setw(5) << new_cost << "   |  ";
+//    std::cout << std::setprecision(2) << eps << " |   ";
+//    std::cout << std::setprecision(4) <<  lambda << "   |       " << std::setw(3) << percent_derivatives << "       |       ";
+//    std::cout << std::setprecision(3) << time_derivs << "       |     " << time_bp << "     |     " << time_fp << "     |         "
+//    << num_linesearches << "        |" << std::endl;
+
 }
 

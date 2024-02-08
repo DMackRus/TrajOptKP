@@ -108,6 +108,13 @@ public:
      */
     double ForwardsPassParallel(double old_cost);
 
+    void PrintBanner(double time_rollout);
+
+    void PrintBannerIteration(int iteration, double new_cost, double old_cost, double eps,
+                              double lambda, double percent_derivatives, double time_derivs, double time_bp,
+                              double time_fp, int num_linesearches);
+
+
     // Whether to save trajectory information to file
     bool save_trajec_information = false;
 
@@ -115,8 +122,10 @@ private:
     // Lambda value which is added to the diagonal of the Q_uu matrix for regularisation purposes.
     double lambda = 0.1;
     double max_lambda = 10.0;
-    double min_lambda = 0.01;
+    double min_lambda = 0.0001;
     double lambda_factor = 10;
+
+    int last_iter_num_linesearches = 0;
 
     // Max horizon of optimisation.
     int maxHorizon = 0;
