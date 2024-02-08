@@ -30,4 +30,7 @@ private:
 
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<MuJoCoHelper> activePhysicsSimulator;
+
+    // temp variable
+    double time_mj_forwards = 0.0f;
 };

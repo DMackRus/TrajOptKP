@@ -395,7 +395,6 @@ MatrixXd ModelTranslator::returnPositionVector(int data_index){
 
 MatrixXd ModelTranslator::returnVelocityVector(int data_index){
     MatrixXd velocity_vector(dof, 1);
-//    active_physics_simulator->forwardSimulator(data_index);
     int currentStateIndex = 0;
 
     // Loop through all robots in the state vector
@@ -438,7 +437,6 @@ MatrixXd ModelTranslator::returnVelocityVector(int data_index){
 
 MatrixXd ModelTranslator::returnAccelerationVector(int data_index){
     MatrixXd accel_vector(dof, 1);
-    active_physics_simulator->forwardSimulator(data_index);
 
     int currentStateIndex = 0;
 
@@ -476,7 +474,6 @@ MatrixXd ModelTranslator::returnAccelerationVector(int data_index){
             }
         }
     }
-
 
     return accel_vector;
 }

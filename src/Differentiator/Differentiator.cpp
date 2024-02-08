@@ -13,6 +13,9 @@ Differentiator::Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator
 void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols,
                                     MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
                                     bool costDerivs, int dataIndex, bool terminal, int threadId){
+
+    time_mj_forwards = 0.0f;
+    auto diff_start = std::chrono::high_resolution_clock::now();
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
     int tid = threadId;
@@ -46,11 +49,17 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     activePhysicsSimulator->forwardSimulator(physicsHelperId);
 
     if(USE_DQACC){
+        auto start = std::chrono::high_resolution_clock::now();
         dqaccdctrl = calc_dqaccdctrl(cols, dataIndex, physicsHelperId, dcostdctrl, costDerivs, terminal);
+//        std::cout << "dqaccdctrl time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
 
+        start = std::chrono::high_resolution_clock::now();
         dqaccdqvel = calc_dqaccdqvel(cols, dataIndex, physicsHelperId, dcostdvel, costDerivs, terminal);
+//        std::cout << "dqaccdqvel time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
 
+        start = std::chrono::high_resolution_clock::now();
         dqaccdq = calc_dqaccdqpos(cols, dataIndex, physicsHelperId, dcostdpos, costDerivs, terminal);
+//        std::cout << "dqaccdq time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
     }
     else{
         dqveldctrl = calc_dqveldctrl(cols, dataIndex, physicsHelperId, dcostdctrl, costDerivs, terminal);
@@ -61,175 +70,8 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     }
 
 
-    if(costDerivs) {
-        l_x.block(0, 0, dof, 1) = dcostdpos;
-        l_x.block(dof, 0, dof, 1) = dcostdvel;
 
-        // ------------- l_u / l_uu -------------------
-        //                dqcostdctrl
-        // --------------------------------------------
-        l_u.block(0, 0, numCtrl, 1) = dcostdctrl;
-    }
 
-    MatrixXd l_x_inc(dof*2, 1);
-    MatrixXd l_x_dec(dof*2, 1);
-    MatrixXd l_u_inc(numCtrl, 1);
-    MatrixXd l_u_dec(numCtrl, 1);
-
-    MatrixXd currentState = activeModelTranslator->ReturnStateVector(physicsHelperId);
-    MatrixXd currentControl = activeModelTranslator->ReturnControlVector(physicsHelperId);
-
-    if(costDerivs && !HESSIAN_APPROXIMATION) {
-        double epsCost = 1e-6;
-        double epsTest = 1e-6;
-
-        MatrixXd test1;
-        MatrixXd test2;
-
-        for(int i = 0; i < 2*dof; i++){
-            MatrixXd perturbedState = currentState.replicate(1, 1);
-            perturbedState(i) += epsCost;
-
-            for(int j = 0; j < 2*dof; j++){
-//                cout << "perturb state index " << i << " with state index " << j << endl;
-                MatrixXd stateInc = perturbedState.replicate(1,1);
-                stateInc(j) += epsTest;
-//                cout << "state inc pos: " << endl << stateInc << endl;
-
-                activeModelTranslator->SetStateVector(stateInc, physicsHelperId);
-//                active_physics_simulator->forwardSimulator(physicsHelperId);
-//                active_physics_simulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                test1 = activeModelTranslator->ReturnStateVector(physicsHelperId);
-                costInc = activeModelTranslator->CostFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                MatrixXd stateDec = perturbedState.replicate(1,1);
-                stateDec(j) -= epsTest;
-//                cout << "state dec: " << endl << stateDec << endl;
-
-                activeModelTranslator->SetStateVector(stateDec, physicsHelperId);
-//                active_physics_simulator->forwardSimulator(physicsHelperId);
-//                active_physics_simulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                test2 = activeModelTranslator->ReturnStateVector(physicsHelperId);
-                costDec = activeModelTranslator->CostFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-//                cout << "difference in returned states: " << endl << test1 - test2 << endl;
-//                cout << "cost inc: " << costInc << endl;
-//                cout << "cost dec: " << costDec << endl;
-
-                l_x_inc(j, 0) = (costInc - costDec)/(2*epsTest);
-            }
-
-//            cout << "perturbed state pos: " << endl << perturbedState << endl;
-//            cout << "l_x_inc: " << endl << l_x_inc << endl;
-
-            perturbedState = currentState.replicate(1, 1);
-            perturbedState(i) -= epsCost;
-
-            for(int j = 0; j < 2*dof; j++){
-                MatrixXd stateInc = perturbedState.replicate(1,1);
-                stateInc(j) += epsTest;
-
-                activeModelTranslator->SetStateVector(stateInc, physicsHelperId);
-//                active_physics_simulator->forwardSimulator(physicsHelperId);
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costInc = activeModelTranslator->CostFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                MatrixXd stateDec = perturbedState.replicate(1,1);
-                stateDec(j) -= epsTest;
-
-                activeModelTranslator->SetStateVector(stateDec, physicsHelperId);
-//                active_physics_simulator->forwardSimulator(physicsHelperId);
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costDec = activeModelTranslator->CostFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                l_x_dec(j, 0) = (costInc - costDec)/(2*epsTest);
-            }
-
-//            cout << "perturbed state neg: " << endl << perturbedState << endl;
-//            cout << "l_x_dec: " << endl << l_x_dec << endl;
-
-            // New l_x at perturbed position i
-            for(int j = 0; j < 2*dof; j++){
-                l_xx(j, i) = (l_x_inc(j, 0) - l_x_dec(j, 0))/(2*epsCost);
-            }
-        }
-
-        for(int i = 0; i < numCtrl; i++){
-            MatrixXd perturbedControl = currentControl.replicate(1, 1);
-            perturbedControl(i) += epsCost;
-
-            for(int j = 0; j < numCtrl; j++){
-                MatrixXd controlInc = perturbedControl.replicate(1,1);
-                controlInc(j) += epsCost;
-
-                activeModelTranslator->SetControlVector(controlInc, physicsHelperId);
-
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costInc = activeModelTranslator->CostFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                MatrixXd controlDec = perturbedControl.replicate(1,1);
-                controlDec(j) -= epsCost;
-
-                activeModelTranslator->SetControlVector(controlDec, physicsHelperId);
-
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costDec = activeModelTranslator->CostFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                l_u_inc(j, 0) = (costInc - costDec)/(2*epsCost);
-            }
-
-            perturbedControl = currentControl.replicate(1, 1);
-            perturbedControl(i) -= epsCost;
-
-            for(int j = 0; j < numCtrl; j++){
-                MatrixXd controlInc = perturbedControl.replicate(1,1);
-                controlInc(j) += epsCost;
-
-                activeModelTranslator->SetControlVector(controlInc, physicsHelperId);
-
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costInc = activeModelTranslator->CostFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                MatrixXd controlDec = perturbedControl.replicate(1,1);
-                controlDec(j) -= epsCost;
-
-                activeModelTranslator->SetControlVector(controlDec, physicsHelperId);
-
-                activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-                activePhysicsSimulator->forwardSimulator(physicsHelperId);
-                costDec = activeModelTranslator->CostFunction(physicsHelperId, terminal);
-                activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
-
-                l_u_dec(j, 0) = (costInc - costDec)/(2*epsCost);
-            }
-
-            for(int j = 0; j < numCtrl; j++){
-                l_uu(j, i) = (l_u_inc(j, 0) - l_u_dec(j, 0))/(2*epsCost);
-            }
-        }
-    }
-//    cout << "l_x: " << endl << l_x << endl;
-//    cout << "l_xx: " << endl << l_xx << endl;
-
-    if(costDerivs && HESSIAN_APPROXIMATION){
-        l_xx = l_x * l_x.transpose();
-        l_uu = l_u * l_u.transpose();
-    }
     // need to set this as zero when reaching but not when pendulum????
     //dqaccdq.setZero();
 
@@ -273,6 +115,9 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
             }
         }
     }
+
+//    std::cout << "time of mj_forwards: " << time_mj_forwards / 1000.0f << "\n";
+//    std::cout << "diff time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - diff_start).count() / 1000.0 << std::endl;
 }
 
 
@@ -366,11 +211,16 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
     double costInc;
     double costDec;
 
+    double temp_time_forwards = 0.0f;
+    double temp_time_copy = 0.0f;
+
     int tid = -4 - physicsHelperId;
     mjtNum* warmstart = mj_stackAlloc(activePhysicsSimulator->fd_data[tid].get(), dof);
     mju_copy(warmstart, activePhysicsSimulator->savedSystemStatesList[dataIndex]->qacc_warmstart, dof);
 
     MatrixXd unperturbedControls = activeModelTranslator->ReturnControlVector(physicsHelperId);
+    MatrixXd perturbedControls = unperturbedControls.replicate(1,1);
+
     for(int i = 0; i < numCtrl; i++){
         bool computeColumn = false;
         for(int j = 0; j < cols.size(); j++){
@@ -381,14 +231,18 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
 
         if(computeColumn){
             // perturb control vector positively
-            MatrixXd perturbedControls = unperturbedControls.replicate(1,1);
+            perturbedControls = unperturbedControls.replicate(1,1);
             perturbedControls(i) += epsControls;
             activeModelTranslator->SetControlVector(perturbedControls, physicsHelperId);
 
             // Integrate the simulator
             mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            active_physics_simulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_VEL, 0);
+
+            //time mj_forwards
+            auto start = std::chrono::high_resolution_clock::now();
+            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_VEL, 1);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+            temp_time_forwards += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
             acellInc = activeModelTranslator->returnAccelerationVector(physicsHelperId);
 
             // If calculating cost derivatives
@@ -398,7 +252,9 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
             }
 
             // return data state back to initial data state
+            start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            temp_time_copy += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
             // perturb control vector in opposite direction
             perturbedControls = unperturbedControls.replicate(1, 1);
@@ -407,8 +263,12 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
             // integrate simulator
 //            mju_copy(active_physics_simulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
             mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            active_physics_simulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_VEL, 0);
+
+            start = std::chrono::high_resolution_clock::now();
+            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_VEL, 1);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+            temp_time_forwards += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
+
             acellDec = activeModelTranslator->returnAccelerationVector(physicsHelperId);
 
             // If calculating cost derivatives via finite-differencing
@@ -420,7 +280,6 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
             // Calculate one column of the dqveldctrl matrix
             for(int j = 0; j < dof; j++){
                 dqaccdctrl(j, i) = (acellInc(j) - acellDec(j))/(2*epsControls);
-
             }
 
             if(fd_costDerivs){
@@ -428,9 +287,14 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
             }
 
             // Undo pertubation
+            start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+            temp_time_copy += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
         }
     }
+//
+//    std::cout << "time forward in calc_dqaccdctrl - " << temp_time_forwards / 1000000.0f << std::endl;
+//    std::cout << "time copy state in calc_dqaccdctrl - " << temp_time_copy / 1000000.0f << std::endl;
 
     return dqaccdctrl;
 }
@@ -544,8 +408,11 @@ MatrixXd Differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, i
 
             //Integrate the simulator
             mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            active_physics_simulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 0);
+
+            auto start = std::chrono::high_resolution_clock::now();
+            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 1);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+
             acellInc = activeModelTranslator->returnAccelerationVector(physicsHelperId);
 
             // If calculating cost derivs via finite-differencing
@@ -563,8 +430,11 @@ MatrixXd Differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, i
 
             // Integrate the simulator
             mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            active_physics_simulator->forwardSimulator(physicsHelperId);
-            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 0);
+
+            start = std::chrono::high_resolution_clock::now();
+            activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_POS, 1);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+
             acellDec = activeModelTranslator->returnAccelerationVector(physicsHelperId);
 
             // If calculating cost derivs via finite-differencing
@@ -692,8 +562,12 @@ MatrixXd Differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, i
 
             // Integrate the simulator
             mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
-//            active_physics_simulator->forwardSimulator(physicsHelperId);
+
+            auto start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
+            activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+
             accellInc = activeModelTranslator->returnAccelerationVector(physicsHelperId);
 
             if(fd_costDerivs){
@@ -710,7 +584,12 @@ MatrixXd Differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, i
 
             mju_copy(activePhysicsSimulator->fd_data[tid]->qacc_warmstart, warmstart, dof);
 //            active_physics_simulator->forwardSimulator(physicsHelperId);
+
+            start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
+            activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+
             accellDec = activeModelTranslator->returnAccelerationVector(physicsHelperId);
 
             if(fd_costDerivs){
@@ -735,3 +614,175 @@ MatrixXd Differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, i
 }
 
 #pragma GCC pop_options
+
+
+// finite difference cost derivatives graveyard
+//if(costDerivs) {
+//l_x.block(0, 0, dof, 1) = dcostdpos;
+//l_x.block(dof, 0, dof, 1) = dcostdvel;
+//
+//// ------------- l_u / l_uu -------------------
+////                dqcostdctrl
+//// --------------------------------------------
+//l_u.block(0, 0, numCtrl, 1) = dcostdctrl;
+//}
+//
+//MatrixXd l_x_inc(dof*2, 1);
+//MatrixXd l_x_dec(dof*2, 1);
+//MatrixXd l_u_inc(numCtrl, 1);
+//MatrixXd l_u_dec(numCtrl, 1);
+//
+//MatrixXd currentState = activeModelTranslator->ReturnStateVector(physicsHelperId);
+//MatrixXd currentControl = activeModelTranslator->ReturnControlVector(physicsHelperId);
+//
+//if(costDerivs && !HESSIAN_APPROXIMATION) {
+//double epsCost = 1e-6;
+//double epsTest = 1e-6;
+//
+//MatrixXd test1;
+//MatrixXd test2;
+//
+//for(int i = 0; i < 2*dof; i++){
+//MatrixXd perturbedState = currentState.replicate(1, 1);
+//perturbedState(i) += epsCost;
+//
+//for(int j = 0; j < 2*dof; j++){
+////                cout << "perturb state index " << i << " with state index " << j << endl;
+//MatrixXd stateInc = perturbedState.replicate(1,1);
+//stateInc(j) += epsTest;
+////                cout << "state inc pos: " << endl << stateInc << endl;
+//
+//activeModelTranslator->SetStateVector(stateInc, physicsHelperId);
+////                active_physics_simulator->forwardSimulator(physicsHelperId);
+////                active_physics_simulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
+//activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//activePhysicsSimulator->forwardSimulator(physicsHelperId);
+//test1 = activeModelTranslator->ReturnStateVector(physicsHelperId);
+//costInc = activeModelTranslator->CostFunction(physicsHelperId, terminal);
+//activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+//
+//MatrixXd stateDec = perturbedState.replicate(1,1);
+//stateDec(j) -= epsTest;
+////                cout << "state dec: " << endl << stateDec << endl;
+//
+//activeModelTranslator->SetStateVector(stateDec, physicsHelperId);
+////                active_physics_simulator->forwardSimulator(physicsHelperId);
+////                active_physics_simulator->forwardSimulatorWithSkip(physicsHelperId, mjSTAGE_NONE, 0);
+//activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//activePhysicsSimulator->forwardSimulator(physicsHelperId);
+//test2 = activeModelTranslator->ReturnStateVector(physicsHelperId);
+//costDec = activeModelTranslator->CostFunction(physicsHelperId, terminal);
+//activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+////                cout << "difference in returned states: " << endl << test1 - test2 << endl;
+////                cout << "cost inc: " << costInc << endl;
+////                cout << "cost dec: " << costDec << endl;
+//
+//l_x_inc(j, 0) = (costInc - costDec)/(2*epsTest);
+//}
+//
+////            cout << "perturbed state pos: " << endl << perturbedState << endl;
+////            cout << "l_x_inc: " << endl << l_x_inc << endl;
+//
+//perturbedState = currentState.replicate(1, 1);
+//perturbedState(i) -= epsCost;
+//
+//for(int j = 0; j < 2*dof; j++){
+//MatrixXd stateInc = perturbedState.replicate(1,1);
+//stateInc(j) += epsTest;
+//
+//activeModelTranslator->SetStateVector(stateInc, physicsHelperId);
+////                active_physics_simulator->forwardSimulator(physicsHelperId);
+//activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//activePhysicsSimulator->forwardSimulator(physicsHelperId);
+//costInc = activeModelTranslator->CostFunction(physicsHelperId, terminal);
+//activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+//
+//MatrixXd stateDec = perturbedState.replicate(1,1);
+//stateDec(j) -= epsTest;
+//
+//activeModelTranslator->SetStateVector(stateDec, physicsHelperId);
+////                active_physics_simulator->forwardSimulator(physicsHelperId);
+//activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//activePhysicsSimulator->forwardSimulator(physicsHelperId);
+//costDec = activeModelTranslator->CostFunction(physicsHelperId, terminal);
+//activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+//
+//l_x_dec(j, 0) = (costInc - costDec)/(2*epsTest);
+//}
+//
+////            cout << "perturbed state neg: " << endl << perturbedState << endl;
+////            cout << "l_x_dec: " << endl << l_x_dec << endl;
+//
+//// New l_x at perturbed position i
+//for(int j = 0; j < 2*dof; j++){
+//l_xx(j, i) = (l_x_inc(j, 0) - l_x_dec(j, 0))/(2*epsCost);
+//}
+//}
+//
+//for(int i = 0; i < numCtrl; i++){
+//MatrixXd perturbedControl = currentControl.replicate(1, 1);
+//perturbedControl(i) += epsCost;
+//
+//for(int j = 0; j < numCtrl; j++){
+//MatrixXd controlInc = perturbedControl.replicate(1,1);
+//controlInc(j) += epsCost;
+//
+//activeModelTranslator->SetControlVector(controlInc, physicsHelperId);
+//
+//activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//activePhysicsSimulator->forwardSimulator(physicsHelperId);
+//costInc = activeModelTranslator->CostFunction(physicsHelperId, terminal);
+//activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+//
+//MatrixXd controlDec = perturbedControl.replicate(1,1);
+//controlDec(j) -= epsCost;
+//
+//activeModelTranslator->SetControlVector(controlDec, physicsHelperId);
+//
+//activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//activePhysicsSimulator->forwardSimulator(physicsHelperId);
+//costDec = activeModelTranslator->CostFunction(physicsHelperId, terminal);
+//activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+//
+//l_u_inc(j, 0) = (costInc - costDec)/(2*epsCost);
+//}
+//
+//perturbedControl = currentControl.replicate(1, 1);
+//perturbedControl(i) -= epsCost;
+//
+//for(int j = 0; j < numCtrl; j++){
+//MatrixXd controlInc = perturbedControl.replicate(1,1);
+//controlInc(j) += epsCost;
+//
+//activeModelTranslator->SetControlVector(controlInc, physicsHelperId);
+//
+//activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//activePhysicsSimulator->forwardSimulator(physicsHelperId);
+//costInc = activeModelTranslator->CostFunction(physicsHelperId, terminal);
+//activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+//
+//MatrixXd controlDec = perturbedControl.replicate(1,1);
+//controlDec(j) -= epsCost;
+//
+//activeModelTranslator->SetControlVector(controlDec, physicsHelperId);
+//
+//activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+//activePhysicsSimulator->forwardSimulator(physicsHelperId);
+//costDec = activeModelTranslator->CostFunction(physicsHelperId, terminal);
+//activePhysicsSimulator->copySystemState(physicsHelperId, dataIndex);
+//
+//l_u_dec(j, 0) = (costInc - costDec)/(2*epsCost);
+//}
+//
+//for(int j = 0; j < numCtrl; j++){
+//l_uu(j, i) = (l_u_inc(j, 0) - l_u_dec(j, 0))/(2*epsCost);
+//}
+//}
+//}
+////    cout << "l_x: " << endl << l_x << endl;
+////    cout << "l_xx: " << endl << l_xx << endl;
+//
+//if(costDerivs && HESSIAN_APPROXIMATION){
+//l_xx = l_x * l_x.transpose();
+//l_uu = l_u * l_u.transpose();
+//}

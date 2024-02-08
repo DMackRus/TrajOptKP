@@ -54,6 +54,8 @@ public:
     void cpMjData(const std::shared_ptr<mjModel> m, std::shared_ptr<mjData> d_dest, const std::shared_ptr<mjData> d_src);
     std::shared_ptr<mjData> returnDesiredDataState(int dataIndex);
 
+    void _mjdTransitionFD();
+
 
     // ------------------------------- Visualisation -----------------------------------------
     void initVisualisation() override;

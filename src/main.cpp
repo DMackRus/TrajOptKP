@@ -71,6 +71,13 @@ bool stopMPC = false;
 
 int main(int argc, char **argv) {
 
+//    vector<robot> temp1;
+//    vector<string> temp2;
+//    MuJoCoHelper temp(temp1, temp2);
+//    temp._mjdTransitionFD();
+//
+//    return -1;
+
     // Expected arguments
     // 1. Program name
     // 2. Task name
@@ -852,7 +859,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
                 taskComplete = true;
             }
         }
-
     }
 
     if(!ASYNC_MPC){

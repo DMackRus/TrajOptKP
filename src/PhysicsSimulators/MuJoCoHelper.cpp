@@ -6,7 +6,6 @@
 
 // Empty constructor
 MuJoCoHelper::MuJoCoHelper(vector<robot> _robots, vector<string> _bodies): PhysicsSimulator(_robots, _bodies) {
-    std::cout << "created mujoco helper" << std::endl;
 
 }
 
@@ -869,7 +868,8 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
 void MuJoCoHelper::initModelForFiniteDifferencing(){
     save_iterations = model->opt.iterations;
     save_tolerance = model->opt.tolerance;
-    model->opt.iterations = 50;
+    // This used to be 50, 3 seems to be the lowest i can set it without breaking the simulation
+    model->opt.iterations = 3;
     model->opt.tolerance = 0;
 }
 
@@ -893,4 +893,31 @@ double* MuJoCoHelper::sensorState(int dataIndex, std::string sensorName){
     } else {
         return d->sensordata + model->sensor_adr[id];
     }
+}
+
+void MuJoCoHelper::_mjdTransitionFD(){
+    std::cout << "start? \n";
+
+    mjModel *m;
+    m = mj_loadXML("/mujoco_models/walker/walker_plane.xml", NULL, NULL, 1000);
+    mjData *d = mj_makeData(m);
+
+    int T = 1000;
+    int dof = m->nv;
+    int num_ctrl = m->nu;
+    int num_fd = ((dof * 2) + num_ctrl) * 2;
+
+    auto time_start = std::chrono::high_resolution_clock::now();
+    for(int i = 0; i < T; i++){
+        mj_step(m, d);
+    }
+
+    std::cout << "pretend rollout took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms\n";
+
+    time_start = std::chrono::high_resolution_clock::now();
+    for(int i = 0; i < num_fd; i++){
+        mj_forward(m, d);
+    }
+
+    std::cout << "finite differencing took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms\n";
 }
