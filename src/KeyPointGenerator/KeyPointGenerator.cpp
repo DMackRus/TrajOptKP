@@ -167,7 +167,6 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsSetInterval(in
 }
 
 std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsAdaptive(int horizon, std::vector<MatrixXd> trajec_profile) {
-    int dof = trajec_profile[0].rows() / 2;
 
     std::vector<std::vector<int>> keypoints;
 
@@ -413,7 +412,6 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
 }
 
 std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsVelocityChange(int horizon, std::vector<MatrixXd> velocity_profile) {
-    int dof = velocity_profile[0].rows();
 
     std::vector<std::vector<int>> keypoints;
 
@@ -489,7 +487,6 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsVelocityChange
 
 std::vector<MatrixXd> KeypointGenerator::GenerateJerkProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
 
-    int dof = trajectory_states[0].rows() / 2;
     MatrixXd jerk(dof, 1);
 
     MatrixXd state1(trajectory_states[0].rows(), 1);

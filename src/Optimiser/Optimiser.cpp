@@ -72,7 +72,7 @@ void Optimiser::GenerateDerivatives(){
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
 
-        std::cout << "fd time: " << duration_fd_time.count() / 1000.0f << " ms\n";
+//        std::cout << "fd time: " << duration_fd_time.count() / 1000.0f << " ms\n";
     }
     else{
         ComputeCostDerivatives();
@@ -81,7 +81,7 @@ void Optimiser::GenerateDerivatives(){
 
     auto start_interp_time = high_resolution_clock::now();
     InterpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
-    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
+//    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
     int totalNumColumnsDerivs = 0;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -138,16 +138,11 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     }
 
     // Get the number of threads available
-    //time this
-    auto time_start = high_resolution_clock::now();
     const int num_threads = std::thread::hardware_concurrency() - 1;  // Get the number of available CPU cores
     std::vector<std::thread> thread_pool;
     for (int i = 0; i < num_threads; ++i) {
         thread_pool.push_back(std::thread(&Optimiser::WorkerComputeDerivatives, this, i));
     }
-
-    std::cout << "num_threads: " << num_threads << std::endl;
-    std::cout << "creating threads took: " << duration_cast<microseconds>(high_resolution_clock::now() - time_start).count() / 1000.0f << " ms\n";
 
     for (std::thread& thread : thread_pool) {
         thread.join();
@@ -177,7 +172,7 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
     }
 
-    std::cout << "time cost derivs: " << duration_cast<microseconds>(high_resolution_clock::now() - time_cost_start).count() / 1000.0f << " ms\n";
+//    std::cout << "time cost derivs: " << duration_cast<microseconds>(high_resolution_clock::now() - time_cost_start).count() / 1000.0f << " ms\n";
 }
 
 void Optimiser::WorkerComputeDerivatives(int threadId) {

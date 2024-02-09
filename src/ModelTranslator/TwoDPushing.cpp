@@ -290,9 +290,10 @@ void TwoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
+    active_physics_simulator->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MAIN_DATA_STATE);
     active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
-//    cout << "goalobj_startPose: " << goalobj_startPose.position(0) << ", " << goalobj_startPose.position(1) << endl;
+    cout << "goalobj_startPose: " << goalobj_startPose.position(0) << ", " << goalobj_startPose.position(1) << endl;
+    cout << "EE_startPose: " << EE_startPose.position(0) << ", " << EE_startPose.position(1) << endl;
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -375,7 +376,7 @@ void TwoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
+    active_physics_simulator->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MAIN_DATA_STATE);
     active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
 
     m_point mainWayPoint;
@@ -479,8 +480,10 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
 
     pose_7 EE_start_pose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_quat(EEName, EE_start_pose, MAIN_DATA_STATE);
+    active_physics_simulator->getBodyPose_quat_ViaXpos(EEName, EE_start_pose, MAIN_DATA_STATE);
     active_physics_simulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
+
+    std::cout << "EE start pose: " << EE_start_pose.position << std::endl;
 
     float angle_EE_push;
     float x_diff = X_desired(7) - goalobj_startPose.position(0);
@@ -525,7 +528,7 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
 
     for(int i = 0; i < initPath.size(); i++){
         pose_7 currentEEPose;
-        active_physics_simulator->getBodyPose_quat(EEName, currentEEPose, MAIN_DATA_STATE);
+        active_physics_simulator->getBodyPose_quat_ViaXpos(EEName, currentEEPose, MAIN_DATA_STATE);
         m_quat currentEEQuat, invertedQuat, quatDiff;
         currentEEQuat(0) = currentEEPose.quat(0);
         currentEEQuat(1) = currentEEPose.quat(1);

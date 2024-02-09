@@ -102,10 +102,6 @@ bool MuJoCoHelper::setRobotJointsControls(string robotName, vector<double> joint
         return false;
     }
 
-    // Get the body id of the base link of the robot
-//    int jointId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robotBaseJointName.c_str());
-//    std::vector<int> jointIds;
-
     std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
     for(int i = 0; i < jointControls.size(); i++){
         int actuatorId = mj_name2id(model.get(), mjOBJ_ACTUATOR, robots[robotIndex].actuatorNames[i].c_str());
@@ -357,19 +353,12 @@ bool MuJoCoHelper::getBodyPose_quat(string bodyName, pose_7 &pose, int dataIndex
     std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < 3; i++){
-        pose.position(i) = d->xpos[(bodyId * 3) + i];
+        pose.position(i) = d->qpos[qposIndex + i];
     }
 
     for(int i = 0; i < 4; i++){
-        pose.quat(i) = d->xquat[(bodyId * 4) + i];
+        pose.quat(i) = d->qpos[qposIndex + 3 + i];
     }
-//    for(int i = 0; i < 3; i++){
-//        pose.position(i) = d->qpos[qposIndex + i];
-//    }
-//
-//    for(int i = 0; i < 4; i++){
-//        pose.quat(i) = d->qpos[qposIndex + 3 + i];
-//    }
 
     return true;
 }
@@ -388,25 +377,72 @@ bool MuJoCoHelper::getBodyPose_angle(string bodyName, pose_6 &pose, int dataInde
     std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
 
     for(int i = 0; i < 3; i++){
-        pose.position(i) = d->xpos[(bodyId * 3) + i];
+        pose.position(i) = d->qpos[qposIndex + i];
     }
-//    for(int i = 0; i < 3; i++){
-//        pose.position(i) = d->qpos[qposIndex + i];
-//    }
 
     m_quat tempQuat;
 
     for(int i = 0; i < 4; i++){
-        tempQuat(i) = d->xquat[(bodyId * 4) + i];
+        tempQuat(i) = d->qpos[qposIndex + 3 + i];
     }
-//    for(int i = 0; i < 4; i++){
-//        tempQuat(i) = d->qpos[qposIndex + 3 + i];
-//    }
 
     m_point euler = quat2Eul(tempQuat);
 
     for(int i = 0; i < 3; i++){
         pose.orientation(i) = euler(i);
+    }
+
+    return true;
+}
+
+bool MuJoCoHelper::getBodyPose_angle_ViaXpos(string bodyName, pose_6 &pose, int dataIndex){
+    int bodyIndex;
+    if(!isValidBodyName(bodyName, bodyIndex)){
+        cout << "That body doesnt exist in the simulation\n";
+        return false;
+    }
+
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
+
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+
+    for(int i = 0; i < 3; i++){
+        pose.position(i) = d->xpos[(3 * bodyId) + i];
+    }
+
+    m_quat tempQuat;
+
+    for(int i = 0; i < 4; i++){
+        tempQuat(i) = d->xpos[(4 * bodyId) + i];
+    }
+
+    m_point euler = quat2Eul(tempQuat);
+
+    for(int i = 0; i < 3; i++){
+        pose.orientation(i) = euler(i);
+    }
+
+    return true;
+}
+
+bool MuJoCoHelper::getBodyPose_quat_ViaXpos(string bodyName, pose_7 &pose, int dataIndex){
+
+    int bodyIndex;
+    if(!isValidBodyName(bodyName, bodyIndex)){
+        cout << "That body doesnt exist in the simulation\n";
+        return false;
+    }
+
+    int bodyId = mj_name2id(model.get(), mjOBJ_BODY, bodyName.c_str());
+
+    std::shared_ptr<mjData> d = returnDesiredDataState(dataIndex);
+
+    for(int i = 0; i < 3; i++){
+        pose.position(i) = d->xpos[(3 * bodyId) + i];
+    }
+
+    for(int i = 0; i < 4; i++){
+        pose.quat(i) = d->xquat[(4 * bodyId) + i];
     }
 
     return true;
@@ -899,25 +935,45 @@ void MuJoCoHelper::_mjdTransitionFD(){
     std::cout << "start? \n";
 
     mjModel *m;
-    m = mj_loadXML("/mujoco_models/walker/walker_plane.xml", NULL, NULL, 1000);
+//    m = mj_loadXML("/home/davidrussell/catkin_ws/src/TrajOptKP/mujoco_models/walker/walker_plane.xml", NULL, NULL, 1000);
+    m = mj_loadXML("/home/davidrussell/catkin_ws/src/TrajOptKP/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml", NULL, NULL, 1000);
     mjData *d = mj_makeData(m);
+    d->qpos[1] = 0.1;
+    mj_kinematics(m, d);
 
-    int T = 1000;
-    int dof = m->nv;
-    int num_ctrl = m->nu;
-    int num_fd = ((dof * 2) + num_ctrl) * 2;
+    std::string EE_name = "franka_gripper";
+    int EE_id = mj_name2id(m, mjOBJ_BODY, EE_name.c_str());
 
-    auto time_start = std::chrono::high_resolution_clock::now();
-    for(int i = 0; i < T; i++){
-        mj_step(m, d);
+    std::cout << "EE_id: " << EE_id << "\n";
+
+//    mjtNum body_pos = d->xpos[3 * EE_id];
+    mjtNum body_pos[3];
+    for (int i = 0; i < 3; ++i) {
+        body_pos[i] = d->xpos[(3 * EE_id) + i];
     }
 
-    std::cout << "pretend rollout took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms\n";
+    // Print out the position
+    std::cout << "Body Position: (" << body_pos[0] << ", " << body_pos[1] << ", " << body_pos[2] << ")" << std::endl;
 
-    time_start = std::chrono::high_resolution_clock::now();
-    for(int i = 0; i < num_fd; i++){
-        mj_forward(m, d);
-    }
 
-    std::cout << "finite differencing took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms\n";
+
+//    int T = 1000;
+//    int dof = m->nv;
+//    int num_ctrl = m->nu;
+//    int num_fd = ((dof * 2) + num_ctrl) * 2 * T;
+//    std::cout << "num_fd: " << num_fd << "\n";
+//
+//    auto time_start = std::chrono::high_resolution_clock::now();
+//    for(int i = 0; i < T; i++){
+//        mj_step(m, d);
+//    }
+//
+//    std::cout << "pretend rollout took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms\n";
+//
+//    time_start = std::chrono::high_resolution_clock::now();
+//    for(int i = 0; i < num_fd; i++){
+//        mj_forward(m, d);
+//    }
+//
+//    std::cout << "finite differencing took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - time_start).count() << "ms\n";
 }

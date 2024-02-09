@@ -228,7 +228,7 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
 
             if(verbose_output){
                 PrintBannerIteration(i, newCost, oldCost,
-                                     (newCost / oldCost), lambda, percentage_derivs_per_iteration[i],
+                                     1 - (newCost / oldCost), lambda, percentage_derivs_per_iteration[i],
                                      time_get_derivs_ms[i], time_backwards_pass_ms[i], time_forwardsPass_ms[i],
                                      last_iter_num_linesearches);
             }
@@ -275,7 +275,8 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
     opt_time_ms = optDuration.count() / 1000.0f;
 
     if(verbose_output){
-        cout << " ----------------------------------------------------- optimisation complete, took: " << opt_time_ms << " --------------------------------------------------" << endl;
+        cout << setprecision(4);
+        cout << " --------------------------------------------------- optimisation complete, took: " << opt_time_ms << " ms --------------------------------------------------" << endl;
     }
 
     for(int i = 0; i < time_get_derivs_ms.size(); i++){

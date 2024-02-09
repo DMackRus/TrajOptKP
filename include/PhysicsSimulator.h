@@ -54,6 +54,9 @@ public:
     virtual bool getBodyVelocity(string bodyName, pose_6 &velocity, int dataIndex) = 0;
     virtual bool getBodyAcceleration(string bodyName, pose_6 &acceleration, int dataIndex) = 0;
 
+    virtual bool getBodyPose_quat_ViaXpos(string bodyName, pose_7 &pose, int dataIndex) = 0;
+    virtual bool getBodyPose_angle_ViaXpos(string bodyName, pose_6 &pose, int dataIndex) = 0;
+
     virtual Eigen::MatrixXd calculateJacobian(std::string bodyName, int dataIndex) = 0;
     virtual int checkSystemForCollisions(int dataIndex) = 0;
     virtual bool checkBodyForCollisions(string bodyName, int dataIndex) = 0;

@@ -10,6 +10,7 @@ void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
     FileHandler yamlReader;
     yamlReader.readModelConfigFile(yamlFilePath, taskConfig);
     model_file_path = taskConfig.modelFilePath;
+    std::cout << "model file path: " << model_file_path << std::endl;
     model_name = taskConfig.modelName;
     min_N = taskConfig.minN;
     max_N = taskConfig.maxN;

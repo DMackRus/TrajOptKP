@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 //    vector<string> temp2;
 //    MuJoCoHelper temp(temp1, temp2);
 //    temp._mjdTransitionFD();
-//
+
 //    return -1;
 
     // Expected arguments
@@ -147,8 +147,8 @@ int main(int argc, char **argv) {
         activeModelTranslator->X_start = startStateVector;
     }
 
-    cout << "start state " << activeModelTranslator->X_start << endl;
-    cout << "desired state " << activeModelTranslator->X_desired << endl;
+    cout << "start state " << activeModelTranslator->X_start.transpose() << endl;
+    cout << "desired state " << activeModelTranslator->X_desired.transpose() << endl;
 
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
     activeModelTranslator->SetStateVector(startStateVector, MASTER_RESET_DATA);
@@ -554,12 +554,9 @@ void optimiseOnceandShow(){
     std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
-    cout << "optimisation took: " << linDuration.count() / 1000000.0f << " ms\n";
 
     // Stitch together setup controls with init control + optimised controls
-//    initControls.insert(initControls.end(), initSetupControls.begin(), initSetupControls.end());
     initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
-//    finalControls.insert(finalControls.end(), initSetupControls.begin(), initSetupControls.end());
     finalControls.insert(finalControls.end(), optimisedControls.begin(), optimisedControls.end());
 
     activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);

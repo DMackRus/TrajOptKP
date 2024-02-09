@@ -37,6 +37,9 @@ public:
     bool getBodyVelocity(string bodyName, pose_6 &velocity, int dataIndex) override;
     bool getBodyAcceleration(string bodyName, pose_6 &acceleration, int dataIndex) override;
 
+    bool getBodyPose_quat_ViaXpos(string bodyName, pose_7 &pose, int dataIndex) override;
+    bool getBodyPose_angle_ViaXpos(string bodyName, pose_6 &pose, int dataIndex) override;
+
     // Extras
     Eigen::MatrixXd calculateJacobian(std::string bodyName, int dataIndex) override;
     int checkSystemForCollisions(int dataIndex) override;
