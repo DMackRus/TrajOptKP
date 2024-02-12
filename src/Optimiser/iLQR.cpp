@@ -226,6 +226,9 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
             auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
             time_forwardsPass_ms.push_back(fpDuration.count() / 1000.0f);
 
+            // Experimental
+            checkKMatrices();
+
             if(verbose_output){
                 PrintBannerIteration(i, newCost, oldCost,
                                      1 - (newCost / oldCost), lambda, percentage_derivs_per_iteration[i],
@@ -451,6 +454,7 @@ double iLQR::ForwardsPass(double old_cost){
             stateFeedback = X_new - _X;
 
             MatrixXd feedBackGain = K[t] * stateFeedback;
+//            std::cout << "K[t] " << K[t] << std::endl;
 
             // Calculate new optimal controls
             U_new[t] = _U + (alphas[alphaCount] * k[t]) + feedBackGain;
@@ -644,6 +648,29 @@ double iLQR::ForwardsPassParallel(double old_cost){
     }
 
     return old_cost;
+}
+
+bool iLQR::checkKMatrices(){
+
+    double *K_dofs_sums = new double[dof];
+
+    for(int t = 0; t < horizonLength; t += sampling_k_interval){
+
+        for(int i = 0; i < dof; i++){
+
+            for(int j = 0; j < num_ctrl; j++){
+                K_dofs_sums[i] += abs(K[t](j, i));
+                K_dofs_sums[i] += abs(K[t](j, i + dof));
+            }
+        }
+    }
+
+    std::cout << "K matrices importance weightings: \n";
+    for (int i = 0; i < dof; i++){
+        std::cout << "DOF " << i << " : " << K_dofs_sums[i] << "\n";
+    }
+
+    return false;
 }
 
 void iLQR::PrintBanner(double time_rollout){

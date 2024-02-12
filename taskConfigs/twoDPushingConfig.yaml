@@ -15,7 +15,7 @@ robots:
     goalPos: [ 0, 0, 0, 0, 0, 0, 0 ]
     jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
 #    jointVelCosts: [0, 0.1, 0.05, 0.05, 0.05, 0.01, 0]
-
+    jointVelCosts: [0, 0, 0, 0, 0, 0.1, 0]
     terminalJointPosCosts: [0, 0, 0, 0, 0, 0, 0]
     terminalJointVelCosts: [0, 0, 0, 0, 0, 0, 0]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]

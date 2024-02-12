@@ -251,6 +251,7 @@ public:
     // State vector object, considers robots and bodies
     struct stateVectorList state_vector;
 
+
     // Desired state, used for cost function
     MatrixXd X_desired;
 
