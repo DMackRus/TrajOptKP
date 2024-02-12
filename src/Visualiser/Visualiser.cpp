@@ -6,7 +6,7 @@
 
 Visualiser::Visualiser(std::shared_ptr<ModelTranslator> _modelTranslator){
 
-    activePhysicsSimulator = _modelTranslator->active_physics_simulator;
+    MuJoCo_helper = _modelTranslator->MuJoCo_helper;
     activeModelTranslator = _modelTranslator;
 
     if (!glfwInit())
@@ -15,7 +15,7 @@ Visualiser::Visualiser(std::shared_ptr<ModelTranslator> _modelTranslator){
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
-    activePhysicsSimulator->initVisualisation();
+    MuJoCo_helper->initVisualisation();
 
     // Set window pointer to this class
     glfwSetWindowUserPointer(window, this);
@@ -44,11 +44,11 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_P){
 
-        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+        MuJoCo_helper->appendSystemStateToEnd(MAIN_DATA_STATE);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_O){
 
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
 
@@ -83,7 +83,7 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
         MatrixXd controlVec;
 //        SensorByName(model, data, "torso_position")[2];
-        activePhysicsSimulator->sensorState(MAIN_DATA_STATE, "torso_position");
+        MuJoCo_helper->sensorState(MAIN_DATA_STATE, "torso_position");
         controlVec = activeModelTranslator->ReturnControlVector(0);
         cout << "control vec: " << controlVec << endl;
 
@@ -157,7 +157,7 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
             vel(0) = testVel;
             cout << "vel: " << vel << endl;
             activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
         }
         
     }
@@ -223,7 +223,7 @@ void Visualiser::mouse_move(GLFWwindow* window, double xpos, double ypos){
     lastx = xpos;
     lasty = ypos;
 
-    activePhysicsSimulator->mouseMove(dx, dy, button_left, button_right, window);
+    MuJoCo_helper->mouseMove(dx, dy, button_left, button_right, window);
 }
 // -----------------------------------------------------------------------------------------------------
 
@@ -235,7 +235,7 @@ void Visualiser::scrollCallbackWrapper(GLFWwindow* window, double xoffset, doubl
 // scroll callback
 void Visualiser::scroll(GLFWwindow* window, double xoffset, double yoffset){
     // emulate vertical mouse motion = 5% of window height
-    activePhysicsSimulator->scroll(yoffset);
+    MuJoCo_helper->scroll(yoffset);
 }
 // -----------------------------------------------------------------------------------------------------
 
@@ -266,7 +266,7 @@ bool Visualiser::windowOpen(){
 
 void Visualiser::render(const char* label) {
 
-    activePhysicsSimulator->updateScene(window, label);
+    MuJoCo_helper->updateScene(window, label);
     glfwSwapBuffers(window);
     glfwPollEvents();
 }

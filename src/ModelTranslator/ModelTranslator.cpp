@@ -47,9 +47,8 @@ void ModelTranslator::InitModelTranslator(std::string yamlFilePath){
         }
     }
 
-    mujoco_helper = std::make_shared<MuJoCoHelper>(taskConfig.robots, bodyNames);
-    active_physics_simulator = mujoco_helper;
-    active_physics_simulator->initSimulator(taskConfig.modelTimeStep, _modelPath);
+    MuJoCo_helper = std::make_shared<MuJoCoHelper>(taskConfig.robots, bodyNames);
+    MuJoCo_helper->initSimulator(taskConfig.modelTimeStep, _modelPath);
 
     active_state_vector.robots = taskConfig.robots;
     active_state_vector.bodiesStates = taskConfig.bodiesStates;
@@ -416,7 +415,7 @@ bool ModelTranslator::TaskComplete(int data_index, double &dist){
 
 std::vector<MatrixXd> ModelTranslator::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> emptyInitSetupControls;
-    active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
     return emptyInitSetupControls;
 }
 
@@ -429,8 +428,8 @@ MatrixXd ModelTranslator::ReturnStateVector(int data_index){
     for(int i = 0; i < active_state_vector.robots.size(); i++){
         vector<double> jointPositions;
         vector<double> jointVelocities;
-        active_physics_simulator->getRobotJointsPositions(active_state_vector.robots[i].name, jointPositions, data_index);
-        active_physics_simulator->getRobotJointsVelocities(active_state_vector.robots[i].name, jointVelocities, data_index);
+        MuJoCo_helper->getRobotJointsPositions(active_state_vector.robots[i].name, jointPositions, data_index);
+        MuJoCo_helper->getRobotJointsVelocities(active_state_vector.robots[i].name, jointVelocities, data_index);
 
         for(int j = 0; j < active_state_vector.robots[i].jointNames.size(); j++){
             stateVector(j, 0) = jointPositions[j];
@@ -446,8 +445,8 @@ MatrixXd ModelTranslator::ReturnStateVector(int data_index){
         // Get the body's position and orientation
         pose_6 bodyPose;
         pose_6 bodyVelocity;
-        active_physics_simulator->getBodyPose_angle(active_state_vector.bodiesStates[i].name, bodyPose, data_index);
-        active_physics_simulator->getBodyVelocity(active_state_vector.bodiesStates[i].name, bodyVelocity, data_index);
+        MuJoCo_helper->getBodyPose_angle(active_state_vector.bodiesStates[i].name, bodyPose, data_index);
+        MuJoCo_helper->getBodyVelocity(active_state_vector.bodiesStates[i].name, bodyVelocity, data_index);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
@@ -496,7 +495,7 @@ MatrixXd ModelTranslator::ReturnControlVector(int data_index){
     // loop through all the present robots
     for(int i = 0; i < active_state_vector.robots.size(); i++){
         vector<double> jointControls;
-        active_physics_simulator->getRobotJointsControls(active_state_vector.robots[i].name, jointControls, data_index);
+        MuJoCo_helper->getRobotJointsControls(active_state_vector.robots[i].name, jointControls, data_index);
         for(int j = 0; j < active_state_vector.robots[i].actuatorNames.size(); j++){
 
             controlVector(currentStateIndex + j, 0) = jointControls[j];
@@ -524,7 +523,7 @@ bool ModelTranslator::SetControlVector(MatrixXd control_vector, int data_index){
             jointControls.push_back(control_vector(currentStateIndex + j));
         }
 
-        active_physics_simulator->setRobotJointsControls(active_state_vector.robots[i].name, jointControls, data_index);
+        MuJoCo_helper->setRobotJointsControls(active_state_vector.robots[i].name, jointControls, data_index);
 
         currentStateIndex += active_state_vector.robots[i].actuatorNames.size();
     }
@@ -540,7 +539,7 @@ MatrixXd ModelTranslator::returnPositionVector(int data_index){
     // Loop through all robots in the state vector
     for(int i = 0; i < active_state_vector.robots.size(); i++){
         vector<double> jointPositions;
-        active_physics_simulator->getRobotJointsPositions(active_state_vector.robots[i].name, jointPositions, data_index);
+        MuJoCo_helper->getRobotJointsPositions(active_state_vector.robots[i].name, jointPositions, data_index);
 
         for(int j = 0; j < active_state_vector.robots[i].jointNames.size(); j++){
             position_vector(j, 0) = jointPositions[j];
@@ -554,7 +553,7 @@ MatrixXd ModelTranslator::returnPositionVector(int data_index){
     for(int i = 0; i < active_state_vector.bodiesStates.size(); i++){
         // Get the body's position and orientation
         pose_6 bodyPose;
-        active_physics_simulator->getBodyPose_angle(active_state_vector.bodiesStates[i].name, bodyPose, data_index);
+        MuJoCo_helper->getBodyPose_angle(active_state_vector.bodiesStates[i].name, bodyPose, data_index);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
@@ -582,7 +581,7 @@ MatrixXd ModelTranslator::returnVelocityVector(int data_index){
     // Loop through all robots in the state vector
     for(int i = 0; i < active_state_vector.robots.size(); i++){
         vector<double> jointVelocities;
-        active_physics_simulator->getRobotJointsVelocities(active_state_vector.robots[i].name, jointVelocities, data_index);
+        MuJoCo_helper->getRobotJointsVelocities(active_state_vector.robots[i].name, jointVelocities, data_index);
 
         for(int j = 0; j < active_state_vector.robots[i].jointNames.size(); j++){
             velocity_vector(j, 0) = jointVelocities[j];
@@ -596,7 +595,7 @@ MatrixXd ModelTranslator::returnVelocityVector(int data_index){
     for(int i = 0; i < active_state_vector.bodiesStates.size(); i++){
         // Get the body's position and orientation
         pose_6 bodyVelocities;
-        active_physics_simulator->getBodyVelocity(active_state_vector.bodiesStates[i].name, bodyVelocities, data_index);
+        MuJoCo_helper->getBodyVelocity(active_state_vector.bodiesStates[i].name, bodyVelocities, data_index);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
@@ -625,7 +624,7 @@ MatrixXd ModelTranslator::returnAccelerationVector(int data_index){
     // Loop through all robots in the state vector
     for(int i = 0; i < active_state_vector.robots.size(); i++){
         vector<double> jointAccelerations;
-        active_physics_simulator->getRobotJointsAccelerations(active_state_vector.robots[i].name, jointAccelerations, data_index);
+        MuJoCo_helper->getRobotJointsAccelerations(active_state_vector.robots[i].name, jointAccelerations, data_index);
 
         for(int j = 0; j < active_state_vector.robots[i].jointNames.size(); j++){
             accel_vector(j, 0) = jointAccelerations[j];
@@ -639,7 +638,7 @@ MatrixXd ModelTranslator::returnAccelerationVector(int data_index){
     for(int i = 0; i < active_state_vector.bodiesStates.size(); i++){
         // Get the body's position and orientation
         pose_6 bodyAccelerations;
-        active_physics_simulator->getBodyAcceleration(active_state_vector.bodiesStates[i].name, bodyAccelerations, data_index);
+        MuJoCo_helper->getBodyAcceleration(active_state_vector.bodiesStates[i].name, bodyAccelerations, data_index);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
@@ -676,7 +675,7 @@ bool ModelTranslator::setPositionVector(MatrixXd position_vector, int data_index
             jointPositions.push_back(position_vector(j, 0));
         }
 
-        active_physics_simulator->setRobotJointsPositions(active_state_vector.robots[i].name, jointPositions, data_index);
+        MuJoCo_helper->setRobotJointsPositions(active_state_vector.robots[i].name, jointPositions, data_index);
 
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
         currentStateIndex += active_state_vector.robots[i].jointNames.size();
@@ -702,7 +701,7 @@ bool ModelTranslator::setPositionVector(MatrixXd position_vector, int data_index
             }
         }
 
-        active_physics_simulator->setBodyPose_angle(active_state_vector.bodiesStates[i].name, bodyPose, data_index);
+        MuJoCo_helper->setBodyPose_angle(active_state_vector.bodiesStates[i].name, bodyPose, data_index);
     }
 
     return true;
@@ -724,7 +723,7 @@ bool ModelTranslator::setVelocityVector(MatrixXd velocity_vector, int data_index
             jointVelocities.push_back(velocity_vector(j, 0));
         }
         
-        active_physics_simulator->setRobotJointsVelocities(active_state_vector.robots[i].name, jointVelocities, data_index);
+        MuJoCo_helper->setRobotJointsVelocities(active_state_vector.robots[i].name, jointVelocities, data_index);
 
         // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
         currentStateIndex += active_state_vector.robots[i].jointNames.size();
@@ -751,7 +750,7 @@ bool ModelTranslator::setVelocityVector(MatrixXd velocity_vector, int data_index
             }
         }
 
-        active_physics_simulator->setBodyVelocity(active_state_vector.bodiesStates[i].name, bodyVelocity, data_index);
+        MuJoCo_helper->setBodyVelocity(active_state_vector.bodiesStates[i].name, bodyVelocity, data_index);
     }
 
     return true;

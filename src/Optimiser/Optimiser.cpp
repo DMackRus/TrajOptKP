@@ -1,9 +1,9 @@
 
 #include "Optimiser.h"
 
-Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<FileHandler> _yamlReader, std::shared_ptr<Differentiator> _differentiator){
+Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _MuJoCo_helper, std::shared_ptr<FileHandler> _yamlReader, std::shared_ptr<Differentiator> _differentiator){
     activeModelTranslator = _modelTranslator;
-    activePhysicsSimulator = _physicsSimulator;
+    MuJoCo_helper = _MuJoCo_helper;
     activeYamlReader = _yamlReader;
     activeDifferentiator = _differentiator;
 
@@ -22,7 +22,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
     activeKeyPointMethod.velocity_change_thresholds = activeModelTranslator->velocity_change_thresholds;
 
     keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
-                                                             activePhysicsSimulator,
+                                                             MuJoCo_helper,
                                                              activeModelTranslator->dof);
 
     keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
@@ -57,7 +57,7 @@ void Optimiser::ResizeStateVector(int new_num_dofs){
         A[t].resize(state_vector_size, state_vector_size);
         A[t].block(0, 0, dof, dof).setIdentity();
         A[t].block(0, dof, dof, dof).setIdentity();
-        A[t].block(0, dof, dof, dof) *= activePhysicsSimulator->returnModelTimeStep();
+        A[t].block(0, dof, dof, dof) *= MuJoCo_helper->returnModelTimeStep();
         B[t].resize(state_vector_size, num_ctrl);
 
     }
@@ -132,7 +132,7 @@ void Optimiser::ComputeCostDerivatives(){
 
 void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
 
-    activePhysicsSimulator->initModelForFiniteDifferencing();
+    MuJoCo_helper->initModelForFiniteDifferencing();
 
     std::vector<int> timeIndices;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -157,29 +157,29 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     keypointsGlobal = keyPoints;
 
     // Setup all the required tasks
-//    for (int i = 0; i < keyPoints.size(); ++i) {
-//        tasks.push_back(&Differentiator::getDerivatives);
-//    }
-//
-//    // Get the number of threads available
-//    const int num_threads = std::thread::hardware_concurrency() - 1;  // Get the number of available CPU cores
-//    std::vector<std::thread> thread_pool;
-//    for (int i = 0; i < num_threads; ++i) {
-//        thread_pool.push_back(std::thread(&Optimiser::WorkerComputeDerivatives, this, i));
-//    }
-//
-//    for (std::thread& thread : thread_pool) {
-//        thread.join();
-//    }
+    for (int i = 0; i < keyPoints.size(); ++i) {
+        tasks.push_back(&Differentiator::getDerivatives);
+    }
+
+    // Get the number of threads available
+    const int num_threads = std::thread::hardware_concurrency() - 1;  // Get the number of available CPU cores
+    std::vector<std::thread> thread_pool;
+    for (int i = 0; i < num_threads; ++i) {
+        thread_pool.push_back(std::thread(&Optimiser::WorkerComputeDerivatives, this, i));
+    }
+
+    for (std::thread& thread : thread_pool) {
+        thread.join();
+    }
 
     // compute derivs serially
-    for(int i = 0; i < horizonLength; i++){
-        if(keyPoints[i].size() != 0){
-            activeDifferentiator->getDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false, i, false, 0);
-        }
-    }
+//    for(int i = 0; i < horizonLength; i++){
+//        if(keyPoints[i].size() != 0){
+//            activeDifferentiator->getDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false, i, false, 0);
+//        }
+//    }
       
-    activePhysicsSimulator->resetModelAfterFiniteDifferencing();
+    MuJoCo_helper->resetModelAfterFiniteDifferencing();
 
     auto time_cost_start = std::chrono::high_resolution_clock::now();
 

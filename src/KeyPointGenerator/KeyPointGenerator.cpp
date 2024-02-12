@@ -1,10 +1,10 @@
 #include "KeyPointGenerator.h"
 
 KeypointGenerator::KeypointGenerator(std::shared_ptr<Differentiator> _differentiator,
-                                     std::shared_ptr<PhysicsSimulator> _physics_simulator,
+                                     std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
                                      int _dof) {
     differentiator = _differentiator;
-    physics_simulator = _physics_simulator;
+    physics_simulator = MuJoCo_helper;
 
     dof = _dof;
 

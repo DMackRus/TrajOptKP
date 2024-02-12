@@ -14,7 +14,6 @@
 
 #include "StdInclude.h"
 #include "ModelTranslator.h"
-#include "PhysicsSimulator.h"
 #include "Differentiator.h"
 #include "KeyPointGenerator.h"
 #include <atomic>
@@ -25,13 +24,13 @@ public:
      * Construct a new Optimiser  object.
      *
      * @param _modelTranslator - ModelTranslator object used to translate between the optimiser and current system
-     * @param _physicsSimulator - PhysicsSimulator object used to simulate the system
+     * @param _MuJoCoHelper - PhysicsSimulator object used to simulate the system
      * @param _yamlReader - FileHandler object used to read in YAML files
      * @param _differentiator - Differentiator object used to compute derivatives
      *
      */
     Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator,
-              std::shared_ptr<PhysicsSimulator> _physicsSimulator,
+              std::shared_ptr<MuJoCoHelper> _MuJoCoHelper,
               std::shared_ptr<FileHandler> _yamlReader,
               std::shared_ptr<Differentiator> _differentiator);
 
@@ -210,7 +209,7 @@ public:
 
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
-    std::shared_ptr<PhysicsSimulator> activePhysicsSimulator;
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
     std::shared_ptr<KeypointGenerator> keypoint_generator;
 
     int dof;

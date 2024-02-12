@@ -5,7 +5,6 @@
 #ifndef PHYSICSSIMSWITCHING_VISUALIZER_H
 #define PHYSICSSIMSWITCHING_VISUALIZER_H
 
-#include "PhysicsSimulator.h"
 #include "MuJoCoHelper.h"
 #include <GLFW/glfw3.h>
 #include "StdInclude.h"
@@ -66,7 +65,7 @@ public:
     bool task_finished = false;
 
 private:
-    std::shared_ptr<PhysicsSimulator> activePhysicsSimulator;
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
 };
 

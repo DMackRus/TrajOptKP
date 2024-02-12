@@ -275,11 +275,8 @@ public:
     // Starting state of the system
     MatrixXd X_start;
 
-    // physics simulator object
-    std::shared_ptr<PhysicsSimulator> active_physics_simulator;
-
     // mujoco helper object
-    std::shared_ptr<MuJoCoHelper> mujoco_helper;
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
 
     // file path to model xml file
     std::string model_file_path;

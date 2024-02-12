@@ -45,8 +45,8 @@ MatrixXd BoxSweep::ReturnRandomGoalState(MatrixXd X0){
 std::vector<MatrixXd> BoxSweep::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
 
-    active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-    active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    MuJoCo_helper->forwardSimulator(MAIN_DATA_STATE);
 
     return initSetupControls;
 }
@@ -60,7 +60,7 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     displayBodyPose.position[0] = X_desired(7);
     displayBodyPose.position[1] = X_desired(8);
     displayBodyPose.position[2] = 0.0f;
-    active_physics_simulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+    MuJoCo_helper->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -92,8 +92,8 @@ void BoxSweep::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd,
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
-    active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -138,7 +138,7 @@ void BoxSweep::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd,
 //    mainWayPoints.push_back(mainWayPoint);
 //    wayPointsTiming.push_back(3 * horizon / 4);
 
-    float maxDistTravelled = 0.01 * ((5.0f/6.0f) * horizon * active_physics_simulator->returnModelTimeStep());
+    float maxDistTravelled = 0.01 * ((5.0f/6.0f) * horizon * MuJoCo_helper->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
@@ -194,8 +194,8 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
 
     pose_7 EE_start_pose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_quat(EEName, EE_start_pose, MAIN_DATA_STATE);
-    active_physics_simulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_quat(EEName, EE_start_pose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
 
     float angle_EE_push;
     float x_diff = X_desired(7) - goalobj_startPose.position(0);
@@ -237,7 +237,7 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
 
     for(int i = 0; i < initPath.size(); i++){
         pose_7 currentEEPose;
-        active_physics_simulator->getBodyPose_quat(EEName, currentEEPose, MAIN_DATA_STATE);
+        MuJoCo_helper->getBodyPose_quat(EEName, currentEEPose, MAIN_DATA_STATE);
         m_quat currentEEQuat, invertedQuat, quatDiff;
         currentEEQuat(0) = currentEEPose.quat(0);
         currentEEQuat(1) = currentEEPose.quat(1);
@@ -259,7 +259,7 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
 
         MatrixXd Jac, JacInv;
 
-        Jac = active_physics_simulator->calculateJacobian(EEName, MAIN_DATA_STATE);
+        Jac = MuJoCo_helper->calculateJacobian(EEName, MAIN_DATA_STATE);
         JacInv = Jac.completeOrthogonalDecomposition().pseudoInverse();
 
         MatrixXd desiredEEForce(6, 1);
@@ -273,7 +273,7 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
 
             std::vector<double> gravCompensation;
             MatrixXd gravCompControl(num_ctrl, 1);
-            active_physics_simulator->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            MuJoCo_helper->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
             for(int j = 0; j < num_ctrl; j++){
                 gravCompControl(j) = gravCompensation[j];
             }
@@ -292,7 +292,7 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
         initControls.push_back(desiredControls);
 
         SetControlVector(desiredControls, MAIN_DATA_STATE);
-        active_physics_simulator->stepSimulator(1, MAIN_DATA_STATE);
+        MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
     }
 

@@ -67,14 +67,14 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
 
     // Set start position of pushed object
     pose_6 pushedObjectStartPose;
-    active_physics_simulator->getBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
+    MuJoCo_helper->getBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
     pushedObjectStartPose.position(0) = startX;
     pushedObjectStartPose.position(1) = startY;
     pushedObjectStartPose.position(2) = 0.032;
-    active_physics_simulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MAIN_DATA_STATE);
-    active_physics_simulator->setBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
-    active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
-    active_physics_simulator->forwardSimulator(MASTER_RESET_DATA);
+    MuJoCo_helper->setBodyPose_angle("blueTin", pushedObjectStartPose, MAIN_DATA_STATE);
+    MuJoCo_helper->setBodyPose_angle("blueTin", pushedObjectStartPose, MASTER_RESET_DATA);
+    MuJoCo_helper->forwardSimulator(MAIN_DATA_STATE);
+    MuJoCo_helper->forwardSimulator(MASTER_RESET_DATA);
 
 
     randomGoalX = goalX;
@@ -116,14 +116,14 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                active_physics_simulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MAIN_DATA_STATE);
+                MuJoCo_helper->getBodyPose_angle(objectNames[i], objectCurrentPose, MAIN_DATA_STATE);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
-                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
-                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
+                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
 
-                if(active_physics_simulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                if(MuJoCo_helper->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
@@ -158,20 +158,20 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
             pose_6 objectCurrentPose;
             pose_6 newObjectPose;
 
-            active_physics_simulator->getBodyPose_angle("obstacle5", objectCurrentPose, MASTER_RESET_DATA);
+            MuJoCo_helper->getBodyPose_angle("obstacle5", objectCurrentPose, MASTER_RESET_DATA);
             newObjectPose = objectCurrentPose;
             newObjectPose.position(0) = randX;
             newObjectPose.position(1) = randY;
             newObjectPose.position(2) = objectCurrentPose.position(2);
-            active_physics_simulator->setBodyPose_angle("obstacle5", newObjectPose, MAIN_DATA_STATE);
-            active_physics_simulator->setBodyPose_angle("obstacle5", newObjectPose, MASTER_RESET_DATA);
+            MuJoCo_helper->setBodyPose_angle("obstacle5", newObjectPose, MAIN_DATA_STATE);
+            MuJoCo_helper->setBodyPose_angle("obstacle5", newObjectPose, MASTER_RESET_DATA);
 
-            if(active_physics_simulator->checkBodyForCollisions("obstacle5", MAIN_DATA_STATE)){
+            if(MuJoCo_helper->checkBodyForCollisions("obstacle5", MAIN_DATA_STATE)){
                 cout << "first object invalid placement : " << randX << ", " << randY << endl;
             }
             else{
-                active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
-                active_physics_simulator->forwardSimulator(MASTER_RESET_DATA);
+                MuJoCo_helper->forwardSimulator(MAIN_DATA_STATE);
+                MuJoCo_helper->forwardSimulator(MASTER_RESET_DATA);
                 validPlacement = true;
                 objectXPos.push_back(randX);
                 objectYPos.push_back(randY);
@@ -194,20 +194,20 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                active_physics_simulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                MuJoCo_helper->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
                 newObjectPose.position(2) = objectCurrentPose.position(2);
-                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
-                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
+                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MASTER_RESET_DATA);
 
-                if(active_physics_simulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                if(MuJoCo_helper->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
-                    active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
-                    active_physics_simulator->forwardSimulator(MASTER_RESET_DATA);
+                    MuJoCo_helper->forwardSimulator(MAIN_DATA_STATE);
+                    MuJoCo_helper->forwardSimulator(MASTER_RESET_DATA);
                     validPlacement = true;
                     objectXPos.push_back(randX);
                     objectYPos.push_back(randY);
@@ -262,8 +262,8 @@ MatrixXd TwoDPushing::ReturnRandomGoalState(MatrixXd X0){
 std::vector<MatrixXd> TwoDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
 
-    active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-    active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    MuJoCo_helper->forwardSimulator(MAIN_DATA_STATE);
 
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -294,8 +294,8 @@ void TwoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MAIN_DATA_STATE);
-    active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -346,7 +346,7 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     displayBodyPose.position[0] = X_desired(7);
     displayBodyPose.position[1] = X_desired(8);
     displayBodyPose.position[2] = 0.0f;
-    active_physics_simulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+    MuJoCo_helper->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -378,8 +378,8 @@ void TwoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MAIN_DATA_STATE);
-    active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -425,7 +425,7 @@ void TwoDPushing::initControls_mainWayPoints_optimisation(m_point desiredObjectE
 //    mainWayPoints.push_back(mainWayPoint);
 //    wayPointsTiming.push_back(3 * horizon / 4);
 
-    float maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * active_physics_simulator->returnModelTimeStep());
+    float maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * MuJoCo_helper->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
@@ -482,8 +482,8 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
 
     pose_7 EE_start_pose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_quat_ViaXpos(EEName, EE_start_pose, MAIN_DATA_STATE);
-    active_physics_simulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_quat_ViaXpos(EEName, EE_start_pose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
 
 
     float angle_EE_push;
@@ -529,7 +529,7 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
 
     for(int i = 0; i < initPath.size(); i++){
         pose_7 currentEEPose;
-        active_physics_simulator->getBodyPose_quat_ViaXpos(EEName, currentEEPose, MAIN_DATA_STATE);
+        MuJoCo_helper->getBodyPose_quat_ViaXpos(EEName, currentEEPose, MAIN_DATA_STATE);
         m_quat currentEEQuat, invertedQuat, quatDiff;
         currentEEQuat(0) = currentEEPose.quat(0);
         currentEEQuat(1) = currentEEPose.quat(1);
@@ -568,7 +568,7 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
 
         MatrixXd Jac, JacInv;
 
-        Jac = active_physics_simulator->calculateJacobian(EEName, MAIN_DATA_STATE);
+        Jac = MuJoCo_helper->calculateJacobian(EEName, MAIN_DATA_STATE);
         JacInv = Jac.completeOrthogonalDecomposition().pseudoInverse();
 
         MatrixXd desiredEEForce(6, 1);
@@ -582,7 +582,7 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
 
             std::vector<double> gravCompensation;
             MatrixXd gravCompControl(num_ctrl, 1);
-            active_physics_simulator->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            MuJoCo_helper->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
             for(int j = 0; j < num_ctrl; j++){
                 gravCompControl(j) = gravCompensation[j];
             }
@@ -600,7 +600,7 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
         initControls.push_back(desiredControls);
 
         SetControlVector(desiredControls, MAIN_DATA_STATE);
-        active_physics_simulator->stepSimulator(1, MAIN_DATA_STATE);
+        MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
     }
 
@@ -628,7 +628,7 @@ double TwoDPushing::CostFunction(int data_index, bool terminal){
 
     // Reach cost function - difference between EE and goal object.
     pose_7 EE_pose;
-    active_physics_simulator->getBodyPose_quat_ViaXpos("franka_gripper", EE_pose, data_index);
+    MuJoCo_helper->getBodyPose_quat_ViaXpos("franka_gripper", EE_pose, data_index);
 
     cost += pow(EE_pose.position(0) - X_desired(7), 2) * 1;
     cost += pow(EE_pose.position(1) - X_desired(8), 2) * 1;
@@ -666,9 +666,9 @@ void TwoDPushing::CostDerivatives(int data_index, MatrixXd &l_x, MatrixXd &l_xx,
 //    MatrixXd joints = Xt.block(0, 0, 7, 1);
 //
 //    // Not ideal this being here, computationally expensive
-//    active_physics_simulator->forwardSimulator(data_index);
+//    MuJoCo_helper->forwardSimulator(data_index);
 //
-//    Jac = active_physics_simulator->calculateJacobian("franka_gripper", data_index);
+//    Jac = MuJoCo_helper->calculateJacobian("franka_gripper", data_index);
 //
 //    std::cout << "Jac " << Jac << std::endl;
 //    std::cout << "joints transpose " << joints << std::endl;

@@ -41,7 +41,7 @@ public:
      *
      */
     iLQR(std::shared_ptr<ModelTranslator> _modelTranslator,
-         std::shared_ptr<PhysicsSimulator> _physicsSimulator,
+         std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
          std::shared_ptr<Differentiator> _differentiator,
          int _maxHorizon,
          std::shared_ptr<Visualiser> _visualizer,
@@ -108,7 +108,7 @@ private:
 
     double eps_acceptable_diff = 0.02;
 //    double threshold_k_eignenvectors = 1.0;
-    double threshold_k_eignenvectors = 1.0;
+    double threshold_k_eignenvectors = 0.0;
 
     /**
      * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.

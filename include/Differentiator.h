@@ -11,7 +11,7 @@
 
 class Differentiator{
 public:
-    Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _physicsSimulator);
+    Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _MuJoCo_helper);
 
     void getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId);
     MatrixXd calc_dqveldctrl(std::vector<int> cols, int dataIndex, int physicsHelperId, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal);
@@ -29,7 +29,7 @@ private:
     double epsPositions = 1e-6;
 
     std::shared_ptr<ModelTranslator> activeModelTranslator;
-    std::shared_ptr<MuJoCoHelper> activePhysicsSimulator;
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
 
     // temp variable
     double time_mj_forwards = 0.0f;

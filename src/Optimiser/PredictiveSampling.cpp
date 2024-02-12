@@ -1,6 +1,12 @@
 #include "PredictiveSampling.h"
 
-PredictiveSampling::PredictiveSampling(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<FileHandler> _yamlReader, std::shared_ptr<Differentiator> _differentiator, int _maxHorizon, int _rolloutsPerIter): Optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+PredictiveSampling::PredictiveSampling(std::shared_ptr<ModelTranslator> _modelTranslator,
+                                       std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
+                                       std::shared_ptr<FileHandler> _yamlReader,
+                                       std::shared_ptr<Differentiator> _differentiator,
+                                       int _maxHorizon, int _rolloutsPerIter):
+                                       Optimiser(_modelTranslator, MuJoCo_helper,
+                                                 _yamlReader, _differentiator){
     maxHorizon = _maxHorizon;
     rolloutsPerIter = _rolloutsPerIter;
 
@@ -25,7 +31,7 @@ PredictiveSampling::PredictiveSampling(std::shared_ptr<ModelTranslator> _modelTr
     }
 
     for(int i = 0; i < rolloutsPerIter; i++){
-        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+        MuJoCo_helper->appendSystemStateToEnd(MAIN_DATA_STATE);
     }
 }
 
@@ -35,7 +41,7 @@ double PredictiveSampling::RolloutTrajectory(int initialDataIndex, bool saveStat
 //    if(initialDataIndex != MAIN_DATA_STATE){
 //        active_physics_simulator->copySystemState(initialDataIndex, 0);
 //    }
-    activePhysicsSimulator->copySystemState(initialDataIndex, MAIN_DATA_STATE);
+    MuJoCo_helper->copySystemState(initialDataIndex, MAIN_DATA_STATE);
 
 //    MatrixXd testStart = activeModelTranslator->ReturnStateVector(initialDataIndex);
 //    cout << "init state: " << testStart << endl;
@@ -53,7 +59,7 @@ double PredictiveSampling::RolloutTrajectory(int initialDataIndex, bool saveStat
         activeModelTranslator->SetControlVector(initControls[i], initialDataIndex);
 
         // Integrate simulator
-        activePhysicsSimulator->stepSimulator(1, initialDataIndex);
+        MuJoCo_helper->stepSimulator(1, initialDataIndex);
 
         // return cost for this state
         Xt = activeModelTranslator->ReturnStateVector(initialDataIndex);
@@ -67,7 +73,7 @@ double PredictiveSampling::RolloutTrajectory(int initialDataIndex, bool saveStat
             stateCost = activeModelTranslator->CostFunction(initialDataIndex, false);
         }
 
-        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
+        cost += (stateCost * MuJoCo_helper->returnModelTimeStep());
 
     }
 
@@ -83,7 +89,7 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(int initialDataIndex, std::ve
     for(int i = 0; i < initControls.size(); i++){
         U_best[i] = initControls[i];
     }
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
     MatrixXd testStart = activeModelTranslator->ReturnStateVector(0);
     bestCost = RolloutTrajectory(0, true, initControls);
 //    active_physics_simulator->copySystemState(0, MAIN_DATA_STATE);

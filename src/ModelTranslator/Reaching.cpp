@@ -49,10 +49,10 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
                 jointStartPositions[i] = randomJoint;
             }
 
-            active_physics_simulator->setRobotJointsPositions(robotName, jointStartPositions, MAIN_DATA_STATE);
+            MuJoCo_helper->setRobotJointsPositions(robotName, jointStartPositions, MAIN_DATA_STATE);
 
             // Check if current configuration is valid
-            if(active_physics_simulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+            if(MuJoCo_helper->checkSystemForCollisions(MAIN_DATA_STATE)){
                 cout << "invalid robot position \n";
             }
             else{
@@ -87,10 +87,10 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
                 jointGoalPositions[i] = randomJoint;
             }
 
-            active_physics_simulator->setRobotJointsPositions(robotName, jointGoalPositions, MAIN_DATA_STATE);
+            MuJoCo_helper->setRobotJointsPositions(robotName, jointGoalPositions, MAIN_DATA_STATE);
 
             // Check if current configuration is valid
-            if(active_physics_simulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+            if(MuJoCo_helper->checkSystemForCollisions(MAIN_DATA_STATE)){
                 cout << "invalid robot position \n";
                 resetCounter++;
             }
@@ -134,10 +134,10 @@ MatrixXd pandaReaching::ReturnRandomStartState(){
             jointPositions[i] = randomJoint;
         }
 
-        active_physics_simulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+        MuJoCo_helper->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
 
         // Check if current configuration is valid
-        if(active_physics_simulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+        if(MuJoCo_helper->checkSystemForCollisions(MAIN_DATA_STATE)){
             cout << "invalid robot position \n";
         }
         else{
@@ -180,10 +180,10 @@ MatrixXd pandaReaching::ReturnRandomGoalState(MatrixXd X0){
             jointPositions[i] = randomJoint;
         }
 
-        active_physics_simulator->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+        MuJoCo_helper->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
 
         // Check if current configuration is valid
-        if(active_physics_simulator->checkSystemForCollisions(MAIN_DATA_STATE)){
+        if(MuJoCo_helper->checkSystemForCollisions(MAIN_DATA_STATE)){
             cout << "invalid robot position \n";
         }
         else{
@@ -209,7 +209,7 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
-            active_physics_simulator->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            MuJoCo_helper->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
 
             Xt = ReturnStateVector(MAIN_DATA_STATE);
 
@@ -220,7 +220,7 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
             }
 
             SetControlVector(control, MAIN_DATA_STATE);
-            active_physics_simulator->stepSimulator(1, MAIN_DATA_STATE);
+            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
             initControls.push_back(control);
         }
     }

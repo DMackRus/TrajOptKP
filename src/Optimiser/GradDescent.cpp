@@ -4,7 +4,7 @@
 
 #include "GradDescent.h"
 
-GradDescent::GradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<Differentiator> _differentiator, std::shared_ptr<Visualiser> _visualizer, int _maxHorizon, std::shared_ptr<FileHandler> _yamlReader) : Optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+GradDescent::GradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, std::shared_ptr<Visualiser> _visualizer, int _maxHorizon, std::shared_ptr<FileHandler> _yamlReader) : Optimiser(_modelTranslator, MuJoCo_helper, _yamlReader, _differentiator){
 //    activeDifferentiator = _differentiator;
     activeVisualizer = _visualizer;
 
@@ -22,7 +22,7 @@ GradDescent::GradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std:
 
         A[i].block(0, 0, dof, dof).setIdentity();
         A[i].block(0, dof, dof, dof).setIdentity();
-        A[i].block(0, dof, dof, dof) *= activePhysicsSimulator->returnModelTimeStep();
+        A[i].block(0, dof, dof, dof) *= MuJoCo_helper->returnModelTimeStep();
         B[i].setZero();
 
         f_x.push_back(MatrixXd(2*dof, 2*dof));
@@ -54,7 +54,7 @@ double GradDescent::RolloutTrajectory(int initialDataIndex, bool saveStates, std
     double cost = 0.0f;
 
     if(initialDataIndex != MAIN_DATA_STATE){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, initialDataIndex);
+        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, initialDataIndex);
     }
 
     MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
@@ -63,11 +63,11 @@ double GradDescent::RolloutTrajectory(int initialDataIndex, bool saveStates, std
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
     X_old[0] = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
-    if(activePhysicsSimulator->checkIfDataIndexExists(0)){
-        activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    if(MuJoCo_helper->checkIfDataIndexExists(0)){
+        MuJoCo_helper->copySystemState(0, MAIN_DATA_STATE);
     }
     else{
-        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+        MuJoCo_helper->appendSystemStateToEnd(MAIN_DATA_STATE);
     }
 
     for(int i = 0; i < initControls.size(); i++){
@@ -75,7 +75,7 @@ double GradDescent::RolloutTrajectory(int initialDataIndex, bool saveStates, std
         activeModelTranslator->SetControlVector(initControls[i], MAIN_DATA_STATE);
 
         // Integrate simulator
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
         // return cost for this state
         Xt = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
@@ -93,16 +93,16 @@ double GradDescent::RolloutTrajectory(int initialDataIndex, bool saveStates, std
         if(saveStates){
             X_old[i + 1] = Xt.replicate(1, 1);
             U_old[i] = Ut.replicate(1, 1);
-            if(activePhysicsSimulator->checkIfDataIndexExists(i + 1)){
-                activePhysicsSimulator->copySystemState(i + 1, MAIN_DATA_STATE);
+            if(MuJoCo_helper->checkIfDataIndexExists(i + 1)){
+                MuJoCo_helper->copySystemState(i + 1, MAIN_DATA_STATE);
             }
             else{
-                activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+                MuJoCo_helper->appendSystemStateToEnd(MAIN_DATA_STATE);
             }
 
         }
 
-        cost += (stateCost * activePhysicsSimulator->returnModelTimeStep());
+        cost += (stateCost * MuJoCo_helper->returnModelTimeStep());
     }
 
     cout << "cost of trajectory was: " << cost << endl;
@@ -121,7 +121,7 @@ std::vector<MatrixXd> GradDescent::Optimise(int initialDataIndex, std::vector<Ma
     double newCost = 0.0f;
 
     oldCost = RolloutTrajectory(MAIN_DATA_STATE, true, initControls);
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
     for(int i = 0; i < maxIter; i++){
 
@@ -168,7 +168,7 @@ std::vector<MatrixXd> GradDescent::Optimise(int initialDataIndex, std::vector<Ma
     }
 
     // Load the initial data back into main data
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_old[i]);
@@ -225,7 +225,7 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
     while(!costReduction){
 
         // Copy intial data state into main data state for rollout
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
         newCost = 0;
         MatrixXd stateFeedback(2*dof, 1);
@@ -272,9 +272,9 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
                 newStateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, false);
             }
 
-            newCost += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+            newCost += (newStateCost * MuJoCo_helper->returnModelTimeStep());
 
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
              if(t % 20 == 0){
                  const char* fplabel = "fp";
@@ -303,17 +303,17 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
 
     // If the cost was reduced
     if(newCost < oldCost){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
         for(int i = 0; i < horizonLength; i++){
 
             activeModelTranslator->SetControlVector(U_new[i], MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
             // Log the old state
             X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
 
-            activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
+            MuJoCo_helper->copySystemState(i + 1, MAIN_DATA_STATE);
 
             U_old[i] = U_new[i].replicate(1, 1);
 
@@ -336,7 +336,7 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
     double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     for(int i = 0; i < 8; i++){
-        activePhysicsSimulator->copySystemState(i+1, 0);
+        MuJoCo_helper->copySystemState(i + 1, 0);
     }
 
     #pragma omp parallel for
@@ -381,9 +381,9 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
                 newStateCost = activeModelTranslator->CostFunction(i + 1, false);
             }
 
-            newCosts[i] += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+            newCosts[i] += (newStateCost * MuJoCo_helper->returnModelTimeStep());
 
-            activePhysicsSimulator->stepSimulator(1, i+1);
+            MuJoCo_helper->stepSimulator(1, i + 1);
 
             X_last = Xt.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
@@ -401,7 +401,7 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
 
     newCost = bestAlphaCost;
     cout << "best alpha cost = " << bestAlphaCost << " at alpha: " << alphas[bestAlphaIndex] << endl;
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
     // If the cost was reduced
     if(newCost < oldCost){
@@ -409,12 +409,12 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
         for(int i = 0; i < horizonLength; i++){
 
             activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
             // Log the old state
             X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
 
-            activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
+            MuJoCo_helper->copySystemState(i + 1, MAIN_DATA_STATE);
 
             U_old[i] = U_alpha[i][bestAlphaIndex].replicate(1, 1);
 

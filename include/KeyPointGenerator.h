@@ -53,7 +53,7 @@ public:
      *
      */
     KeypointGenerator(std::shared_ptr<Differentiator> _differentiator,
-                      std::shared_ptr<PhysicsSimulator> _physics_simulator,
+                      std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
                       int _dof);
 
     /**
@@ -198,7 +198,7 @@ private:
     std::shared_ptr<Differentiator> differentiator;
 
     // Physics simulator object, computes the dynamics of the system.
-    std::shared_ptr<PhysicsSimulator> physics_simulator;
+    std::shared_ptr<MuJoCoHelper> physics_simulator;
 
     // Stored keypoints for the iterative error method so we know where we have already computed keypoints. Prevents recomputation.
     std::vector<std::vector<int>> computed_keypoints;

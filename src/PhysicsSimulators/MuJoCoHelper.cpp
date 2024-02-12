@@ -5,8 +5,10 @@
 #include "MuJoCoHelper.h"
 
 // Empty constructor
-MuJoCoHelper::MuJoCoHelper(vector<robot> _robots, vector<string> _bodies): PhysicsSimulator(_robots, _bodies) {
-
+MuJoCoHelper::MuJoCoHelper(vector<robot> _robots, vector<string> _bodies) {
+    // Set the robots and bodies
+    robots = _robots;
+    bodies = _bodies;
 }
 
 // ------------------------------------    ROBOT UTILITY   --------------------------------------------

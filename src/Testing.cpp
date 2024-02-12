@@ -16,10 +16,10 @@ Testing::Testing(std::shared_ptr<iLQR> iLQROptimiser_,
     activeVisualiser = activeVisualiser_;
     yamlReader = yamlReader_;
 
-    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->mujoco_helper);
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
 
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
-    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->active_physics_simulator,
+    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper,
                                            activeDifferentiator, yamlReader_->maxHorizon, activeVisualiser,
                                            yamlReader);
 }
@@ -175,16 +175,16 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_tr
         activeModelTranslator->X_start = X_start;
 
         activeModelTranslator->SetStateVector(X_start, MASTER_RESET_DATA);
-        activeModelTranslator->active_physics_simulator->stepSimulator(1, MASTER_RESET_DATA);
-        if(!activeModelTranslator->active_physics_simulator->checkIfDataIndexExists(0)){
-            activeModelTranslator->active_physics_simulator->appendSystemStateToEnd(MASTER_RESET_DATA);
+        activeModelTranslator->MuJoCo_helper->stepSimulator(1, MASTER_RESET_DATA);
+        if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
+            activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(MASTER_RESET_DATA);
         }
 
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
-        activeModelTranslator->active_physics_simulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+        activeModelTranslator->MuJoCo_helper->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
 
-        activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-        activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+        activeModelTranslator->MuJoCo_helper->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+        activeModelTranslator->MuJoCo_helper->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
         // Perform the optimisation MPC test here asynchronously
         single_asynchronus_run(true);
@@ -268,7 +268,7 @@ int Testing::single_asynchronus_run(bool visualise){
         activeModelTranslator->SetControlVector(next_control, VISUALISATION_DATA);
 
         // Update the simulation
-        activeModelTranslator->active_physics_simulator->stepSimulator(1, VISUALISATION_DATA);
+        activeModelTranslator->MuJoCo_helper->stepSimulator(1, VISUALISATION_DATA);
 
         double dist;
         if(activeModelTranslator->TaskComplete(VISUALISATION_DATA, dist)){
@@ -289,7 +289,7 @@ int Testing::single_asynchronus_run(bool visualise){
         auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
         // compare how long we took versus the timestep of the model
-        int difference_ms = (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
+        int difference_ms = (activeModelTranslator->MuJoCo_helper->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
@@ -305,13 +305,13 @@ int Testing::single_asynchronus_run(bool visualise){
     MPC_controls_thread.join();
 
     final_cost = 0.0f;
-    activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+    activeModelTranslator->MuJoCo_helper->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
     for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
         activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], VISUALISATION_DATA);
         activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], VISUALISATION_DATA);
-        activeModelTranslator->active_physics_simulator->forwardSimulator(VISUALISATION_DATA);
+        activeModelTranslator->MuJoCo_helper->forwardSimulator(VISUALISATION_DATA);
 
-        final_cost += (activeModelTranslator->CostFunction(VISUALISATION_DATA, false) * activeModelTranslator->active_physics_simulator->returnModelTimeStep());
+        final_cost += (activeModelTranslator->CostFunction(VISUALISATION_DATA, false) * activeModelTranslator->MuJoCo_helper->returnModelTimeStep());
     }
 
     std::cout << "final cost of entire MPC trajectory was: " << final_cost << "\n";
@@ -342,9 +342,9 @@ void Testing::asynchronus_optimiser_worker(){
     int horizon = 100;
 
     initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(horizon);
-    activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-    activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
-    activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
+    activeModelTranslator->MuJoCo_helper->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
+    activeModelTranslator->MuJoCo_helper->copySystemState(0, MASTER_RESET_DATA);
+    activeModelTranslator->MuJoCo_helper->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
     optimisedControls = iLQROptimiser->Optimise(0, initOptimisationControls, 1, 1, horizon);
 
@@ -358,8 +358,8 @@ void Testing::asynchronus_optimiser_worker(){
 
         visualCounter++;
 
-        activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, VISUALISATION_DATA);
-        activeModelTranslator->active_physics_simulator->copySystemState(0, MAIN_DATA_STATE);
+        activeModelTranslator->MuJoCo_helper->copySystemState(MAIN_DATA_STATE, VISUALISATION_DATA);
+        activeModelTranslator->MuJoCo_helper->copySystemState(0, MAIN_DATA_STATE);
 
 
         int current_control_index = activeVisualiser->current_control_index;
@@ -383,7 +383,7 @@ void Testing::asynchronus_optimiser_worker(){
         std::mutex mtx;
         mtx.lock();
 
-        int optTimeToTimeSteps = iLQROptimiser->opt_time_ms / (activeModelTranslator->active_physics_simulator->returnModelTimeStep() * 1000);
+        int optTimeToTimeSteps = iLQROptimiser->opt_time_ms / (activeModelTranslator->MuJoCo_helper->returnModelTimeStep() * 1000);
 
         int low_bound = optTimeToTimeSteps - 3;
         if (low_bound < 0) low_bound = 0;

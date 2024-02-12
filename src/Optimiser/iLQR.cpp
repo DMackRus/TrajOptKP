@@ -1,8 +1,8 @@
 #include <iomanip>
 #include "iLQR.h"
 
-iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<Differentiator> _differentiator, int _maxHorizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
-        Optimiser(_modelTranslator, _physicsSimulator, _yamlReader, _differentiator){
+iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, int _maxHorizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
+        Optimiser(_modelTranslator, MuJoCo_helper, _yamlReader, _differentiator){
 
     maxHorizon = _maxHorizon;
     active_visualiser = _visualizer;
@@ -22,7 +22,7 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Ph
 
         A[i].block(0, 0, dof, dof).setIdentity();
         A[i].block(0, dof, dof, dof).setIdentity();
-        A[i].block(0, dof, dof, dof) *= activePhysicsSimulator->returnModelTimeStep();
+        A[i].block(0, dof, dof, dof) *= MuJoCo_helper->returnModelTimeStep();
         B[i].setZero();
 
         K.push_back(MatrixXd(num_ctrl, 2*dof));
@@ -58,7 +58,7 @@ double iLQR::RolloutTrajectory(int initial_data_index, bool save_states, std::ve
     std::cout << "begin rollout - state vector size: " << activeModelTranslator->state_vector_size << std::endl;
 
     if(initial_data_index != MAIN_DATA_STATE){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, initial_data_index);
+        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, initial_data_index);
     }
 
     MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
@@ -68,11 +68,11 @@ double iLQR::RolloutTrajectory(int initial_data_index, bool save_states, std::ve
 
     X_old[0] = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
 
-    if(activePhysicsSimulator->checkIfDataIndexExists(0)){
-        activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
+    if(MuJoCo_helper->checkIfDataIndexExists(0)){
+        MuJoCo_helper->copySystemState(0, MAIN_DATA_STATE);
     }
     else{
-        activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+        MuJoCo_helper->appendSystemStateToEnd(MAIN_DATA_STATE);
     }
 
     for(int i = 0; i < horizonLength; i++){
@@ -80,7 +80,7 @@ double iLQR::RolloutTrajectory(int initial_data_index, bool save_states, std::ve
         activeModelTranslator->SetControlVector(initial_controls[i], MAIN_DATA_STATE);
 
         // Integrate simulator
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
         // return cost for this state
         Xt = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
@@ -98,11 +98,11 @@ double iLQR::RolloutTrajectory(int initial_data_index, bool save_states, std::ve
         if(save_states){
             X_old[i + 1] = Xt.replicate(1, 1);
             U_old[i] = Ut.replicate(1, 1);
-            if(activePhysicsSimulator->checkIfDataIndexExists(i + 1)){
-                activePhysicsSimulator->copySystemState(i + 1, MAIN_DATA_STATE);
+            if(MuJoCo_helper->checkIfDataIndexExists(i + 1)){
+                MuJoCo_helper->copySystemState(i + 1, MAIN_DATA_STATE);
             }
             else{
-                activePhysicsSimulator->appendSystemStateToEnd(MAIN_DATA_STATE);
+                MuJoCo_helper->appendSystemStateToEnd(MAIN_DATA_STATE);
             }
         }
 
@@ -168,7 +168,7 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
         PrintBanner(duration.count() / 1000.0f);
     }
     initialCost = oldCost;
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
     // Optimise for a set number of iterations
     for(int i = 0; i < max_iterations; i++){
@@ -347,7 +347,7 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
     }
 
     // Load the initial data back into main data
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_old[i]);
@@ -471,7 +471,7 @@ double iLQR::ForwardsPass(double old_cost){
     while(!costReduction){
 
         // Copy initial data state into main data state for rollout
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
         newCost = 0;
         MatrixXd stateFeedback(2*dof, 1);
@@ -516,10 +516,10 @@ double iLQR::ForwardsPass(double old_cost){
 //            newCost += (newStateCost * active_physics_simulator->returnModelTimeStep());
             newCost += newStateCost;
 
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
             // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-            activePhysicsSimulator->saveDataToRolloutBuffer(MAIN_DATA_STATE, t + 1);
+            MuJoCo_helper->saveDataToRolloutBuffer(MAIN_DATA_STATE, t + 1);
 
 //             if(t % 5 == 0){
 //                 const char* fplabel = "fp";
@@ -546,10 +546,10 @@ double iLQR::ForwardsPass(double old_cost){
 
     // If the cost was reduced
     if(newCost < old_cost){
-        activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
         //Copy the rollout buffer to saved systems state list, prevents recomputation using optimal controls
-        activePhysicsSimulator->copyRolloutBufferToSavedSystemStatesList();
+        MuJoCo_helper->copyRolloutBufferToSavedSystemStatesList();
 
         return newCost;
     }
@@ -571,7 +571,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
 //    double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     for(int i = 0; i < alphas.size(); i++){
-        activePhysicsSimulator->copySystemState(i+1, 0);
+        MuJoCo_helper->copySystemState(i + 1, 0);
     }
 
     MatrixXd initState = activeModelTranslator->ReturnStateVector(1);
@@ -629,9 +629,9 @@ double iLQR::ForwardsPassParallel(double old_cost){
                 newStateCost = activeModelTranslator->CostFunction(i + 1, false);
             }
 
-            newCosts[i] += (newStateCost * activePhysicsSimulator->returnModelTimeStep());
+            newCosts[i] += (newStateCost * MuJoCo_helper->returnModelTimeStep());
 
-            activePhysicsSimulator->stepSimulator(1, i+1);
+            MuJoCo_helper->stepSimulator(1, i + 1);
 
         }
     }
@@ -651,19 +651,19 @@ double iLQR::ForwardsPassParallel(double old_cost){
 
     newCost = bestAlphaCost;
 //    cout << "best alpha cost = " << bestAlphaCost << " at alpha: " << alphas[bestAlphaIndex] << endl;
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
 
     // If the cost was reduced - update all the data states
     if(newCost < old_cost){
         for(int i = 0; i < horizonLength; i++){
 
             activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
-            activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
             // Log the old state
             X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
 
-            activePhysicsSimulator->copySystemState(i+1, MAIN_DATA_STATE);
+            MuJoCo_helper->copySystemState(i + 1, MAIN_DATA_STATE);
 
             U_old[i] = U_alpha[i][bestAlphaIndex].replicate(1, 1);
 
@@ -681,7 +681,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
 bool iLQR::RolloutWithKMatricesReduction(std::vector<int> dof_indices, double old_cost, double new_cost, double alpha){
 
     // Copy initial state into main data
-    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
     double reduced_cost = 0.0f;
 
     MatrixXd stateFeedback(2*dof, 1);
@@ -732,10 +732,10 @@ bool iLQR::RolloutWithKMatricesReduction(std::vector<int> dof_indices, double ol
 
         reduced_cost += newStateCost;
 
-        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+        MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
 
         // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-//        activePhysicsSimulator->saveDataToRolloutBuffer(MAIN_DATA_STATE, t + 1);
+//        MuJoCo_helper->saveDataToRolloutBuffer(MAIN_DATA_STATE, t + 1);
 
     }
 
