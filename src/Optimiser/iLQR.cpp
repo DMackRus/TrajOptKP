@@ -465,8 +465,6 @@ double iLQR::ForwardsPass(double old_cost){
 
             activeModelTranslator->SetControlVector(U_new[t], MAIN_DATA_STATE);
 
-            Ut = U_new[t].replicate(1, 1);
-
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){

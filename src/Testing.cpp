@@ -42,24 +42,46 @@ int Testing::testing_different_velocity_change_asynchronus_mpc(){
 
     std::cout << "beginning testing asynchronus MPC for " << activeModelTranslator->model_name << std::endl;
 
+//    std::vector<int> minN = {1};
+//    std::vector<int> maxN_multiplier = {20};
+//    std::vector<double> velocity_change_thresholds = {0.01, 0.1, 0.5, 1.0, 2.0};
+//
+//    for(int i = 0; i < minN.size(); i++){
+//        for(int j = 0; j < maxN_multiplier.size(); j++){
+//            for(int k = 0; k < velocity_change_thresholds.size(); k++){
+//                keypoint_method keypoint_method;
+//                keypoint_method.name = "magvel_change";
+//                keypoint_method.min_N = minN[i];
+//                keypoint_method.max_N = minN[i] * maxN_multiplier[j];
+//                for(int l = 0; l < activeModelTranslator->dof; l++){
+//                    keypoint_method.velocity_change_thresholds.push_back(velocity_change_thresholds[k]);
+//                }
+//                std::cout << "testing keypoint method: " << keypoint_method.name << " with minN: " << keypoint_method.min_N
+//                          << " maxN: " << keypoint_method.max_N << " and velocity change thresholds: " << keypoint_method.velocity_change_thresholds[0] << std::endl;
+//
+//                testing_asynchronus_mpc(keypoint_method, 100);
+//            }
+//        }
+//    }
+
     std::vector<int> minN = {1};
-    std::vector<int> maxN_multiplier = {20};
-    std::vector<double> velocity_change_thresholds = {0.01, 0.1, 0.5, 1.0, 2.0};
+    std::vector<int> maxN_multiplier = {50};
+    std::vector<double> jerk_thresholds = {0.0001, 0.001, 0.01, 0.1, 1.0};
 
     for(int i = 0; i < minN.size(); i++){
         for(int j = 0; j < maxN_multiplier.size(); j++){
-            for(int k = 0; k < velocity_change_thresholds.size(); k++){
+            for(int k = 0; k < jerk_thresholds.size(); k++){
                 keypoint_method keypoint_method;
-                keypoint_method.name = "magvel_change";
+                keypoint_method.name = "adaptive_jerk";
                 keypoint_method.min_N = minN[i];
                 keypoint_method.max_N = minN[i] * maxN_multiplier[j];
                 for(int l = 0; l < activeModelTranslator->dof; l++){
-                    keypoint_method.velocity_change_thresholds.push_back(velocity_change_thresholds[k]);
+                    keypoint_method.jerk_thresholds.push_back(jerk_thresholds[k]);
                 }
                 std::cout << "testing keypoint method: " << keypoint_method.name << " with minN: " << keypoint_method.min_N
-                          << " maxN: " << keypoint_method.max_N << " and velocity change thresholds: " << keypoint_method.velocity_change_thresholds[0] << std::endl;
+                          << " maxN: " << keypoint_method.max_N << " and jerk thresholds: " << keypoint_method.jerk_thresholds[0] << std::endl;
 
-                testing_asynchronus_mpc(keypoint_method, 200);
+                testing_asynchronus_mpc(keypoint_method, 50);
             }
         }
     }
@@ -94,11 +116,12 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_tr
     std::vector<double> avgTimeFPRow;
     // -----------------------------------------------------------------------------
 
+    //  make method file name
     std::string method_name;
     if(keypoint_method.name == "setInterval") {
         method_name = keypoint_method.name + "_" + std::to_string(keypoint_method.min_N);
     }
-    else{
+    else if(keypoint_method.name == "magvel_change"){
         int substring_length = 3;
         if(keypoint_method.velocity_change_thresholds[0] < 0.1){
             substring_length = 4;
@@ -108,24 +131,31 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_tr
                 std::to_string(keypoint_method.max_N) + "_" +
                 std::to_string(keypoint_method.velocity_change_thresholds[0]).substr(0, substring_length);
     }
-
-    std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
-    std::vector<std::string> horizonNames;
-    int numHorizons = horizons.size();
-
-    for(int i = 0; i < horizons.size(); i++){
-        horizonNames.push_back(std::to_string(horizons[i]));
+    else if(keypoint_method.name == "adaptive_jerk"){
+        int substring_length = 4;
+        if(keypoint_method.jerk_thresholds[0] <= 0.001){
+            substring_length = 5;
+        }
+        if(keypoint_method.jerk_thresholds[0] <= 0.0001){
+            substring_length = 6;
+        }
+        method_name = keypoint_method.name + "_" +
+                      std::to_string(keypoint_method.min_N) + "_" +
+                      std::to_string(keypoint_method.max_N) + "_" +
+                      std::to_string(keypoint_method.jerk_thresholds[0]).substr(0, substring_length);
     }
 
-    std::vector<double> targetVelocities;
-    double minTarget = 0.2;
-    double maxTarget = 0.5;
-    double currentVel = minTarget;
+//    std::vector<double> targetVelocities;
+//    double minTarget = 0.2;
+//    double maxTarget = 0.5;
+//    double currentVel = minTarget;
+//
+//    for(int i = 0; i < num_trials; i++){
+//        targetVelocities.push_back(currentVel);
+//        currentVel += (maxTarget - minTarget) / (num_trials - 1);
+//    }
 
-    for(int i = 0; i < num_trials; i++){
-        targetVelocities.push_back(currentVel);
-        currentVel += (maxTarget - minTarget) / (num_trials - 1);
-    }
+
 
     auto startTimer = std::chrono::high_resolution_clock::now();
     iLQROptimiser->verbose_output = false;
@@ -138,19 +168,21 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_tr
     avgTimeFP.clear();
     avgPercentDerivs.clear();
 
-    for (int i = 0; i < targetVelocities.size(); i++) {
+    for (int i = 0; i < num_trials; i++) {
         // Load start and desired state from csv file
         MatrixXd X_start(activeModelTranslator->state_vector_size, 1);
         yamlReader->loadTaskFromFile(task_prefix, i, X_start, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = X_start;
 
-        // TODO - make this better, hard coded for walker atm
-        // Change walker desired velocity
-        activeModelTranslator->X_desired(10) = targetVelocities[i];
-
         activeModelTranslator->SetStateVector(X_start, MASTER_RESET_DATA);
         activeModelTranslator->active_physics_simulator->stepSimulator(1, MASTER_RESET_DATA);
-        activeModelTranslator->active_physics_simulator->appendSystemStateToEnd(MASTER_RESET_DATA);
+        if(!activeModelTranslator->active_physics_simulator->checkIfDataIndexExists(0)){
+            activeModelTranslator->active_physics_simulator->appendSystemStateToEnd(MASTER_RESET_DATA);
+        }
+
+        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+        activeModelTranslator->active_physics_simulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
+
         activeModelTranslator->active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
         activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
@@ -237,6 +269,12 @@ int Testing::single_asynchronus_run(bool visualise){
 
         // Update the simulation
         activeModelTranslator->active_physics_simulator->stepSimulator(1, VISUALISATION_DATA);
+
+        double dist;
+        if(activeModelTranslator->TaskComplete(VISUALISATION_DATA, dist)){
+            std::cout << "Task complete" << std::endl;
+            break;
+        }
 
         // Update the visualisation
         // Unsure why rendering every time causes it to lag so much more???

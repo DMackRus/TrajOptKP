@@ -5,7 +5,7 @@ import csv
 import os
 
 def main():
-    task_name = "walker_uneven"
+    task_name = "push_nCl"
     directory = "../" + task_name
     all_method_file_names = list_files_in_directory(directory)
 

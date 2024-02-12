@@ -598,13 +598,12 @@ void optimiseOnceandShow(){
 
 void worker(){
     double trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
-    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, 100);
+    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, 80);
 }
 
 void async_MPC_testing(){
 
-    // Some tasks need setup controls to be generated and executed
-//    std::vector<MatrixXd> initSetupControls = activeModelTranslator->createInitSetupControls(1000);
+    std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
     activeModelTranslator->active_physics_simulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
 
     // Whether Optimiser will output useful information
@@ -654,6 +653,13 @@ void async_MPC_testing(){
             // Update the simulation
             activeModelTranslator->active_physics_simulator->stepSimulator(1, VISUALISATION_DATA);
 
+            // Check if task complete
+            double dist;
+            if(activeModelTranslator->TaskComplete(VISUALISATION_DATA, dist)){
+                cout << "task complete - dist: " << dist  << endl;
+                break;
+            }
+
             // Update the visualisation
             // Unsure why rendering every time causes it to lag so much more???
             vis_counter++;
@@ -672,9 +678,6 @@ void async_MPC_testing(){
             if(difference_ms > 0) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
             }
-
-
-            activeModelTranslator->X_desired(1) = activeModelTranslator->ReturnStateVector(VISUALISATION_DATA)(1) + 0.15;
 
         }
 
@@ -741,7 +744,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     activeModelTranslator->active_physics_simulator->copySystemState(0, MASTER_RESET_DATA);
     activeModelTranslator->active_physics_simulator->copySystemState(VISUALISATION_DATA, MASTER_RESET_DATA);
 
-    optimisedControls = activeOptimiser->Optimise(0, initOptimisationControls, 5, 4, OPT_HORIZON);
+    optimisedControls = activeOptimiser->Optimise(0, initOptimisationControls, 1, 1, OPT_HORIZON);
 
     MatrixXd currState;
     activeOptimiser->verbose_output = true;
@@ -1085,183 +1088,6 @@ void generateTestingData_MPC(){
                                         avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
     }
 }
-
-//int generateTestingData_MPC_asynchronous(){
-//    playback = false;
-//    mpcVisualise = false;
-//
-//    // start timer here
-//    auto startTime = std::chrono::high_resolution_clock::now();
-//
-//    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->myHelper);
-//
-//    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
-//    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->activePhysicsSimulator,
-//                                                       activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
-//                                                       yamlReader);
-//    activeOptimiser = iLQROptimiser;
-//
-//    // ------------------------- data storage -------------------------------------
-//    std::vector<std::vector<double>> finalCosts;
-//    std::vector<double> finalCostsRow;
-//
-//    std::vector<std::vector<double>> avgTimeForDerivs;
-//    std::vector<double> avgTimeForDerivsRow;
-//
-//    std::vector<std::vector<double>> avgTimeBP;
-//    std::vector<double> avgTimeBPRow;
-//
-//    std::vector<std::vector<double>> avgTimeFP;
-//    std::vector<double> avgTimeFPRow;
-//
-//    std::vector<std::vector<double>> avg_percent_derivs;
-//    std::vector<double> avgPercentDerivsRow;
-//
-//    std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
-//    std::vector<std::string> horizonNames;
-//    int numHorizons = horizons.size();
-//
-//    for(int i = 0; i < horizons.size(); i++){
-//        horizonNames.push_back(std::to_string(horizons[i]));
-//    }
-//
-//    if(testingMethods.size() == 0){
-//        return 0;
-//    }
-//
-//    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk2", "iterative_error", "magvel_change2"};
-//    std::vector<int> testIndices;
-//    bool anyMatch = false;
-//    for(int i = 0; i < testingMethods.size(); i++){
-//        for(int j = 0; j < methodNames.size(); j++){
-//            if(testingMethods[i] == methodNames[j]){
-//                anyMatch = true;
-//                testIndices.push_back(j);
-//            }
-//        }
-//
-//    }
-//
-//    if(anyMatch == false){
-//        cout << "passed testing arguments didnt match any allowed methods \n";
-//        return 0;
-//    }
-//
-//    std::vector<int> minN = {1, 5, 10, 20, 2, 2, 2};
-//    std::vector<int> maxN = {1, 5, 10, 20, 20, 5, 10};
-//    std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
-//
-//    std::vector<double> targetVelocities;
-//    double minTarget = 0.1;
-//    double maxTarget = 0.3;
-//    int numTests = 100;
-//    double currentVel = minTarget;
-//
-//    for(int i = 0; i < numTests; i++){
-//        targetVelocities.push_back(currentVel);
-//        currentVel += (maxTarget - minTarget) / (numTests - 1);
-//    }
-//
-//    auto startTimer = std::chrono::high_resolution_clock::now();
-//    activeOptimiser->verbose_output = false;
-//
-//    for(int k = 0; k < testIndices.size(); k++) {
-//        int testIndex = testIndices[k];
-//        cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
-//
-//        derivative_interpolator currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
-//        currentInterpolator.minN = minN[testIndex];
-//        currentInterpolator.maxN = maxN[testIndex];
-//        currentInterpolator.keypoint_method = keypoint_method[testIndex];
-//        activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
-//
-//        finalCosts.clear();
-//        avgHzs.clear();
-//        avgTimeForDerivs.clear();
-//        avgTimeBP.clear();
-//        avgTimeFP.clear();
-//        avg_percent_derivs.clear();
-//
-//        for (int i = 0; i < targetVelocities.size(); i++) {
-//            cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
-//
-//            // Loop through our interpolating derivatives methods
-//            finalCostsRow.clear();
-//            avgHZRow.clear();
-//            avgTimeForDerivsRow.clear();
-//            avgTimeBPRow.clear();
-//            avgTimeFPRow.clear();
-//            avgPercentDerivsRow.clear();
-//
-//            MatrixXd startStateVector;
-//            startStateVector.resize(activeModelTranslator->stateVectorSize, 1);
-//
-//            yamlReader->loadTaskFromFile(activeModelTranslator->modelName, i, startStateVector,
-//                                         activeModelTranslator->X_desired);
-//
-//            // Walker model where were trying to match a velocity
-//            if(task == "walker"){
-//                activeModelTranslator->X_desired(10) = targetVelocities[i];
-//            }
-//
-//            activeModelTranslator->X_start = startStateVector;
-//            activeModelTranslator->setStateVector(startStateVector, MASTER_RESET_DATA);
-//            activeModelTranslator->activePhysicsSimulator->stepSimulator(5, MASTER_RESET_DATA);
-//
-//            if(activeModelTranslator->activePhysicsSimulator->checkIfDataIndexExists(0) == false){
-//                activeModelTranslator->activePhysicsSimulator->appendSystemStateToEnd(MASTER_RESET_DATA);
-//            }
-//
-//            // Move the end-effector to a decent starting position
-//            activeModelTranslator->activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-//            std::vector<MatrixXd> setupControls = activeModelTranslator->createInitSetupControls(1000);
-//            activeModelTranslator->activePhysicsSimulator->copySystemState(MASTER_RESET_DATA, MAIN_DATA_STATE);
-//
-//            for (int j = 0; j < numHorizons; j++) {
-//                double avgHz = 0.0f;
-//                double finalCost = 0.0f;
-//                double avgPercentageDerivs = 0.0f;
-//                double avgTimeForDerivs = 0.0f;
-//                double avgTimeBP = 0.0f;
-//                double avgTimeFP = 0.0f;
-//
-//                cout << "--------------------------------------------------------------------------------\n";
-//                cout << "current horizon: " << horizonNames[j] << "\n";
-//
-//                activeModelTranslator->activePhysicsSimulator->copySystemState( MAIN_DATA_STATE, MASTER_RESET_DATA);
-//                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1500, 1, horizons[j]);
-//
-//                finalCostsRow.push_back(finalCost);
-//                avgHZRow.push_back(avgHz);
-//                avgTimeForDerivsRow.push_back(avgTimeForDerivs);
-//                avgTimeBPRow.push_back(avgTimeBP);
-//                avgTimeFPRow.push_back(avgTimeFP);
-//                avgPercentDerivsRow.push_back(avgPercentageDerivs);
-//            }
-//
-//            // New row of data added
-//            finalCosts.push_back(finalCostsRow);
-//            avgHzs.push_back(avgHZRow);
-//            avgTimeForDerivs.push_back(avgTimeForDerivsRow);
-//            avgTimeBP.push_back(avgTimeBPRow);
-//            avgTimeFP.push_back(avgTimeFPRow);
-//            avg_percent_derivs.push_back(avgPercentDerivsRow);
-//
-//            auto currentTime = std::chrono::high_resolution_clock::now();
-//            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTimer).count();
-//
-//            cout << "Time taken so far: " << duration/ 1000.0f << " s" << endl;
-//        }
-//        // Save data to csv
-//        cout << "save data to file for " << methodNames[testIndex] << endl;
-//        std::string taskPrefix = activeModelTranslator->modelName + "_" + methodNames[testIndex];
-//        yamlReader->saveResultsData_MPC(taskPrefix, horizonNames, finalCosts, avgHzs,
-//                                        avgTimeForDerivs, avgTimeBP, avgTimeFP, avg_percent_derivs);
-//    }
-//
-//    cout << "tests exited correctly \n";
-//    return 1;
-//}
 
 int generateTestingData_MPCHorizons(){
     playback = false;

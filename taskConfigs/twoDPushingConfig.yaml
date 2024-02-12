@@ -1,9 +1,9 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml"
 modelName: "/push_nCl"
 timeStep: 0.004
-keypointMethod: "adaptive_jerk"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 minN: 1
-maxN: 50
+maxN: 20
 iterativeErrorThreshold: 0.00001
 robots:
   panda:
@@ -14,7 +14,8 @@ robots:
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
     goalPos: [ 0, 0, 0, 0, 0, 0, 0 ]
     jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
-    jointVelCosts: [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05]
+#    jointVelCosts: [0, 0.1, 0.05, 0.05, 0.05, 0.01, 0]
+
     terminalJointPosCosts: [0, 0, 0, 0, 0, 0, 0]
     terminalJointVelCosts: [0, 0, 0, 0, 0, 0, 0]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
@@ -28,10 +29,10 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, 0.0, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [0, 0, 0]
+    linearPosCost: [0.2, 0.4, 0]
     # When iLQR once
-    terminalLinearPosCost: [100, 100, 0]
-    linearVelCost: [1, 1, 0]
+    terminalLinearPosCost: [0, 0, 0]
+    linearVelCost: [0.1, 0.1, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
     terminalAngularPosCost: [0, 0, 0]

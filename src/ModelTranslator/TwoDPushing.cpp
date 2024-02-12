@@ -23,6 +23,10 @@ TwoDPushing::TwoDPushing(int _clutterLevel){
         cout << "ERROR: Invalid clutter level" << endl;
     }
 
+    cost_reach.setZero();
+    cost_reach(0, 0) = 1;
+    cost_reach(1, 1) = 1;
+
     InitModelTranslator(yamlFilePath);
 }
 
@@ -292,8 +296,6 @@ void TwoDPushing::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std
     pose_6 goalobj_startPose;
     active_physics_simulator->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MAIN_DATA_STATE);
     active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
-    cout << "goalobj_startPose: " << goalobj_startPose.position(0) << ", " << goalobj_startPose.position(1) << endl;
-    cout << "EE_startPose: " << EE_startPose.position(0) << ", " << EE_startPose.position(1) << endl;
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -483,7 +485,6 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
     active_physics_simulator->getBodyPose_quat_ViaXpos(EEName, EE_start_pose, MAIN_DATA_STATE);
     active_physics_simulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
 
-    std::cout << "EE start pose: " << EE_start_pose.position << std::endl;
 
     float angle_EE_push;
     float x_diff = X_desired(7) - goalobj_startPose.position(0);
@@ -596,7 +597,6 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
             //cout << "desired controls: " << desiredControls << endl;
         }
 
-
         initControls.push_back(desiredControls);
 
         SetControlVector(desiredControls, MAIN_DATA_STATE);
@@ -605,6 +605,87 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
     }
 
     return initControls;
+}
+
+// New - testing it out
+double TwoDPushing::CostFunction(int data_index, bool terminal){
+    double cost;
+    MatrixXd Xt = ReturnStateVector(data_index);
+    MatrixXd Ut = ReturnControlVector(data_index);
+
+    // General cost function for the difference between desired and actual state
+    MatrixXd X_diff = Xt - X_desired;
+    MatrixXd temp;
+
+    if(terminal){
+        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
+    }
+    else{
+        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
+    }
+
+    cost = temp(0);
+
+    // Reach cost function - difference between EE and goal object.
+    pose_7 EE_pose;
+    active_physics_simulator->getBodyPose_quat_ViaXpos("franka_gripper", EE_pose, data_index);
+
+    cost += pow(EE_pose.position(0) - X_desired(7), 2) * 1;
+    cost += pow(EE_pose.position(1) - X_desired(8), 2) * 1;
+
+    return cost;
+}
+
+void TwoDPushing::CostDerivatives(int data_index, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd Xt = ReturnStateVector(data_index);
+    MatrixXd Ut = ReturnControlVector(data_index);
+
+    MatrixXd X_diff = Xt - X_desired;
+
+    // Size cost derivatives appropriately
+    l_x.resize(state_vector_size, 1);
+    l_xx.resize(state_vector_size, state_vector_size);
+
+    l_u.resize(num_ctrl, 1);
+    l_uu.resize(num_ctrl, num_ctrl);
+
+    if(terminal){
+        l_x = 2 * Q_terminal * X_diff;
+        l_xx = 2 * Q_terminal;
+    }
+    else{
+        l_x = 2 * Q * X_diff;
+        l_xx = 2 * Q;
+    }
+
+    l_u = 2 * R * Ut;
+    l_uu = 2 * R;
+
+//    // Reach gradients
+//    MatrixXd Jac;
+//    MatrixXd joints = Xt.block(0, 0, 7, 1);
+//
+//    // Not ideal this being here, computationally expensive
+//    active_physics_simulator->forwardSimulator(data_index);
+//
+//    Jac = active_physics_simulator->calculateJacobian("franka_gripper", data_index);
+//
+//    std::cout << "Jac " << Jac << std::endl;
+//    std::cout << "joints transpose " << joints << std::endl;
+//
+//    MatrixXd joints_2_EE(6, 1);
+//    MatrixXd EE_x(7, 1);
+//    MatrixXd EE_xx(7, 7);
+//    joints_2_EE = Jac * joints;
+//    std::cout << "jointes_2_ee " << EE_x << std::endl;
+//
+//    EE_x = 2 * joints_2_EE * cost_reach;
+//    std::cout << "EE_x " << EE_x << std::endl;
+//    EE_xx = 2 * cost_reach;
+//
+//    // Add the reach gradients to the cost derivatives
+//    l_x.block(7, 0, 7, 1) += EE_x;
+//    l_xx.block(7, 7, 7, 7) += EE_xx;
 }
 
 bool TwoDPushing::TaskComplete(int dataIndex, double &dist){
@@ -617,7 +698,7 @@ bool TwoDPushing::TaskComplete(int dataIndex, double &dist){
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 
-    if(dist < 0.035){
+    if(dist < 0.025){
         taskComplete = true;
     }
 
