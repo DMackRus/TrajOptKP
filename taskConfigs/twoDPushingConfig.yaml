@@ -2,7 +2,7 @@ modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml"
 modelName: "/push_nCl"
 timeStep: 0.004
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
-minN: 1
+minN: 20
 maxN: 20
 iterativeErrorThreshold: 0.00001
 robots:

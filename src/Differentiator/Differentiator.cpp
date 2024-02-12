@@ -8,13 +8,15 @@ Differentiator::Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator
 
 // Hack to prevent strange segmentation faults I was epxeriecning when running my code with O3 optimisation flag.
 // If anyone can find a way to remove these pragma commands without it breaking the code that would be fantastic  ... :).
-#pragma GCC push_options
-#pragma GCC optimize ("O0")
+//#pragma GCC push_options
+//#pragma GCC optimize ("O0")
 void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols,
                                     MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
                                     bool costDerivs, int dataIndex, bool terminal, int threadId){
 
     time_mj_forwards = 0.0f;
+    count_integrations = 0;
+
     auto diff_start = std::chrono::high_resolution_clock::now();
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
@@ -116,8 +118,9 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
         }
     }
 
-//    std::cout << "time of mj_forwards: " << time_mj_forwards / 1000.0f << "\n";
-//    std::cout << "diff time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - diff_start).count() / 1000.0 << std::endl;
+    std::cout << "time of sim integration: " << time_mj_forwards / 1000.0f << "\n";
+    std::cout << "num of sim integration: " << count_integrations << "\n";
+    std::cout << "diff time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - diff_start).count() / 1000.0 << std::endl;
 }
 
 
@@ -140,14 +143,16 @@ MatrixXd Differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, i
         }
 
         if(computeColumn){
+            count_integrations++;
             // perturb control vector positively
             MatrixXd perturbedControls = unperturbedControls.replicate(1,1);
             perturbedControls(i) += epsControls;
             activeModelTranslator->SetControlVector(perturbedControls, physicsHelperId);
 
             // Integrate the simulator
-//            mju_copy(active_physics_simulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            auto start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 //            cout << "after first step simulator - " << i << endl;
 
             // return the  new velcoity vector
@@ -167,8 +172,9 @@ MatrixXd Differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, i
             perturbedControls(i) -= epsControls;
 
             // integrate simulator
-//            mju_copy(active_physics_simulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 //            cout << "after second step simulator - " << i << endl;
 
             // return the new velocity vector
@@ -198,6 +204,8 @@ MatrixXd Differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, i
 //            cout << "reset simulator state - " << i << endl;
         }
     }
+
+    std::cout << "time of sim integration: " << time_mj_forwards / 1000.0f << "\n";
 
     return dqveldctrl;
 }
@@ -319,14 +327,16 @@ MatrixXd Differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, i
         }
 
         if(computeColumn){
+            count_integrations++;
             // Perturb velocity vector positively
             MatrixXd perturbedVelocities = unperturbedVelocities.replicate(1, 1);
             perturbedVelocities(i) += epsVelocities;
             activeModelTranslator->setVelocityVector(perturbedVelocities, physicsHelperId);
 
             // Integrate the simulator
-//            mju_copy(active_physics_simulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            auto start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 //            cout << "after first step simulator velocity - " << i << endl;
 
 
@@ -349,13 +359,12 @@ MatrixXd Differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, i
 
             // Integrate the simulatormodel
 //            mju_copy(active_physics_simulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
-//            cout << "after 2nd step simulator - " << i << endl;
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
             // Return the new velocity vector
             velocityDec = activeModelTranslator->returnVelocityVector(physicsHelperId);
-//            cout << "velocityDec - " << velocityDec << endl;
-
 
             // If calculating cost derivs via finite-differencing
             if(fd_costDerivs){
@@ -476,15 +485,16 @@ MatrixXd Differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
         }
 
         if(computeColumn){
+            count_integrations++;
             // Perturb position vector positively
             MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
             perturbedPositions(i) += epsPositions;
             activeModelTranslator->setPositionVector(perturbedPositions, physicsHelperId);
-//                cout << "Perturbed positions positive " << perturbedPositions << endl;cout << "Perturbed positions positive " << perturbedPositions << endl;
 
             // Integrate the simulator
-//                mju_copy(active_physics_simulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            auto start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 //                cout << "after step simulator positon - " << i << endl;
 
             // return the new velocity vector
@@ -504,12 +514,12 @@ MatrixXd Differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
             activeModelTranslator->setPositionVector(perturbedPositions, physicsHelperId);
 
             // Integrate the simulator
-//                mju_copy(active_physics_simulator->fd_data[tid]->qacc_warmstart, warmstart, m->nv);
+            start = std::chrono::high_resolution_clock::now();
             activePhysicsSimulator->stepSimulator(1, physicsHelperId);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
             // Return the new velocity vector
             velocityDec = activeModelTranslator->returnVelocityVector(physicsHelperId);
-//                cout << "velocity dec " << velocityDec << endl;
 
             if(fd_costDerivs){
                 costDec = activeModelTranslator->CostFunction(physicsHelperId, terminal);
@@ -613,7 +623,7 @@ MatrixXd Differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, i
     return dqaccdq;
 }
 
-#pragma GCC pop_options
+//#pragma GCC pop_options
 
 
 // finite difference cost derivatives graveyard

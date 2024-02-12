@@ -104,6 +104,13 @@ public:
     void ReturnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
     /**
+     * Resize variables that are dependant on the size of the state vector.
+     *
+     * @param new_num_dofs - The new number of degrees of freedom in the state vector.
+     */
+    void ResizeStateVector(int new_num_dofs);
+
+    /**
      * Returns the current active keypoint method, and its associating parameters.
      *
      * @return keypoint_method The current active keypoint method.
@@ -200,8 +207,6 @@ public:
     std::vector<double> costHistory;
     double lowPassACoefficient = 0.25;
     std::vector<double> FIRCoefficients = {0.1, 0.15, 0.5, 0.15, 0.1};
-
-
 
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;

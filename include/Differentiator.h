@@ -33,4 +33,5 @@ private:
 
     // temp variable
     double time_mj_forwards = 0.0f;
+    int count_integrations = 0;
 };

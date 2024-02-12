@@ -228,7 +228,7 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
     m_quat desiredQuat = rotMat2Quat(rotMat);
 
     MatrixXd currentControl(num_ctrl, 1);
-    if(state_vector.robots[0].torqueControlled){
+    if(active_state_vector.robots[0].torqueControlled){
         MatrixXd robotPos = returnPositionVector(MAIN_DATA_STATE);
         for(int i = 0; i < num_ctrl; i++){
             currentControl(i) = robotPos(i);
@@ -265,7 +265,7 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
         MatrixXd desiredEEForce(6, 1);
         MatrixXd desiredControls(num_ctrl, 1);
 
-        if(state_vector.robots[0].torqueControlled){
+        if(active_state_vector.robots[0].torqueControlled){
             for(int j = 0; j < 6; j++) {
                 desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
             }
@@ -273,7 +273,7 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
 
             std::vector<double> gravCompensation;
             MatrixXd gravCompControl(num_ctrl, 1);
-            active_physics_simulator->getRobotJointsGravityCompensaionControls(state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            active_physics_simulator->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
             for(int j = 0; j < num_ctrl; j++){
                 gravCompControl(j) = gravCompensation[j];
             }

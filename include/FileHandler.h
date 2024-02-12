@@ -23,7 +23,9 @@ enum optimisers{
 class FileHandler{
 public:
     FileHandler();
+
     void readModelConfigFile(const std::string& yamlFilePath, task &_taskConfig);
+
     void readSettingsFile(std::string settingsFilePath);
 
     void saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength);

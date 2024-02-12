@@ -93,6 +93,7 @@ private:
 
     // Last number of linesearches performed for print banner
     int last_iter_num_linesearches = 0;
+    double last_alpha = 0.0f;
 
     // Max horizon of optimisation.
     int maxHorizon = 0;
@@ -103,7 +104,11 @@ private:
     // State dependant feedback matrices
     vector<MatrixXd> K;
 
-    int sampling_k_interval = 5;
+    int sampling_k_interval = 1;
+
+    double eps_acceptable_diff = 0.02;
+//    double threshold_k_eignenvectors = 1.0;
+    double threshold_k_eignenvectors = 1.0;
 
     /**
      * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
@@ -139,7 +144,21 @@ private:
      */
     double ForwardsPassParallel(double old_cost);
 
-    bool checkKMatrices();
+    std::vector<int> checkKMatrices();
+
+    /**
+     * Perform a rollout with the previously computed k and K matrices but nullify feedback rows for the specified
+     * dof indices. The cumulated cost is compared against the cost from the rollout using all the elements in the
+     * K matrices. If the cost is similar we can reduce our state vector.
+     *
+     * @param dof_indices - Dof indices to nullify the K matrices for.
+     * @param old_cost - Cost of the previous trajectory.
+     * @param new_cost - Cost of the new trajectory, when all elements in the K matrices were used.
+     * @param alpha - The alpha value used for the rollout.
+     *
+     * @return bool - true if the cost was similar, false otherwise.
+     */
+    bool RolloutWithKMatricesReduction(std::vector<int> dof_indices, double old_cost, double new_cost, double alpha);
 
     // Visualiser object
     std::shared_ptr<Visualiser> active_visualiser;

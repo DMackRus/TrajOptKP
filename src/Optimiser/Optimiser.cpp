@@ -38,6 +38,31 @@ bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
     return false;
 }
 
+void Optimiser::ResizeStateVector(int new_num_dofs){
+
+    dof = new_num_dofs;
+    int state_vector_size = new_num_dofs * 2;
+
+    for(int t = 0; t < horizonLength; t++){
+
+        // State vectors
+        X_new[t].resize(state_vector_size, 1);
+        X_old[t].resize(state_vector_size, 1);
+
+        // Cost derivatives
+        l_x[t].resize(state_vector_size, 1);
+        l_xx[t].resize(state_vector_size, state_vector_size);
+
+        // Dynamics derivatives
+        A[t].resize(state_vector_size, state_vector_size);
+        A[t].block(0, 0, dof, dof).setIdentity();
+        A[t].block(0, dof, dof, dof).setIdentity();
+        A[t].block(0, dof, dof, dof) *= activePhysicsSimulator->returnModelTimeStep();
+        B[t].resize(state_vector_size, num_ctrl);
+
+    }
+}
+
 void Optimiser::SetTrajecNumber(int trajec_number) {
     currentTrajecNumber = trajec_number;
 }
@@ -62,7 +87,6 @@ void Optimiser::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
 void Optimiser::GenerateDerivatives(){
     // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
     // generate the dynamics evaluation waypoints
-//    std::cout << "before gen keypoints \n";
     std::vector<std::vector<int>> keyPoints = keypoint_generator->GenerateKeyPoints(horizonLength, X_old, U_old, A, B);
 
     // Calculate derivatives via finite differencing / analytically for cost functions if available
@@ -133,27 +157,27 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     keypointsGlobal = keyPoints;
 
     // Setup all the required tasks
-    for (int i = 0; i < keyPoints.size(); ++i) {
-        tasks.push_back(&Differentiator::getDerivatives);
-    }
-
-    // Get the number of threads available
-    const int num_threads = std::thread::hardware_concurrency() - 1;  // Get the number of available CPU cores
-    std::vector<std::thread> thread_pool;
-    for (int i = 0; i < num_threads; ++i) {
-        thread_pool.push_back(std::thread(&Optimiser::WorkerComputeDerivatives, this, i));
-    }
-
-    for (std::thread& thread : thread_pool) {
-        thread.join();
-    }
+//    for (int i = 0; i < keyPoints.size(); ++i) {
+//        tasks.push_back(&Differentiator::getDerivatives);
+//    }
+//
+//    // Get the number of threads available
+//    const int num_threads = std::thread::hardware_concurrency() - 1;  // Get the number of available CPU cores
+//    std::vector<std::thread> thread_pool;
+//    for (int i = 0; i < num_threads; ++i) {
+//        thread_pool.push_back(std::thread(&Optimiser::WorkerComputeDerivatives, this, i));
+//    }
+//
+//    for (std::thread& thread : thread_pool) {
+//        thread.join();
+//    }
 
     // compute derivs serially
-//    for(int i = 0; i < horizonLength; i++){
-//        if(keyPoints[i].size() != 0){
-//            activeDifferentiator->getDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false, i, false, 0);
-//        }
-//    }
+    for(int i = 0; i < horizonLength; i++){
+        if(keyPoints[i].size() != 0){
+            activeDifferentiator->getDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false, i, false, 0);
+        }
+    }
       
     activePhysicsSimulator->resetModelAfterFiniteDifferencing();
 

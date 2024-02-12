@@ -55,6 +55,7 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Ph
 
 double iLQR::RolloutTrajectory(int initial_data_index, bool save_states, std::vector<MatrixXd> initial_controls){
     double cost = 0.0f;
+    std::cout << "begin rollout - state vector size: " << activeModelTranslator->state_vector_size << std::endl;
 
     if(initial_data_index != MAIN_DATA_STATE){
         activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, initial_data_index);
@@ -66,7 +67,6 @@ double iLQR::RolloutTrajectory(int initial_data_index, bool save_states, std::ve
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
     X_old[0] = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
-//    std::cout << "X_old[0]: " << X_old[0].transpose() << std::endl;
 
     if(activePhysicsSimulator->checkIfDataIndexExists(0)){
         activePhysicsSimulator->copySystemState(0, MAIN_DATA_STATE);
@@ -110,7 +110,7 @@ double iLQR::RolloutTrajectory(int initial_data_index, bool save_states, std::ve
         cost += stateCost;
     }
 
-//    cout << "cost of initial trajectory was: " << cost << endl;
+    cout << "cost of initial trajectory was: " << cost << endl;
     initialCost = cost;
     costHistory.push_back(cost);
 
@@ -227,7 +227,46 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
             time_forwardsPass_ms.push_back(fpDuration.count() / 1000.0f);
 
             // Experimental
-            checkKMatrices();
+            auto time_start_k = high_resolution_clock::now();
+            std::vector<int> dofs_to_reduce = checkKMatrices();
+//            std::cout << "time check k matrices: " << duration_cast<microseconds>(high_resolution_clock::now() - time_start_k).count() / 1000.0f << "ms" << std::endl;
+
+            // Extra rollout with dimensionality
+            bool dimensionality_reduction_accepted;
+            if(dofs_to_reduce.size() > 0){
+                dimensionality_reduction_accepted = RolloutWithKMatricesReduction(dofs_to_reduce, oldCost, newCost, last_alpha);
+            }
+
+            if(dimensionality_reduction_accepted){
+                // reduce the dimensionality of the state vector...
+                std::vector<std::string> state_vector_names = activeModelTranslator->GetStateVectorNames();
+                std::vector<std::string> dofs_to_reduce_str;
+                // pop the elements depending on dofs_to_reduce
+                for(int i = 0; i < dofs_to_reduce.size(); i++){
+                    dofs_to_reduce_str.push_back(state_vector_names[dofs_to_reduce[i]]);
+                }
+
+                // Temp print
+                if(verbose_output){
+//                    std::cout << "Reducing dimensionality of state vector by removing: " << std::endl;
+//                    for(int i = 0; i < dofs_to_reduce_str.size(); i++){
+//                        std::cout << dofs_to_reduce_str[i] << std::endl;
+//                    }
+                }
+                activeModelTranslator->UpdateStateVector(dofs_to_reduce_str, false);
+
+                ResizeStateVector(activeModelTranslator->dof);
+                for(int t = 0; t < horizonLength; t++){
+                    K[t].resize(num_ctrl, activeModelTranslator->dof * 2);
+                }
+                keypoint_generator->ResizeStateVector(activeModelTranslator->dof);
+            }
+
+            // Update the X_old and U_old if cost was reduced
+            for(int i = 0 ; i < horizonLength; i++){
+                X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(i + 1);
+                U_old[i] = U_new[i].replicate(1, 1);
+            }
 
             if(verbose_output){
                 PrintBannerIteration(i, newCost, oldCost,
@@ -318,7 +357,6 @@ std::vector<MatrixXd> iLQR::Optimise(int initial_data_index, std::vector<MatrixX
         activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
     }
 
-
     return optimisedControls;
 }
 
@@ -337,9 +375,6 @@ bool iLQR::BackwardsPassQuuRegularisation(){
     MatrixXd Q_xx(2*dof, 2*dof);
     MatrixXd Q_uu(num_ctrl, num_ctrl);
     MatrixXd Q_ux(num_ctrl, 2*dof);
-
-//    cout << "V_x \n" << V_x << endl;
-//    cout << "V_xx \n " << V_xx << endl;
 
     // TODO check if this should start at -2 or -1 and end at 0 or 1?
     for(int t = horizonLength - 1; t > -1; t--){
@@ -460,10 +495,10 @@ double iLQR::ForwardsPass(double old_cost){
             U_new[t] = _U + (alphas[alphaCount] * k[t]) + feedBackGain;
 
             // Clamp torque within limits
-            if(activeModelTranslator->state_vector.robots[0].torqueControlled){
+            if(activeModelTranslator->active_state_vector.robots[0].torqueControlled){
                 for(int i = 0; i < num_ctrl; i++){
-                    if (U_new[t](i) > activeModelTranslator->state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->state_vector.robots[0].torqueLimits[i];
-                    if (U_new[t](i) < -activeModelTranslator->state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->state_vector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) > activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) < -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
                 }
             }
 
@@ -507,6 +542,7 @@ double iLQR::ForwardsPass(double old_cost){
     }
 
     last_iter_num_linesearches = alphaCount + 1;
+    last_alpha = alphas[alphaCount];
 
     // If the cost was reduced
     if(newCost < old_cost){
@@ -514,14 +550,6 @@ double iLQR::ForwardsPass(double old_cost){
 
         //Copy the rollout buffer to saved systems state list, prevents recomputation using optimal controls
         activePhysicsSimulator->copyRolloutBufferToSavedSystemStatesList();
-
-        for(int i = 0 ; i < horizonLength; i++){
-            // TODO - Removing this might break pushing object cde, i think I need to change return state vector
-            // code to return using qpos rather than xpos
-//            activeModelTranslator->active_physics_simulator->forwardSimulator(i + 1);
-            X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(i + 1);
-            U_old[i] = U_new[i].replicate(1, 1);
-        }
 
         return newCost;
     }
@@ -580,10 +608,10 @@ double iLQR::ForwardsPassParallel(double old_cost){
             U_alpha[t][i] = U_old[t] + (alphas[i] * k[t]) + feedBackGain;
 
             // Clamp torque within limits
-            if(activeModelTranslator->state_vector.robots[0].torqueControlled){
+            if(activeModelTranslator->active_state_vector.robots[0].torqueControlled){
                 for(int k = 0; k < num_ctrl; k++){
-                    if (U_alpha[t][i](k) > activeModelTranslator->state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = activeModelTranslator->state_vector.robots[0].torqueLimits[k];
-                    if (U_alpha[t][i](k) < -activeModelTranslator->state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = -activeModelTranslator->state_vector.robots[0].torqueLimits[k];
+                    if (U_alpha[t][i](k) > activeModelTranslator->active_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = activeModelTranslator->active_state_vector.robots[0].torqueLimits[k];
+                    if (U_alpha[t][i](k) < -activeModelTranslator->active_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = -activeModelTranslator->active_state_vector.robots[0].torqueLimits[k];
                 }
             }
 
@@ -650,27 +678,128 @@ double iLQR::ForwardsPassParallel(double old_cost){
     return old_cost;
 }
 
-bool iLQR::checkKMatrices(){
+bool iLQR::RolloutWithKMatricesReduction(std::vector<int> dof_indices, double old_cost, double new_cost, double alpha){
+
+    // Copy initial state into main data
+    activePhysicsSimulator->copySystemState(MAIN_DATA_STATE, 0);
+    double reduced_cost = 0.0f;
+
+    MatrixXd stateFeedback(2*dof, 1);
+    MatrixXd _X(2*dof, 1);
+    MatrixXd X_new(2*dof, 1);
+    MatrixXd _U(num_ctrl, 1);
+
+    for(int t = 0; t < horizonLength; t++) {
+        for( int dof_index : dof_indices) {
+            K[t].block(0, dof_index, num_ctrl, 1) = MatrixXd::Zero(num_ctrl, 1);
+            K[t].block(0, dof_index + dof, num_ctrl, 1) = MatrixXd::Zero(num_ctrl, 1);
+        }
+    }
+
+    for(int t = 0; t < horizonLength; t++) {
+        // Step 1 - get old state and old control that were linearised around
+        _X = X_old[t].replicate(1, 1);
+        _U = U_old[t].replicate(1, 1);
+
+        X_new = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
+        // Calculate difference from new state to old state
+        stateFeedback = X_new - _X;
+
+        MatrixXd feedBackGain = K[t] * stateFeedback;
+//            std::cout << "K[t] " << K[t] << std::endl;
+
+        // Calculate new optimal controls
+        U_new[t] = _U + (alpha * k[t]) + feedBackGain;
+
+        // Clamp torque within limits
+        if(activeModelTranslator->active_state_vector.robots[0].torqueControlled){
+            for(int i = 0; i < num_ctrl; i++){
+                if (U_new[t](i) > activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
+                if (U_new[t](i) < -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
+            }
+        }
+
+        activeModelTranslator->SetControlVector(U_new[t], MAIN_DATA_STATE);
+
+        double newStateCost;
+        // Terminal state
+        if(t == horizonLength - 1){
+            newStateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, true);
+        }
+        else{
+            newStateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, false);
+        }
+
+        reduced_cost += newStateCost;
+
+        activePhysicsSimulator->stepSimulator(1, MAIN_DATA_STATE);
+
+        // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
+//        activePhysicsSimulator->saveDataToRolloutBuffer(MAIN_DATA_STATE, t + 1);
+
+    }
+
+    double eps_before = 1.0f - (new_cost / old_cost);
+    double eps_reduced = 1.0f - (reduced_cost / old_cost);
+
+    std::cout << "eps_before: " << eps_before << " eps_reduced: " << eps_reduced << std::endl;
+    std::cout << "reduced_cost: " << reduced_cost << " old_new_cost: " << new_cost << std::endl;
+
+    if(eps_before - eps_reduced < eps_acceptable_diff){
+        return true;
+    }
+
+    return false;
+}
+
+std::vector<int> iLQR::checkKMatrices(){
 
     double *K_dofs_sums = new double[dof];
+    std::vector<int> dofs_to_remove;
+    for(int i = 0; i < dof; i++){
+        K_dofs_sums[i] = 0;
+    }
+//
+//    for(int t = 0; t < horizonLength; t += sampling_k_interval){
+//
+//        for(int i = 0; i < dof; i++){
+//
+//            for(int j = 0; j < num_ctrl; j++){
+//                K_dofs_sums[i] += abs(K[t](j, i));
+//                K_dofs_sums[i] += abs(K[t](j, i + dof));
+//            }
+//        }
+//    }
+//
 
     for(int t = 0; t < horizonLength; t += sampling_k_interval){
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
+        if (!svd.computeV()) {
+            std::cerr << "SVD decomposition failed!" << std::endl;
+            return dofs_to_remove;
+        }
 
-        for(int i = 0; i < dof; i++){
+//        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
+//        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
 
-            for(int j = 0; j < num_ctrl; j++){
-                K_dofs_sums[i] += abs(K[t](j, i));
-                K_dofs_sums[i] += abs(K[t](j, i + dof));
+        for(int i = 0; i < num_ctrl; i++){
+            for(int j = 0; j < dof; j++){
+                K_dofs_sums[j] += abs(svd.matrixV()(j, i));
+                K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
             }
         }
     }
 
-    std::cout << "K matrices importance weightings: \n";
+//    std::cout << "K matrices importance weightings: \n";
     for (int i = 0; i < dof; i++){
-        std::cout << "DOF " << i << " : " << K_dofs_sums[i] << "\n";
+//        std::cout << "DOF " << i << " : " << K_dofs_sums[i] << "\n";
+
+        if(K_dofs_sums[i] < threshold_k_eignenvectors) {
+            dofs_to_remove.push_back(i);
+        }
     }
 
-    return false;
+    return dofs_to_remove;
 }
 
 void iLQR::PrintBanner(double time_rollout){

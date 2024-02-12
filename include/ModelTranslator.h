@@ -42,6 +42,24 @@ public:
      */
     ModelTranslator();
 
+    /**
+     * Update the state vector of the system by either adding or removing elements from
+     * the state vector.
+     *
+     * @param state_vector_names The names of the state vector elements to add or remove.
+     * @param add_extra_states Whether to add or remove the state vector elements.
+     *
+     */
+    void UpdateStateVector(std::vector<std::string> state_vector_names, bool add_extra_states);
+
+    /**
+     * Returns the current names of the state vector elements in order.
+     *
+     * @return std::vector<std::string> The names of the active state vector elements.
+     *
+     */
+    std::vector<std::string> GetStateVectorNames();
+
     //--------------------------------------------------------------------------------
     // Pure virtual functions that HAVE to be implemented by the child class
     //--------------------------------------------------------------------------------
@@ -249,8 +267,7 @@ public:
     int state_vector_size;
 
     // State vector object, considers robots and bodies
-    struct stateVectorList state_vector;
-
+    struct stateVectorList active_state_vector;
 
     // Desired state, used for cost function
     MatrixXd X_desired;

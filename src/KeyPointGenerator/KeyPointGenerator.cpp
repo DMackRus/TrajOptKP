@@ -13,6 +13,11 @@ KeypointGenerator::KeypointGenerator(std::shared_ptr<Differentiator> _differenti
 
 }
 
+void KeypointGenerator::ResizeStateVector(int new_num_dofs){
+    dof = new_num_dofs;
+    last_percentages.resize(dof);
+}
+
 keypoint_method KeypointGenerator::ReturnCurrentKeypointMethod() {
     return current_keypoint_method;
 }

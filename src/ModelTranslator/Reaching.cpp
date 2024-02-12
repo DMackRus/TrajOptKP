@@ -201,7 +201,7 @@ MatrixXd pandaReaching::ReturnRandomGoalState(MatrixXd X0){
 std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
-    if(state_vector.robots[0].torqueControlled){
+    if(active_state_vector.robots[0].torqueControlled){
 
         MatrixXd control(num_ctrl, 1);
         double gains[7] = {10, 10, 10, 10, 5, 5, 5};
@@ -209,7 +209,7 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
-            active_physics_simulator->getRobotJointsGravityCompensaionControls(state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            active_physics_simulator->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
 
             Xt = ReturnStateVector(MAIN_DATA_STATE);
 

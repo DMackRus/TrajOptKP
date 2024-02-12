@@ -63,6 +63,9 @@ public:
      */
     keypoint_method ReturnCurrentKeypointMethod();
 
+
+    void ResizeStateVector(int new_num_dofs);
+
     void SetKeypointMethod(keypoint_method method);
 
 
