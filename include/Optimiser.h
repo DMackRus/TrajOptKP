@@ -46,7 +46,7 @@ public:
      *
      * @return double The cost of the rollout after evaluating it with the cost function. (Cost function from the model translator)
      */
-    virtual double RolloutTrajectory(int initial_data_index, bool save_states, std::vector<MatrixXd> control_sequence) = 0;
+    virtual double RolloutTrajectory(mjData *d, bool save_states, std::vector<MatrixXd> control_sequence) = 0;
 
     /**
      * Optimise a trajectory from a given initial data state and a given set of initial controls. Will return the new optimised
@@ -62,7 +62,7 @@ public:
      *
      * @return std::vector<MatrixXd> The optimised control sequence.
      */
-    virtual std::vector<MatrixXd> Optimise(int initial_data_index, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int _horizonLength) = 0;
+    virtual std::vector<MatrixXd> Optimise(mjData *d, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int _horizonLength) = 0;
 
     // -----------------------------------------------------------------------------------------------------------
     // -------------------------------------- OPTIONAL virtual function ------------------------------------------

@@ -50,43 +50,44 @@ GradDescent::GradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std:
     intervalSize = _yamlReader->min_interval;
 }
 
-double GradDescent::RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls){
+double GradDescent::RolloutTrajectory(mjData *d, bool saveStates, std::vector<MatrixXd> initControls){
     double cost = 0.0f;
 
-    if(initialDataIndex != MAIN_DATA_STATE){
-        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, initialDataIndex);
-    }
+//    if(initialDataIndex != MuJoCo_helper->main_data){
+//        MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, initialDataIndex);
+//    }
+    MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, d);
 
     MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
     MatrixXd X_last(activeModelTranslator->state_vector_size, 1);
     MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
     MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
 
-    X_old[0] = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
+    X_old[0] = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
     if(MuJoCo_helper->checkIfDataIndexExists(0)){
-        MuJoCo_helper->copySystemState(0, MAIN_DATA_STATE);
+        MuJoCo_helper->copySystemState(0, MuJoCo_helper->main_data);
     }
     else{
-        MuJoCo_helper->appendSystemStateToEnd(MAIN_DATA_STATE);
+        MuJoCo_helper->appendSystemStateToEnd(MuJoCo_helper->main_data);
     }
 
     for(int i = 0; i < initControls.size(); i++){
         // set controls
-        activeModelTranslator->SetControlVector(initControls[i], MAIN_DATA_STATE);
+        activeModelTranslator->SetControlVector(initControls[i], MuJoCo_helper->main_data);
 
         // Integrate simulator
-        MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
+        MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
 
         // return cost for this state
-        Xt = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
-        Ut = activeModelTranslator->ReturnControlVector(MAIN_DATA_STATE);
+        Xt = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
+        Ut = activeModelTranslator->ReturnControlVector(MuJoCo_helper->main_data);
         double stateCost;
 
         if(i == initControls.size() - 1){
-            stateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, true);
+            stateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
         }
         else{
-            stateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, false);
+            stateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, false);
         }
 
         // If required to save states to trajectory tracking, then save state
@@ -94,10 +95,10 @@ double GradDescent::RolloutTrajectory(int initialDataIndex, bool saveStates, std
             X_old[i + 1] = Xt.replicate(1, 1);
             U_old[i] = Ut.replicate(1, 1);
             if(MuJoCo_helper->checkIfDataIndexExists(i + 1)){
-                MuJoCo_helper->copySystemState(i + 1, MAIN_DATA_STATE);
+                MuJoCo_helper->copySystemState(MuJoCo_helper->savedSystemStatesList[i+1], MuJoCo_helper->main_data);
             }
             else{
-                MuJoCo_helper->appendSystemStateToEnd(MAIN_DATA_STATE);
+                MuJoCo_helper->appendSystemStateToEnd(MuJoCo_helper->main_data);
             }
 
         }
@@ -110,7 +111,7 @@ double GradDescent::RolloutTrajectory(int initialDataIndex, bool saveStates, std
     return cost;
 }
 
-std::vector<MatrixXd> GradDescent::Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
+std::vector<MatrixXd> GradDescent::Optimise(mjData *d, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength){
     cout << " ---------------- optimisation begins -------------------" << endl;
     auto optStart = high_resolution_clock::now();
 
@@ -120,8 +121,8 @@ std::vector<MatrixXd> GradDescent::Optimise(int initialDataIndex, std::vector<Ma
     double oldCost = 0.0f;
     double newCost = 0.0f;
 
-    oldCost = RolloutTrajectory(MAIN_DATA_STATE, true, initControls);
-    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
+    oldCost = RolloutTrajectory(MuJoCo_helper->main_data, true, initControls);
+    MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, 0);
 
     for(int i = 0; i < maxIter; i++){
 
@@ -168,7 +169,7 @@ std::vector<MatrixXd> GradDescent::Optimise(int initialDataIndex, std::vector<Ma
     }
 
     // Load the initial data back into main data
-    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, 0);
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls.push_back(U_old[i]);
@@ -225,7 +226,7 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
     while(!costReduction){
 
         // Copy intial data state into main data state for rollout
-        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
+        MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, 0);
 
         newCost = 0;
         MatrixXd stateFeedback(2*dof, 1);
@@ -236,11 +237,11 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
 //        #pragma omp parallel for
         for(int t = 0; t < horizonLength; t++) {
             // Step 1 - get old state and old control that were linearised around
-            _X = activeModelTranslator->ReturnStateVector(t);
+            _X = activeModelTranslator->ReturnStateVector(MuJoCo_helper->savedSystemStatesList[t]);
             //_U = activeModelTranslator->ReturnControlVector(t);
             _U = U_old[t].replicate(1, 1);
 
-            X_new = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
+            X_new = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
 
             // Calculate new optimal controls
             U_new[t] = _U + (alpha * J_u[t]);
@@ -258,23 +259,23 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
 //            cout << "state feedback" << endl << stateFeedback << endl;
 //            cout << "new control: " << endl << U_new[t] << endl;
 
-            activeModelTranslator->SetControlVector(U_new[t], MAIN_DATA_STATE);
-            Xt = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
+            activeModelTranslator->SetControlVector(U_new[t], MuJoCo_helper->main_data);
+            Xt = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
 
             Ut = U_new[t].replicate(1, 1);
 
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, true);
+                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
             }
             else{
-                newStateCost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, false);
+                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, false);
             }
 
             newCost += (newStateCost * MuJoCo_helper->returnModelTimeStep());
 
-            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
+            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
 
              if(t % 20 == 0){
                  const char* fplabel = "fp";
@@ -303,17 +304,17 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
 
     // If the cost was reduced
     if(newCost < oldCost){
-        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
+        MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, 0);
 
         for(int i = 0; i < horizonLength; i++){
 
-            activeModelTranslator->SetControlVector(U_new[i], MAIN_DATA_STATE);
-            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
+            activeModelTranslator->SetControlVector(U_new[i], MuJoCo_helper->main_data);
+            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
 
             // Log the old state
-            X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
+            X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
 
-            MuJoCo_helper->copySystemState(i + 1, MAIN_DATA_STATE);
+            MuJoCo_helper->copySystemState(MuJoCo_helper->savedSystemStatesList[i+1], MuJoCo_helper->main_data);
 
             U_old[i] = U_new[i].replicate(1, 1);
 
@@ -336,7 +337,7 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
     double newCosts[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     for(int i = 0; i < 8; i++){
-        MuJoCo_helper->copySystemState(i + 1, 0);
+        MuJoCo_helper->copySystemState(MuJoCo_helper->savedSystemStatesList[i+1], 0);
     }
 
     #pragma omp parallel for
@@ -364,8 +365,8 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
                 }
             }
 
-            activeModelTranslator->SetControlVector(U_alpha[t][i], i + 1);
-            Xt = activeModelTranslator->ReturnStateVector(i + 1);
+            activeModelTranslator->SetControlVector(U_alpha[t][i], MuJoCo_helper->savedSystemStatesList[i+1]);
+            Xt = activeModelTranslator->ReturnStateVector(MuJoCo_helper->savedSystemStatesList[i+1]);
 //            //cout << "Xt: " << Xt << endl;
 //
             Ut = U_alpha[t][i].replicate(1, 1);
@@ -375,15 +376,15 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
             double newStateCost;
             // Terminal state
             if(t == horizonLength - 1){
-                newStateCost = activeModelTranslator->CostFunction(i + 1, true);
+                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->savedSystemStatesList[i+1], true);
             }
             else{
-                newStateCost = activeModelTranslator->CostFunction(i + 1, false);
+                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->savedSystemStatesList[i+1], false);
             }
 
             newCosts[i] += (newStateCost * MuJoCo_helper->returnModelTimeStep());
 
-            MuJoCo_helper->stepSimulator(1, i + 1);
+            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->savedSystemStatesList[i+1]);
 
             X_last = Xt.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
@@ -401,20 +402,20 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
 
     newCost = bestAlphaCost;
     cout << "best alpha cost = " << bestAlphaCost << " at alpha: " << alphas[bestAlphaIndex] << endl;
-    MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
+    MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, 0);
 
     // If the cost was reduced
     if(newCost < oldCost){
 
         for(int i = 0; i < horizonLength; i++){
 
-            activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MAIN_DATA_STATE);
-            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
+            activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MuJoCo_helper->main_data);
+            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
 
             // Log the old state
-            X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
+            X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
 
-            MuJoCo_helper->copySystemState(i + 1, MAIN_DATA_STATE);
+            MuJoCo_helper->copySystemState(MuJoCo_helper->savedSystemStatesList[i+1], MuJoCo_helper->main_data);
 
             U_old[i] = U_alpha[i][bestAlphaIndex].replicate(1, 1);
 

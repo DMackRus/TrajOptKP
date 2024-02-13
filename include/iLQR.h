@@ -57,11 +57,11 @@ public:
      *
      * @return double - The rolling cost of the trajectory.
      */
-    double RolloutTrajectory(int initial_data_index, bool save_states, std::vector<MatrixXd> initial_controls) override;
+    double RolloutTrajectory(mjData *d, bool save_states, std::vector<MatrixXd> initial_controls) override;
 
     /**
      * Optimise the current trajectory until convergence, or max iterations has been reached. Uses the normal iLQR algorithm
-     * to optimsie the trajectory. Step 1 - Compute derivatives, Step 2 - backwards pass, Step 3 - forwards pass with linesearch.
+     * to optimise the trajectory. Step 1 - Compute derivatives, Step 2 - backwards pass, Step 3 - forwards pass with linesearch.
      * Step 4 - check for convergence.
      *
      * @param initial_data_index - The data index of the simulation data which should be the starting state of optimisation.
@@ -72,7 +72,7 @@ public:
      *
      * @return std::vector<MatrixXd> - The new optimal control sequence.
      */
-    std::vector<MatrixXd> Optimise(int initial_data_index, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length) override;
+    std::vector<MatrixXd> Optimise(mjData *d, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length) override;
 
     void PrintBanner(double time_rollout);
 

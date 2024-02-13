@@ -123,10 +123,10 @@ void Optimiser::GenerateDerivatives(){
 void Optimiser::ComputeCostDerivatives(){
     #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
-        activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+        activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
     }
 
-    activeModelTranslator->CostDerivatives(horizonLength - 1,
+    activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[horizonLength - 1],
                                            l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
 }
 
@@ -186,13 +186,15 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     if(!activeYamlReader->costDerivsFD){
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
-                activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[i],
+                                                       l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
             else{
-                activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[i],
+                                                       l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
         }
-        activeModelTranslator->CostDerivatives(horizonLength - 1,
+        activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[horizonLength - 1],
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
     }
 

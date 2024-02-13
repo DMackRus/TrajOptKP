@@ -5,7 +5,7 @@ class Acrobot : public ModelTranslator {
 public:
     Acrobot();
 
-    bool TaskComplete(int dataIndex, double &dist) override;
+    bool TaskComplete(mjData *d, double &dist) override;
     void GenerateRandomGoalAndStartState() override;
     MatrixXd ReturnRandomStartState() override;
     MatrixXd ReturnRandomGoalState(MatrixXd X0) override;

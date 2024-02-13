@@ -5,10 +5,10 @@ DoublePendulum::DoublePendulum(): ModelTranslator(){
     InitModelTranslator(yamlFilePath);
 }
 
-bool DoublePendulum::TaskComplete(int dataIndex, double &dist){
+bool DoublePendulum::TaskComplete(mjData *d, double &dist){
     double diff = 0.0f;
 
-    MatrixXd Xt = ReturnStateVector(dataIndex);
+    MatrixXd Xt = ReturnStateVector(d);
 
     for(int i = 0; i < dof; i++){
         diff += abs(X_desired(i) - Xt(i));

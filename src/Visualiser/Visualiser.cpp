@@ -44,101 +44,20 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_P){
 
-        MuJoCo_helper->appendSystemStateToEnd(MAIN_DATA_STATE);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_O){
 
-        MuJoCo_helper->copySystemState(MAIN_DATA_STATE, 0);
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
-
-        std::cout << "before ut " << std::endl;
-        MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
-        MatrixXd X_last(activeModelTranslator->state_vector_size, 1);
-        MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
-        MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
-
-        Xt = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
-        X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->CostFunction(MAIN_DATA_STATE, false);
-        std::cout << "cost: " << cost << std::endl;
-
-
-        MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->CostDerivatives(MAIN_DATA_STATE, l_x, l_xx, l_u, l_uu, false);
-        cout << "l_x: " << l_x << endl;
-        cout << "l_xx:" << l_xx << endl;
-
-        MatrixXd posVector, velVector, accelVec, stateVector;
-        posVector = activeModelTranslator->returnPositionVector(MAIN_DATA_STATE);
-        velVector = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
-        stateVector = activeModelTranslator->ReturnStateVector(MAIN_DATA_STATE);
-        accelVec = activeModelTranslator->returnAccelerationVector(MAIN_DATA_STATE);
-        cout << "pos Vector: " << posVector << endl;
-        cout << "vel vector: " << velVector << endl;
-        cout << "stateVector: " << stateVector << endl;
-        cout << "accel vector: " << accelVec << endl;
         
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
-        MatrixXd controlVec;
-//        SensorByName(model, data, "torso_position")[2];
-        MuJoCo_helper->sensorState(MAIN_DATA_STATE, "torso_position");
-        controlVec = activeModelTranslator->ReturnControlVector(0);
-        cout << "control vec: " << controlVec << endl;
 
     }
-        // left arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_A){
-        // Analyse a specific stored system state
-
-
-        int dataIndex = 1;
-
-        MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
-        MatrixXd X_last(activeModelTranslator->state_vector_size, 1);
-        MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
-        MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
-
-
-        Ut = activeModelTranslator->ReturnControlVector(dataIndex);
-        U_last = activeModelTranslator->ReturnControlVector(dataIndex);
-
-        Xt = activeModelTranslator->ReturnStateVector(dataIndex);
-        X_last = Xt.replicate(1, 1);
-        double cost = activeModelTranslator->CostFunction(dataIndex, false);
-        cout << "------------------------------------------------- \n";
-        std::cout << "cost: " << cost << std::endl;
-
-
-        MatrixXd l_x, l_xx, l_u, l_uu;
-        activeModelTranslator->CostDerivatives(dataIndex, l_x, l_xx, l_u, l_uu, false);
-        cout << "l_x: " << l_x << endl;
-        cout << "l_xx:" << l_xx << endl;
-
-        MatrixXd posVector, velVector, accelVec, stateVector;
-        posVector = activeModelTranslator->returnPositionVector(dataIndex);
-        velVector = activeModelTranslator->returnVelocityVector(dataIndex);
-        stateVector = activeModelTranslator->ReturnStateVector(dataIndex);
-        accelVec = activeModelTranslator->returnAccelerationVector(dataIndex);
-        cout << "pos Vector: " << posVector << endl;
-        cout << "vel vector: " << velVector << endl;
-        cout << "stateVector: " << stateVector << endl;
-        cout << "accel vector: " << accelVec << endl;
-        cout << "------------------------------------------------- \n";
-
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_S){
-        // cout << "finite differencing test \n";
-        // MatrixXd A, B;
-        // int dataIndex = 0;
-        // activeDifferentiator->getDerivatives(A, B, false, dataIndex);
-
-        // cout << "----------------B ------------------ \n";
-        // cout << B << endl;
-        // cout << "--------------- A ---------------------- \n";
-        // cout << A << endl;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Z){
@@ -149,37 +68,17 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     else if(act == GLFW_PRESS && key == GLFW_KEY_X){
 
     }
-
-//     if up arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_UP){
-        for(int i = 0; i < 10; i++){
-            MatrixXd vel = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
-            vel(0) = testVel;
-            cout << "vel: " << vel << endl;
-            activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
-            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
-        }
         
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_DOWN){
 
     }
-        // left arrow key pressed
     else if(act == GLFW_PRESS && key == GLFW_KEY_LEFT){
-        MatrixXd vel = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
-        vel(0) -= 0.1;
-        testVel = vel(0);
-        cout << testVel << endl;
-        activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
+
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_RIGHT){
-        MatrixXd vel = activeModelTranslator->returnVelocityVector(MAIN_DATA_STATE);
-        vel(0) += 0.1;
-        testVel = vel(0);
-        cout << "vel(0) " << vel(0) << endl;
-        cout << "testVel " << testVel << endl;
-        activeModelTranslator->setVelocityVector(vel, MAIN_DATA_STATE);
 
     }
 

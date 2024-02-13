@@ -4,12 +4,11 @@ pandaReaching::pandaReaching(): ModelTranslator(){
     std::string yamlFilePath = "/taskConfigs/reachingConfig.yaml";
 
     InitModelTranslator(yamlFilePath);
-
 }
 
-bool pandaReaching::TaskComplete(int dataIndex, double &dist){
+bool pandaReaching::TaskComplete(mjData *d, double &dist){
     double cumError = 0.0f;
-    MatrixXd X = ReturnStateVector(dataIndex);
+    MatrixXd X = ReturnStateVector(d);
 
     for(int i = 0; i < dof; i++){
         double diff = X_desired(i) - X(i);
@@ -49,10 +48,10 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
                 jointStartPositions[i] = randomJoint;
             }
 
-            MuJoCo_helper->setRobotJointsPositions(robotName, jointStartPositions, MAIN_DATA_STATE);
+            MuJoCo_helper->setRobotJointsPositions(robotName, jointStartPositions, MuJoCo_helper->main_data);
 
             // Check if current configuration is valid
-            if(MuJoCo_helper->checkSystemForCollisions(MAIN_DATA_STATE)){
+            if(MuJoCo_helper->checkSystemForCollisions(MuJoCo_helper->main_data)){
                 cout << "invalid robot position \n";
             }
             else{
@@ -87,10 +86,10 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
                 jointGoalPositions[i] = randomJoint;
             }
 
-            MuJoCo_helper->setRobotJointsPositions(robotName, jointGoalPositions, MAIN_DATA_STATE);
+            MuJoCo_helper->setRobotJointsPositions(robotName, jointGoalPositions, MuJoCo_helper->main_data);
 
             // Check if current configuration is valid
-            if(MuJoCo_helper->checkSystemForCollisions(MAIN_DATA_STATE)){
+            if(MuJoCo_helper->checkSystemForCollisions(MuJoCo_helper->main_data)){
                 cout << "invalid robot position \n";
                 resetCounter++;
             }
@@ -134,10 +133,10 @@ MatrixXd pandaReaching::ReturnRandomStartState(){
             jointPositions[i] = randomJoint;
         }
 
-        MuJoCo_helper->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+        MuJoCo_helper->setRobotJointsPositions(robotName, jointPositions, MuJoCo_helper->main_data);
 
         // Check if current configuration is valid
-        if(MuJoCo_helper->checkSystemForCollisions(MAIN_DATA_STATE)){
+        if(MuJoCo_helper->checkSystemForCollisions(MuJoCo_helper->main_data)){
             cout << "invalid robot position \n";
         }
         else{
@@ -180,10 +179,10 @@ MatrixXd pandaReaching::ReturnRandomGoalState(MatrixXd X0){
             jointPositions[i] = randomJoint;
         }
 
-        MuJoCo_helper->setRobotJointsPositions(robotName, jointPositions, MAIN_DATA_STATE);
+        MuJoCo_helper->setRobotJointsPositions(robotName, jointPositions, MuJoCo_helper->main_data);
 
         // Check if current configuration is valid
-        if(MuJoCo_helper->checkSystemForCollisions(MAIN_DATA_STATE)){
+        if(MuJoCo_helper->checkSystemForCollisions(MuJoCo_helper->main_data)){
             cout << "invalid robot position \n";
         }
         else{
@@ -209,9 +208,9 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
-            MuJoCo_helper->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            MuJoCo_helper->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
 
-            Xt = ReturnStateVector(MAIN_DATA_STATE);
+            Xt = ReturnStateVector(MuJoCo_helper->main_data);
 
             for(int j = 0; j < num_ctrl; j++){
                 control(j) = gravCompensation[j];
@@ -219,13 +218,13 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
 //                control(j) += diff * gains[j];
             }
 
-            SetControlVector(control, MAIN_DATA_STATE);
-            MuJoCo_helper->stepSimulator(1, MAIN_DATA_STATE);
+            SetControlVector(control, MuJoCo_helper->main_data);
+            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
             initControls.push_back(control);
         }
     }
     else{
-        MatrixXd startState = ReturnStateVector(MAIN_DATA_STATE);
+        MatrixXd startState = ReturnStateVector(MuJoCo_helper->main_data);
         MatrixXd goalState = X_desired.replicate(1, 1);
         MatrixXd difference = goalState - startState;
 

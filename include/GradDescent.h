@@ -15,12 +15,8 @@ class GradDescent: public Optimiser{
 public:
     GradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, std::shared_ptr<Visualiser> _visualizer, int _maxHorizon, std::shared_ptr<FileHandler> _yamlReader);
 
-    double RolloutTrajectory(int initialDataIndex, bool saveStates, std::vector<MatrixXd> initControls) override;
-    std::vector<MatrixXd> Optimise(int initialDataIndex, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
-
-//    std::vector<int> generateEvalWaypoints(std::vector<MatrixXd> trajecStates, std::vector<MatrixXd> trajecControls);
-//    void ComputeDerivativesAtSpecifiedIndices(std::vector<int> indices);
-//    void InterpolateDerivatives(std::vector<int> calculatedIndices);
+    double RolloutTrajectory(mjData *d, bool saveStates, std::vector<MatrixXd> initControls) override;
+    std::vector<MatrixXd> Optimise(mjData *d, std::vector<MatrixXd> initControls, int maxIter, int minIter, int _horizonLength) override;
 
     void backwardsPass();
 

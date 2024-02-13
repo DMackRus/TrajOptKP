@@ -13,7 +13,7 @@ walker::walker(int terrain): ModelTranslator(){
     InitModelTranslator(yaml_file_path);
 }
 
-bool walker::TaskComplete(int dataIndex, double &dist){
+bool walker::TaskComplete(mjData *d, double &dist){
     return false;
 }
 
@@ -53,10 +53,10 @@ std::vector<MatrixXd> walker::CreateInitOptimisationControls(int horizonLength){
     return initControls;
 }
 
-double walker::CostFunction(int dataIndex, bool terminal){
+double walker::CostFunction(mjData *d, bool terminal){
     double cost;
-    MatrixXd Xt = ReturnStateVector(dataIndex);
-    MatrixXd Ut = ReturnControlVector(dataIndex);
+    MatrixXd Xt = ReturnStateVector(d);
+    MatrixXd Ut = ReturnControlVector(d);
 
     MatrixXd X_diff = Xt - X_desired;
 
@@ -82,9 +82,9 @@ double walker::CostFunction(int dataIndex, bool terminal){
     return cost;
 }
 
-void walker::CostDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-    MatrixXd Xt = ReturnStateVector(dataIndex);
-    MatrixXd Ut = ReturnControlVector(dataIndex);
+void walker::CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd Xt = ReturnStateVector(d);
+    MatrixXd Ut = ReturnControlVector(d);
     MatrixXd X_diff = Xt - X_desired;
 
     double height_gradient = 0.0f;

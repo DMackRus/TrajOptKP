@@ -20,11 +20,11 @@ public:
     std::vector<MatrixXd> generate_initControls_fromWayPoints(std::vector<m_point> initPath);
 
 
-    double CostFunction(int data_index, bool terminal) override;
+    double CostFunction(mjData *d, bool terminal) override;
 
-    void CostDerivatives(int data_index, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
+    void CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
 
-    bool TaskComplete(int dataIndex, double &dist) override;
+    bool TaskComplete(mjData *d, double &dist) override;
 
 private:
     int clutterLevel = noClutter;

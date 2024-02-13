@@ -18,7 +18,7 @@ public:
     std::vector<m_point> initControls_createAllWayPoints(std::vector<m_point> mainWayPoints, std::vector<int> wayPointsTiming);
     std::vector<MatrixXd> generate_initControls_fromWayPoints(std::vector<m_point> initPath);
 
-    bool TaskComplete(int dataIndex, double &dist) override;
+    bool TaskComplete(mjData *d, double &dist) override;
 
 private:
     double randomGoalX = 0.0;
