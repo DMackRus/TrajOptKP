@@ -23,7 +23,8 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
 
     keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
                                                              MuJoCo_helper,
-                                                             activeModelTranslator->dof);
+                                                             activeModelTranslator->dof,
+                                                             horizonLength);
 
     keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
     keypoint_generator->PrintKeypointMethod();
@@ -87,12 +88,14 @@ void Optimiser::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
 void Optimiser::GenerateDerivatives(){
     // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
     // generate the dynamics evaluation waypoints
-    std::vector<std::vector<int>> keyPoints = keypoint_generator->GenerateKeyPoints(horizonLength, X_old, U_old, A, B);
+    auto start_keypoint_time = high_resolution_clock::now();
+    keypoint_generator->GenerateKeyPoints(X_old, A, B);
+//    std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
 
     // Calculate derivatives via finite differencing / analytically for cost functions if available
     if(activeKeyPointMethod.name != "iterative_error"){
         auto start_fd_time = high_resolution_clock::now();
-        ComputeDerivativesAtSpecifiedIndices(keyPoints);
+        ComputeDerivativesAtSpecifiedIndices(keypoint_generator->keypoints);
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
 
@@ -101,15 +104,14 @@ void Optimiser::GenerateDerivatives(){
     else{
         ComputeCostDerivatives();
     }
-
-
+    
     auto start_interp_time = high_resolution_clock::now();
-    InterpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
+    InterpolateDerivatives(keypoint_generator->keypoints, activeYamlReader->costDerivsFD);
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
     int totalNumColumnsDerivs = 0;
-    for(int i = 0; i < keyPoints.size(); i++){
-        totalNumColumnsDerivs += keyPoints[i].size();
+    for(int i = 0; i < keypoint_generator->keypoints.size(); i++){
+        totalNumColumnsDerivs += keypoint_generator->keypoints[i].size();
     }
 
     double percentDerivsCalculated = ((double) totalNumColumnsDerivs / (double)numberOfTotalDerivs) * 100.0f;
@@ -221,7 +223,7 @@ void Optimiser::WorkerComputeDerivatives(int threadId) {
     }
 }
 
-void Optimiser::InterpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs){
+void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, bool costDerivs){
     MatrixXd startB;
     MatrixXd endB;
     MatrixXd addB;

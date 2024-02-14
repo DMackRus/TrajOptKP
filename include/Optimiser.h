@@ -244,7 +244,7 @@ protected:
      * @param costDerivs - Whether to interpolate the cost derivatives or not.
      *
      */
-    void InterpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs);
+    void InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, bool costDerivs);
 
     /**
      * Applies a filter to the internal dynamics derivatives.

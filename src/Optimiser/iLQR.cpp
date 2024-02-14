@@ -110,7 +110,6 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
         cost += stateCost;
     }
 
-    cout << "cost of initial trajectory was: " << cost << endl;
     initialCost = cost;
     costHistory.push_back(cost);
 
@@ -121,7 +120,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
 //
 //  Optimise - Optimise a sequence of controls for a given problem
 //  @Params:
-//  initial_data_index - the data index of the system state that the optimisation problem should start from
+//  d - The initial mujoco data to optimise from
 //  initial_controls - The initial controls for the problem
 //  maxIterations - The maximum iterations of the solver before it should return a new set of controls
 //  horizonLength - How far into the future the Optimiser should look when optimising the controls
@@ -137,6 +136,11 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     std::vector<MatrixXd> optimisedControls;
     horizonLength = horizon_length;
     numberOfTotalDerivs = horizon_length * dof;
+
+    if(keypoint_generator->horizon != horizonLength){
+        std::cout << "horizon length changed" << std::endl;
+        keypoint_generator->ResizeStateVector(dof, horizonLength);
+    }
 
     double oldCost = 0.0f;
     double newCost = 0.0f;
@@ -231,8 +235,9 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 //            std::cout << "time check k matrices: " << duration_cast<microseconds>(high_resolution_clock::now() - time_start_k).count() / 1000.0f << "ms" << std::endl;
 
             // Extra rollout with dimensionality
-            bool dimensionality_reduction_accepted;
+            bool dimensionality_reduction_accepted = false;
             if(dofs_to_reduce.size() > 0){
+                std::cout << "Reducing dimensionality of state vector" << std::endl;
                 dimensionality_reduction_accepted = RolloutWithKMatricesReduction(dofs_to_reduce, oldCost, newCost, last_alpha);
             }
 
@@ -241,6 +246,10 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
                 std::vector<std::string> state_vector_names = activeModelTranslator->GetStateVectorNames();
                 std::vector<std::string> dofs_to_reduce_str;
                 // pop the elements depending on dofs_to_reduce
+
+                // TESTING
+//                dofs_to_reduce_str.push_back("blueTin_x");
+//                dofs_to_reduce_str.push_back("blueTin_y");
                 for(int i = 0; i < dofs_to_reduce.size(); i++){
                     dofs_to_reduce_str.push_back(state_vector_names[dofs_to_reduce[i]]);
                 }
@@ -258,7 +267,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
                 for(int t = 0; t < horizonLength; t++){
                     K[t].resize(num_ctrl, activeModelTranslator->dof * 2);
                 }
-                keypoint_generator->ResizeStateVector(activeModelTranslator->dof);
+                keypoint_generator->ResizeStateVector(activeModelTranslator->dof, horizon_length);
             }
 
             // Update the X_old and U_old if cost was reduced
@@ -277,7 +286,11 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
             costHistory.push_back(newCost);
 
             // Updates the keypoint parameters if auto_adjust is true.
-            keypoint_generator->AdjustKeyPointMethod(oldCost, newCost, horizon_length, X_old);
+            std::vector<double> dof_importances(activeModelTranslator->dof, 1.0);
+            auto start_adjust = high_resolution_clock::now();
+//            keypoint_generator->AdjustKeyPointMethod(oldCost, newCost, horizon_length, X_old, dof_importances);
+            auto stop_adjust = high_resolution_clock::now();
+            std::cout << "adjust took: " << duration_cast<microseconds>(stop_adjust - start_adjust).count() / 1000.0f << "ms" << std::endl;
 
             // STEP 4 - Check for convergence
             bool converged;

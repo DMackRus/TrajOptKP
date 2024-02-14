@@ -110,6 +110,8 @@ int main(int argc, char **argv) {
     task = yamlReader->taskName;
     taskInitMode = yamlReader->taskInitMode;
 
+    std::cout << "task: " << task << endl;
+
     MatrixXd startStateVector(1, 1);
 
     // Instantiate model translator as specified by the config file.
@@ -615,6 +617,8 @@ void async_MPC_testing(){
         // Setting lateral desired speed
         activeModelTranslator->X_desired(10) = 0.5;
     }
+
+    std::cout << "X_deisred: " << activeModelTranslator->X_desired.transpose() << std::endl;
 
     if(ASYNC_MPC){
         std::thread MPC_controls_thread;

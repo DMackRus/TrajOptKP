@@ -828,6 +828,7 @@ void MuJoCoHelper::scroll(double yoffset){
 void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
     // cout << "fileName in init: " << fileName << endl;
+    auto load_start = std::chrono::high_resolution_clock::now();
     model = mj_loadXML(fileName, NULL, error, 1000);
 
     if( !model ) {
@@ -870,6 +871,7 @@ void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     for(int i = 0; i < numCores; i++){
         fd_data.push_back(mj_makeData(model));
     }
+    std::cout << "time to load and make data: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - load_start).count() << "ms" << std::endl;
 }
 
 void MuJoCoHelper::initModelForFiniteDifferencing(){

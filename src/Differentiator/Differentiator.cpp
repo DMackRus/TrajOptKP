@@ -65,11 +65,17 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
 //        std::cout << "dqaccdq time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
     }
     else{
+        auto start = std::chrono::high_resolution_clock::now();
         dqveldctrl = calc_dqveldctrl(cols, dataIndex, tid, dcostdctrl, costDerivs, terminal);
+//        std::cout << "dqveldctrl time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
 
+        start = std::chrono::high_resolution_clock::now();
         dqveldq = calc_dqveldqpos(cols, dataIndex, tid, dcostdpos, costDerivs, terminal);
+//        std::cout << "dqveldq time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
 
+        start = std::chrono::high_resolution_clock::now();
         dqveldqvel = calc_dqveldqvel(cols, dataIndex, tid, dcostdvel, costDerivs, terminal);
+//        std::cout << "dqveldqvel time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
     }
 
 
@@ -123,7 +129,6 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
 //    std::cout << "num of sim integration: " << count_integrations << "\n";
 //    std::cout << "diff time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - diff_start).count() / 1000.0 << std::endl;
 }
-
 
 MatrixXd Differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, int tid, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
     int numCtrl = activeModelTranslator->num_ctrl;
@@ -483,6 +488,12 @@ MatrixXd Differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
     double costDec;
     MatrixXd dqveldq(dof, dof);
 
+    mjtNum* warmstart = mj_stackAlloc(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv);
+    mju_copy(warmstart, MuJoCo_helper->savedSystemStatesList[dataIndex]->qacc_warmstart, MuJoCo_helper->model->nv);
+
+    int num_integrations = 0;
+    double time_integrations_here = 0.0f;
+
     for(int i = 0; i < dof; i++){
         bool computeColumn = false;
         for(int j = 0; j < cols.size(); j++) {
@@ -493,15 +504,19 @@ MatrixXd Differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
 
         if(computeColumn){
             count_integrations++;
+            num_integrations++;
             // Perturb position vector positively
             MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
             perturbedPositions(i) += epsPositions;
             activeModelTranslator->setPositionVector(perturbedPositions, MuJoCo_helper->fd_data[tid]);
 
+            mju_copy(MuJoCo_helper->fd_data[tid]->qacc_warmstart, warmstart, MuJoCo_helper->model->nv);
+
             // Integrate the simulator
             auto start = std::chrono::high_resolution_clock::now();
-            mj_forward(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
             time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+            time_integrations_here += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 //                cout << "after step simulator positon - " << i << endl;
 
             // return the new velocity vector
@@ -520,11 +535,14 @@ MatrixXd Differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
             perturbedPositions(i) -= epsPositions;
             activeModelTranslator->setPositionVector(perturbedPositions, MuJoCo_helper->fd_data[tid]);
 
+            mju_copy(MuJoCo_helper->fd_data[tid]->qacc_warmstart, warmstart, MuJoCo_helper->model->nv);
+
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
 //            MuJoCo_helper->stepSimulator(1, tid);
             mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
             time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+            time_integrations_here += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
             // Return the new velocity vector
             velocityDec = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
@@ -546,6 +564,10 @@ MatrixXd Differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
             MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
         }
     }
+
+//    std::cout << "num integrations in dqvel/dqpos: " << num_integrations << std::endl;
+//    std::cout << "time integrations in dqvel/dqpos: " << time_integrations_here << std::endl;
+
     return dqveldq;
 }
 
