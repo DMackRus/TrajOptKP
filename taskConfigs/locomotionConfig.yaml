@@ -1,7 +1,7 @@
 modelFile: "/mujoco_models/walker/walker_plane.xml"
 modelName: "/walker_plane"
 timeStep: 0.005
-keypointMethod: "magvel_change"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+keypointMethod: "adaptive_jerk"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 auto_adjust: true
 minN: 1
 maxN: 20
@@ -22,7 +22,7 @@ robots:
 #    jointControlCosts: [0.0001, 0.00001, 0.0001, 0.0001, 0.0001, 0.0001]
     jointControlCosts: [0, 0, 0, 0, 0, 0]
     #jointControlCosts: [0.005, 0.001, 0.001, 0.005, 0.001, 0.001]
-#    jointJerkThresholds: [0.1, 0.02, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
-    jointJerkThresholds: [1e-15, 1e-15, 0.01, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
-    #jointJerkThresholds: [0.1, 0.02, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+#    jointJerkThresholds: [1e-15, 1e-15, 0.01, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
+
+    jointJerkThresholds: [1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15]
     magVelThresholds: [0.1, 0.1, 0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]

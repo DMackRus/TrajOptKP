@@ -618,8 +618,6 @@ void async_MPC_testing(){
         activeModelTranslator->X_desired(10) = 0.5;
     }
 
-    std::cout << "X_deisred: " << activeModelTranslator->X_desired.transpose() << std::endl;
-
     if(ASYNC_MPC){
         std::thread MPC_controls_thread;
         MPC_controls_thread = std::thread(&worker);
@@ -680,9 +678,9 @@ void async_MPC_testing(){
             int difference_ms = (activeModelTranslator->MuJoCo_helper->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
             if(difference_ms > 0) {
+//                difference_ms = 10;
                 std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
             }
-
         }
 
         std::mutex mtx;
@@ -848,7 +846,12 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             }
 
             activeVisualiser->controlBuffer = optimisedControls;
+
+            // Set the current control index to the best matching state index
             activeVisualiser->current_control_index = bestMatchingStateIndex;
+            std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
+
+//            activeVisualiser->current_control_index = 0;
             activeVisualiser->new_controls_flag = true;
 
             mtx.unlock();

@@ -90,6 +90,8 @@ void Optimiser::GenerateDerivatives(){
     // generate the dynamics evaluation waypoints
     auto start_keypoint_time = high_resolution_clock::now();
     keypoint_generator->GenerateKeyPoints(X_old, A, B);
+
+    keypoint_generator->ResetCache();
 //    std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
 
     // Calculate derivatives via finite differencing / analytically for cost functions if available
@@ -104,7 +106,7 @@ void Optimiser::GenerateDerivatives(){
     else{
         ComputeCostDerivatives();
     }
-    
+
     auto start_interp_time = high_resolution_clock::now();
     InterpolateDerivatives(keypoint_generator->keypoints, activeYamlReader->costDerivsFD);
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";

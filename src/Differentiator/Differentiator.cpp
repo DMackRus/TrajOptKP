@@ -10,9 +10,10 @@ Differentiator::Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator
 // If anyone can find a way to remove these pragma commands without it breaking the code that would be fantastic  ... :).
 //#pragma GCC push_options
 //#pragma GCC optimize ("O0")
-void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> cols,
+void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
                                     MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
                                     bool costDerivs, int dataIndex, bool terminal, int threadId){
+
 
     time_mj_forwards = 0.0f;
     count_integrations = 0;
@@ -21,11 +22,6 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
     int dof = activeModelTranslator->dof;
     int numCtrl = activeModelTranslator->num_ctrl;
     int tid = threadId;
-
-    // This seems random, in Optimiser we define -1 = "mainData", -2 = "masterData",
-    // -3 = "visualisation data", 0 -> horizon Length = "stored trajectory data"
-    // So we need values below -3 for finite-differencing data
-    int physicsHelperId = -4 - tid;
 
     // Initialise sub matrices of A and B matrix
     // ------------ dof x dof ----------------
@@ -130,7 +126,7 @@ void Differentiator::getDerivatives(MatrixXd &A, MatrixXd &B, std::vector<int> c
 //    std::cout << "diff time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - diff_start).count() / 1000.0 << std::endl;
 }
 
-MatrixXd Differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, int tid, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
+MatrixXd Differentiator::calc_dqveldctrl(const std::vector<int> &cols, int dataIndex, int tid, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
     int numCtrl = activeModelTranslator->num_ctrl;
     int dof = activeModelTranslator->dof;
     MatrixXd velocityInc(dof, 1);
@@ -216,7 +212,7 @@ MatrixXd Differentiator::calc_dqveldctrl(std::vector<int> cols, int dataIndex, i
     return dqveldctrl;
 }
 
-MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, int tid, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
+MatrixXd Differentiator::calc_dqaccdctrl(const std::vector<int> &cols, int dataIndex, int tid, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
     int numCtrl = activeModelTranslator->num_ctrl;
     int dof = activeModelTranslator->dof;
     MatrixXd acellInc(dof, 1);
@@ -314,7 +310,7 @@ MatrixXd Differentiator::calc_dqaccdctrl(std::vector<int> cols, int dataIndex, i
     return dqaccdctrl;
 }
 
-MatrixXd Differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, int tid, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
+MatrixXd Differentiator::calc_dqveldqvel(const std::vector<int> &cols, int dataIndex, int tid, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
     int dof = activeModelTranslator->dof;
     MatrixXd velocityInc(dof, 1);
     MatrixXd velocityDec(dof, 1);
@@ -396,7 +392,7 @@ MatrixXd Differentiator::calc_dqveldqvel(std::vector<int> cols, int dataIndex, i
     return dqveldqvel;
 }
 
-MatrixXd Differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, int tid, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
+MatrixXd Differentiator::calc_dqaccdqvel(const std::vector<int> &cols, int dataIndex, int tid, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
     int dof = activeModelTranslator->dof;
     MatrixXd acellInc(dof, 1);
     MatrixXd acellDec(dof, 1);
@@ -479,7 +475,7 @@ MatrixXd Differentiator::calc_dqaccdqvel(std::vector<int> cols, int dataIndex, i
     return dqaccdvel;
 }
 
-MatrixXd Differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
+MatrixXd Differentiator::calc_dqveldqpos(const std::vector<int> &cols, int dataIndex, int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
     MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
     int dof = activeModelTranslator->dof;
     MatrixXd velocityInc(dof, 1);
@@ -571,7 +567,7 @@ MatrixXd Differentiator::calc_dqveldqpos(std::vector<int> cols, int dataIndex, i
     return dqveldq;
 }
 
-MatrixXd Differentiator::calc_dqaccdqpos(std::vector<int> cols, int dataIndex, int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
+MatrixXd Differentiator::calc_dqaccdqpos(const std::vector<int> &cols, int dataIndex, int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
     int dof = activeModelTranslator->dof;
     MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
     MatrixXd accellInc(dof, 1);

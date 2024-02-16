@@ -29,6 +29,7 @@
 
 #include "StdInclude.h"
 #include "Differentiator.h"
+#include <algorithm>
 
 struct keypoint_method{
     std::string name;
@@ -81,7 +82,7 @@ public:
      * @return std::vector<std::vector<int>> A set of key-points (integer indices over the trajectory) per
      * degree of freedom.
      */
-    void GenerateKeyPoints(std::vector<MatrixXd> &trajectory_states,
+    void GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
                            std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
 
     void AdjustKeyPointMethod(double old_cost, double new_cost, std::vector<MatrixXd> &trajectory_states,
@@ -89,14 +90,17 @@ public:
 
     void PrintKeypointMethod();
 
-    double percent_deriv_adjust_factor_L = 1.1;
-    double percent_deriv_adjust_factor_U = 1.5;
+    void ResetCache();
+
+    double percent_deriv_adjust_factor_L = 1.5;
+    double percent_deriv_adjust_factor_U = 2.0;
 
     int dof;
     int horizon;
 
     std::vector<std::vector<int>> keypoints;
-//    std::vector<int> keypoints_per_timestep;
+
+
 
 
 private:
@@ -190,12 +194,20 @@ private:
      */
     void GenerateKeyPointsVelocityChange(const std::vector<MatrixXd> &velocity_profile);
 
-    void UpdateLastPercentageDerivatives(std::vector<std::vector<int>> keypoints, int horizon);
+    void UpdateLastPercentageDerivatives(std::vector<std::vector<int>> &keypoints);
 
-    std::vector<double> ComputePercentageDerivatives(std::vector<std::vector<int>> keypoints, int horizon);
+    std::vector<double> ComputePercentageDerivatives(std::vector<std::vector<int>> &keypoints);
 
-    void AutoAdjustKeypointParameters(int horizon, std::vector<MatrixXd> trajectory_states,
-                                      std::vector<double> desired_percentages, int num_iterations);
+    void AutoAdjustKeypointParameters(const std::vector<MatrixXd> &trajectory_states,
+                                      const std::vector<int> &desired_percentages, int num_iterations);
+
+    void GenerateKeypointsOrderOfImportance(const std::vector<MatrixXd> &trajectory_states, const std::vector<int> &num_keypoints);
+
+    std::vector<int> ConvertPercentagesToNumKeypoints(const std::vector<double> &percentages);
+
+    std::vector<double> ConvertNumKeypointsToPercentages(const std::vector<int> &num_keypoints);
+
+
 
     // Differentiator object, computes specific columns of the A and B matrices as desired.
     std::shared_ptr<Differentiator> differentiator;
@@ -206,8 +218,8 @@ private:
     // Stored keypoints for the iterative error method so we know where we have already computed keypoints. Prevents recomputation.
     std::vector<std::vector<int>> computed_keypoints;
 
-
     std::vector<double> last_percentages;
+    std::vector<int> last_num_keypoints;
 
     // Current keypoint method
     keypoint_method current_keypoint_method;
@@ -216,4 +228,14 @@ private:
 
     std::vector<MatrixXd> jerk_profile;
     std::vector<MatrixXd> velocity_profile;
+
+    std::vector<double> max_last_jerk;
+    std::vector<double> min_last_jerk;
+
+    std::vector<double> max_last_velocity;
+    std::vector<double> min_last_velocity;
+
+    //Cache system to prevent recomputation
+    bool keypoints_computed = false;
+
 };

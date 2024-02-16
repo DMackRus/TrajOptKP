@@ -232,7 +232,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
             // Experimental
             auto time_start_k = high_resolution_clock::now();
             std::vector<int> dofs_to_reduce = checkKMatrices();
-//            std::cout << "time check k matrices: " << duration_cast<microseconds>(high_resolution_clock::now() - time_start_k).count() / 1000.0f << "ms" << std::endl;
+            std::cout << "time check k matrices: " << duration_cast<microseconds>(high_resolution_clock::now() - time_start_k).count() / 1000.0f << "ms" << std::endl;
 
             // Extra rollout with dimensionality
             bool dimensionality_reduction_accepted = false;
@@ -288,7 +288,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
             // Updates the keypoint parameters if auto_adjust is true.
             std::vector<double> dof_importances(activeModelTranslator->dof, 1.0);
             auto start_adjust = high_resolution_clock::now();
-//            keypoint_generator->AdjustKeyPointMethod(oldCost, newCost, horizon_length, X_old, dof_importances);
+            keypoint_generator->AdjustKeyPointMethod(oldCost, newCost, X_old, dof_importances);
             auto stop_adjust = high_resolution_clock::now();
             std::cout << "adjust took: " << duration_cast<microseconds>(stop_adjust - start_adjust).count() / 1000.0f << "ms" << std::endl;
 

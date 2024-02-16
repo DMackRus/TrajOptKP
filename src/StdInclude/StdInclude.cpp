@@ -147,3 +147,20 @@ m_point crossProduct(m_point vec1, m_point vec2){
 
     return crossProduct;
 }
+
+bool compare(const std::pair<double, int>& a, const std::pair<double, int>& b) {
+    return a.first > b.first; // Sort in descending order
+}
+
+std::vector<int> sortIndices(const std::vector<double>& values) {
+    std::vector<std::pair<double, int>> indexedValues;
+    for (int i = 0; i < values.size(); ++i) {
+        indexedValues.push_back({values[i], i});
+    }
+    std::sort(indexedValues.begin(), indexedValues.end(), compare);
+    std::vector<int> sortedIndices;
+    for (const auto& pair : indexedValues) {
+        sortedIndices.push_back(pair.second);
+    }
+    return sortedIndices;
+}

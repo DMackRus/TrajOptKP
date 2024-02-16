@@ -627,11 +627,11 @@ double TwoDPushing::CostFunction(mjData *d, bool terminal){
     cost = temp(0);
 
     // Reach cost function - difference between EE and goal object.
-    pose_7 EE_pose;
-    MuJoCo_helper->getBodyPose_quat_ViaXpos("franka_gripper", EE_pose, d);
-
-    cost += pow(EE_pose.position(0) - X_desired(7), 2) * 1;
-    cost += pow(EE_pose.position(1) - X_desired(8), 2) * 1;
+//    pose_7 EE_pose;
+//    MuJoCo_helper->getBodyPose_quat_ViaXpos("franka_gripper", EE_pose, d);
+//
+//    cost += pow(EE_pose.position(0) - X_desired(7), 2) * 1;
+//    cost += pow(EE_pose.position(1) - X_desired(8), 2) * 1;
 
     return cost;
 }
