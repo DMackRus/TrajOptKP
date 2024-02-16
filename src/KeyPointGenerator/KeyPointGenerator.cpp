@@ -113,13 +113,13 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
     }
 
     //Print out the key points
-//    for(int i = 0; i < keypoints.size(); i++){
-//        cout << "timestep " << i << ": ";
-//        for(int j = 0; j < keypoints[i].size(); j++){
-//            cout << keypoints[i][j] << " ";
-//        }
-//        cout << "\n";
-//    }
+    for(int i = 0; i < keypoints.size(); i++){
+        cout << "timestep " << i << ": ";
+        for(int j = 0; j < keypoints[i].size(); j++){
+            cout << keypoints[i][j] << " ";
+        }
+        cout << "\n";
+    }
 
     UpdateLastPercentageDerivatives(keypoints);
 }
@@ -357,7 +357,7 @@ void KeypointGenerator::GenerateKeyPointsAdaptive(const std::vector<MatrixXd> &t
         min_last_jerk[i] = trajec_profile[0](i, 0);
     }
 
-    for(int t = 0; t < horizon - 2; t++){
+    for(int t = 1; t < horizon - 2; t++){
         std::vector<int> row;
         for(int j = 0; j < dof; j++){
             if((t - last_indices[j]) >= current_keypoint_method.min_N){
@@ -382,6 +382,7 @@ void KeypointGenerator::GenerateKeyPointsAdaptive(const std::vector<MatrixXd> &t
         }
         keypoints.push_back(row);
     }
+    keypoints.push_back(full_row);
 }
 
 void KeypointGenerator::GenerateKeypointsOrderOfImportance(const std::vector<MatrixXd> &trajectory_states,
@@ -807,7 +808,7 @@ void KeypointGenerator::UpdateLastPercentageDerivatives(std::vector<std::vector<
 std::vector<double> KeypointGenerator::ComputePercentageDerivatives(std::vector<std::vector<int>> &keypoints){
     std::vector<int> dof_count = std::vector<int>(dof, 0);
     std::vector<double> percentages = std::vector<double>(dof, 0);
-    for(int t = 0; t < horizon; t++){
+    for(int t = 0; t < horizon - 1; t++){
         for(int i = 0; i < keypoints[t].size(); i++){
             for(int j = 0; j < dof; j++){
                 // if match between keypoint and dof

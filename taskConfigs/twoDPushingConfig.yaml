@@ -33,7 +33,7 @@ bodies:
     linearPosCost: [1.0, 1.0, 0]
     # When iLQR once
     terminalLinearPosCost: [0, 0, 0]
-    linearVelCost: [0, 0, 0]
+    linearVelCost: [0.5, 0.5, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
     terminalAngularPosCost: [0, 0, 0]

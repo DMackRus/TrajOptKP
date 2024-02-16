@@ -183,7 +183,9 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         //STEP 1 - If forwards pass changed the trajectory, -
         auto derivsstart = high_resolution_clock::now();
         if(costReducedLastIter){
+            std::cout << "before compute derivs \n";
             GenerateDerivatives();
+            std::cout << "after compute derivs \n";
         }
         auto derivsstop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(derivsstop - derivsstart);
@@ -586,6 +588,8 @@ double iLQR::ForwardsPass(double old_cost){
         surprise = (old_cost - newCost) / expected;
         surprises.push_back(surprise);
 
+        std::cout << "expected :" << expected << " actual: " << old_cost - newCost << std::endl;
+
         // Reset the system state to the initial state
         MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, MuJoCo_helper->savedSystemStatesList[0]);
 
@@ -599,6 +603,8 @@ double iLQR::ForwardsPass(double old_cost){
 
     surprise = 0.0;
     surprises.push_back(0.0);
+
+
 
     return old_cost;
 }

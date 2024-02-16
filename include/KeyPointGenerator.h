@@ -102,6 +102,7 @@ public:
     int horizon;
 
     std::vector<std::vector<int>> keypoints;
+    std::vector<double> last_percentages;
 
 
 
@@ -221,7 +222,6 @@ private:
     // Stored keypoints for the iterative error method so we know where we have already computed keypoints. Prevents recomputation.
     std::vector<std::vector<int>> computed_keypoints;
 
-    std::vector<double> last_percentages;
     std::vector<int> last_num_keypoints;
 
     // Current keypoint method

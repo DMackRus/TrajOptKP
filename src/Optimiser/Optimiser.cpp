@@ -109,15 +109,16 @@ void Optimiser::GenerateDerivatives(){
 
     auto start_interp_time = high_resolution_clock::now();
     InterpolateDerivatives(keypoint_generator->keypoints, activeYamlReader->costDerivsFD);
-//    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
+    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
-    int totalNumColumnsDerivs = 0;
-    for(int i = 0; i < keypoint_generator->keypoints.size(); i++){
-        totalNumColumnsDerivs += keypoint_generator->keypoints[i].size();
+
+    double average_percent_derivs = 0.0f;
+    for(int i = 0; i < dof; i++){
+        average_percent_derivs += keypoint_generator->last_percentages[i];
     }
+    average_percent_derivs /= dof;
 
-    double percentDerivsCalculated = ((double) totalNumColumnsDerivs / (double)numberOfTotalDerivs) * 100.0f;
-    percentage_derivs_per_iteration.push_back(percentDerivsCalculated);
+    percentage_derivs_per_iteration.push_back(average_percent_derivs);
 
     if(filteringMethod != "none"){
         FilterDynamicsMatrices();
@@ -252,7 +253,7 @@ void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyP
 
     // Loop through all the time indices - can skip the first
     // index as we preload the first index as the start index for all dofs.
-    for(int t = 1; t < horizonLength; t++){
+    for(int t = 1; t < horizonLength - 1; t++){
         // Loop through all the dofs
         for(int i = 0; i < dof; i++){
             // Check the current vector at that time segment for the current dof
