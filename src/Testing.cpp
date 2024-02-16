@@ -377,7 +377,6 @@ void Testing::asynchronus_optimiser_worker(){
         timeForwardsPass.push_back(iLQROptimiser->avg_time_forwards_pass_ms);
         percentagesDerivsCalculated.push_back(iLQROptimiser->avg_percent_derivs);
 
-
         // If we are use Async visualisation, need to copy our control vector to internal control vector for
         // visualisation class
         std::mutex mtx;

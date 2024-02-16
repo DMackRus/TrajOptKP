@@ -85,15 +85,18 @@ public:
     void GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
                            std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
 
-    void AdjustKeyPointMethod(double old_cost, double new_cost, std::vector<MatrixXd> &trajectory_states,
+    void AdjustKeyPointMethod(double expected, double actual,
+                              std::vector<MatrixXd> &trajectory_states,
                               std::vector<double> &dof_importances);
+
+    std::vector<double> DesiredPercentageDerivs(double expected, double actual,
+                                                std::vector<double> &dof_importances);
 
     void PrintKeypointMethod();
 
     void ResetCache();
 
-    double percent_deriv_adjust_factor_L = 1.5;
-    double percent_deriv_adjust_factor_U = 2.0;
+    double surprise_lower = 0.2;
 
     int dof;
     int horizon;

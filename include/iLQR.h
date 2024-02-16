@@ -110,6 +110,13 @@ private:
 //    double threshold_k_eignenvectors = 1.0;
     double threshold_k_eignenvectors = 0.0;
 
+    double delta_J = 0.0f;
+
+    double expected = 0.0f;
+    double surprise = 0.0f;
+    std::vector<double> surprises;
+    double avg_surprise = 0.0f;
+
     /**
      * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
      *

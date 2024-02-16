@@ -112,16 +112,6 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
         std::cout << "ERROR: keyPointsMethod not recognised \n";
     }
 
-    // Enforce that last two time-step is evaluated for all dofs, otherwise nothing to interpolate to
-    keypoints[horizon - 1].clear();
-    keypoints[horizon - 2].clear();
-    std::vector<int> full_row(dof, 0);
-    for(int i = 0; i < dof; i++){
-        full_row[i] = i;
-    }
-
-    keypoints.push_back(full_row);
-
     //Print out the key points
 //    for(int i = 0; i < keypoints.size(); i++){
 //        cout << "timestep " << i << ": ";
@@ -132,13 +122,9 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //    }
 
     UpdateLastPercentageDerivatives(keypoints);
-
-
-
-
 }
 
-void KeypointGenerator::AdjustKeyPointMethod(double old_cost, double new_cost,
+void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,
                                              std::vector<MatrixXd> &trajectory_states,
                                              std::vector<double> &dof_importances){
 
@@ -171,38 +157,8 @@ void KeypointGenerator::AdjustKeyPointMethod(double old_cost, double new_cost,
     }
     cout << "\n";
 
-
-
-//    double min_percentage = (min_keypoints / horizon) * 100.0;
-
     // If the last optimisation decreased the cost
-    if(new_cost < old_cost){
-        // Make the key-points greedier
-        for(int i = 0; i < dof; i++){
-            double adjust_factor = ((percent_deriv_adjust_factor_U - percent_deriv_adjust_factor_L) * dof_importances[i]) + percent_deriv_adjust_factor_L;
-            desired_derivative_percentages[i] = last_percentages[i] / adjust_factor;
-//            desired_num_keypoints[i] = last_num_keypoints[i] / adjust_factor;
-        }
-    }
-    else{
-        // Increase the number of key-points per dof
-        for(int i = 0; i < dof; i++) {
-            double adjust_factor = ((percent_deriv_adjust_factor_L - 1) * dof_importances[i]) + 1;
-            desired_derivative_percentages[i] = last_percentages[i] * adjust_factor;
-//            desired_num_keypoints[i] = last_num_keypoints[i] * adjust_factor;
-        }
-    }
-
-    // Enforce minimum and maximum percentages
-//    for(int i = 0; i < dof; i++){
-//        if(desired_derivative_percentages[i] < min_percentage){
-//            desired_derivative_percentages[i] = min_percentage;
-//        }
-//
-//        if(desired_derivative_percentages[i] > 100.0){
-//            desired_derivative_percentages[i] = 100.0;
-//        }
-//    }
+    desired_derivative_percentages = DesiredPercentageDerivs(expected, actual, dof_importances);
 
     std::cout << "desired derivative percentages: ";
     for(int i = 0; i < dof; i++){
@@ -267,6 +223,68 @@ void KeypointGenerator::AdjustKeyPointMethod(double old_cost, double new_cost,
 
 }
 
+std::vector<double> KeypointGenerator::DesiredPercentageDerivs(double expected, double actual,
+                                            std::vector<double> &dof_importances){
+
+    std::vector<double> desired_derivative_percentages = std::vector<double>(dof);
+
+    std:: cout << "actual was: " << actual << " expected was: " << expected << std::endl;
+    double surprise = actual / expected;
+
+    // If we has some cost reduction
+    if(actual > 0){
+        // Make the key-points greedier
+        for(int i = 0; i < dof; i++){
+            // When surprise is low, dont update
+            double raw_adjust_factor;
+            if(surprise < surprise_lower){
+                raw_adjust_factor = 1;
+            }
+            // Lets scale our greediness depending on how much surprise we received
+            else{
+                // This might need caps on it.
+                raw_adjust_factor = 5 * pow(surprise, 2);
+            }
+
+            // Cap the adjust factor
+            if(raw_adjust_factor > 5){
+                raw_adjust_factor = 5;
+            }
+
+            // Take into account the dof importances, if a dof is very important, we want to be less greedy
+            // If a dof is not important, we want to be more greedy
+            double adjust_factor;
+
+            if(dof_importances[i] == 0.0){
+                adjust_factor = raw_adjust_factor;
+            }
+            else{
+                adjust_factor = raw_adjust_factor * (1.0 / dof_importances[i]);
+            }
+            desired_derivative_percentages[i] = last_percentages[i] - adjust_factor;
+        }
+    }
+    // If we had no cost reduction
+    else{
+        // Make the key-points less greedy
+        for(int i = 0; i < dof; i++) {
+
+            // TODO(DMackRus) we might need to take into acount the old cost also.
+            double raw_adjust_factor = pow(expected, 2);
+
+            if(raw_adjust_factor > 5){
+                raw_adjust_factor = 5;
+            }
+
+            double adjust_factor = raw_adjust_factor * dof_importances[i];
+
+            desired_derivative_percentages[i] = last_percentages[i] + adjust_factor;
+        }
+    }
+
+    return desired_derivative_percentages;
+}
+
 void KeypointGenerator::AutoAdjustKeypointParameters(const std::vector<MatrixXd> &trajectory_states,
                                   const std::vector<int> &desired_num_keypoints, int num_iterations){
 
@@ -288,69 +306,14 @@ void KeypointGenerator::AutoAdjustKeypointParameters(const std::vector<MatrixXd>
     }
     std::cout << std::endl;
 
-    dof_percentages = ComputePercentageDerivatives(keypoints);
+    UpdateLastPercentageDerivatives(keypoints);
 
-//    std::cout << "dof_percentages: ";
-//    for(int j = 0; j < dof; j++){
-//        std::cout << dof_percentages[j] << " ";
-//    }
-
-//    for(int i = 0; i < num_iterations; i++){
-//
-//        std::vector<double> range_jerk(dof, 0.0);
-//        std::vector<double> range_velocity(dof, 0.0);
-//
-//        GenerateKeypointsOrderOfImportance(trajectory_states, desired_num_keypoints);
-
-//        GenerateKeyPoints(trajectory_states, empty, empty);
-
-//        for(int j = 0; j < dof; j++){
-//            range_jerk[j] = max_last_jerk[j] - min_last_jerk[j];
-//            range_velocity[j] = max_last_velocity[j] - min_last_velocity[j];
+//    for(int i = 0; i < keypoints.size(); i++){
+//        cout << "timestep " << i << ": ";
+//        for(int j = 0; j < keypoints[i].size(); j++){
+//            cout << keypoints[i][j] << " ";
 //        }
-//
-//
-
-//        std::cout << std::endl;
-//
-//        std::cout << "jerk range: ";
-//        for(int j = 0; j < dof; j++){
-//            std::cout << range_jerk[j] << " ";
-//        }
-//        std::cout << std::endl;
-//
-//        std::cout << "jerk change: ";
-
-        // Adjust the keypoint method accordingly
-//        for(int j = 0; j < dof; j++){
-//            if(current_keypoint_method.name == "adaptive_jerk"){
-//
-////                double diff_percentage = dof_percentages[j] - desired_percentages[j];
-////                double jerk_change = diff_percentage * range_jerk[j] * 0.0001;
-//
-////                std::cout << jerk_change << " ";
-//
-////                current_keypoint_method.jerk_thresholds[j] += diff_percentage * range_jerk[j] * 0.0001;
-//
-//
-//                // Clamp
-//                if(current_keypoint_method.jerk_thresholds[j] < min_last_jerk[j]){
-//                    current_keypoint_method.jerk_thresholds[j] = min_last_jerk[j];
-//                }
-//                else if(current_keypoint_method.jerk_thresholds[j] > max_last_jerk[j]){
-//                    current_keypoint_method.jerk_thresholds[j] = max_last_jerk[j];
-//                }
-//
-//            }
-////            else if(current_keypoint_method.name == "magvel_change"){
-////                current_keypoint_method.velocity_change_thresholds[j] += (dof_percentages[j] - desired_percentages[j]) * 0.1;
-////            }
-//        }
-//        std::cout << std::endl;
-
-//        std::cout << "mini iter: " << i << std::endl;
-//        PrintKeypointMethod();
-
+//        cout << "\n";
 //    }
 
     // Prevents recomputation for next iteration as we have already adjusted.
@@ -366,7 +329,7 @@ void KeypointGenerator::GenerateKeyPointsSetInterval(){
         full_row[i] = i;
     }
 
-    for(int t = 0; t < horizon; t++){
+    for(int t = 0; t < horizon - 2; t++){
         if(t % current_keypoint_method.min_N == 0){
             keypoints.push_back(full_row);
         }
@@ -374,6 +337,9 @@ void KeypointGenerator::GenerateKeyPointsSetInterval(){
             keypoints.push_back(empty_row);
         }
     }
+
+    // Always push the last row
+    keypoints.push_back(full_row);
 }
 
 void KeypointGenerator::GenerateKeyPointsAdaptive(const std::vector<MatrixXd> &trajec_profile) {
@@ -427,7 +393,7 @@ void KeypointGenerator::GenerateKeypointsOrderOfImportance(const std::vector<Mat
 
     for(int i = 0; i < dof; i++){
         std::vector<double> jerk_vals;
-        for(int t = 1; t < horizon - 1; t++) {
+        for(int t = 1; t < horizon - 2; t++) {
             jerk_vals.push_back(jerk_profile[t](i, 0));
         }
 
@@ -436,7 +402,7 @@ void KeypointGenerator::GenerateKeypointsOrderOfImportance(const std::vector<Mat
 
         // Have to push the first and last time indices
         keypoints_per_dof[i].push_back(0);
-        keypoints_per_dof[i].push_back(horizon - 1);
+        keypoints_per_dof[i].push_back(horizon - 2);
 
         for (int k = 0; k < num_keypoints[i] - 2; k++) {
             keypoints_per_dof[i].push_back(sorted_indices[k]);
@@ -456,7 +422,7 @@ void KeypointGenerator::GenerateKeypointsOrderOfImportance(const std::vector<Mat
     keypoints.clear();
 
     // Construct keypoints per timestep
-    for(int i = 0; i < horizon; i++){
+    for(int i = 0; i < horizon - 1; i++){
         std::vector<int> row;
         for(int j = 0; j < dof; j++){
             // loop throguh keypoints_per_dof

@@ -157,10 +157,13 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     avg_time_get_derivs_ms = 0.0f;
     avg_time_forwards_pass_ms = 0.0f;
     avg_time_backwards_pass_ms = 0.0f;
+    avg_surprise = 0.0f;
+
     percentage_derivs_per_iteration.clear();
     time_backwards_pass_ms.clear();
     time_forwardsPass_ms.clear();
     time_get_derivs_ms.clear();
+    surprises.clear();
     // ------------------------------------------------------------------------
 
     auto time_start = high_resolution_clock::now();
@@ -224,57 +227,57 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
             auto fp_start = high_resolution_clock::now();
             newCost = ForwardsPass(oldCost);
-//            newCost = ForwardsPassParallel(oldCost);
-            auto fp_stop = high_resolution_clock::now();
-            auto fpDuration = duration_cast<microseconds>(fp_stop - fp_start);
-            time_forwardsPass_ms.push_back(fpDuration.count() / 1000.0f);
+            time_forwardsPass_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - fp_start).count() / 1000.0f);
 
             // Experimental
             auto time_start_k = high_resolution_clock::now();
-            std::vector<int> dofs_to_reduce = checkKMatrices();
+//            std::vector<int> dofs_to_reduce = checkKMatrices();
             std::cout << "time check k matrices: " << duration_cast<microseconds>(high_resolution_clock::now() - time_start_k).count() / 1000.0f << "ms" << std::endl;
 
             // Extra rollout with dimensionality
-            bool dimensionality_reduction_accepted = false;
-            if(dofs_to_reduce.size() > 0){
-                std::cout << "Reducing dimensionality of state vector" << std::endl;
-                dimensionality_reduction_accepted = RolloutWithKMatricesReduction(dofs_to_reduce, oldCost, newCost, last_alpha);
-            }
+//            bool dimensionality_reduction_accepted = false;
+//            if(dofs_to_reduce.size() > 0){
+//                std::cout << "Reducing dimensionality of state vector" << std::endl;
+//                dimensionality_reduction_accepted = RolloutWithKMatricesReduction(dofs_to_reduce, oldCost, newCost, last_alpha);
+//            }
 
-            if(dimensionality_reduction_accepted){
-                // reduce the dimensionality of the state vector...
-                std::vector<std::string> state_vector_names = activeModelTranslator->GetStateVectorNames();
-                std::vector<std::string> dofs_to_reduce_str;
-                // pop the elements depending on dofs_to_reduce
-
-                // TESTING
-//                dofs_to_reduce_str.push_back("blueTin_x");
-//                dofs_to_reduce_str.push_back("blueTin_y");
-                for(int i = 0; i < dofs_to_reduce.size(); i++){
-                    dofs_to_reduce_str.push_back(state_vector_names[dofs_to_reduce[i]]);
-                }
-
-                // Temp print
-                if(verbose_output){
-//                    std::cout << "Reducing dimensionality of state vector by removing: " << std::endl;
-//                    for(int i = 0; i < dofs_to_reduce_str.size(); i++){
-//                        std::cout << dofs_to_reduce_str[i] << std::endl;
-//                    }
-                }
-                activeModelTranslator->UpdateStateVector(dofs_to_reduce_str, false);
-
-                ResizeStateVector(activeModelTranslator->dof);
-                for(int t = 0; t < horizonLength; t++){
-                    K[t].resize(num_ctrl, activeModelTranslator->dof * 2);
-                }
-                keypoint_generator->ResizeStateVector(activeModelTranslator->dof, horizon_length);
-            }
+//            if(dimensionality_reduction_accepted){
+//                // reduce the dimensionality of the state vector...
+//                std::vector<std::string> state_vector_names = activeModelTranslator->GetStateVectorNames();
+//                std::vector<std::string> dofs_to_reduce_str;
+//                // pop the elements depending on dofs_to_reduce
+//
+//                // TESTING
+////                dofs_to_reduce_str.push_back("blueTin_x");
+////                dofs_to_reduce_str.push_back("blueTin_y");
+//                for(int i = 0; i < dofs_to_reduce.size(); i++){
+//                    dofs_to_reduce_str.push_back(state_vector_names[dofs_to_reduce[i]]);
+//                }
+//
+//                // Temp print
+//                if(verbose_output){
+////                    std::cout << "Reducing dimensionality of state vector by removing: " << std::endl;
+////                    for(int i = 0; i < dofs_to_reduce_str.size(); i++){
+////                        std::cout << dofs_to_reduce_str[i] << std::endl;
+////                    }
+//                }
+//                activeModelTranslator->UpdateStateVector(dofs_to_reduce_str, false);
+//
+//                ResizeStateVector(activeModelTranslator->dof);
+//                for(int t = 0; t < horizonLength; t++){
+//                    K[t].resize(num_ctrl, activeModelTranslator->dof * 2);
+//                }
+//                keypoint_generator->ResizeStateVector(activeModelTranslator->dof, horizon_length);
+//            }
 
             // Update the X_old and U_old if cost was reduced
-            for(int i = 0 ; i < horizonLength; i++){
-                X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->savedSystemStatesList[i + 1]);
-                U_old[i] = U_new[i].replicate(1, 1);
+            if(newCost < oldCost){
+                for(int i = 0 ; i < horizonLength; i++){
+                    X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->savedSystemStatesList[i + 1]);
+                    U_old[i] = U_new[i].replicate(1, 1);
+                }
             }
+
 
             if(verbose_output){
                 PrintBannerIteration(i, newCost, oldCost,
@@ -288,7 +291,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
             // Updates the keypoint parameters if auto_adjust is true.
             std::vector<double> dof_importances(activeModelTranslator->dof, 1.0);
             auto start_adjust = high_resolution_clock::now();
-            keypoint_generator->AdjustKeyPointMethod(oldCost, newCost, X_old, dof_importances);
+            keypoint_generator->AdjustKeyPointMethod(expected, oldCost - newCost, X_old, dof_importances);
             auto stop_adjust = high_resolution_clock::now();
             std::cout << "adjust took: " << duration_cast<microseconds>(stop_adjust - start_adjust).count() / 1000.0f << "ms" << std::endl;
 
@@ -333,10 +336,12 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         cout << " --------------------------------------------------- optimisation complete, took: " << opt_time_ms << " ms --------------------------------------------------" << endl;
     }
 
+    // Time get derivs
     for(int i = 0; i < time_get_derivs_ms.size(); i++){
         avg_time_get_derivs_ms += time_get_derivs_ms[i];
     }
 
+    // Percent derivs
     for(int i = 0; i < percentage_derivs_per_iteration.size(); i++){
         avg_percent_derivs += percentage_derivs_per_iteration[i];
     }
@@ -344,18 +349,29 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     avg_time_get_derivs_ms /= time_get_derivs_ms.size();
     avg_percent_derivs /= percentage_derivs_per_iteration.size();
 
+    // Time backwards pass
     for(int i = 0; i < time_backwards_pass_ms.size(); i++){
         avg_time_backwards_pass_ms += time_backwards_pass_ms[i];
     }
 
     avg_time_backwards_pass_ms /= time_backwards_pass_ms.size();
 
+    // Time forwards pass
     for(int i = 0; i < time_forwardsPass_ms.size(); i++){
         avg_time_forwards_pass_ms += time_forwardsPass_ms[i];
     }
 
     if(time_forwardsPass_ms.size() != 0){
         avg_time_forwards_pass_ms /= time_forwardsPass_ms.size();
+    }
+
+    // Surprise
+    for(int i = 0; i < surprises.size(); i++){
+        avg_surprise += surprises[i];
+    }
+
+    if(surprises.size() != 0){
+        avg_surprise /= surprises.size();
     }
 
     // Load the initial data back into main data
@@ -388,8 +404,11 @@ bool iLQR::BackwardsPassQuuRegularisation(){
     MatrixXd Q_uu(num_ctrl, num_ctrl);
     MatrixXd Q_ux(num_ctrl, 2*dof);
 
+    // Reset delta J
+    delta_J = 0.0f;
+
     // TODO check if this should start at -2 or -1 and end at 0 or 1?
-    for(int t = horizonLength - 1; t > -1; t--){
+    for(int t = horizonLength - 1; t > 0; t--){
 
 //        cout << "t: " << t << endl;
 //        cout << "f_x[t] " << A[t] << endl;
@@ -428,6 +447,7 @@ bool iLQR::BackwardsPassQuuRegularisation(){
         I.setIdentity();
         MatrixXd Q_uu_inv = temp.solve(I);
 
+        // control update law, open loop and feedback
         k[t] = -Q_uu_inv * Q_u;
         K[t] = -Q_uu_inv * Q_ux;
 
@@ -435,6 +455,9 @@ bool iLQR::BackwardsPassQuuRegularisation(){
         V_xx = Q_xx + (K[t].transpose() * (Q_uu * K[t])) + (K[t].transpose() * Q_ux) + (Q_ux.transpose() * K[t]);
 
         V_xx = (V_xx + V_xx.transpose()) / 2;
+
+        delta_J += (k[t].transpose() * Q_u)(0);
+        delta_J += (k[t].transpose() * Q_uu * k[t])(0);
 
         // if(t > horizonLength - 5){
         //     cout << "------------------ iteration " << t << " ------------------" << endl;
@@ -501,7 +524,6 @@ double iLQR::ForwardsPass(double old_cost){
             stateFeedback = X_new - _X;
 
             MatrixXd feedBackGain = K[t] * stateFeedback;
-//            std::cout << "K[t] " << K[t] << std::endl;
 
             // Calculate new optimal controls
             U_new[t] = _U + (alphas[alphaCount] * k[t]) + feedBackGain;
@@ -540,31 +562,43 @@ double iLQR::ForwardsPass(double old_cost){
 
         }
 
-//        cout << "cost from alpha: " << alphaCount << ": " << newCost << endl;
-
         if(newCost < old_cost){
             costReduction = true;
         }
         else{
-            alphaCount++;
-            if(alphaCount >= alphas.size()){
+            if(alphaCount >= alphas.size() - 1){
                 break;
             }
+            alphaCount++;
         }
     }
 
     last_iter_num_linesearches = alphaCount + 1;
     last_alpha = alphas[alphaCount];
 
+    // Compute expected costreduction
+    expected = -(last_alpha * delta_J + (pow(last_alpha, 2) / 2) * delta_J);
+
     // If the cost was reduced
     if(newCost < old_cost){
+        // Compute surprise
+
+        surprise = (old_cost - newCost) / expected;
+        surprises.push_back(surprise);
+
+        // Reset the system state to the initial state
         MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, MuJoCo_helper->savedSystemStatesList[0]);
 
         //Copy the rollout buffer to saved systems state list, prevents recomputation using optimal controls
         MuJoCo_helper->copyRolloutBufferToSavedSystemStatesList();
 
+        // Update X_old and U_old
+
         return newCost;
     }
+
+    surprise = 0.0;
+    surprises.push_back(0.0);
 
     return old_cost;
 }

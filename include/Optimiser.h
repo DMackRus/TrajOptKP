@@ -160,7 +160,6 @@ public:
     double initialCost;
     double costReduction = 1.0f;
 
-
     int numberOfTotalDerivs = 0;
 
     std::vector<double> timeDerivsPerIter;
