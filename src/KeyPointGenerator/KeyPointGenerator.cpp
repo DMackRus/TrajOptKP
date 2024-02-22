@@ -113,13 +113,8 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
     }
 
     //Print out the key points
-    for(int i = 0; i < keypoints.size(); i++){
-        cout << "timestep " << i << ": ";
-        for(int j = 0; j < keypoints[i].size(); j++){
-            cout << keypoints[i][j] << " ";
-        }
-        cout << "\n";
-    }
+//
+
 
     UpdateLastPercentageDerivatives(keypoints);
 }
@@ -145,26 +140,26 @@ void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,
 //    std::vector<int> desired_derivative_nums = std::vector<int>(dof, 0);
 
     // Print last num keypoints
-    cout << "Last num keypoints: ";
-    for(int i = 0; i < dof; i++){
-        cout << last_num_keypoints[i] << " ";
-    }
-    cout << "\n";
-
-    cout << "last percentages: ";
-    for(int i = 0; i < dof; i++){
-        cout << last_percentages[i] << " ";
-    }
-    cout << "\n";
+//    cout << "Last num keypoints: ";
+//    for(int i = 0; i < dof; i++){
+//        cout << last_num_keypoints[i] << " ";
+//    }
+//    cout << "\n";
+//
+//    cout << "last percentages: ";
+//    for(int i = 0; i < dof; i++){
+//        cout << last_percentages[i] << " ";
+//    }
+//    cout << "\n";
 
     // If the last optimisation decreased the cost
     desired_derivative_percentages = DesiredPercentageDerivs(expected, actual, dof_importances);
 
-    std::cout << "desired derivative percentages: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << desired_derivative_percentages[i] << " ";
-    }
-    std::cout << std::endl;
+//    std::cout << "desired derivative percentages: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << desired_derivative_percentages[i] << " ";
+//    }
+//    std::cout << std::endl;
 
     // Convert percentages to number of key-points
     desired_num_keypoints = ConvertPercentagesToNumKeypoints(desired_derivative_percentages);
@@ -192,35 +187,8 @@ void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,
 //        std::cout << desired_derivative_percentages[i] << " ";
 //    }
 //    std::cout << std::endl;
-//
-//    // print max and min velocities
-//    std::cout << "max velocities: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << max_last_velocity[i] << " ";
-//    }
-//    std::cout << std::endl;
-//
-//    std::cout << "min velocities: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << min_last_velocity[i] << " ";
-//    }
-//    std::cout << std::endl;
-//
-//    // print max and min jerks
-//    std::cout << "max jerks: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << max_last_jerk[i] << " ";
-//    }
-//    std::cout << std::endl;
-//
-//    std::cout << "min jerks: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << min_last_jerk[i] << " ";
-//    }
-//    std::cout << std::endl;
 
     AutoAdjustKeypointParameters(trajectory_states, desired_num_keypoints, 3);
-
 }
 
 std::vector<double> KeypointGenerator::DesiredPercentageDerivs(double expected, double actual,
@@ -228,28 +196,37 @@ std::vector<double> KeypointGenerator::DesiredPercentageDerivs(double expected, 
 
     std::vector<double> desired_derivative_percentages = std::vector<double>(dof);
 
-    std:: cout << "actual was: " << actual << " expected was: " << expected << std::endl;
     double surprise = actual / expected;
+    std:: cout << "actual was: " << actual << " expected was: " << expected << "surprise was: " << surprise << std::endl;
 
     // If we has some cost reduction
     if(actual > 0){
         // Make the key-points greedier
-        for(int i = 0; i < dof; i++){
-            // When surprise is low, dont update
-            double raw_adjust_factor;
-            if(surprise < surprise_lower){
-                raw_adjust_factor = 1;
-            }
-            // Lets scale our greediness depending on how much surprise we received
-            else{
-                // This might need caps on it.
-                raw_adjust_factor = 5 * pow(surprise, 2);
-            }
 
-            // Cap the adjust factor
-            if(raw_adjust_factor > 5){
-                raw_adjust_factor = 5;
+        // When surprise is low, dont update
+        double raw_adjust_factor;
+        if(surprise < surprise_lower){
+            std::cout << "surprise was low" << std::endl;
+            raw_adjust_factor = -2 - pow(expected, 2);
+
+            if(raw_adjust_factor < -5){
+                raw_adjust_factor = -5;
             }
+        }
+            // Lets scale our greediness depending on how much surprise we received
+        else{
+            // This might need caps on it.
+            raw_adjust_factor = 3 * pow(surprise, 2) + 2;
+        }
+
+        // Cap the adjust factor
+        if(raw_adjust_factor > 5){
+            raw_adjust_factor = 5;
+        }
+
+//        std::cout << "raw adjust factor  " << raw_adjust_factor << std::endl;
+
+        for(int i = 0; i < dof; i++){
 
             // Take into account the dof importances, if a dof is very important, we want to be less greedy
             // If a dof is not important, we want to be more greedy
@@ -291,22 +268,26 @@ void KeypointGenerator::AutoAdjustKeypointParameters(const std::vector<MatrixXd>
     std::vector<double> dof_percentages;
     std::vector<MatrixXd> empty;
 
-    std::cout << "desired derivs: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << desired_num_keypoints[i] << " ";
-    }
-    std::cout << std::endl;
+//    std::cout << "desired derivs: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << desired_num_keypoints[i] << " ";
+//    }
+//    std::cout << std::endl;
 
     GenerateKeypointsOrderOfImportance(trajectory_states, desired_num_keypoints);
     UpdateLastPercentageDerivatives(keypoints);
 
-    std::cout << "actual derivs: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << last_num_keypoints[i] << " ";
-    }
-    std::cout << std::endl;
-
-    UpdateLastPercentageDerivatives(keypoints);
+//    std::cout << "actual derivs: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << last_num_keypoints[i] << " ";
+//    }
+//    std::cout << std::endl;
+//
+//    std::cout << "new percentages: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << last_percentages[i] << " ";
+//    }
+//    std::cout << std::endl;
 
 //    for(int i = 0; i < keypoints.size(); i++){
 //        cout << "timestep " << i << ": ";

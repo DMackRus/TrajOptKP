@@ -18,11 +18,15 @@ bool walker::TaskComplete(mjData *d, double &dist){
 }
 
 void walker::GenerateRandomGoalAndStartState(){
-    MatrixXd test;
+    X_start.resize(state_vector_size, 1);
+    X_desired.resize(state_vector_size, 1);
+
+    X_start = ReturnRandomStartState();
+    X_desired = ReturnRandomGoalState(X_start);
 }
 
 MatrixXd walker::ReturnRandomStartState(){
-    MatrixXd startState;
+    MatrixXd startState(state_vector_size, 1);
 
     startState << 0, 0, 0, 1, -1, 0.2, 0, 0, 0,
                     0, 0, 0, 0, 0, 0, 0, 0, 0;
@@ -31,10 +35,12 @@ MatrixXd walker::ReturnRandomStartState(){
 }
 
 MatrixXd walker::ReturnRandomGoalState(MatrixXd X0){
-    MatrixXd goalState;
+    MatrixXd goalState(state_vector_size, 1);
+
+    double rand_body_velocity = randFloat(1.5f, 2.5f);
 
     goalState << 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0.3, 0, 0, 0, 0, 0, 0, 0;
+            0, rand_body_velocity, 0, 0, 0, 0, 0, 0, 0;
 
     return goalState;
 }

@@ -142,8 +142,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         keypoint_generator->ResizeStateVector(dof, horizonLength);
     }
 
-    double oldCost = 0.0f;
-    double newCost = 0.0f;
+    double oldCost;
     bool costReducedLastIter = true;
 
     // ---------------------- Clear data saving variables ----------------------
@@ -158,12 +157,14 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     avg_time_forwards_pass_ms = 0.0f;
     avg_time_backwards_pass_ms = 0.0f;
     avg_surprise = 0.0f;
+    avg_expected = 0.0f;
 
     percentage_derivs_per_iteration.clear();
     time_backwards_pass_ms.clear();
     time_forwardsPass_ms.clear();
     time_get_derivs_ms.clear();
     surprises.clear();
+    expecteds.clear();
     // ------------------------------------------------------------------------
 
     auto time_start = high_resolution_clock::now();
@@ -183,9 +184,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         //STEP 1 - If forwards pass changed the trajectory, -
         auto derivsstart = high_resolution_clock::now();
         if(costReducedLastIter){
-            std::cout << "before compute derivs \n";
             GenerateDerivatives();
-            std::cout << "after compute derivs \n";
         }
         auto derivsstop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(derivsstop - derivsstart);
@@ -193,8 +192,8 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 
         if(save_trajec_information){
-
-            activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
+            activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old,
+                                                   activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
         }
 
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
@@ -228,13 +227,13 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         if(!lambdaExit){
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
             auto fp_start = high_resolution_clock::now();
-            newCost = ForwardsPass(oldCost);
+            new_cost = ForwardsPass(oldCost);
             time_forwardsPass_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - fp_start).count() / 1000.0f);
 
             // Experimental
             auto time_start_k = high_resolution_clock::now();
 //            std::vector<int> dofs_to_reduce = checkKMatrices();
-            std::cout << "time check k matrices: " << duration_cast<microseconds>(high_resolution_clock::now() - time_start_k).count() / 1000.0f << "ms" << std::endl;
+//            std::cout << "time check k matrices: " << duration_cast<microseconds>(high_resolution_clock::now() - time_start_k).count() / 1000.0f << "ms" << std::endl;
 
             // Extra rollout with dimensionality
 //            bool dimensionality_reduction_accepted = false;
@@ -273,36 +272,35 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 //            }
 
             // Update the X_old and U_old if cost was reduced
-            if(newCost < oldCost){
+            if(new_cost < oldCost){
                 for(int i = 0 ; i < horizonLength; i++){
                     X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->savedSystemStatesList[i + 1]);
                     U_old[i] = U_new[i].replicate(1, 1);
                 }
             }
 
-
             if(verbose_output){
-                PrintBannerIteration(i, newCost, oldCost,
-                                     1 - (newCost / oldCost), lambda, percentage_derivs_per_iteration[i],
+                PrintBannerIteration(i, new_cost, oldCost,
+                                     1 - (new_cost / oldCost), lambda, percentage_derivs_per_iteration[i],
                                      time_get_derivs_ms[i], time_backwards_pass_ms[i], time_forwardsPass_ms[i],
                                      last_iter_num_linesearches);
             }
 
-            costHistory.push_back(newCost);
+            costHistory.push_back(new_cost);
 
             // Updates the keypoint parameters if auto_adjust is true.
             std::vector<double> dof_importances(activeModelTranslator->dof, 1.0);
             auto start_adjust = high_resolution_clock::now();
-            keypoint_generator->AdjustKeyPointMethod(expected, oldCost - newCost, X_old, dof_importances);
+            keypoint_generator->AdjustKeyPointMethod(expected, oldCost - new_cost, X_old, dof_importances);
             auto stop_adjust = high_resolution_clock::now();
-            std::cout << "adjust took: " << duration_cast<microseconds>(stop_adjust - start_adjust).count() / 1000.0f << "ms" << std::endl;
+//            std::cout << "adjust took: " << duration_cast<microseconds>(stop_adjust - start_adjust).count() / 1000.0f << "ms" << std::endl;
 
             // STEP 4 - Check for convergence
             bool converged;
-            converged = CheckForConvergence(oldCost, newCost);
+            converged = CheckForConvergence(oldCost, new_cost);
 
-            if(newCost < oldCost){
-                oldCost = newCost;
+            if(new_cost < oldCost){
+                oldCost = new_cost;
                 costReducedLastIter = true;
             }
             else{
@@ -328,7 +326,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     // --------------------  Computing testing results ---------------------------
 
-    costReduction = 1 - (newCost / initialCost);
+    costReduction = 1 - (new_cost / initialCost);
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
     opt_time_ms = optDuration.count() / 1000.0f;
@@ -367,13 +365,15 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         avg_time_forwards_pass_ms /= time_forwardsPass_ms.size();
     }
 
-    // Surprise
+    // Surprise and expected
     for(int i = 0; i < surprises.size(); i++){
         avg_surprise += surprises[i];
+        avg_expected += expecteds[i];
     }
 
     if(surprises.size() != 0){
         avg_surprise /= surprises.size();
+        avg_expected /= expecteds.size();
     }
 
     // Load the initial data back into main data
@@ -384,7 +384,8 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     }
 
     if(save_trajec_information){
-        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old, activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
+        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old,
+                                               activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
     }
 
     return optimisedControls;
@@ -580,6 +581,7 @@ double iLQR::ForwardsPass(double old_cost){
 
     // Compute expected costreduction
     expected = -(last_alpha * delta_J + (pow(last_alpha, 2) / 2) * delta_J);
+    expecteds.push_back(expected);
 
     // If the cost was reduced
     if(newCost < old_cost){
@@ -588,15 +590,13 @@ double iLQR::ForwardsPass(double old_cost){
         surprise = (old_cost - newCost) / expected;
         surprises.push_back(surprise);
 
-        std::cout << "expected :" << expected << " actual: " << old_cost - newCost << std::endl;
+//        std::cout << "expected :" << expected << " actual: " << old_cost - newCost << std::endl;
 
         // Reset the system state to the initial state
         MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, MuJoCo_helper->savedSystemStatesList[0]);
 
         //Copy the rollout buffer to saved systems state list, prevents recomputation using optimal controls
         MuJoCo_helper->copyRolloutBufferToSavedSystemStatesList();
-
-        // Update X_old and U_old
 
         return newCost;
     }

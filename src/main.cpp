@@ -600,7 +600,7 @@ void optimiseOnceandShow(){
 
 void worker(){
     double trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
-    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, 80);
+    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, 150);
 }
 
 void async_MPC_testing(){
@@ -612,11 +612,6 @@ void async_MPC_testing(){
     activeOptimiser->verbose_output = true;
     // Visualise MPC trajectory live
     mpcVisualise = true;
-
-    if(task == "walker"){
-        // Setting lateral desired speed
-        activeModelTranslator->X_desired(10) = 0.5;
-    }
 
     if(ASYNC_MPC){
         std::thread MPC_controls_thread;
@@ -678,7 +673,7 @@ void async_MPC_testing(){
             int difference_ms = (activeModelTranslator->MuJoCo_helper->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
             if(difference_ms > 0) {
-//                difference_ms = 10;
+//                difference_ms = 20;
                 std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
             }
         }
@@ -772,7 +767,6 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->vis_data);
         }
 
-
         reInitialiseCounter++;
         visualCounter++;
 
@@ -851,11 +845,9 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             activeVisualiser->current_control_index = bestMatchingStateIndex;
             std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
 
-//            activeVisualiser->current_control_index = 0;
             activeVisualiser->new_controls_flag = true;
 
             mtx.unlock();
-
         }
 
         if(!ASYNC_MPC){
@@ -1281,7 +1273,7 @@ int assign_task(){
         std::shared_ptr<DoublePendulum> myDoublePendulum = std::make_shared<DoublePendulum>();
         activeModelTranslator = myDoublePendulum;
     }
-    else if(task == "Acrobot"){
+    else if(task == "acrobot"){
         std::shared_ptr<Acrobot> myAcrobot = std::make_shared<Acrobot>();
         activeModelTranslator = myAcrobot;
 

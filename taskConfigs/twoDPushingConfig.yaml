@@ -3,7 +3,7 @@ modelName: "/push_nCl"
 timeStep: 0.004
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 auto_adjust: true
-minN: 1
+minN: 80
 maxN: 20
 iterativeErrorThreshold: 0.00001
 robots:
@@ -30,7 +30,7 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, 0.0, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [1.0, 1.0, 0]
+    linearPosCost: [1, 1, 0]
     # When iLQR once
     terminalLinearPosCost: [0, 0, 0]
     linearVelCost: [0.5, 0.5, 0]

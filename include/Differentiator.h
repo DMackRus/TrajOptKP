@@ -1,6 +1,6 @@
 #pragma once
 
-#define USE_DQACC 0
+#define USE_DQACC 1
 #define HESSIAN_APPROXIMATION 0
 
 #include "ModelTranslator.h"

@@ -109,7 +109,7 @@ void Optimiser::GenerateDerivatives(){
 
     auto start_interp_time = high_resolution_clock::now();
     InterpolateDerivatives(keypoint_generator->keypoints, activeYamlReader->costDerivsFD);
-    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
+//    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
 
     double average_percent_derivs = 0.0f;

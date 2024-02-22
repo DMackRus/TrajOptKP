@@ -8,7 +8,7 @@ iterativeErrorThreshold: 0.0000001                # Threshold for iterative erro
 
 # stable down pos [3.1415, 0], half up unstable pos [3.14, 3.14], full up unstable pos [0, 0]
 robots:
-  doublePendulum:
+  acrobot:
     jointNames: [shoulder, elbow]
     actuatorNames: [shoulder]
     torqueControl: true
@@ -17,8 +17,8 @@ robots:
     goalPos: [0, 0]
     jointPosCosts: [0, 0]
     jointVelCosts: [0.001, 0.001]
-    terminalJointPosCosts: [10, 10]
+    terminalJointPosCosts: [100, 100]
     terminalJointVelCosts: [1, 1]
-    jointControlCosts: [0.0001]
+    jointControlCosts: [0.1]
     jointJerkThresholds: [0.001, 0.001]
     magVelThresholds: [0.2, 0.2]

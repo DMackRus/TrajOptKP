@@ -206,10 +206,11 @@ public:
     double lowPassACoefficient = 0.25;
     std::vector<double> FIRCoefficients = {0.1, 0.15, 0.5, 0.15, 0.1};
 
+    std::shared_ptr<KeypointGenerator> keypoint_generator;
+
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
-    std::shared_ptr<KeypointGenerator> keypoint_generator;
 
     int dof;
     int num_ctrl;

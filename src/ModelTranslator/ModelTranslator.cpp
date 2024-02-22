@@ -361,6 +361,7 @@ double ModelTranslator::CostFunction(mjData* d, bool terminal){
     double cost;
     MatrixXd Xt = ReturnStateVector(d);
     MatrixXd Ut = ReturnControlVector(d);
+//    cout << "X_desired: " << X_desired << endl;
 
     MatrixXd X_diff = Xt - X_desired;
     MatrixXd temp;

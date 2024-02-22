@@ -104,9 +104,6 @@ public:
     std::vector<std::vector<int>> keypoints;
     std::vector<double> last_percentages;
 
-
-
-
 private:
 
     /**

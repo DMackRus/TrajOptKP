@@ -84,6 +84,11 @@ public:
     // Whether to save trajectory information to file
     bool save_trajec_information = false;
 
+    double avg_surprise = 0.0f;
+    double avg_expected = 0.0f;
+    double new_cost = 0.0f;
+
+
 private:
     // Lambda value which is added to the diagonal of the Q_uu matrix for regularisation purposes.
     double lambda = 0.1;
@@ -115,7 +120,7 @@ private:
     double expected = 0.0f;
     double surprise = 0.0f;
     std::vector<double> surprises;
-    double avg_surprise = 0.0f;
+    std::vector<double> expecteds;
 
     /**
      * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.

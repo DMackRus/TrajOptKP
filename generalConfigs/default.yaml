@@ -2,7 +2,7 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "pushing_moderate_clutter"  # Task to be performed
+task: "walker"  # Task to be performed
 # Current implemented tasks are:
 # "double_pendulum", "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
 # "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
@@ -25,7 +25,7 @@ runMode: "MPC_until_completion"
 # "Generate_filtering_data" - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 
 taskInitMode: "fromCSV"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 7                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+csvRow: 0                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filterting of derivative values over trajectory length.
 costDerivsFD: false       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)

@@ -90,6 +90,8 @@ m_quat multQuat(m_quat quat_l, m_quat quat_r);
 
 m_point crossProduct(m_point vec1, m_point vec2);
 
+double GaussNoise(double mean, double stddev);
+
 bool compare(const std::pair<double, int>& a, const std::pair<double, int>& b);
 
 std::vector<int> sortIndices(const std::vector<double>& values);

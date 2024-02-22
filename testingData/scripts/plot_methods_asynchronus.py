@@ -3,13 +3,121 @@ import numpy as np
 from numpy import genfromtxt
 import csv
 import os
+import sys
+
+
+
+task = "walker_plane"
+task_num = -1
+
+show_ind_trajecs = True
+
 
 def main():
-    task_name = "push_nCl"
+    global task
+    global task_num
+    
+    if(len(sys.argv) < 2):
+        pass
+    else:
+        # argument 0 is the program name
+        task = sys.argv[1]
+        if(len(sys.argv) >= 2):
+            task_num = sys.argv[2]
+            
+    if(task_num != -1):
+        plot_task(task, "AA_1_50", task_num)
+    plot_summary(task)
+
+    # 6 elements in data, final cost, opt time, % derivs, time derivs, time bp, time fp
+    
+def plot_task(task_name, method_name, task_number):
+    
+    
+    directory = "../" + task_name + "/" + method_name
+    file_name = directory + "/" + str(task_number) + ".csv"
+    
+    # load data
+    data = np.array([genfromtxt(file_name, delimiter = ',')])
+    data = data[0]
+    data = data[1:]
+    
+    # Data headers are: 
+    # opt time (ms), derivs time, bp time, fp time, & derivs, surprise, expected, new_cost
+    
+    fig, axs = plt.subplots(3, 3, sharex=False, figsize = (15, 12))
+
+    # Overall optimisation time
+    axs[0, 0].plot(data[:, 0])
+    axs[0, 0].set_xlabel("Time")
+    axs[0, 0].set_ylabel("Optimisation time (ms)")
+    
+    axs[1, 0].plot(data[:, 1])
+    axs[1, 0].set_xlabel("Time")
+    axs[1, 0].set_ylabel("Derivs time (ms)")
+    
+    axs[2, 0].plot(data[:, 4])
+    axs[2, 0].set_xlabel("Time")
+    axs[2, 0].set_ylabel("% Derivs")
+    
+    # ---- time fp, time bp -----
+    axs[0, 1].plot(data[:, 3])
+    axs[0, 1].set_xlabel("Time")
+    axs[0, 1].set_ylabel("Time FP (ms)")
+    
+    axs[1, 1].plot(data[:, 2])
+    axs[1, 1].set_xlabel("Time")
+    axs[1, 1].set_ylabel("Time BP (ms)")
+    
+    # ----- Surprise, expected, new cost ------
+    axs[0, 2].plot(data[:, 5])
+    axs[0, 2].set_xlabel("Time")
+    axs[0, 2].set_ylabel("Surprise")
+    
+    axs[1, 2].plot(data[:, 6])
+    axs[1, 2].set_xlabel("Time")
+    axs[1, 2].set_ylabel("Expected")
+    axs[1, 2].set_ylim(bottom=0, top = 10)
+    
+    axs[2, 2].plot(data[:, 7])
+    axs[2, 2].set_xlabel("Time")
+    axs[2, 2].set_ylabel("New cost")
+    
+    
+    
+    
+    
+    
+
+    # # Average optimisation times per iteration
+    # ax2.plot(opt_times)
+    # ax2.set_xticks(x_ticks)
+    # ax2.set_xticklabels(methods)
+    # ax2.set_xlabel("method name")
+    # ax2.set_ylabel("Mean optimisation time (ms)")
+
+    # # Mean percentage derivatives
+    # ax3.plot(percent_derivs)
+    # ax3.set_xticks(x_ticks)
+    # ax3.set_xticklabels(methods)
+    # ax3.set_xlabel("method name")
+    # ax3.set_ylabel("Mean percent derivatives")
+
+    # # set figure title
+    figure_title = task_name + "_" + method_name + "_" + str(task_number)
+    fig.suptitle(figure_title, fontsize = 20)
+
+    plt.show()
+    
+    
+    
+    
+    
+def plot_summary(task_name):
+    
     directory = "../" + task_name
-    all_method_file_names = list_files_in_directory(directory)
-
-
+    all_method_file_names = list_directories(directory)
+    
     # load the data
     file_count = len(all_method_file_names)
     all_data = load_all_data(directory, all_method_file_names)
@@ -76,8 +184,7 @@ def main():
     fig.suptitle(task_name, fontsize = 20)
 
     plt.show()
-
-    # 6 elements in data, final cost, opt time, % derivs, time derivs, time bp, time fp
+    
 
 
 def compute_mean_and_std_deviation(data):
@@ -119,12 +226,19 @@ def list_files_in_directory(directory):
             files_list.append(file_name)
     return files_list
 
-def load_all_data(directory, file_names):
+def list_directories(directory):
+    directories = []
+    for item in os.listdir(directory):
+        if os.path.isdir(os.path.join(directory, item)):
+            directories.append(item)
+    return directories
+
+def load_all_data(directory, method_names):
 
     # Load all the data
     all_data = []
-    for file in file_names:
-        file_path = directory + "/" + file
+    for folder in method_names:
+        file_path = directory + "/" + folder + "/summary.csv"
         data = load_data_from_path(file_path)
 
         # drop top row as its header which are converted to Nan
