@@ -1,7 +1,6 @@
 #pragma once
 
-#define USE_DQACC 1
-#define HESSIAN_APPROXIMATION 0
+#define USE_DQACC 0
 
 #include "ModelTranslator.h"
 #include "MuJoCoHelper.h"
@@ -17,23 +16,23 @@ public:
                         MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx,
                         MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId);
 
-    MatrixXd calc_dqveldctrl(const std::vector<int> &cols, int dataIndex, int tid,
-                             MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal);
+    void calc_dqveldctrl(MatrixXd &dqveldctrl, const std::vector<int> &cols, int dataIndex,
+                         int tid, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal);
 
-    MatrixXd calc_dqaccdctrl(const std::vector<int> &cols, int dataIndex, int tid,
-                             MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal);
+    void calc_dqaccdctrl(MatrixXd &dqaccdctrl, const std::vector<int> &cols, int dataIndex,
+                         int tid, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal);
 
-    MatrixXd calc_dqveldqvel(const std::vector<int> &cols, int dataIndex, int tid,
-                             MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal);
+    void calc_dqveldqvel(MatrixXd &dqveldqvel, const std::vector<int> &cols, int dataIndex,
+                         int tid, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal);
 
-    MatrixXd calc_dqaccdqvel(const std::vector<int> &cols, int dataIndex, int tid,
-                             MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal);
+    void calc_dqaccdqvel(MatrixXd &dqaccdqvel, const std::vector<int> &cols, int dataIndex,
+                         int tid, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal);
 
-    MatrixXd calc_dqveldqpos(const std::vector<int> &cols, int dataIndex, int tid,
-                             MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal);
+    void calc_dqveldqpos(MatrixXd &dqveldqpos, const std::vector<int> &cols, int dataIndex,
+                         int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal);
 
-    MatrixXd calc_dqaccdqpos(const std::vector<int> &cols, int dataIndex, int tid,
-                             MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal);
+    void calc_dqaccdqpos(MatrixXd &dqaccdqpos, const std::vector<int> &cols, int dataIndex,
+                         int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal);
 
 private:
     double epsControls = 1e-6;
@@ -46,4 +45,7 @@ private:
     // temp variable
     double time_mj_forwards = 0.0f;
     int count_integrations = 0;
+
+    int dof = 0;
+    int num_ctrl = 0;
 };

@@ -122,18 +122,10 @@ int main(int argc, char **argv) {
     if(runMode == "Generate_testing_data"){
 //    	 return generateTestingData_MPCHorizons();
 //         return generateTestingData_MPC_asynchronous();
-        Testing myTestingObject(iLQROptimiser, activeModelTranslator, activeDifferentiator, activeVisualiser, yamlReader);
-//        derivative_interpolator test;
-//        test.keypoint_method = "SetInterval";
-//        test.minN = 5;
-//        return myTestingObject.testing_asynchronus_mpc(test);
-
-//        return myTestingObject.testing_different_minN_asynchronus_mpc(1, 20, 1);
+        Testing myTestingObject(iLQROptimiser, activeModelTranslator,
+                                activeDifferentiator, activeVisualiser, yamlReader);
         return myTestingObject.testing_different_velocity_change_asynchronus_mpc();
 
-//        generateTestingData_MPC();
-        //generateTestingData();
-        //return 0;
     }
 
     startStateVector.resize(activeModelTranslator->state_vector_size, 1);
@@ -202,8 +194,10 @@ int main(int argc, char **argv) {
     }
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
+        return EXIT_FAILURE;
     }
-    return 0;
+
+    return EXIT_SUCCESS;
 }
 
 void onetaskGenerateTestingData(){
