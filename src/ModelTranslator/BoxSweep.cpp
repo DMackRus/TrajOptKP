@@ -2,7 +2,7 @@
 
 BoxSweep::BoxSweep(){
 
-    std::string yamlFilePath = "/taskConfigs/BoxSweep.yaml";
+    std::string yamlFilePath = "/taskConfigs/boxSweep.yaml";
 
     InitModelTranslator(yamlFilePath);
 }
@@ -92,7 +92,7 @@ void BoxSweep::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd,
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    MuJoCo_helper->getBodyPose_angle(EE_name, EE_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MuJoCo_helper->main_data);
     MuJoCo_helper->getBodyPose_angle(goalObject, goalobj_startPose, MuJoCo_helper->main_data);
 
     m_point mainWayPoint;
@@ -194,7 +194,7 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
 
     pose_7 EE_start_pose;
     pose_6 goalobj_startPose;
-    MuJoCo_helper->getBodyPose_quat(EEName, EE_start_pose, MuJoCo_helper->main_data);
+    MuJoCo_helper->getBodyPose_quat_ViaXpos(EEName, EE_start_pose, MuJoCo_helper->main_data);
     MuJoCo_helper->getBodyPose_angle(goalObjName, goalobj_startPose, MuJoCo_helper->main_data);
 
     float angle_EE_push;
@@ -237,7 +237,7 @@ std::vector<MatrixXd> BoxSweep::generate_initControls_fromWayPoints(std::vector<
 
     for(int i = 0; i < initPath.size(); i++){
         pose_7 currentEEPose;
-        MuJoCo_helper->getBodyPose_quat(EEName, currentEEPose, MuJoCo_helper->main_data);
+        MuJoCo_helper->getBodyPose_quat_ViaXpos(EEName, currentEEPose, MuJoCo_helper->main_data);
         m_quat currentEEQuat, invertedQuat, quatDiff;
         currentEEQuat(0) = currentEEPose.quat(0);
         currentEEQuat(1) = currentEEPose.quat(1);
