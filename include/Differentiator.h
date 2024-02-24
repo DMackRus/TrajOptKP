@@ -34,6 +34,9 @@ public:
     void calc_dqaccdqpos(MatrixXd &dqaccdqpos, const std::vector<int> &cols, int dataIndex,
                          int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal);
 
+    double time_mj_forwards = 0.0f;
+    int count_integrations = 0;
+
 private:
     double epsControls = 1e-6;
     double epsVelocities = 1e-6;
@@ -43,8 +46,6 @@ private:
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
 
     // temp variable
-    double time_mj_forwards = 0.0f;
-    int count_integrations = 0;
 
     int dof = 0;
     int num_ctrl = 0;

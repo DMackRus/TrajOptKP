@@ -512,7 +512,8 @@ void Differentiator::calc_dqveldqpos(MatrixXd &dqveldqpos, const std::vector<int
 //    std::cout << "time integrations in dqvel/dqpos: " << time_integrations_here << std::endl;
 }
 
-void Differentiator::calc_dqaccdqpos(MatrixXd &dqaccdqpos, const std::vector<int> &cols, int dataIndex, int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
+void Differentiator::calc_dqaccdqpos(MatrixXd &dqaccdqpos, const std::vector<int> &cols,
+                                     int dataIndex, int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
 
     MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
     MatrixXd accellInc(dof, 1);

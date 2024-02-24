@@ -95,3 +95,12 @@ double GaussNoise(double mean, double stddev);
 bool compare(const std::pair<double, int>& a, const std::pair<double, int>& b);
 
 std::vector<int> sortIndices(const std::vector<double>& values);
+
+template <typename T>
+inline T* DataAt(std::vector<T>& vec, typename std::vector<T>::size_type elem) {
+    if (elem < vec.size()) {
+        return &vec[elem];
+    } else {
+        return nullptr;
+    }
+}
