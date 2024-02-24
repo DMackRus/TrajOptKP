@@ -147,3 +147,32 @@ m_point crossProduct(m_point vec1, m_point vec2){
 
     return crossProduct;
 }
+
+double GaussNoise(double mean, double stddev) {
+    // Create a random engine
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    // Create a normal distribution
+    std::normal_distribution<double> dist(mean, stddev);
+
+    // Generate a random number from the distribution
+    return dist(gen);
+}
+
+bool compare(const std::pair<double, int>& a, const std::pair<double, int>& b) {
+    return a.first > b.first; // Sort in descending order
+}
+
+std::vector<int> sortIndices(const std::vector<double>& values) {
+    std::vector<std::pair<double, int>> indexedValues;
+    for (int i = 0; i < values.size(); ++i) {
+        indexedValues.push_back({values[i], i});
+    }
+    std::sort(indexedValues.begin(), indexedValues.end(), compare);
+    std::vector<int> sortedIndices;
+    for (const auto& pair : indexedValues) {
+        sortedIndices.push_back(pair.second);
+    }
+    return sortedIndices;
+}

@@ -40,7 +40,25 @@ public:
      * Construct a new Model Translator object.
      *
      */
-    ModelTranslator();
+    ModelTranslator() = default;
+
+    /**
+     * Update the state vector of the system by either adding or removing elements from
+     * the state vector.
+     *
+     * @param state_vector_names The names of the state vector elements to add or remove.
+     * @param add_extra_states Whether to add or remove the state vector elements.
+     *
+     */
+    void UpdateStateVector(std::vector<std::string> state_vector_names, bool add_extra_states);
+
+    /**
+     * Returns the current names of the state vector elements in order.
+     *
+     * @return std::vector<std::string> The names of the active state vector elements.
+     *
+     */
+    std::vector<std::string> GetStateVectorNames();
 
     //--------------------------------------------------------------------------------
     // Pure virtual functions that HAVE to be implemented by the child class
@@ -81,7 +99,7 @@ public:
      *
      * @return double The cost of the system at the given data index.
      */
-    virtual double CostFunction(int data_index, bool terminal);
+    virtual double CostFunction(mjData* d, bool terminal);
 
     /**
      * Returns the current cost derivatives (1st and 2nd order) of the system with respect to the
@@ -95,7 +113,7 @@ public:
      * @param  terminal Whether or not this is the terminal state or not.
      *
      */
-    virtual void CostDerivatives(int data_index, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
+    virtual void CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
 
     /**
      * Returns whether the task has been completed yet. Distance is sometimes useful depending on the task. E.g. for
@@ -106,7 +124,7 @@ public:
      *
      * @return bool Whether the task is complete or not.
      */
-    virtual bool TaskComplete(int data_index, double &dist);
+    virtual bool TaskComplete(mjData* d, double &dist);
 
     /**
      * Computes an initial sequence of controls for the system to setup the task to a use-able state.
@@ -147,7 +165,7 @@ public:
      * @return MatrixXd The current state vector of the system at the specified data index.
      *
      */
-    MatrixXd ReturnStateVector(int data_index);
+    MatrixXd ReturnStateVector(mjData* d);
 
     /**
      * Sets the current state vector of the system in the specified data index.
@@ -159,7 +177,7 @@ public:
      * of the state vector is correct.
      *
      */
-    bool SetStateVector(MatrixXd state_vector, int data_index);
+    bool SetStateVector(MatrixXd state_vector, mjData* d);
 
     /**
      * Returns the current control vector of the system in the specified data index.
@@ -169,7 +187,7 @@ public:
      * @return MatrixXd The current control vector of the system at the specified data index.
      *
      */
-    MatrixXd ReturnControlVector(int data_index);
+    MatrixXd ReturnControlVector(mjData* d);
 
     /**
      * Sets the current control vector of the system in the specified data index.
@@ -181,7 +199,7 @@ public:
      * of the control vector is correct.
      *
      */
-    bool SetControlVector(MatrixXd control_vector, int data_index);
+    bool SetControlVector(MatrixXd control_vector, mjData* d);
 
     /**
      * Returns the current position vector of the system in the specified data index.
@@ -191,7 +209,7 @@ public:
      * @return MatrixXd The current position vector of the system at the specified data index.
      *
      */
-    MatrixXd returnPositionVector(int data_index);
+    MatrixXd returnPositionVector(mjData* d);
 
     /**
      * Returns the current velocity vector of the system in the specified data index.
@@ -201,7 +219,7 @@ public:
      * @return MatrixXd The current velocity vector of the system at the specified data index.
      *
      */
-    MatrixXd returnVelocityVector(int data_index);
+    MatrixXd returnVelocityVector(mjData* d);
 
     /**
      * Returns the current acceleration vector of the system in the specified data index.
@@ -211,7 +229,7 @@ public:
      * @return MatrixXd The current acceleration vector of the system at the specified data index.
      *
      */
-    MatrixXd returnAccelerationVector(int data_index);
+    MatrixXd returnAccelerationVector(mjData* d);
 
     /**
      * Sets the position vector of the system at the specified data index.
@@ -223,7 +241,7 @@ public:
      * position vector is correct.
      *
      */
-    bool setPositionVector(MatrixXd position_vector, int data_index);
+    bool setPositionVector(MatrixXd position_vector, mjData* d);
 
     /**
      * Sets the velocity vector of the system at the specified data index.
@@ -235,7 +253,7 @@ public:
      * velocity vector is correct.
      *
      */
-    bool setVelocityVector(MatrixXd velocity_vector, int data_index);
+    bool setVelocityVector(MatrixXd velocity_vector, mjData* d);
 
 
     // Number of degrees of freedom of the system (Note, this is set by used via yaml file, it doesnt necessary
@@ -249,7 +267,7 @@ public:
     int state_vector_size;
 
     // State vector object, considers robots and bodies
-    struct stateVectorList state_vector;
+    struct stateVectorList active_state_vector;
 
     // Desired state, used for cost function
     MatrixXd X_desired;
@@ -257,11 +275,8 @@ public:
     // Starting state of the system
     MatrixXd X_start;
 
-    // physics simulator object
-    std::shared_ptr<PhysicsSimulator> active_physics_simulator;
-
     // mujoco helper object
-    std::shared_ptr<MuJoCoHelper> mujoco_helper;
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
 
     // file path to model xml file
     std::string model_file_path;
@@ -271,6 +286,7 @@ public:
 
     // Keypoint hyper parameters
     std::string keypoint_method;
+    bool auto_adjust;
     int min_N;
     int max_N;
     std::vector<double> jerk_thresholds;

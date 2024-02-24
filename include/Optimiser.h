@@ -14,7 +14,6 @@
 
 #include "StdInclude.h"
 #include "ModelTranslator.h"
-#include "PhysicsSimulator.h"
 #include "Differentiator.h"
 #include "KeyPointGenerator.h"
 #include <atomic>
@@ -25,13 +24,13 @@ public:
      * Construct a new Optimiser  object.
      *
      * @param _modelTranslator - ModelTranslator object used to translate between the optimiser and current system
-     * @param _physicsSimulator - PhysicsSimulator object used to simulate the system
+     * @param _MuJoCoHelper - PhysicsSimulator object used to simulate the system
      * @param _yamlReader - FileHandler object used to read in YAML files
      * @param _differentiator - Differentiator object used to compute derivatives
      *
      */
     Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator,
-              std::shared_ptr<PhysicsSimulator> _physicsSimulator,
+              std::shared_ptr<MuJoCoHelper> _MuJoCoHelper,
               std::shared_ptr<FileHandler> _yamlReader,
               std::shared_ptr<Differentiator> _differentiator);
 
@@ -47,7 +46,7 @@ public:
      *
      * @return double The cost of the rollout after evaluating it with the cost function. (Cost function from the model translator)
      */
-    virtual double RolloutTrajectory(int initial_data_index, bool save_states, std::vector<MatrixXd> control_sequence) = 0;
+    virtual double RolloutTrajectory(mjData *d, bool save_states, std::vector<MatrixXd> control_sequence) = 0;
 
     /**
      * Optimise a trajectory from a given initial data state and a given set of initial controls. Will return the new optimised
@@ -63,7 +62,7 @@ public:
      *
      * @return std::vector<MatrixXd> The optimised control sequence.
      */
-    virtual std::vector<MatrixXd> Optimise(int initial_data_index, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int _horizonLength) = 0;
+    virtual std::vector<MatrixXd> Optimise(mjData *d, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int _horizonLength) = 0;
 
     // -----------------------------------------------------------------------------------------------------------
     // -------------------------------------- OPTIONAL virtual function ------------------------------------------
@@ -104,6 +103,13 @@ public:
     void ReturnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
 
     /**
+     * Resize variables that are dependant on the size of the state vector.
+     *
+     * @param new_num_dofs - The new number of degrees of freedom in the state vector.
+     */
+    void ResizeStateVector(int new_num_dofs);
+
+    /**
      * Returns the current active keypoint method, and its associating parameters.
      *
      * @return keypoint_method The current active keypoint method.
@@ -141,7 +147,7 @@ public:
     void setFIRFilter(std::vector<double> _FIRCoefficients);
 
     // List of differentiator function callbacks, for parallelisation.
-    std::vector<void (Differentiator::*)(MatrixXd &A, MatrixXd &B, std::vector<int> cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId)> tasks;
+    std::vector<void (Differentiator::*)(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols, MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu, bool costDerivs, int dataIndex, bool terminal, int threadId)> tasks;
 
     // current_iteration used for parallelisation.
     std::atomic<int> current_iteration;
@@ -153,7 +159,6 @@ public:
 
     double initialCost;
     double costReduction = 1.0f;
-
 
     int numberOfTotalDerivs = 0;
 
@@ -201,12 +206,11 @@ public:
     double lowPassACoefficient = 0.25;
     std::vector<double> FIRCoefficients = {0.1, 0.15, 0.5, 0.15, 0.1};
 
-
+    std::shared_ptr<KeypointGenerator> keypoint_generator;
 
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
-    std::shared_ptr<PhysicsSimulator> activePhysicsSimulator;
-    std::shared_ptr<KeyPointGenerator> keypoint_generator;
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
 
     int dof;
     int num_ctrl;
@@ -240,7 +244,7 @@ protected:
      * @param costDerivs - Whether to interpolate the cost derivatives or not.
      *
      */
-    void InterpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs);
+    void InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, bool costDerivs);
 
     /**
      * Applies a filter to the internal dynamics derivatives.

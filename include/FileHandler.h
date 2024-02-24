@@ -6,7 +6,6 @@
 #define PHYSICSSIMSWITCHING_FILEHANDLER_H
 
 #include "StdInclude.h"
-#include "PhysicsSimulator.h"
 #include <yaml-cpp/yaml.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -23,7 +22,9 @@ enum optimisers{
 class FileHandler{
 public:
     FileHandler();
+
     void readModelConfigFile(const std::string& yamlFilePath, task &_taskConfig);
+
     void readSettingsFile(std::string settingsFilePath);
 
     void saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength);
@@ -54,10 +55,7 @@ public:
     int maxIter;
     int maxHorizon;
 
-    int keyPointMethod;
-    int interpolationMethod;
-    int minInterval;
-    int maxInterval;
+    int min_interval;
 
 private:
     std::string projectParentPath;

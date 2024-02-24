@@ -48,7 +48,6 @@ set(PROJECT_INCLUDE_DIR ${PARENT_DIR}/${PROJECT_NAME}/include)
 message(STATUS "project include directory: " ${PROJECT_INCLUDE_DIR})
 
 add_executable(${PROJECT_NAME} src/main.cpp
-            src/PhysicsSimulators/PhysicsSimulator.cpp
             src/StdInclude/StdInclude.cpp
             src/PhysicsSimulators/MuJoCoHelper.cpp
             src/ModelTranslator/ModelTranslator.cpp
@@ -67,8 +66,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/BoxSweep.cpp
             src/ModelTranslator/Acrobot.cpp
             src/ModelTranslator/Hopper.cpp
-                src/Testing.cpp
-                src/KeyPointGenerator/KeyPointGenerator.cpp)
+            src/Testing.cpp
+            src/KeyPointGenerator/KeyPointGenerator.cpp)
 
 include_directories(
         include

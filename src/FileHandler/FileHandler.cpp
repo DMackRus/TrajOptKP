@@ -27,7 +27,15 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
     _taskConfig.modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
     _taskConfig.modelName = node["modelName"].as<std::string>();
     _taskConfig.modelTimeStep = node["timeStep"].as<double>();
+
+
     _taskConfig.keypointMethod = node["keypointMethod"].as<std::string>();
+    if(node["auto_adjust"]){
+        _taskConfig.auto_adjust = node["auto_adjust"].as<bool>();
+    }
+    else{
+        _taskConfig.auto_adjust = false;
+    }
     _taskConfig.minN = node["minN"].as<int>();
     _taskConfig.maxN = node["maxN"].as<int>();
     _taskConfig.iterativeErrorThreshold = node["iterativeErrorThreshold"].as<double>();

@@ -19,12 +19,19 @@ public:
     std::vector<m_point> initControls_createAllWayPoints(std::vector<m_point> mainWayPoints, std::vector<int> wayPointsTiming);
     std::vector<MatrixXd> generate_initControls_fromWayPoints(std::vector<m_point> initPath);
 
-    bool TaskComplete(int dataIndex, double &dist) override;
+
+    double CostFunction(mjData *d, bool terminal) override;
+
+    void CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
+
+    bool TaskComplete(mjData *d, double &dist) override;
 
 private:
     int clutterLevel = noClutter;
     double randomGoalX = 0.0;
     double randomGoalY = 0.0;
+
+    Matrix<double, 6, 6> cost_reach;
 
 };
 

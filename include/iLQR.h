@@ -41,7 +41,7 @@ public:
      *
      */
     iLQR(std::shared_ptr<ModelTranslator> _modelTranslator,
-         std::shared_ptr<PhysicsSimulator> _physicsSimulator,
+         std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
          std::shared_ptr<Differentiator> _differentiator,
          int _maxHorizon,
          std::shared_ptr<Visualiser> _visualizer,
@@ -57,11 +57,11 @@ public:
      *
      * @return double - The rolling cost of the trajectory.
      */
-    double RolloutTrajectory(int initial_data_index, bool save_states, std::vector<MatrixXd> initial_controls) override;
+    double RolloutTrajectory(mjData *d, bool save_states, std::vector<MatrixXd> initial_controls) override;
 
     /**
      * Optimise the current trajectory until convergence, or max iterations has been reached. Uses the normal iLQR algorithm
-     * to optimsie the trajectory. Step 1 - Compute derivatives, Step 2 - backwards pass, Step 3 - forwards pass with linesearch.
+     * to optimise the trajectory. Step 1 - Compute derivatives, Step 2 - backwards pass, Step 3 - forwards pass with linesearch.
      * Step 4 - check for convergence.
      *
      * @param initial_data_index - The data index of the simulation data which should be the starting state of optimisation.
@@ -72,7 +72,55 @@ public:
      *
      * @return std::vector<MatrixXd> - The new optimal control sequence.
      */
-    std::vector<MatrixXd> Optimise(int initial_data_index, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length) override;
+    std::vector<MatrixXd> Optimise(mjData *d, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length) override;
+
+    void PrintBanner(double time_rollout);
+
+    void PrintBannerIteration(int iteration, double new_cost, double old_cost, double eps,
+                              double lambda, double percent_derivatives, double time_derivs, double time_bp,
+                              double time_fp, int num_linesearches);
+
+
+    // Whether to save trajectory information to file
+    bool save_trajec_information = false;
+
+    double avg_surprise = 0.0f;
+    double avg_expected = 0.0f;
+    double new_cost = 0.0f;
+
+
+private:
+    // Lambda value which is added to the diagonal of the Q_uu matrix for regularisation purposes.
+    double lambda = 0.1;
+    double max_lambda = 10.0;
+    double min_lambda = 0.0001;
+    double lambda_factor = 10;
+
+    // Last number of linesearches performed for print banner
+    int last_iter_num_linesearches = 0;
+    double last_alpha = 0.0f;
+
+    // Max horizon of optimisation.
+    int maxHorizon = 0;
+
+    // Feedback gains matrices
+    // open loop feedback gains
+    vector<MatrixXd> k;
+    // State dependant feedback matrices
+    vector<MatrixXd> K;
+
+    int sampling_k_interval = 1;
+
+    double eps_acceptable_diff = 0.02;
+//    double threshold_k_eignenvectors = 1.0;
+    double threshold_k_eignenvectors = 0.0;
+
+    double delta_J = 0.0f;
+
+    double expected = 0.0f;
+    double surprise = 0.0f;
+    std::vector<double> surprises;
+    std::vector<double> expecteds;
 
     /**
      * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
@@ -108,24 +156,21 @@ public:
      */
     double ForwardsPassParallel(double old_cost);
 
-    // Whether to save trajectory information to file
-    bool save_trajec_information = false;
+    std::vector<int> checkKMatrices();
 
-private:
-    // Lambda value which is added to the diagonal of the Q_uu matrix for regularisation purposes.
-    double lambda = 0.1;
-    double max_lambda = 10.0;
-    double min_lambda = 0.01;
-    double lambda_factor = 10;
-
-    // Max horizon of optimisation.
-    int maxHorizon = 0;
-
-    // Feedback gains matrices
-    // open loop feedback gains
-    vector<MatrixXd> k;
-    // State dependant feedback matrices
-    vector<MatrixXd> K;
+    /**
+     * Perform a rollout with the previously computed k and K matrices but nullify feedback rows for the specified
+     * dof indices. The cumulated cost is compared against the cost from the rollout using all the elements in the
+     * K matrices. If the cost is similar we can reduce our state vector.
+     *
+     * @param dof_indices - Dof indices to nullify the K matrices for.
+     * @param old_cost - Cost of the previous trajectory.
+     * @param new_cost - Cost of the new trajectory, when all elements in the K matrices were used.
+     * @param alpha - The alpha value used for the rollout.
+     *
+     * @return bool - true if the cost was similar, false otherwise.
+     */
+    bool RolloutWithKMatricesReduction(std::vector<int> dof_indices, double old_cost, double new_cost, double alpha);
 
     // Visualiser object
     std::shared_ptr<Visualiser> active_visualiser;

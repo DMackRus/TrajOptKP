@@ -1,9 +1,9 @@
 
 #include "Optimiser.h"
 
-Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<PhysicsSimulator> _physicsSimulator, std::shared_ptr<FileHandler> _yamlReader, std::shared_ptr<Differentiator> _differentiator){
+Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _MuJoCo_helper, std::shared_ptr<FileHandler> _yamlReader, std::shared_ptr<Differentiator> _differentiator){
     activeModelTranslator = _modelTranslator;
-    activePhysicsSimulator = _physicsSimulator;
+    MuJoCo_helper = _MuJoCo_helper;
     activeYamlReader = _yamlReader;
     activeDifferentiator = _differentiator;
 
@@ -12,6 +12,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
 
     // Set up the derivative interpolator from YAML settings
     activeKeyPointMethod.name = activeModelTranslator->keypoint_method;
+    activeKeyPointMethod.auto_adjust = activeModelTranslator->auto_adjust;
     activeKeyPointMethod.min_N = activeModelTranslator->min_N;
     activeKeyPointMethod.max_N = activeModelTranslator->max_N;
     activeKeyPointMethod.jerk_thresholds = activeModelTranslator->jerk_thresholds;
@@ -20,9 +21,13 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
     activeKeyPointMethod.iterative_error_threshold = activeModelTranslator->iterative_error_threshold;
     activeKeyPointMethod.velocity_change_thresholds = activeModelTranslator->velocity_change_thresholds;
 
-    keypoint_generator = std::make_shared<KeyPointGenerator>(activeDifferentiator, activePhysicsSimulator);
+    keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
+                                                             MuJoCo_helper,
+                                                             activeModelTranslator->dof,
+                                                             horizonLength);
 
-
+    keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
+    keypoint_generator->PrintKeypointMethod();
 }
 
 bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
@@ -32,6 +37,31 @@ bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
         return true;
     }
     return false;
+}
+
+void Optimiser::ResizeStateVector(int new_num_dofs){
+
+    dof = new_num_dofs;
+    int state_vector_size = new_num_dofs * 2;
+
+    for(int t = 0; t < horizonLength; t++){
+
+        // State vectors
+        X_new[t].resize(state_vector_size, 1);
+        X_old[t].resize(state_vector_size, 1);
+
+        // Cost derivatives
+        l_x[t].resize(state_vector_size, 1);
+        l_xx[t].resize(state_vector_size, state_vector_size);
+
+        // Dynamics derivatives
+        A[t].resize(state_vector_size, state_vector_size);
+        A[t].block(0, 0, dof, dof).setIdentity();
+        A[t].block(0, dof, dof, dof).setIdentity();
+        A[t].block(0, dof, dof, dof) *= MuJoCo_helper->returnModelTimeStep();
+        B[t].resize(state_vector_size, num_ctrl);
+
+    }
 }
 
 void Optimiser::SetTrajecNumber(int trajec_number) {
@@ -48,42 +78,47 @@ void Optimiser::ReturnOptimisationData(double &_optTime, double &_costReduction,
 }
 
 keypoint_method Optimiser::ReturnCurrentKeypointMethod(){
-    return activeKeyPointMethod;
+    return keypoint_generator->ReturnCurrentKeypointMethod();
 }
 
 void Optimiser::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
-    activeKeyPointMethod = _keypoint_method;
+    keypoint_generator->SetKeypointMethod(_keypoint_method);
 }
 
 void Optimiser::GenerateDerivatives(){
     // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
     // generate the dynamics evaluation waypoints
-//    std::cout << "before gen keypoints \n";
-    std::vector<std::vector<int>> keyPoints = keypoint_generator->GenerateKeyPoints(horizonLength, X_old, U_old, activeKeyPointMethod, A, B);
+    auto start_keypoint_time = high_resolution_clock::now();
+    keypoint_generator->GenerateKeyPoints(X_old, A, B);
+
+    keypoint_generator->ResetCache();
+//    std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
 
     // Calculate derivatives via finite differencing / analytically for cost functions if available
     if(activeKeyPointMethod.name != "iterative_error"){
         auto start_fd_time = high_resolution_clock::now();
-        ComputeDerivativesAtSpecifiedIndices(keyPoints);
+        ComputeDerivativesAtSpecifiedIndices(keypoint_generator->keypoints);
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
+
+//        std::cout << "fd time: " << duration_fd_time.count() / 1000.0f << " ms\n";
     }
     else{
         ComputeCostDerivatives();
     }
 
-    InterpolateDerivatives(keyPoints, activeYamlReader->costDerivsFD);
+    auto start_interp_time = high_resolution_clock::now();
+    InterpolateDerivatives(keypoint_generator->keypoints, activeYamlReader->costDerivsFD);
+//    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
-    int totalNumColumnsDerivs = 0;
-    for(int i = 0; i < keyPoints.size(); i++){
-        totalNumColumnsDerivs += keyPoints[i].size();
-    }
 
-    double percentDerivsCalculated = ((double) totalNumColumnsDerivs / (double)numberOfTotalDerivs) * 100.0f;
-    percentage_derivs_per_iteration.push_back(percentDerivsCalculated);
-    if(verbose_output){
-        cout << "percentage of derivs calculated: " << percentDerivsCalculated << endl;
+    double average_percent_derivs = 0.0f;
+    for(int i = 0; i < dof; i++){
+        average_percent_derivs += keypoint_generator->last_percentages[i];
     }
+    average_percent_derivs /= dof;
+
+    percentage_derivs_per_iteration.push_back(average_percent_derivs);
 
     if(filteringMethod != "none"){
         FilterDynamicsMatrices();
@@ -93,16 +128,16 @@ void Optimiser::GenerateDerivatives(){
 void Optimiser::ComputeCostDerivatives(){
     #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
-        activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+        activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
     }
 
-    activeModelTranslator->CostDerivatives(horizonLength - 1,
+    activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[horizonLength - 1],
                                            l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
 }
 
 void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
 
-    activePhysicsSimulator->initModelForFiniteDifferencing();
+    MuJoCo_helper->initModelForFiniteDifferencing();
 
     std::vector<int> timeIndices;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -132,7 +167,7 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     }
 
     // Get the number of threads available
-    const int num_threads = std::thread::hardware_concurrency();  // Get the number of available CPU cores
+    const int num_threads = std::thread::hardware_concurrency() - 1;  // Get the number of available CPU cores
     std::vector<std::thread> thread_pool;
     for (int i = 0; i < num_threads; ++i) {
         thread_pool.push_back(std::thread(&Optimiser::WorkerComputeDerivatives, this, i));
@@ -141,23 +176,34 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     for (std::thread& thread : thread_pool) {
         thread.join();
     }
+
+    // compute derivs serially
+//    for(int i = 0; i < horizonLength; i++){
+//        if(keyPoints[i].size() != 0){
+//            activeDifferentiator->getDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false, i, false, 0);
+//        }
+//    }
       
-    activePhysicsSimulator->resetModelAfterFiniteDifferencing();
+    MuJoCo_helper->resetModelAfterFiniteDifferencing();
 
     auto time_cost_start = std::chrono::high_resolution_clock::now();
 
     if(!activeYamlReader->costDerivsFD){
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
-                activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[i],
+                                                       l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
             else{
-                activeModelTranslator->CostDerivatives(i, l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+                activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[i],
+                                                       l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
         }
-        activeModelTranslator->CostDerivatives(horizonLength - 1,
+        activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[horizonLength - 1],
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
     }
+
+//    std::cout << "time cost derivs: " << duration_cast<microseconds>(high_resolution_clock::now() - time_cost_start).count() / 1000.0f << " ms\n";
 }
 
 void Optimiser::WorkerComputeDerivatives(int threadId) {
@@ -180,7 +226,7 @@ void Optimiser::WorkerComputeDerivatives(int threadId) {
     }
 }
 
-void Optimiser::InterpolateDerivatives(std::vector<std::vector<int>> keyPoints, bool costDerivs){
+void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, bool costDerivs){
     MatrixXd startB;
     MatrixXd endB;
     MatrixXd addB;
@@ -207,7 +253,7 @@ void Optimiser::InterpolateDerivatives(std::vector<std::vector<int>> keyPoints, 
 
     // Loop through all the time indices - can skip the first
     // index as we preload the first index as the start index for all dofs.
-    for(int t = 1; t < horizonLength; t++){
+    for(int t = 1; t < horizonLength - 1; t++){
         // Loop through all the dofs
         for(int i = 0; i < dof; i++){
             // Check the current vector at that time segment for the current dof

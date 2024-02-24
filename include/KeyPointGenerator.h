@@ -29,9 +29,11 @@
 
 #include "StdInclude.h"
 #include "Differentiator.h"
+#include <algorithm>
 
 struct keypoint_method{
     std::string name;
+    bool auto_adjust;
     int min_N;
     int max_N;
     std::vector<double> jerk_thresholds;
@@ -45,22 +47,33 @@ struct index_tuple{
     int end_index;
 };
 
-class KeyPointGenerator{
+class KeypointGenerator{
 public:
     /**
      * Construct a new KeyPoint Generator object.
      *
      */
-    KeyPointGenerator(std::shared_ptr<Differentiator> _differentiator, std::shared_ptr<PhysicsSimulator> _physics_simulator);
+    KeypointGenerator(std::shared_ptr<Differentiator> _differentiator,
+                      std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
+                      int _dof, int _horizon);
+
+    /**
+     * Returns the current active keypoint method
+     *
+     * @return keypoint_method
+     */
+    keypoint_method ReturnCurrentKeypointMethod();
+
+    void ResizeStateVector(int new_num_dofs, int _horizon);
+
+    void SetKeypointMethod(keypoint_method method);
+
 
     /**
      * Generates a set of key-points per degree of freedom over a trajectory depending on the
      * key-point method specified. Usually takes into account the trajectory_states of the system.
      *
-     * @param  horizon The length of the trajectory.
      * @param  trajectory_states A sequence of states of the system over a trajectory.
-     * @param  trajectory_controls A sequence of controls of the system over a trajectory.
-     * @param  keypoint_method The method and parameters used to generate key-points.
      * @param  A A vector of matrices containing the dynamics gradients per time-step with respect
      *           to the state vector. Passed by reference so they can be updated by the "Iterative Error" method.
      * @param  B A vector of matrices containing the dynamics gradients per time-step with respect
@@ -69,8 +82,27 @@ public:
      * @return std::vector<std::vector<int>> A set of key-points (integer indices over the trajectory) per
      * degree of freedom.
      */
-    std::vector<std::vector<int>> GenerateKeyPoints(int horizon, std::vector<MatrixXd> trajectory_states, std::vector<MatrixXd> trajec_controls,
-                                                    keypoint_method keypoint_method, std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
+    void GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
+                           std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
+
+    void AdjustKeyPointMethod(double expected, double actual,
+                              std::vector<MatrixXd> &trajectory_states,
+                              std::vector<double> &dof_importances);
+
+    std::vector<double> DesiredPercentageDerivs(double expected, double actual,
+                                                std::vector<double> &dof_importances);
+
+    void PrintKeypointMethod();
+
+    void ResetCache();
+
+    double surprise_lower = 0.2;
+
+    int dof;
+    int horizon;
+
+    std::vector<std::vector<int>> keypoints;
+    std::vector<double> last_percentages;
 
 private:
 
@@ -78,12 +110,10 @@ private:
      * Loops through a trajectory of states and computes a jerk profile for each degree of freedom. Jerk
      * is the time-derivative of acceleration.
      *
-     * @param  horizon The length of the trajectory.
      * @param  trajectory_states A sequence of states of the system over a trajectory.
      *
-     * @return std::vector<std::vector<MatrixXd>> A Jerk profile for each degree of freedom.
      */
-    std::vector<MatrixXd> GenerateJerkProfile(int horizon, std::vector<MatrixXd> trajectory_states);
+    void GenerateJerkProfile(const std::vector<MatrixXd> &trajectory_states);
 
     /**
      * Loops through a trajectory of states and computes an acceleration profile for each degree of freedom.
@@ -99,12 +129,12 @@ private:
      * Loops through a trajectory of states and computes a velocity profile for each degree of freedom. Velocity
      * is already present in the state vector, this function effectively just returns that half of the state vector.
      *
-     * @param  horizon The length of the trajectory.
      * @param  trajectory_states A sequence of states of the system over a trajectory.
      *
-     * @return std::vector<std::vector<MatrixXd>> A velocity profile for each degree of freedom.
      */
-    std::vector<MatrixXd> GenerateVelocityProfile(int horizon, std::vector<MatrixXd> trajectory_states);
+    void GenerateVelocityProfile(const std::vector<MatrixXd> &trajectory_states);
+
+    void GenerateKeyPointsSetInterval();
 
     /**
      * Computes keypoints over a trajectory per degree of freedom. THis method begins with a coarse approximations
@@ -116,7 +146,6 @@ private:
      *
      * @param  horizon The length of the trajectory.
      * @param  trajectory_states A sequence of states of the system over a trajectory.
-     * @param  keypoint_method Contains the hyper parameters for the iterative error method.
      * @param  A A vector of matrices containing the dynamics gradients per time-step with respect to the state vector.
      *           This values is passed by reference as this method actually performs some F.D computations and we
      *           might as well store them.
@@ -126,7 +155,7 @@ private:
      *
      * @return std::vector<std::vector<MatrixXd>> A set of key-points (integer indices over the trajectory) per degree of freedom.
      */
-    std::vector<std::vector<int>> GenerateKeyPointsIteratively(int horizon, keypoint_method keypoint_method, std::vector<MatrixXd> trajectory_states,
+    std::vector<std::vector<int>> GenerateKeyPointsIteratively(int horizon, std::vector<MatrixXd> trajectory_states,
                                                                std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
 
     /**
@@ -136,7 +165,6 @@ private:
      *
      * @param indices Start and end index of the current linear approximation.
      * @param dof_index The current degree of freedom of index that we are computing the error for.
-     * @param keypoint_method Contains the hyper parameters for the key-point method.
      * @param num_dofs The number of dofs in the system, important so we update the correct column of the dynamics gradient matrix.
      * @param A A vector of all the dynamics gradients matrix with respect to the state vector. Since this method has to compute
      *         some F.D values, we cache them for later so we dont need to re-compute them.
@@ -145,7 +173,7 @@ private:
      *
      * @return true if error < "Iterative_Error_Threshold", false otherwise.
      */
-    bool CheckDOFColumnError(index_tuple indices, int dof_index, keypoint_method keypoint_method, int num_dofs,
+    bool CheckDOFColumnError(index_tuple indices, int dof_index, int num_dofs,
                              std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
 
     /**
@@ -154,33 +182,60 @@ private:
      * exceeds some threshold, as defined by keypoint_method. This method is not iterative, it is a one pass method.
      * Keypoints cannot be located closer than "min_N" steps apart, and must be located at msot "max_N" steps apart.
      *
-     * @param horizon The horizon of the trajectory.
      * @param trajec_profile The dynamics quality we are currently assessing, either acceleration or jerk., for each degree of freedom.
-     * @param keypoint_method  Stores the hyper parameters for this method.
-     *
-     * @return std::vector<std::vector<int>> A set of key-points (integer indices over the trajectory) per degree of freedom.
      */
-    std::vector<std::vector<int>> GenerateKeyPointsAdaptive(int horizon, std::vector<MatrixXd> trajec_profile, keypoint_method keypoint_method);
+    void GenerateKeyPointsAdaptive(const std::vector<MatrixXd> &trajec_profile);
 
     /**
      * This method of generating keypoints considers the velocity profile for each degree of freedom. When the velocity has changed substantially
      * since the last keypoint, we assign a new keypoint. We also assign keypoints when we detect the velocity changes direction (turning points).
      * Keypoints cannot be located closer than "min_N" steps apart, and must be located at msot "max_N" steps apart.
      *
-     * @param horizon The horizon of the trajectory.
      * @param velocity_profile A velocity profile (per degree of freedom) over the trajectory.
-     * @param keypoint_method  Stores the hyper parameters for this method.
-     *
-     * @return std::vector<std::vector<int>> A set of key-points (integer indices over the trajectory) per degree of freedom.
      */
-    std::vector<std::vector<int>> GenerateKeyPointsVelocityChange(int horizon, std::vector<MatrixXd> velocity_profile, keypoint_method keypoint_method);
+    void GenerateKeyPointsVelocityChange(const std::vector<MatrixXd> &velocity_profile);
+
+    void UpdateLastPercentageDerivatives(std::vector<std::vector<int>> &keypoints);
+
+    std::vector<double> ComputePercentageDerivatives(std::vector<std::vector<int>> &keypoints);
+
+    void AutoAdjustKeypointParameters(const std::vector<MatrixXd> &trajectory_states,
+                                      const std::vector<int> &desired_percentages, int num_iterations);
+
+    void GenerateKeypointsOrderOfImportance(const std::vector<MatrixXd> &trajectory_states, const std::vector<int> &num_keypoints);
+
+    std::vector<int> ConvertPercentagesToNumKeypoints(const std::vector<double> &percentages);
+
+    std::vector<double> ConvertNumKeypointsToPercentages(const std::vector<int> &num_keypoints);
+
+
 
     // Differentiator object, computes specific columns of the A and B matrices as desired.
     std::shared_ptr<Differentiator> differentiator;
 
     // Physics simulator object, computes the dynamics of the system.
-    std::shared_ptr<PhysicsSimulator> physics_simulator;
+    std::shared_ptr<MuJoCoHelper> physics_simulator;
 
     // Stored keypoints for the iterative error method so we know where we have already computed keypoints. Prevents recomputation.
     std::vector<std::vector<int>> computed_keypoints;
+
+    std::vector<int> last_num_keypoints;
+
+    // Current keypoint method
+    keypoint_method current_keypoint_method;
+
+    bool auto_adjust_initialisation_occured = false;
+
+    std::vector<MatrixXd> jerk_profile;
+    std::vector<MatrixXd> velocity_profile;
+
+    std::vector<double> max_last_jerk;
+    std::vector<double> min_last_jerk;
+
+    std::vector<double> max_last_velocity;
+    std::vector<double> min_last_velocity;
+
+    //Cache system to prevent recomputation
+    bool keypoints_computed = false;
+
 };

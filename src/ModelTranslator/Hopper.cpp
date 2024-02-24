@@ -6,7 +6,7 @@ Hopper::Hopper(): ModelTranslator(){
 
 }
 
-bool Hopper::TaskComplete(int dataIndex, double &dist){
+bool Hopper::TaskComplete(mjData *d, double &dist){
     return false;
 }
 

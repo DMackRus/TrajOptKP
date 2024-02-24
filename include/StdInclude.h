@@ -1,9 +1,4 @@
-//
-// Created by dave on 01/03/23.
-//
-
-#ifndef PHYSICSSIMSWITCHING_STDINCLUDE_H
-#define PHYSICSSIMSWITCHING_STDINCLUDE_H
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -62,6 +57,7 @@ struct task{
     std::string modelName;
     std::string modelFilePath;
     std::string keypointMethod;
+    bool auto_adjust;
     int minN;
     int maxN;
     std::vector<double> jerkThresholds;
@@ -94,6 +90,17 @@ m_quat multQuat(m_quat quat_l, m_quat quat_r);
 
 m_point crossProduct(m_point vec1, m_point vec2);
 
+double GaussNoise(double mean, double stddev);
 
+bool compare(const std::pair<double, int>& a, const std::pair<double, int>& b);
 
-#endif //PHYSICSSIMSWITCHING_STDINCLUDE_H
+std::vector<int> sortIndices(const std::vector<double>& values);
+
+template <typename T>
+inline T* DataAt(std::vector<T>& vec, typename std::vector<T>::size_type elem) {
+    if (elem < vec.size()) {
+        return &vec[elem];
+    } else {
+        return nullptr;
+    }
+}

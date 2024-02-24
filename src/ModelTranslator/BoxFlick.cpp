@@ -44,18 +44,18 @@ MatrixXd BoxFlick::ReturnRandomStartState(){
     std::vector<double> objectYPos;
 
     pose_6 objectCurrentPose;
-    active_physics_simulator->getBodyPose_angle("goal", objectCurrentPose, MASTER_RESET_DATA);
+    MuJoCo_helper->getBodyPose_angle("goal", objectCurrentPose, MuJoCo_helper->master_reset_data);
     objectCurrentPose.position(0) = startX;
     objectCurrentPose.position(1) = startY;
-    active_physics_simulator->setBodyPose_angle("goal", objectCurrentPose, MAIN_DATA_STATE);
-    active_physics_simulator->setBodyPose_angle("goal", objectCurrentPose, MASTER_RESET_DATA);
+    MuJoCo_helper->setBodyPose_angle("goal", objectCurrentPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->setBodyPose_angle("goal", objectCurrentPose, MuJoCo_helper->master_reset_data);
 
-    active_physics_simulator->getBodyPose_angle("mainObstacle", objectCurrentPose, MASTER_RESET_DATA);
+    MuJoCo_helper->getBodyPose_angle("mainObstacle", objectCurrentPose, MuJoCo_helper->master_reset_data);
     objectCurrentPose.position(0) = startX;
     objectCurrentPose.position(1) = startY;
     objectCurrentPose.position(2) = 0.2;
-    active_physics_simulator->setBodyPose_angle("mainObstacle", objectCurrentPose, MAIN_DATA_STATE);
-    active_physics_simulator->setBodyPose_angle("mainObstacle", objectCurrentPose, MASTER_RESET_DATA);
+    MuJoCo_helper->setBodyPose_angle("mainObstacle", objectCurrentPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->setBodyPose_angle("mainObstacle", objectCurrentPose, MuJoCo_helper->master_reset_data);
 
 
     if(clutterLevel == noClutter){
@@ -83,13 +83,13 @@ MatrixXd BoxFlick::ReturnRandomStartState(){
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                active_physics_simulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                MuJoCo_helper->getBodyPose_angle(objectNames[i], objectCurrentPose, MuJoCo_helper->master_reset_data);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
-                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MuJoCo_helper->main_data);
 
-                if(active_physics_simulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                if(MuJoCo_helper->checkBodyForCollisions(objectNames[i], MuJoCo_helper->main_data)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
@@ -128,13 +128,13 @@ MatrixXd BoxFlick::ReturnRandomStartState(){
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                active_physics_simulator->getBodyPose_angle(objectNames[i], objectCurrentPose, MASTER_RESET_DATA);
+                MuJoCo_helper->getBodyPose_angle(objectNames[i], objectCurrentPose, MuJoCo_helper->master_reset_data);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
-                active_physics_simulator->setBodyPose_angle(objectNames[i], newObjectPose, MAIN_DATA_STATE);
+                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MuJoCo_helper->main_data);
 
-                if(active_physics_simulator->checkBodyForCollisions(objectNames[i], MAIN_DATA_STATE)){
+                if(MuJoCo_helper->checkBodyForCollisions(objectNames[i], MuJoCo_helper->main_data)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
@@ -197,10 +197,10 @@ MatrixXd BoxFlick::ReturnRandomGoalState(MatrixXd X0){
     return randomGoalState;
 }
 
-double BoxFlick::CostFunction(int dataIndex, bool terminal){
+double BoxFlick::CostFunction(mjData *d, bool terminal){
     double cost = 0.0f;
-    MatrixXd Xt = ReturnStateVector(dataIndex);
-    MatrixXd Ut = ReturnControlVector(dataIndex);
+    MatrixXd Xt = ReturnStateVector(d);
+    MatrixXd Ut = ReturnControlVector(d);
 
     MatrixXd X_diff = Xt - X_desired;
     MatrixXd temp;
@@ -232,9 +232,9 @@ double BoxFlick::CostFunction(int dataIndex, bool terminal){
     return cost;
 }
 
-void BoxFlick::CostDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-    MatrixXd Xt = ReturnStateVector(dataIndex);
-    MatrixXd Ut = ReturnControlVector(dataIndex);
+void BoxFlick::CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+    MatrixXd Xt = ReturnStateVector(d);
+    MatrixXd Ut = ReturnControlVector(d);
     MatrixXd X_diff = Xt - X_desired;
 
     // Special elemetns for gaussian distance of obstacle1 to goal
@@ -279,8 +279,8 @@ void BoxFlick::CostDerivatives(int dataIndex, MatrixXd &l_x, MatrixXd &l_xx, Mat
 std::vector<MatrixXd> BoxFlick::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
 
-    active_physics_simulator->copySystemState(MAIN_DATA_STATE, MASTER_RESET_DATA);
-    active_physics_simulator->forwardSimulator(MAIN_DATA_STATE);
+    MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->forwardSimulator(MuJoCo_helper->main_data);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -311,8 +311,8 @@ void BoxFlick::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std::v
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
-    active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle(EE_name, EE_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->getBodyPose_angle(goalObject, goalobj_startPose, MuJoCo_helper->main_data);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -352,7 +352,7 @@ void BoxFlick::initControls_mainWayPoints_setup(m_point desiredObjectEnd, std::v
 //    displayBodyPose.position[0] = 100.0f;
     displayBodyPose.position[1] = intermediatePointY;
     displayBodyPose.position[2] = 0.0f;
-    active_physics_simulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+    MuJoCo_helper->setBodyPose_angle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
 
     mainWayPoint(0) = intermediatePointX;
     mainWayPoint(1) = intermediatePointY;
@@ -383,7 +383,7 @@ std::vector<MatrixXd> BoxFlick::CreateInitOptimisationControls(int horizonLength
     displayBodyPose.position[1]  = goalPos(1);
 //    displayBodyPose.position[1] = 100.0f;
     displayBodyPose.position[2] = 0.0f;
-    active_physics_simulator->setBodyPose_angle(goalMarkerName, displayBodyPose, MASTER_RESET_DATA);
+    MuJoCo_helper->setBodyPose_angle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
     initControls_mainWayPoints_optimisation(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
     cout << "mainwaypoint 0: " << mainWayPoints[0] << endl;
     cout << "mainWayPoint " << mainWayPoints[1] << endl;
@@ -404,8 +404,8 @@ void BoxFlick::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd,
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_angle(EE_name, EE_startPose, MAIN_DATA_STATE);
-    active_physics_simulator->getBodyPose_angle(goalObject, goalobj_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_angle(EE_name, EE_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->getBodyPose_angle(goalObject, goalobj_startPose, MuJoCo_helper->main_data);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -444,7 +444,7 @@ void BoxFlick::initControls_mainWayPoints_optimisation(m_point desiredObjectEnd,
     // intermediatePoint(0) = intermediatePointX;
     // intermediatePoint(1) = intermediatePointY;
 
-    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * active_physics_simulator->returnModelTimeStep());
+    float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MuJoCo_helper->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
@@ -500,8 +500,8 @@ std::vector<MatrixXd> BoxFlick::generate_initControls_fromWayPoints(std::vector<
 
     pose_7 EE_start_pose;
     pose_6 goalobj_startPose;
-    active_physics_simulator->getBodyPose_quat(EEName, EE_start_pose, MAIN_DATA_STATE);
-    active_physics_simulator->getBodyPose_angle(goalObjName, goalobj_startPose, MAIN_DATA_STATE);
+    MuJoCo_helper->getBodyPose_quat(EEName, EE_start_pose, MuJoCo_helper->main_data);
+    MuJoCo_helper->getBodyPose_angle(goalObjName, goalobj_startPose, MuJoCo_helper->main_data);
 
     float angle_EE_push;
     float x_diff = 0.2;
@@ -532,8 +532,8 @@ std::vector<MatrixXd> BoxFlick::generate_initControls_fromWayPoints(std::vector<
     m_quat desiredQuat = rotMat2Quat(rotMat);
 
     MatrixXd currentControl(num_ctrl, 1);
-    if(state_vector.robots[0].torqueControlled){
-        MatrixXd robotPos = returnPositionVector(MAIN_DATA_STATE);
+    if(active_state_vector.robots[0].torqueControlled){
+        MatrixXd robotPos = returnPositionVector(MuJoCo_helper->main_data);
         for(int i = 0; i < num_ctrl; i++){
             currentControl(i) = robotPos(i);
         }
@@ -541,7 +541,7 @@ std::vector<MatrixXd> BoxFlick::generate_initControls_fromWayPoints(std::vector<
 
     for(int i = 0; i < initPath.size(); i++){
         pose_7 currentEEPose;
-        active_physics_simulator->getBodyPose_quat(EEName, currentEEPose, MAIN_DATA_STATE);
+        MuJoCo_helper->getBodyPose_quat(EEName, currentEEPose, MuJoCo_helper->main_data);
         m_quat currentEEQuat, invertedQuat, quatDiff;
         currentEEQuat(0) = currentEEPose.quat(0);
         currentEEQuat(1) = currentEEPose.quat(1);
@@ -563,13 +563,13 @@ std::vector<MatrixXd> BoxFlick::generate_initControls_fromWayPoints(std::vector<
 
         MatrixXd Jac, JacInv;
 
-        Jac = active_physics_simulator->calculateJacobian(EEName, MAIN_DATA_STATE);
+        Jac = MuJoCo_helper->calculateJacobian(EEName, MuJoCo_helper->main_data);
         JacInv = Jac.completeOrthogonalDecomposition().pseudoInverse();
 
         MatrixXd desiredEEForce(6, 1);
         MatrixXd desiredControls(num_ctrl, 1);
 
-        if(state_vector.robots[0].torqueControlled){
+        if(active_state_vector.robots[0].torqueControlled){
             for(int j = 0; j < 6; j++) {
                 desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
             }
@@ -577,7 +577,7 @@ std::vector<MatrixXd> BoxFlick::generate_initControls_fromWayPoints(std::vector<
 
             std::vector<double> gravCompensation;
             MatrixXd gravCompControl(num_ctrl, 1);
-            active_physics_simulator->getRobotJointsGravityCompensaionControls(state_vector.robots[0].name, gravCompensation, MAIN_DATA_STATE);
+            MuJoCo_helper->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
             for(int j = 0; j < num_ctrl; j++){
                 gravCompControl(j) = gravCompensation[j];
             }
@@ -595,18 +595,18 @@ std::vector<MatrixXd> BoxFlick::generate_initControls_fromWayPoints(std::vector<
 
         initControls.push_back(desiredControls);
 
-        SetControlVector(desiredControls, MAIN_DATA_STATE);
-        active_physics_simulator->stepSimulator(1, MAIN_DATA_STATE);
+        SetControlVector(desiredControls, MuJoCo_helper->main_data);
+        MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
 
     }
 
     return initControls;
 }
 
-bool BoxFlick::TaskComplete(int dataIndex, double &dist){
+bool BoxFlick::TaskComplete(mjData *d, double &dist){
     bool taskComplete = false;
 
-    MatrixXd currentState = ReturnStateVector(dataIndex);
+    MatrixXd currentState = ReturnStateVector(d);
 
     float x_diff = currentState(9) - currentState(7);
     float y_diff = currentState(10) - currentState(8);

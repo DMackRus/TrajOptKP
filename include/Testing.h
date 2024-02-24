@@ -8,6 +8,9 @@
 #include "iLQR.h"
 #include <thread>
 #include <mutex>
+#include <filesystem>
+
+#define APPLY_NOISE 1
 
 class Testing{
 
@@ -31,33 +34,47 @@ public:
     int testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size);
 
     /**
+     * Tests different parametrisations of velocity change methods (different minN, maxN
+     * and velocity change thresholds. for asynchronous MPC.
+     *
+     * @return 1 if successful, 0 if not
+     */
+    int testing_different_velocity_change_asynchronus_mpc();
+
+    /**
      * This function tests a particular keypoint method for a static number
      * of trials for the same tasks. The task is set in the config file.
      *
      * @Param keypoint_method: The keypoint method to be tested
+     * @Param num_trials: The number of trials to be run
      *
      * @Return: 1 if successful, 0 if not
      */
-    int testing_asynchronus_mpc(keypoint_method keypoint_method);
+    int testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials);
 
     /**
      * This function performs an asynchronus MPC optimisation for a set number of time-steps
      * with the simulation running in one thread and calles'asycnhronus_optimiser_worker' for
      * the optimisation in another thread.
      *
-     * @Param keypoint_method: The keypoint method to be tested
+     * @Param visualise: Whether to visualise the results
+     * @Param method_directory: The directory to save the results
+     * @Param task_number: The task number to be performed
      *
      * @Return: 1 if successful, 0 if not
      */
-    int single_asynchronus_run(bool visualise);
+    int single_asynchronus_run(bool visualise, std::string method_directory, int task_number);
 
     /**
      * This function performs an asynchronus MPC optimisation with another thread doing simulation
      * and visualisation. This thread will keep performing MPC optimisation until the main thread
      * terminates after task timeout.
      *
+     * @Param method_directory: The directory to save the results
+     * @Param task_number: The task number to be performed
+     *
      */
-    void asynchronus_optimiser_worker();
+    void asynchronus_optimiser_worker(std::string method_directory, int task_number);
 
 
     std::shared_ptr<iLQR> iLQROptimiser;
@@ -77,5 +94,6 @@ private:
     double average_time_derivs_ms = 0.0f;
     double average_time_fp_ms = 0.0f;
     double average_time_bp_ms = 0.0f;
+    double average_surprise = 0.0f;
 
 };
