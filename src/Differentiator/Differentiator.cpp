@@ -148,7 +148,8 @@ void Differentiator::calc_dqveldctrl(MatrixXd &dqveldctrl, const std::vector<int
             // Integrate the simulator
             auto start = std::chrono::high_resolution_clock::now();
 //            MuJoCo_helper->stepSimulator(1, tid);
-            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
             time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 //            cout << "after first step simulator - " << i << endl;
 
@@ -171,7 +172,8 @@ void Differentiator::calc_dqveldctrl(MatrixXd &dqveldctrl, const std::vector<int
             // integrate simulator
             start = std::chrono::high_resolution_clock::now();
 //            MuJoCo_helper->stepSimulator(1, tid);
-            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
             time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 //            cout << "after second step simulator - " << i << endl;
 
@@ -311,7 +313,8 @@ void Differentiator::calc_dqveldqvel(MatrixXd &dqveldqvel, const std::vector<int
 
             // Integrate the simulator
             auto start = std::chrono::high_resolution_clock::now();
-            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, 1);
             time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
             // return the new velocity vector
@@ -332,7 +335,8 @@ void Differentiator::calc_dqveldqvel(MatrixXd &dqveldqvel, const std::vector<int
 
             // Integrate the simulatormodel
             start = std::chrono::high_resolution_clock::now();
-            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, 1);
             time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
             // Return the new velocity vector
@@ -460,7 +464,8 @@ void Differentiator::calc_dqveldqpos(MatrixXd &dqveldqpos, const std::vector<int
 
             // Integrate the simulator
             auto start = std::chrono::high_resolution_clock::now();
-            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
             time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
             time_integrations_here += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 //                cout << "after step simulator positon - " << i << endl;
@@ -483,7 +488,8 @@ void Differentiator::calc_dqveldqpos(MatrixXd &dqveldqpos, const std::vector<int
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
-            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
             time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
             time_integrations_here += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 

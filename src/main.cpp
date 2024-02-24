@@ -250,7 +250,6 @@ int main(int argc, char **argv) {
             std::cout << std::endl;
         }
 
-
         int dof_model_translator = activeModelTranslator->dof;
 
         A_mine.push_back(MatrixXd(dof_model_translator*2, dof_model_translator*2));

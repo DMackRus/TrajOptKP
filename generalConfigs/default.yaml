@@ -2,12 +2,12 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "box_sweep"  # Task to be performed
+task: "pushing_moderate_clutter"  # Task to be performed
 # Current implemented tasks are:
 # "double_pendulum", "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
 # "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
 # "box_push_toppling", "box_flick_no_clutter", "box_flick_low_clutter", "box_flick_moderate_clutter",
-# "walker", "walker_uneven", "hopper", "box_sweep"
+# "walker", "walker_uneven", "hopper", "box_sweep"box_sweep
 
 optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
