@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
         double time = 0.0f;
         start = std::chrono::high_resolution_clock::now();
         for(int i = 0; i < T; i++){
-            activeDifferentiator->getDerivatives(A_mine[0], B_mine[0], cols, l_x, l_xx, l_u, l_uu, false, 0, false, 0);
+            activeDifferentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, l_x, l_xx, l_u, l_uu, false, 0, false, 0, true, 1e-6);
             time += activeDifferentiator->time_mj_forwards;
         }
         std::cout << "time of mj_forwards calls " << (time / 1000.0f) << "ms\n";
