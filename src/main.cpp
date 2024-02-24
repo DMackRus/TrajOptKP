@@ -389,7 +389,7 @@ void onetaskGenerateTestingData(){
             currentInterpolator.max_N = maxN[j];
             activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
 
-            std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(0, initOptimisationControls, 8, 2, optHorizon);
+            std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], initOptimisationControls, 8, 2, optHorizon);
 
 //            yamlReader->save_trajec_information(activeOptimiser->A, activeOptimiser->B, activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->model_name, i, optHorizon);
 
@@ -646,11 +646,10 @@ void optimiseOnceandShow(){
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(optHorizon);
     activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-
-//    activeOptimiser->setupTestingExtras(1000, keyPointMethod, activeOptimiser->min_interval);
+    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(0, initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
 

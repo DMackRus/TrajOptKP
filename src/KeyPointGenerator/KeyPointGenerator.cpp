@@ -197,7 +197,7 @@ std::vector<double> KeypointGenerator::DesiredPercentageDerivs(double expected, 
     std::vector<double> desired_derivative_percentages = std::vector<double>(dof);
 
     double surprise = actual / expected;
-    std:: cout << "actual was: " << actual << " expected was: " << expected << "surprise was: " << surprise << std::endl;
+//    std:: cout << "actual was: " << actual << " expected was: " << expected << "surprise was: " << surprise << std::endl;
 
     // If we has some cost reduction
     if(actual > 0){

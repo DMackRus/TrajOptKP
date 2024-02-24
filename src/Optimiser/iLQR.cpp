@@ -55,6 +55,7 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
 
 double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd> initial_controls){
     double cost = 0.0f;
+//    std::cout << "rollout trajectory" << std::endl;
 
 //    if(d != MuJoCo_helper->main_data){
 //        MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, d);
