@@ -39,6 +39,8 @@ public:
     bool getRobotJointsAccelerations(string robotName, vector<double> &jointsAccelerations, mjData *d);
     bool getRobotJointsControls(string robotName, vector<double> &jointsControls, mjData *d);
     bool getRobotJointsGravityCompensaionControls(string robotName, vector<double> &jointsControls, mjData *d);
+    bool getRobotControlLimits(string robotName, vector<double> &controlLimits);
+    bool getRobotJointLimits(string robotName, vector<double> &jointLimits, mjData *d);
 
     // Utility functions -- bodies
     bool isValidBodyName(string bodyName, int &bodyIndex);

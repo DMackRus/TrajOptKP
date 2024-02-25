@@ -11,17 +11,18 @@ Differentiator::Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator
 
 void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
                                         MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
-                                        int dataIndex, int threadId, bool terminal, bool costDerivs,
+                                        int data_index, int thread_id, bool terminal, bool cost_derivs,
                                         bool central_diff, double eps){
 
     // Reset some debugging timing variables
     time_mj_forwards = 0.0f;
     count_integrations = 0;
+    auto start = std::chrono::high_resolution_clock::now();
 
     auto diff_start = std::chrono::high_resolution_clock::now();
 
     // Get the thread Id
-    int tid = threadId;
+    int tid = thread_id;
 
     // Memory allocation for next states, whether perturbed or not
     MatrixXd next_state(dim_state, 1);
@@ -33,6 +34,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     MatrixXd unperturbed_positions(dof, 1);
     MatrixXd unperturbed_velocities(dof, 1);
 
+    // Memory allocation for perturbed state and controls
     MatrixXd perturbed_controls(num_ctrl, 1);
     MatrixXd perturbed_positions(dof, 1);
     MatrixXd perturbed_velocities(dof, 1);
@@ -45,15 +47,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 //    MatrixXd dqveldqpos(dim_state, dof);
 //    MatrixXd dqveldqvel(dim_state, dof);
 
-//    MatrixXd dqaccdqpos(dof, dof);
-//    MatrixXd dqaccdqvel(dof, dof);
-
     // ------------ dof x ctrl --------------
     MatrixXd dstatedctrl(dim_state, num_ctrl);
 //    MatrixXd dqveldctrl(dof, num_ctrl);
-
-//    MatrixXd dqaccdctrl(dof, num_ctrl);
-
 
     // How the cost changes
     MatrixXd dcostdctrl(num_ctrl, 1);
@@ -64,7 +60,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     double costDec = 0.0f;
 
     // Copy data we wish to finite-difference into finite differencing data (for multi threading)
-    MuJoCo_helper->cpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
+    MuJoCo_helper->cpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
 
     // TODO (DMackRus) We could in theory use the information from the rollout here instead, except for t = T - 1
     // Compute next state with no perturbations
@@ -72,11 +68,14 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     next_state = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
     // Reset the simulator to the initial state
-    MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
+    MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+
+    unperturbed_controls = activeModelTranslator->ReturnControlVector(MuJoCo_helper->fd_data[tid]);
+    unperturbed_positions = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
+    unperturbed_velocities = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
 
     // --------------------------------------------- FD for controls ---------------------------------------------
-    unperturbed_controls = activeModelTranslator->ReturnControlVector(MuJoCo_helper->fd_data[tid]);
-
+    MatrixXd control_limits = activeModelTranslator->ReturnControlLimits();
     for(int i = 0; i < num_ctrl; i++){
         bool compute_column = false;
         for(int j = 0; j < cols.size(); j++){
@@ -90,67 +89,109 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             continue;
         }
 
-        // count how many calls to step_skip we make
-        count_integrations++;
-
         // perturb control vector positively
         perturbed_controls = unperturbed_controls.replicate(1,1);
         perturbed_controls(i) += eps;
 
-        activeModelTranslator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid]);
-
-        // Integrate the simulator
-        auto start = std::chrono::high_resolution_clock::now();
-        mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
-        time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-
-        // return the new state vector
-        next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
-
-        // If computing cost derivatives
-        if(costDerivs){
-            costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+        // Check if the perturbed control is within the control limits
+        int nudge_forward = 1;
+        if(perturbed_controls(i) > control_limits(2*i + 1)){
+            nudge_forward = 0;
         }
 
-        // Undo the perturbation
-        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
+        if(nudge_forward){
+            // count how many calls to step_skip we make
+            count_integrations++;
+
+            // Set perturbed control vector
+            activeModelTranslator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid]);
+
+            // Integrate the simulator
+            start = std::chrono::high_resolution_clock::now();
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+
+            // return the new state vector
+            next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
+
+            // If computing cost derivatives
+            if(cost_derivs){
+                costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+            }
+
+            // Undo the perturbation
+            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+        }
+
+        int nudge_back;
 
         // perturb control vector in opposite direction
         perturbed_controls = unperturbed_controls.replicate(1, 1);
         perturbed_controls(i) -= eps;
 
-        activeModelTranslator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid]);
-
-        // integrate simulator
-        start = std::chrono::high_resolution_clock::now();
-        mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
-        time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-
-        // return the new state vector
-        next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
-
-        // If calculating cost derivatives via finite-differencing
-        if(costDerivs){
-            costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+        // If we use central difference or we didnt nudge forward, due to control limits
+        if(central_diff || !nudge_forward){
+            nudge_back = 1;
+            if(perturbed_controls(i) < control_limits(2*i)){
+                nudge_back = 0;
+            }
+        } else {
+            nudge_back = 0;
         }
 
-        // Compute one column of the B matrix
-        for(int j = 0; j < dim_state; j++){
-            dstatedctrl(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
+        if(nudge_back){
+            activeModelTranslator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid]);
+
+            // integrate simulator
+            start = std::chrono::high_resolution_clock::now();
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
+            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
+
+            // return the new state vector
+            next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
+
+            // If calculating cost derivatives via finite-differencing
+            if(cost_derivs){
+                costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+            }
+
+            // Undo perturbation
+            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
         }
 
-        if(costDerivs){
-            dcostdctrl(i, 0) = (costInc - costDec)/(2*eps);
-        }
+        // Compute finite differences, depending on what perturbations were made
+        if(nudge_forward && nudge_back){
+            for(int j = 0; j < dim_state; j++){
+                dstatedctrl(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
+            }
 
-        // Undo perturbation
-        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
+            if(cost_derivs){
+                dcostdctrl(i, 0) = (costInc - costDec)/(2*eps);
+            }
+        }
+        else if(nudge_forward){
+            for(int j = 0; j < dim_state; j++){
+                dstatedctrl(j, i) = (next_state_plus(j) - next_state(j))/(eps);
+            }
+
+            // TODO(DMackRus) this is wrong
+            if(cost_derivs){
+                dcostdctrl(i, 0) = (costInc - costDec)/(2*eps);
+            }
+        }
+        else if(nudge_back){
+            for(int j = 0; j < dim_state; j++){
+                dstatedctrl(j, i) = (next_state(j) - next_state_minus(j))/(eps);
+            }
+
+            // TODO(DMackRus) this is wrong
+            if(cost_derivs){
+                dcostdctrl(i, 0) = (costInc - costDec)/(2*eps);
+            }
+        }
     }
 
     // ----------------------------------------------- FD for velocities ---------------------------------------------
-
-    unperturbed_velocities = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
-
     for(int i = 0; i < dof; i++){
         bool compute_column = false;
 
@@ -160,6 +201,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
         }
 
+        // Skip this column if it is not in the list of columns to compute
         if(!compute_column){
             continue;
         }
@@ -171,7 +213,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         activeModelTranslator->setVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid]);
 
         // Integrate the simulator
-        auto start = std::chrono::high_resolution_clock::now();
+        start = std::chrono::high_resolution_clock::now();
         mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, 1);
         time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
@@ -179,12 +221,12 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         // If calculating cost derivs via finite-differencing
-        if(costDerivs){
+        if(cost_derivs){
             costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
         }
 
         // reset the data state back to initial data state
-        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
+        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
 
         // perturb velocity vector negatively
         perturbed_velocities = unperturbed_velocities.replicate(1, 1);
@@ -200,7 +242,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         // If calculating cost derivs via finite-differencing
-        if(costDerivs){
+        if(cost_derivs){
             costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
         }
 
@@ -209,17 +251,15 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             dstatedqvel(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
         }
 
-        if(costDerivs){
+        if(cost_derivs){
             dcostdvel(i, 0) = (costInc - costDec)/(2*eps);
         }
 
         // Undo perturbation
-        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
+        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
     }
 
     // ----------------------------------------------- FD for positions ---------------------------------------------
-    unperturbed_positions = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
-
     for(int i = 0; i < dof; i++){
         bool compute_column = false;
         for(int j = 0; j < cols.size(); j++) {
@@ -228,6 +268,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
         }
 
+        // Skip this column if it is not in the list of columns to compute
         if(!compute_column){
             continue;
         }
@@ -239,19 +280,19 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         activeModelTranslator->setPositionVector(perturbed_positions, MuJoCo_helper->fd_data[tid]);
 
         // Integrate the simulator
-        auto start = std::chrono::high_resolution_clock::now();
+        start = std::chrono::high_resolution_clock::now();
         mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
         time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
         // return the new velocity vector
         next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
-        if(costDerivs){
+        if(cost_derivs){
             costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
         }
 
         // reset the data state back to initial data statedataIndex
-        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
+        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
 
         // perturb position vector negatively
         perturbed_positions = unperturbed_positions.replicate(1, 1);
@@ -266,7 +307,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         // Return the decremented vectors
         next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
-        if(costDerivs){
+        if(cost_derivs){
             costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
         }
 
@@ -275,52 +316,20 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             dstatedqpos(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
         }
 
-        if(costDerivs){
+        if(cost_derivs){
             dcostdpos(i, 0) = (costInc - costDec)/(2*eps);
         }
 
         // Undo perturbation
-        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
+        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
 
     }
-
-
-//    if(USE_DQACC){
-//        auto start = std::chrono::high_resolution_clock::now();
-//        calc_dqaccdctrl(dqaccdqpos, cols, dataIndex, tid, dcostdctrl, costDerivs, terminal);
-////        std::cout << "dqaccdctrl time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
-//
-//        start = std::chrono::high_resolution_clock::now();
-//        calc_dqaccdqvel(dqaccdqvel, cols, dataIndex, tid, dcostdvel, costDerivs, terminal);
-////        std::cout << "dqaccdqvel time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
-//
-//        start = std::chrono::high_resolution_clock::now();
-//        calc_dqaccdqpos(dqaccdqpos, cols, dataIndex, tid, dcostdpos, costDerivs, terminal);
-////        std::cout << "dqaccdq time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
-//    }
-//    else{
-//        auto start = std::chrono::high_resolution_clock::now();
-//        FD_Controls(dqveldctrl, dqposdctrl, cols, dataIndex, tid,
-//                    central_diff, eps, dcostdctrl, costDerivs, terminal);
-////        std::cout << "dqveldctrl time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
-//
-//        start = std::chrono::high_resolution_clock::now();
-//        FD_Velcoities(dqveldqvel, dqposdqvel, cols, dataIndex, tid,
-//                      central_diff, eps, dcostdpos, costDerivs, terminal);
-////        std::cout << "dqveldq time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
-//
-//        start = std::chrono::high_resolution_clock::now();
-//        FD_Positions(dqveldqpos, dqposdqpos, cols, dataIndex, tid,
-//                     central_diff, eps, dcostdvel, costDerivs, terminal);
-////        std::cout << "dqveldqvel time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << std::endl;
-//    }
 
     // ------------ A -----------------
     // dqposdqpos       dqposdqvel
     //
     // dqveldqpos       dqveldqvel
     // --------------------------------
-
     for(int i = 0; i < cols.size(); i++){
 //        if(USE_DQACC){
 //            A.block(dof, cols[i], dof, 1) = dqaccdqpos.block(0, cols[i], dof, 1) * MuJoCo_helper->returnModelTimeStep();
@@ -364,499 +373,6 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 //    std::cout << "num of sim integration: " << count_integrations << "\n";
 //    std::cout << "diff time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - diff_start).count() / 1000.0 << std::endl;
 }
-
-void Differentiator::FD_Controls(MatrixXd &dqveldctrl, MatrixXd &dqposdctrl, const std::vector<int> &cols,
-                                  int dataIndex, int tid, bool central_diff, double eps,
-                                  MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
-
-    MatrixXd velocityInc(dof, 1);
-    MatrixXd velocityDec(dof, 1);
-    MatrixXd positionInc(dof, 1);
-    MatrixXd positionDec(dof, 1);
-
-    double costInc;
-    double costDec;
-
-    MatrixXd unperturbedControls = activeModelTranslator->ReturnControlVector(MuJoCo_helper->fd_data[tid]);
-    for(int i = 0; i < num_ctrl; i++){
-
-        bool computeColumn = false;
-        for(int j = 0; j < cols.size(); j++){
-            if(i == cols[j]){
-                computeColumn = true;
-            }
-        }
-
-        if(computeColumn){
-            count_integrations++;
-            // perturb control vector positively
-            MatrixXd perturbedControls = unperturbedControls.replicate(1,1);
-            perturbedControls(i) += eps;
-            activeModelTranslator->SetControlVector(perturbedControls, MuJoCo_helper->fd_data[tid]);
-
-            // Integrate the simulator
-            auto start = std::chrono::high_resolution_clock::now();
-//            MuJoCo_helper->stepSimulator(1, tid);
-//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
-            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//            cout << "after first step simulator - " << i << endl;
-
-            // return the  new velcoity vector
-            velocityInc = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
-            positionInc = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
-
-            // If calculating cost derivatives
-            if(fd_costDerivs){
-                // Calculate cost
-                costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-            }
-
-            // return data state back to initial data state
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-
-            // perturb control vector in opposite direction
-            perturbedControls = unperturbedControls.replicate(1, 1);
-            perturbedControls(i) -= eps;
-
-            // integrate simulator
-            start = std::chrono::high_resolution_clock::now();
-//            MuJoCo_helper->stepSimulator(1, tid);
-//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
-            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//            cout << "after second step simulator - " << i << endl;
-
-            // return the new velocity vector
-            velocityDec = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
-            positionDec = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
-
-            // If calculating cost derivatives via finite-differencing
-            if(fd_costDerivs){
-                // Calculate cost
-                costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-            }
-
-            // Calculate one column of the dqveldctrl matrix
-            for(int j = 0; j < dof; j++){
-                dqveldctrl(j, i) = (velocityInc(j) - velocityDec(j))/(2*eps);
-                dqposdctrl(j, i) = (positionInc(j) - positionDec(j))/(2*eps);
-
-            }
-
-            if(fd_costDerivs){
-                dcostdctrl(i, 0) = (costInc - costDec)/(2*eps);
-            }
-
-            // Undo perturbation
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-        }
-    }
-}
-
-void Differentiator::FD_Velcoities(MatrixXd &dqveldqvel, MatrixXd &dqposdqvel, const std::vector<int> &cols,
-                                   int dataIndex, int tid, bool central_diff, double eps,
-                                   MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
-
-    // Increment and decrement vectors
-    MatrixXd velocityInc(dof, 1);
-    MatrixXd velocityDec(dof, 1);
-    MatrixXd positionInc(dof, 1);
-    MatrixXd positionDec(dof, 1);
-
-    double costInc;
-    double costDec;
-
-    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
-
-    for(int i = 0; i < dof; i++){
-        bool computeColumn = false;
-
-        for(int j = 0; j < cols.size(); j++){
-            if(i == cols[j]){
-                computeColumn = true;
-            }
-        }
-
-        if(computeColumn){
-            count_integrations++;
-            // Perturb velocity vector positively
-            MatrixXd perturbedVelocities = unperturbedVelocities.replicate(1, 1);
-            perturbedVelocities(i) += eps;
-            activeModelTranslator->setVelocityVector(perturbedVelocities, MuJoCo_helper->fd_data[tid]);
-
-            // Integrate the simulator
-            auto start = std::chrono::high_resolution_clock::now();
-//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, 1);
-            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-
-            // return the new velocity vector
-            velocityInc = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
-            positionInc = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
-
-            // If calculating cost derivs via finite-differencing
-            if(fd_costDerivs){
-                costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-            }
-
-            // reset the data state back to initial data state
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-
-            // perturb velocity vector negatively
-            perturbedVelocities = unperturbedVelocities.replicate(1, 1);
-            perturbedVelocities(i) -= eps;
-            activeModelTranslator->setVelocityVector(perturbedVelocities, MuJoCo_helper->fd_data[tid]);
-
-            // Integrate the simulatormodel
-            start = std::chrono::high_resolution_clock::now();
-//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, 1);
-            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-
-            // Return the new velocity vector
-            velocityDec = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
-            positionDec = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
-
-            // If calculating cost derivs via finite-differencing
-            if(fd_costDerivs){
-                costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-            }
-
-            // Calculate one column of the dqveldqvel matrix
-            for(int j = 0; j < dof; j++){
-                dqveldqvel(j, i) = (velocityInc(j) - velocityDec(j))/(2*eps);
-                dqposdqvel(j, i) = (positionInc(j) - positionDec(j))/(2*eps);
-            }
-
-            if(fd_costDerivs){
-                dcostdvel(i, 0) = (costInc - costDec)/(2*eps);
-            }
-
-            // Undo perturbation
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-        }
-    }
-}
-
-void Differentiator::FD_Positions(MatrixXd &dqveldqpos, MatrixXd &dqposdqpos, const std::vector<int> &cols,
-                                  int dataIndex, int tid, bool central_diff, double eps,
-                                  MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
-
-    // Increment and decrement vectors
-    MatrixXd velocityInc(dof, 1);
-    MatrixXd velocityDec(dof, 1);
-    MatrixXd positionInc(dof, 1);
-    MatrixXd positionDec(dof, 1);
-
-    double costInc;
-    double costDec;
-
-    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
-
-    int num_integrations = 0;
-    double time_integrations_here = 0.0f;
-
-    for(int i = 0; i < dof; i++){
-        bool computeColumn = false;
-        for(int j = 0; j < cols.size(); j++) {
-            if (i == cols[j]) {
-                computeColumn = true;
-            }
-        }
-
-        if(computeColumn){
-            count_integrations++;
-            num_integrations++;
-            // Perturb position vector positively
-            MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
-            perturbedPositions(i) += eps;
-            activeModelTranslator->setPositionVector(perturbedPositions, MuJoCo_helper->fd_data[tid]);
-
-            // Integrate the simulator
-            auto start = std::chrono::high_resolution_clock::now();
-//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
-            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-            time_integrations_here += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//                cout << "after step simulator positon - " << i << endl;
-
-            // return the new velocity vector
-            velocityInc = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
-            positionInc = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
-//                cout << "Velocity positive " << velocityInc << endl;
-
-            if(fd_costDerivs){
-                costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-            }
-
-            // reset the data state back to initial data statedataIndex
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-
-            // perturb position vector negatively
-            perturbedPositions = unperturbedPositions.replicate(1, 1);
-            perturbedPositions(i) -= eps;
-            activeModelTranslator->setPositionVector(perturbedPositions, MuJoCo_helper->fd_data[tid]);
-
-            // Integrate the simulator
-            start = std::chrono::high_resolution_clock::now();
-//            mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
-            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-            time_integrations_here += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-
-            // Return the decremented vectors
-            velocityDec = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
-            positionDec = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
-
-            if(fd_costDerivs){
-                costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-            }
-
-            // Calculate one column of the dqaccdq matrix
-            for(int j = 0; j < dof; j++){
-                dqveldqpos(j, i) = (velocityInc(j) - velocityDec(j))/(2*eps);
-                dqposdqpos(j, i) = (positionInc(j) - positionDec(j))/(2*eps);
-            }
-
-            if(fd_costDerivs){
-                dcostdpos(i, 0) = (costInc - costDec)/(2*eps);
-            }
-
-            // Undo perturbation
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-        }
-    }
-//    std::cout << "num integrations in dqvel/dqpos: " << num_integrations << std::endl;
-//    std::cout << "time integrations in dqvel/dqpos: " << time_integrations_here << std::endl;
-}
-
-//void Differentiator::calc_dqaccdctrl(MatrixXd &dqaccdctrl, const std::vector<int> &cols, int dataIndex, int tid, MatrixXd &dcostdctrl, bool fd_costDerivs, bool terminal){
-//
-//    MatrixXd acellInc(dof, 1);
-//    MatrixXd acellDec(dof, 1);
-//    double costInc;
-//    double costDec;
-//
-//    double temp_time_forwards = 0.0f;
-//    double temp_time_copy = 0.0f;
-//
-//    MatrixXd unperturbedControls = activeModelTranslator->ReturnControlVector(MuJoCo_helper->fd_data[tid]);
-//    MatrixXd perturbedControls = unperturbedControls.replicate(1,1);
-//
-//    for(int i = 0; i < num_ctrl; i++){
-//        bool computeColumn = false;
-//        for(int j = 0; j < cols.size(); j++){
-//            if(i == cols[j]){
-//                computeColumn = true;
-//            }
-//        }
-//
-//        if(computeColumn){
-//            // perturb control vector positively
-//            perturbedControls = unperturbedControls.replicate(1,1);
-//            perturbedControls(i) += epsControls;
-//            activeModelTranslator->SetControlVector(perturbedControls, MuJoCo_helper->fd_data[tid]);
-//
-//            // Integrate the simulator
-//            auto start = std::chrono::high_resolution_clock::now();
-//            mj_forwardSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
-//            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//            temp_time_forwards += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//            acellInc = activeModelTranslator->returnAccelerationVector(MuJoCo_helper->fd_data[tid]);
-//
-//            // If calculating cost derivatives
-//            if(fd_costDerivs){
-//                // Calculate cost
-//                costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-//            }
-//
-//            // return data state back to initial data state
-//            start = std::chrono::high_resolution_clock::now();
-//            MuJoCo_helper->cpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-//            temp_time_copy += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//
-//            // perturb control vector in opposite direction
-//            perturbedControls = unperturbedControls.replicate(1, 1);
-//            perturbedControls(i) -= epsControls;
-//
-//            start = std::chrono::high_resolution_clock::now();
-//            mj_forwardSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
-//            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//            temp_time_forwards += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//
-//            acellDec = activeModelTranslator->returnAccelerationVector(MuJoCo_helper->fd_data[tid]);
-//
-//            // If calculating cost derivatives via finite-differencing
-//            if(fd_costDerivs){
-//                // Calculate cost
-//                costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-//            }
-//
-//            // Calculate one column of the dqveldctrl matrix
-//            for(int j = 0; j < dof; j++){
-//                dqaccdctrl(j, i) = (acellInc(j) - acellDec(j))/(2*epsControls);
-//            }
-//
-//            if(fd_costDerivs){
-//                dcostdctrl(i, 0) = (costInc - costDec)/(2*epsControls);
-//            }
-//
-//            // Undo pertubation
-//            start = std::chrono::high_resolution_clock::now();
-//            MuJoCo_helper->cpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-//            temp_time_copy += std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//        }
-//    }
-////
-////    std::cout << "time forward in calc_dqaccdctrl - " << temp_time_forwards / 1000000.0f << std::endl;
-////    std::cout << "time copy state in calc_dqaccdctrl - " << temp_time_copy / 1000000.0f << std::endl;
-//}
-//
-//void Differentiator::calc_dqaccdqvel(MatrixXd &dqaccdqvel, const std::vector<int> &cols, int dataIndex, int tid, MatrixXd &dcostdvel, bool fd_costDerivs, bool terminal){
-//
-//    MatrixXd acellInc(dof, 1);
-//    MatrixXd acellDec(dof, 1);
-//    double costInc;
-//    double costDec;
-//    MatrixXd unperturbedVelocities = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
-//
-//    for(int i = 0; i < dof; i++){
-//        bool computeColumn = false;
-//
-//        for(int j = 0; j < cols.size(); j++){
-//            if(i == cols[j]){
-//                computeColumn = true;
-//            }
-//        }
-//
-//        if(computeColumn){
-//            // Perturb velocity vector positively
-//            MatrixXd perturbedVelocities = unperturbedVelocities.replicate(1, 1);
-//            perturbedVelocities(i) += epsVelocities;
-//            activeModelTranslator->setVelocityVector(perturbedVelocities, MuJoCo_helper->fd_data[tid]);
-//
-//            //Integrate the simulator
-//            auto start = std::chrono::high_resolution_clock::now();
-//            mj_forwardSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, 1);
-//            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//
-//            acellInc = activeModelTranslator->returnAccelerationVector(MuJoCo_helper->fd_data[tid]);
-//
-//            // If calculating cost derivs via finite-differencing
-//            if(fd_costDerivs){
-//                costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-//            }
-//
-//            // reset the data state back to initial data state
-////            MuJoCo_helper->copySystemState(tid, dataIndex);
-//            MuJoCo_helper->cpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-//
-//            // perturb velocity vector negatively
-//            perturbedVelocities = unperturbedVelocities.replicate(1, 1);
-//            perturbedVelocities(i) -= epsVelocities;
-//            activeModelTranslator->setVelocityVector(perturbedVelocities, MuJoCo_helper->fd_data[tid]);
-//
-//            // Integrate the simulator
-//            start = std::chrono::high_resolution_clock::now();
-////            MuJoCo_helper->forwardSimulatorWithSkip(tid, mjSTAGE_POS, 1);
-//            mj_forwardSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, 1);
-//            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//
-//            acellDec = activeModelTranslator->returnAccelerationVector(MuJoCo_helper->fd_data[tid]);
-//
-//            // If calculating cost derivs via finite-differencing
-//            if(fd_costDerivs){
-//                costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-//            }
-//
-//            // Calculate one column of the dqveldqvel matrix
-//            for(int j = 0; j < dof; j++){
-//                dqaccdqvel(j, i) = (acellInc(j) - acellDec(j))/(2*epsVelocities);
-//            }
-//
-//            if(fd_costDerivs){
-//                dcostdvel(i, 0) = (costInc - costDec)/(2*epsVelocities);
-//            }
-//
-//            // Undo perturbation
-//            MuJoCo_helper->cpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-//        }
-//    }
-//}
-//
-//void Differentiator::calc_dqaccdqpos(MatrixXd &dqaccdqpos, const std::vector<int> &cols,
-//                                     int dataIndex, int tid, MatrixXd &dcostdpos, bool fd_costDerivs, bool terminal){
-//
-//    MatrixXd unperturbedPositions = activeModelTranslator->returnPositionVector(MuJoCo_helper->fd_data[tid]);
-//    MatrixXd accellInc(dof, 1);
-//    MatrixXd accellDec(dof, 1);
-//    double costInc;
-//    double costDec;
-//
-//    for(int i = 0; i < dof; i++){
-//
-//        bool computeColumn = false;
-//
-//        for(int j = 0; j < cols.size(); j++){
-//            if(i == cols[j]){
-//                computeColumn = true;
-//            }
-//        }
-//
-//        if(computeColumn){
-//            // Perturb position vector positively
-//            MatrixXd perturbedPositions = unperturbedPositions.replicate(1, 1);
-//            perturbedPositions(i) += epsPositions;
-//            activeModelTranslator->setPositionVector(perturbedPositions, MuJoCo_helper->fd_data[tid]);
-//
-//            // Integrate the simulator
-//            auto start = std::chrono::high_resolution_clock::now();
-////            MuJoCo_helper->forwardSimulatorWithSkip(tid, mjSTAGE_NONE, 0);
-//            mj_forwardSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
-//            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//
-//            accellInc = activeModelTranslator->returnAccelerationVector(MuJoCo_helper->fd_data[tid]);
-//
-//            if(fd_costDerivs){
-//                costInc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-//            }
-//
-//            //Reset data state
-//            MuJoCo_helper->cpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-//
-//            //Perturb position vector negatively
-//            perturbedPositions = unperturbedPositions.replicate(1, 1);
-//            perturbedPositions(i) -= epsPositions;
-//            activeModelTranslator->setPositionVector(perturbedPositions, MuJoCo_helper->fd_data[tid]);
-//
-//            start = std::chrono::high_resolution_clock::now();
-//            mj_forwardSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
-//            time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
-//
-//            accellDec = activeModelTranslator->returnAccelerationVector(MuJoCo_helper->fd_data[tid]);
-//
-//            if(fd_costDerivs){
-//                costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
-//            }
-//
-//            // Calculate one column of the dqaccdq matrix
-//            for(int j = 0; j < dof; j++){
-//                dqaccdqpos(j, i) = (accellInc(j) - accellDec(j))/(2*epsPositions);
-//            }
-//
-//            if(fd_costDerivs){
-//                dcostdpos(i, 0) = (costInc - costDec)/(2*epsPositions);
-//            }
-//
-//            // Undo perturbation
-//            MuJoCo_helper->cpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[dataIndex]);
-//        }
-//    }
-//}
-
-//#pragma GCC pop_options
-
 
 // finite difference cost derivatives graveyard
 //if(costDerivs) {

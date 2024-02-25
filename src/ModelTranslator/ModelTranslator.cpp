@@ -503,6 +503,24 @@ MatrixXd ModelTranslator::ReturnControlVector(mjData* d){
     return controlVector;
 }
 
+MatrixXd ModelTranslator::ReturnControlLimits(){
+    MatrixXd control_limits(num_ctrl*2, 1);
+    int current_state_index = 0;
+
+    // loop through all the present robots
+    for(int i = 0; i < active_state_vector.robots.size(); i++){
+        vector<double> robot_control_limits;
+        MuJoCo_helper->getRobotControlLimits(active_state_vector.robots[i].name, robot_control_limits);
+        for(int j = 0; j < active_state_vector.robots[i].actuatorNames.size() * 2; j++){
+            control_limits(current_state_index + j, 0) = robot_control_limits[j];
+        }
+
+        current_state_index += active_state_vector.robots[i].actuatorNames.size();
+    }
+
+    return control_limits;
+}
+
 bool ModelTranslator::SetControlVector(MatrixXd control_vector, mjData* d){
     if(control_vector.rows() != num_ctrl){
         cout << "ERROR: control vector size does not match the size of the control vector in the model translator" << endl;

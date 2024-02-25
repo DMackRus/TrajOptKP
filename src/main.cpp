@@ -195,6 +195,12 @@ int main(int argc, char **argv) {
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
 
+        vector<double> controlLims;
+        activeModelTranslator->MuJoCo_helper->getRobotControlLimits("walker", controlLims);
+        for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->nu; i++){
+            cout << "control limits: " << controlLims[2 * i] << " " << controlLims[2*i+1] << endl;
+        }
+
         // Compare my fd code versus mjd_transitionFD;
 
         // Start with mjd_transitionFD
@@ -223,7 +229,7 @@ int main(int argc, char **argv) {
 
         activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
         MatrixXd control_vector = MatrixXd::Zero(dim_action, 1);
-        control_vector << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1;
+        control_vector << -1, -1, -1, -1, -1, -1;
         activeModelTranslator->SetControlVector(control_vector, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0]);
 
         std::cout << "start of mjd_transitionFD \n";

@@ -230,13 +230,13 @@ bool MuJoCoHelper::getRobotJointsGravityCompensaionControls(string robotName, ve
         cout << "Base link of robot not found\n";
         return false;
     }
+
     int startIndex = model->jnt_dofadr[jointId];
 
     if(startIndex == -1){
         cout << "Invalid bodyId for robot\n";
         return false;
     }
-
 
     // TODO (DMackRus) - Check if this is needed?
     mj_forward(model, d);
@@ -246,6 +246,42 @@ bool MuJoCoHelper::getRobotJointsGravityCompensaionControls(string robotName, ve
     }
 
     return true;
+}
+
+bool MuJoCoHelper::getRobotControlLimits(string robotName, vector<double> &controlLimits){
+
+    // Check if the robot exists in the simulation
+    int robotIndex;
+    string robotBaseJointName;
+    if(!isValidRobotName(robotName, robotIndex, robotBaseJointName)){
+        cout << "That robot doesnt exist in the simulation\n";
+        return false;
+    }
+
+    // Get the body id of the base link of the robot
+    int jointId = mj_name2id(model, mjOBJ_JOINT, robotBaseJointName.c_str());
+
+    if(jointId == -1){
+        cout << "Base link of robot not found\n";
+        return false;
+    }
+
+    int startIndex = model->jnt_dofadr[jointId];
+
+    if(startIndex == -1){
+        cout << "Invalid bodyId for robot\n";
+        return false;
+    }
+
+    for(int i = 0; i < 2 * robots[robotIndex].jointNames.size(); i++){
+        controlLimits.push_back(model->actuator_ctrlrange[i]);
+    }
+
+    return true;
+}
+
+bool MuJoCoHelper::getRobotJointLimits(string robotName, vector<double> &jointLimits, mjData *d){
+
 }
 
 // --------------------------------- END OF ROBOT UTILITY ---------------------------------------
@@ -607,8 +643,6 @@ bool MuJoCoHelper::checkBodyForCollisions(string bodyName, mjData *d){
     mj_forward(model, d);
 
     int numContacts = d->ncon;
-    // id to name
-//    std::string name = mj_id2name(model, mjOBJ_BODY, 10);
 
     int bodyId = mj_name2id(model, mjOBJ_BODY, bodyName.c_str());
     bool objectCollisionFound = false;

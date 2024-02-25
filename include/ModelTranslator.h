@@ -190,6 +190,18 @@ public:
     MatrixXd ReturnControlVector(mjData* d);
 
     /**
+     * Returns the control limits
+     *
+     * @return MatrixXd The control limits of actuators present in the state vector.
+     * The return length is twice the active number of controls and is oredered,
+     * low limit, high limit, low limit, high limit, ...
+     *
+     */
+    MatrixXd ReturnControlLimits();
+
+
+
+    /**
      * Sets the current control vector of the system in the specified data index.
      *
      * @param  control_vector The control vector to set.
