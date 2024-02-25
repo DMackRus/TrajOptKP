@@ -48,5 +48,6 @@ private:
     // temp variable
 
     int dof = 0;
+    int dim_state = 0;
     int num_ctrl = 0;
 };

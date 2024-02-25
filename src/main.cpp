@@ -222,6 +222,9 @@ int main(int argc, char **argv) {
         int t = 0;
 
         activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+        MatrixXd control_vector = MatrixXd::Zero(dim_action, 1);
+        control_vector << 0.1, 0.1, 0.1, 0.1, 0.1, 0.1;
+        activeModelTranslator->SetControlVector(control_vector, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0]);
 
         std::cout << "start of mjd_transitionFD \n";
         auto start = std::chrono::high_resolution_clock::now();
@@ -269,7 +272,7 @@ int main(int argc, char **argv) {
         double time = 0.0f;
         start = std::chrono::high_resolution_clock::now();
         for(int i = 0; i < T; i++){
-            activeDifferentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, l_x, l_xx, l_u, l_uu, false, 0, false, 0, true, 1e-6);
+            activeDifferentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, l_x, l_xx, l_u, l_uu, 0, 0, false, false, true, 1e-6);
             time += activeDifferentiator->time_mj_forwards;
         }
         std::cout << "time of mj_forwards calls " << (time / 1000.0f) << "ms\n";
@@ -294,6 +297,20 @@ int main(int argc, char **argv) {
 
         std::cout << "A_diff \n";
         std::cout << A_diff << std::endl;
+
+
+        // Print their B matrix
+        std::cout << "B from mjd_transition \n";
+        for(int i = 0; i < dim_state_derivative; i++){
+            for(int j = 0; j < dim_action; j++){
+                std::cout << setw(6) << B[i * dim_action + j] << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        // Print our B matrix
+        std::cout << "B_mine[0] \n";
+        std::cout << B_mine[0] << std::endl;
 
 
         return EXIT_FAILURE;

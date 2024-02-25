@@ -3,7 +3,7 @@ modelName: "/walker_plane"
 timeStep: 0.005
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 auto_adjust: false
-minN: 1
+minN: 20
 maxN: 20
 iterativeErrorThreshold: 0.1
 
@@ -15,9 +15,9 @@ robots:
     torqueLimits: [1, 1, 1, 1, 1, 1]
     startPos: [0, 0, 0, 1, -1, 0.2, 0, 0, 0]
     goalPos: [0, 0, 0, 0, 0, 0, 0, 0, 0]
-    jointPosCosts: [0.01, 0, 0.01, 0, 0, 0, 0, 0, 0]
-    jointVelCosts: [0, 0.01, 0, 0, 0, 0, 0, 0, 0]
-    terminalJointPosCosts: [ 10, 0, 0, 0, 0, 0, 0, 0, 0 ]
+    jointPosCosts: [1, 0, 0.01, 0, 0, 0, 0, 0, 0]
+    jointVelCosts: [0, 0.001, 0, 0, 0, 0, 0, 0, 0]
+    terminalJointPosCosts: [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
     terminalJointVelCosts: [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
 #    jointControlCosts: [0.0001, 0.00001, 0.0001, 0.0001, 0.0001, 0.0001]
     jointControlCosts: [0, 0, 0, 0, 0, 0]
