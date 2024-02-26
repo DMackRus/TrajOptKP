@@ -260,6 +260,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     }
 
     // ----------------------------------------------- FD for positions ---------------------------------------------
+    mjtNum *dpos  = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv);
     for(int i = 0; i < dof; i++){
         bool compute_column = false;
         for(int j = 0; j < cols.size(); j++) {
@@ -273,11 +274,20 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             continue;
         }
 
+        // Compute the index of the position vector in MuJoCo that corresponds to the index of the state vector
+        int dpos_index = activeModelTranslator->StateIndexToQposIndex(i);
+
         count_integrations++;
         // Perturb position vector positively
-        perturbed_positions = unperturbed_positions.replicate(1, 1);
-        perturbed_positions(i) += eps;
-        activeModelTranslator->setPositionVector(perturbed_positions, MuJoCo_helper->fd_data[tid]);
+
+
+        mju_zero(dpos, MuJoCo_helper->model->nv);
+        dpos[dpos_index] = 1;
+        mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, eps);
+
+//        perturbed_positions = unperturbed_positions.replicate(1, 1);
+//        perturbed_positions(i) += eps;
+//        activeModelTranslator->setPositionVector(perturbed_positions, MuJoCo_helper->fd_data[tid]);
 
         // Integrate the simulator
         start = std::chrono::high_resolution_clock::now();
@@ -295,9 +305,12 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
 
         // perturb position vector negatively
-        perturbed_positions = unperturbed_positions.replicate(1, 1);
-        perturbed_positions(i) -= eps;
-        activeModelTranslator->setPositionVector(perturbed_positions, MuJoCo_helper->fd_data[tid]);
+//        perturbed_positions = unperturbed_positions.replicate(1, 1);
+//        perturbed_positions(i) -= eps;
+//        activeModelTranslator->setPositionVector(perturbed_positions, MuJoCo_helper->fd_data[tid]);
+        mju_zero(dpos, MuJoCo_helper->model->nv);
+        dpos[dpos_index] = 1;
+        mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, -eps);
 
         // Integrate the simulator
         start = std::chrono::high_resolution_clock::now();

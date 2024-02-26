@@ -196,10 +196,18 @@ int main(int argc, char **argv) {
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
 
         vector<double> controlLims;
-        activeModelTranslator->MuJoCo_helper->getRobotControlLimits("walker", controlLims);
+        activeModelTranslator->MuJoCo_helper->getRobotControlLimits("panda", controlLims);
         for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->nu; i++){
             cout << "control limits: " << controlLims[2 * i] << " " << controlLims[2*i+1] << endl;
         }
+
+        // Test ability to convert state vector to q pos index.
+        std::cout << "indices: ";
+        for(int i = 0; i < activeModelTranslator->state_vector_names.size(); i++){
+            int index = activeModelTranslator->StateIndexToQposIndex(i);
+            std::cout << index << " ";
+        }
+        std::cout << "\n";
 
         // Compare my fd code versus mjd_transitionFD;
 
@@ -228,9 +236,9 @@ int main(int argc, char **argv) {
         int t = 0;
 
         activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-        MatrixXd control_vector = MatrixXd::Zero(dim_action, 1);
-        control_vector << -1, -1, -1, -1, -1, -1;
-        activeModelTranslator->SetControlVector(control_vector, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0]);
+//        MatrixXd control_vector = MatrixXd::Zero(dim_action, 1);
+//        control_vector << -1, -1, -1, -1, -1, -1;
+//        activeModelTranslator->SetControlVector(control_vector, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0]);
 
         std::cout << "start of mjd_transitionFD \n";
         auto start = std::chrono::high_resolution_clock::now();
@@ -317,8 +325,7 @@ int main(int argc, char **argv) {
         // Print our B matrix
         std::cout << "B_mine[0] \n";
         std::cout << B_mine[0] << std::endl;
-
-
+//
         return EXIT_FAILURE;
     }
 
