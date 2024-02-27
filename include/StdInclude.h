@@ -104,3 +104,5 @@ inline T* DataAt(std::vector<T>& vec, typename std::vector<T>::size_type elem) {
         return nullptr;
     }
 }
+
+bool endsWith(const std::string& mainString, const std::string& subString);

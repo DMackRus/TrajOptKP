@@ -1,5 +1,5 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml"
-modelName: "/push_nCl"
+modelName: "/3D_push"
 timeStep: 0.004
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 auto_adjust: false
@@ -13,9 +13,8 @@ robots:
     torqueControl: true 
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
-    goalPos: [ 0, 0, 0, 0, 0, 0, 0 ]
+    goalPos: [ 0, 0, 0, 0, 0, 0, 0]
     jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
-#    jointVelCosts: [0, 0.1, 0.05, 0.05, 0.05, 0.2, 0]
     jointVelCosts: [0, 0, 0, 0, 0, 0.1, 0]
     terminalJointPosCosts: [0, 0, 0, 0, 0, 0, 0]
     terminalJointVelCosts: [0, 0, 0, 0, 0, 0, 0]
@@ -24,18 +23,18 @@ robots:
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   blueTin:
-    activeLinearDOF: [true, true, false]
-    activeAngularDOF: [false, false, false]
+    activeLinearDOF: [true, true, true]
+    activeAngularDOF: [true, true, true]
     startLinearPos: [ 0.5, 0.1, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.7, 0.0, 0.0 ]
+    goalLinearPos: [ 0.7, 0, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [1, 1, 0]
+    linearPosCost: [0, 0, 0]
     # When iLQR once
     terminalLinearPosCost: [1000, 1000, 0]
     linearVelCost: [0.01, 0.01, 0]
     terminalLinearVelCost: [0, 0, 0]
-    angularPosCost: [1, 0, 0]
+    angularPosCost: [0, 0, 0]
     terminalAngularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]

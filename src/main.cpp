@@ -6,6 +6,7 @@
 #include "Acrobot.h"
 #include "Reaching.h"
 #include "TwoDPushing.h"
+#include "ThreeDPushing.h"
 #include "BoxFlick.h"
 #include "Walker.h"
 #include "Hopper.h"
@@ -195,12 +196,6 @@ int main(int argc, char **argv) {
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
 
-        vector<double> controlLims;
-        activeModelTranslator->MuJoCo_helper->getRobotControlLimits("panda", controlLims);
-        for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->nu; i++){
-            cout << "control limits: " << controlLims[2 * i] << " " << controlLims[2*i+1] << endl;
-        }
-
         // Test ability to convert state vector to q pos index.
         std::cout << "indices: ";
         for(int i = 0; i < activeModelTranslator->state_vector_names.size(); i++){
@@ -257,16 +252,6 @@ int main(int argc, char **argv) {
         std::vector<MatrixXd> A_mine;
         std::vector<MatrixXd> B_mine;
 
-        std::cout << "A from mjd_transition \n";
-        // Print their A matrix
-//        std::cout << setw(6);
-        for(int i = 0; i < dim_state_derivative; i++){
-            for(int j = 0; j < dim_state_derivative; j++){
-                std::cout << setw(6) << A[i * dim_state_derivative + j] << " ";
-            }
-            std::cout << std::endl;
-        }
-
         int dof_model_translator = activeModelTranslator->dof;
 
         A_mine.push_back(MatrixXd(dof_model_translator*2, dof_model_translator*2));
@@ -293,39 +278,63 @@ int main(int argc, char **argv) {
         std::cout << "time taken for my code " << (std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now() - start).count()) / 1000.0f << "ms\n";
 
-        // print my A matrix
-        std::cout << "A_mine[0] \n";
-        std::cout << A_mine[0] << std::endl;
-//
 
-
-        MatrixXd A_diff;
-        A_diff.resize(dim_state_derivative, dim_state_derivative);
-
-        for(int i = 0; i < dim_state_derivative; i++){
-            for(int j = 0; j < dim_state_derivative; j++){
-                A_diff(i, j) = abs(A[i * dim_state_derivative + j] - A_mine[0](i, j));
-                if(A_diff(i, j) < 1e-6) A_diff(i, j) = 0;
+        if(dim_state_derivative != dof_model_translator*2){
+            // Print theirs and print mine
+            std::cout << "A from mjd_transition \n";
+            for(int i = 0; i < dim_state_derivative; i++){
+                for(int j = 0; j < dim_state_derivative; j++){
+                    std::cout << setw(6) << A[i * dim_state_derivative + j] << " ";
+                }
+                std::cout << std::endl;
             }
+
+            std::cout << "A_mine[0] \n";
+            std::cout << A_mine[0] << std::endl;
+
+            // Print their B matrix
+            std::cout << "B from mjd_transition \n";
+            for(int i = 0; i < dim_state_derivative; i++){
+                for(int j = 0; j < dim_action; j++){
+                    std::cout << setw(6) << B[i * dim_action + j] << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            // Print our B matrix
+            std::cout << "B_mine[0] \n";
+            std::cout << B_mine[0] << std::endl;
+
+
+        }
+        else{
+            // compute difference and print
+            MatrixXd A_diff;
+            MatrixXd B_diff;
+            A_diff.resize(dim_state_derivative, dim_state_derivative);
+            B_diff.resize(dim_state_derivative, dim_action);
+
+            for(int i = 0; i < dim_state_derivative; i++){
+                for(int j = 0; j < dim_state_derivative; j++){
+                    A_diff(i, j) = abs(A[i * dim_state_derivative + j] - A_mine[0](i, j));
+                    if(A_diff(i, j) < 1e-6) A_diff(i, j) = 0;
+                }
+            }
+
+            std::cout << "A_diff \n";
+            std::cout << A_diff << std::endl;
+
+            for(int i = 0; i < dim_state_derivative; i++){
+                for(int j = 0; j < dim_action; j++){
+                    B_diff(i, j) = abs(B[i * dim_action + j] - B_mine[0](i, j));
+                    if(B_diff(i, j) < 1e-6) B_diff(i, j) = 0;
+                }
+            }
+
+            std::cout << "B_diff \n";
+            std::cout << B_diff << std::endl;
         }
 
-        std::cout << "A_diff \n";
-        std::cout << A_diff << std::endl;
-
-
-        // Print their B matrix
-        std::cout << "B from mjd_transition \n";
-        for(int i = 0; i < dim_state_derivative; i++){
-            for(int j = 0; j < dim_action; j++){
-                std::cout << setw(6) << B[i * dim_action + j] << " ";
-            }
-            std::cout << std::endl;
-        }
-
-        // Print our B matrix
-        std::cout << "B_mine[0] \n";
-        std::cout << B_mine[0] << std::endl;
-//
         return EXIT_FAILURE;
     }
 
@@ -1425,6 +1434,10 @@ int assign_task(){
     else if(task == "pushing_moderate_clutter_constrained"){
         std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(constrainedClutter);
         activeModelTranslator = myTwoDPushing;
+    }
+    else if(task == "3D_pushing"){
+        std::shared_ptr<ThreeDPushing> myThreeDPushing = std::make_shared<ThreeDPushing>();
+        activeModelTranslator = myThreeDPushing;
     }
     else if(task == "box_push_toppling"){
         cout << "not implemented task yet " << endl;
