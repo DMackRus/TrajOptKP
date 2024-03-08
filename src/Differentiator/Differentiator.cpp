@@ -260,6 +260,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     }
 
     // ----------------------------------------------- FD for positions ---------------------------------------------
+    mj_markStack(MuJoCo_helper->fd_data[tid]);
     mjtNum *dpos  = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv);
     for(int i = 0; i < dof; i++){
         bool compute_column = false;
@@ -280,14 +281,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         count_integrations++;
         // Perturb position vector positively
 
-
         mju_zero(dpos, MuJoCo_helper->model->nv);
         dpos[dpos_index] = 1;
         mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, eps);
-
-//        perturbed_positions = unperturbed_positions.replicate(1, 1);
-//        perturbed_positions(i) += eps;
-//        activeModelTranslator->setPositionVector(perturbed_positions, MuJoCo_helper->fd_data[tid]);
 
         // Integrate the simulator
         start = std::chrono::high_resolution_clock::now();
@@ -337,6 +333,8 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
 
     }
+
+    mj_freeStack(MuJoCo_helper->fd_data[tid]);
 
     // ------------ A -----------------
     // dqposdqpos       dqposdqvel

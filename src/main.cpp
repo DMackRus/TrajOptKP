@@ -597,12 +597,11 @@ void generateFilteringData(){
 }
 
 void generateTestScenes(){
-    for(int i = 0; i < 100; i++){
+    for(int i = 0; i < 200; i++){
         activeModelTranslator->GenerateRandomGoalAndStartState();
         activeModelTranslator->SetStateVector(activeModelTranslator->X_start, activeModelTranslator->MuJoCo_helper->main_data);
         activeVisualiser->render("init state");
-        cout << "starting state: " << activeModelTranslator->X_start.transpose() << endl;
-
+        std::cout << "X_desired: " << activeModelTranslator->X_desired << std::endl;
         yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->X_start, activeModelTranslator->X_desired);
     }
 }
@@ -1455,17 +1454,19 @@ int assign_task(){
         std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(heavyClutter);
         activeModelTranslator = myBoxFlick;
     }
-    else if(task == "walker"){
-        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(PLANE);
+    else if(task == "walker_walk"){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(PLANE, WALK);
+        activeModelTranslator = myLocomotion;
+    }
+    else if(task == "walker_run"){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN, RUN);
         activeModelTranslator = myLocomotion;
     }
     else if(task == "walker_uneven"){
-        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN);
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN, WALK);
         activeModelTranslator = myLocomotion;
     }
     else if(task == "Hopper"){
-//        std::shared_ptr<Hopper> myHopper = std::make_shared<Hopper>();
-//        activeModelTranslator = myHopper;
         cout << "not implemented task yet " << endl;
         return EXIT_FAILURE;
     }

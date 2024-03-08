@@ -65,6 +65,9 @@ int Testing::testing_different_velocity_change_asynchronus_mpc(){
 //    }
 
     keypoint_method keypoint_method;
+
+    int num_trials = 100;
+
     keypoint_method.name = "adaptive_jerk";
     keypoint_method.min_N = 1;
     keypoint_method.max_N = 50;
@@ -72,44 +75,40 @@ int Testing::testing_different_velocity_change_asynchronus_mpc(){
     for(int i = 0; i < activeModelTranslator->dof; i++){
         keypoint_method.jerk_thresholds.push_back(1e-15);
     }
-    testing_asynchronus_mpc(keypoint_method, 100);
+    testing_asynchronus_mpc(keypoint_method, num_trials);
 
-    // Test set interval 1
+    // Test set interval methods
     keypoint_method.name = "setInterval";
-    keypoint_method.min_N = 1;
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
-    testing_asynchronus_mpc(keypoint_method, 100);
-
-    keypoint_method.name = "setInterval";
-    keypoint_method.min_N = 20;
-    keypoint_method.max_N = 1;
-    keypoint_method.auto_adjust = false;
-    testing_asynchronus_mpc(keypoint_method, 100);
-
-    std::vector<int> minN = {1};
-    std::vector<int> maxN_multiplier = {50};
-    std::vector<double> jerk_thresholds = {0.0001, 0.001, 0.01, 0.1, 1.0};
-
-    for(int i = 0; i < minN.size(); i++){
-        for(int j = 0; j < maxN_multiplier.size(); j++){
-            for(int k = 0; k < jerk_thresholds.size(); k++){
-                keypoint_method.name = "adaptive_jerk";
-                keypoint_method.min_N = minN[i];
-                keypoint_method.max_N = minN[i] * maxN_multiplier[j];
-                for(int l = 0; l < activeModelTranslator->dof; l++){
-                    keypoint_method.jerk_thresholds.push_back(jerk_thresholds[k]);
-                }
-                std::cout << "testing keypoint method: " << keypoint_method.name << " with minN: " << keypoint_method.min_N
-                          << " maxN: " << keypoint_method.max_N << " and jerk thresholds: " << keypoint_method.jerk_thresholds[0] << std::endl;
-
-                testing_asynchronus_mpc(keypoint_method, 100);
-            }
-        }
+    std::vector<int> minNs = {1, 2, 5, 10, 20, 40, 60, 80, 150};
+    for(int i = 0; i < minNs.size(); i++){
+        keypoint_method.min_N = minNs[i];
+        testing_asynchronus_mpc(keypoint_method, num_trials);
     }
 
 
 
+//    std::vector<int> minN = {1};
+//    std::vector<int> maxN_multiplier = {50};
+//    std::vector<double> jerk_thresholds = {0.0001, 0.001, 0.01, 0.1, 1.0};
+//
+//    for(int i = 0; i < minN.size(); i++){
+//        for(int j = 0; j < maxN_multiplier.size(); j++){
+//            for(int k = 0; k < jerk_thresholds.size(); k++){
+//                keypoint_method.name = "adaptive_jerk";
+//                keypoint_method.min_N = minN[i];
+//                keypoint_method.max_N = minN[i] * maxN_multiplier[j];
+//                for(int l = 0; l < activeModelTranslator->dof; l++){
+//                    keypoint_method.jerk_thresholds.push_back(jerk_thresholds[k]);
+//                }
+//                std::cout << "testing keypoint method: " << keypoint_method.name << " with minN: " << keypoint_method.min_N
+//                          << " maxN: " << keypoint_method.max_N << " and jerk thresholds: " << keypoint_method.jerk_thresholds[0] << std::endl;
+//
+//                testing_asynchronus_mpc(keypoint_method, 100);
+//            }
+//        }
+//    }
 
     return EXIT_SUCCESS;
 }
@@ -381,9 +380,11 @@ int Testing::single_asynchronus_run(bool visualise, std::string method_directory
     for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
         activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data);
         activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data);
-        activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+//        activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+//
+//        activeVisualiser->render("playback");
 
-        final_cost += (activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false) * activeModelTranslator->MuJoCo_helper->returnModelTimeStep());
+        final_cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false);
     }
 
     std::cout << "final cost of entire MPC trajectory was: " << final_cost << "\n";

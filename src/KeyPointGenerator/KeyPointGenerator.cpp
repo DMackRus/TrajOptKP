@@ -206,7 +206,7 @@ std::vector<double> KeypointGenerator::DesiredPercentageDerivs(double expected, 
         // When surprise is low, dont update
         double raw_adjust_factor;
         if(surprise < surprise_lower){
-            std::cout << "surprise was low" << std::endl;
+//            std::cout << "surprise was low" << std::endl;
             raw_adjust_factor = -2 - pow(expected, 2);
 
             if(raw_adjust_factor < -5){

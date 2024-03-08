@@ -90,7 +90,6 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
         
         if(i == horizonLength - 1){
             stateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
-            std::cout << "terminal cost is: " << stateCost << std::endl;
         }
         else{
             stateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, false);
@@ -547,7 +546,6 @@ double iLQR::ForwardsPass(double old_cost){
             // Terminal state
             if(t == horizonLength - 1){
                 newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
-                std::cout << "new terminal state cost: " << newStateCost << "\n";
             }
             else{
                 newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, false);
