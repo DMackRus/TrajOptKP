@@ -313,6 +313,8 @@ int main(int argc, char **argv) {
             MatrixXd B_diff;
             A_diff.resize(dim_state_derivative, dim_state_derivative);
             B_diff.resize(dim_state_derivative, dim_action);
+            std::cout << "A_mine[0] \n";
+            std::cout << A_mine[0] << std::endl;
 
             for(int i = 0; i < dim_state_derivative; i++){
                 for(int j = 0; j < dim_state_derivative; j++){

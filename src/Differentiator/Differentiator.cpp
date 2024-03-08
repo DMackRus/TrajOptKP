@@ -14,6 +14,8 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                                         int data_index, int thread_id, bool terminal, bool cost_derivs,
                                         bool central_diff, double eps){
 
+    std::cout << "----------------------------------------------------- \n";
+
     // Reset some debugging timing variables
     time_mj_forwards = 0.0f;
     count_integrations = 0;
@@ -192,6 +194,16 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     }
 
     // ----------------------------------------------- FD for velocities ---------------------------------------------
+    mj_markStack(MuJoCo_helper->fd_data[tid]);
+    mjtNum *dpos  = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv);
+    mjtNum *next_full_state_pos = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv +
+                                                                                MuJoCo_helper->model->na+
+                                                                                MuJoCo_helper->model->nq);
+    mjtNum *next_full_state_minus = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv +
+                                                                                  MuJoCo_helper->model->na+
+                                                                                  MuJoCo_helper->model->nq);
+
+    mjtNum *vel_diff = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nq);
     for(int i = 0; i < dof; i++){
         bool compute_column = false;
 
@@ -218,6 +230,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
         // return the new velocity vector
+        mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_pos, mjSTATE_PHYSICS);
         next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         // If calculating cost derivs via finite-differencing
@@ -239,6 +252,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
         // Return the new velocity vector
+        mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_minus, mjSTATE_PHYSICS);
         next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         // If calculating cost derivs via finite-differencing
@@ -246,10 +260,34 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
         }
 
-        // Calculate one column of the dqveldqvel matrix
-        for(int j = 0; j < dim_state; j++){
+        // Compute one column of the A matrix
+        // compute position row using differentiate pos
+        mj_differentiatePos(MuJoCo_helper->model, vel_diff, (2 * eps), next_full_state_minus, next_full_state_pos);
+//        std::cout << "next state full minus";
+//        for(int k = 0; k < MuJoCo_helper->model->nv +
+//                           MuJoCo_helper->model->na+
+//                           MuJoCo_helper->model->nq; k++){
+//            std::cout << next_full_state_minus[k] << " ";
+//        }
+//        std::cout << endl;
+
+        std::cout << "vel diff: ";
+        for(int j = 0; j < dim_state / 2; j++){
+            int q_index = activeModelTranslator->StateIndexToQposIndex(j);
+//            std::cout << "state index: " << j << " q index: " << q_index << "\n";
+            std::cout << vel_diff[q_index] << " ";
+            dstatedqvel(j, i) = vel_diff[q_index];
+        }
+        std::cout << "\n";
+
+        for(int j = dim_state / 2; j < dim_state; j++){
             dstatedqvel(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
         }
+
+//        // Calculate one column of the dqveldqvel matrix
+//        for(int j = 0; j < dim_state; j++){
+//            dstatedqvel(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
+//        }
 
         if(cost_derivs){
             dcostdvel(i, 0) = (costInc - costDec)/(2*eps);
@@ -260,8 +298,6 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     }
 
     // ----------------------------------------------- FD for positions ---------------------------------------------
-    mj_markStack(MuJoCo_helper->fd_data[tid]);
-    mjtNum *dpos  = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv);
     for(int i = 0; i < dof; i++){
         bool compute_column = false;
         for(int j = 0; j < cols.size(); j++) {
@@ -279,8 +315,8 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         int dpos_index = activeModelTranslator->StateIndexToQposIndex(i);
 
         count_integrations++;
-        // Perturb position vector positively
 
+        // Perturb position vector positively
         mju_zero(dpos, MuJoCo_helper->model->nv);
         dpos[dpos_index] = 1;
         mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, eps);
@@ -290,7 +326,8 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
         time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
-        // return the new velocity vector
+        // return the positive perturbed next state vector
+        mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_pos, mjSTATE_PHYSICS);
         next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         if(cost_derivs){
@@ -301,9 +338,6 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
 
         // perturb position vector negatively
-//        perturbed_positions = unperturbed_positions.replicate(1, 1);
-//        perturbed_positions(i) -= eps;
-//        activeModelTranslator->setPositionVector(perturbed_positions, MuJoCo_helper->fd_data[tid]);
         mju_zero(dpos, MuJoCo_helper->model->nv);
         dpos[dpos_index] = 1;
         mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, -eps);
@@ -313,15 +347,35 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
         time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
-        // Return the decremented vectors
+        // Return the decremented state vector
+        mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_minus, mjSTATE_PHYSICS);
         next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         if(cost_derivs){
             costDec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
         }
 
-        // Calculate one column of the dqaccdq matrix
-        for(int j = 0; j < dim_state; j++){
+        // Compute one column of the A matrix
+        // compute position row using differentiate pos
+        mj_differentiatePos(MuJoCo_helper->model, vel_diff, (2 * eps), next_full_state_minus, next_full_state_pos);
+//        std::cout << "next state full minus";
+//        for(int k = 0; k < MuJoCo_helper->model->nv +
+//                           MuJoCo_helper->model->na+
+//                           MuJoCo_helper->model->nq; k++){
+//            std::cout << next_full_state_minus[k] << " ";
+//        }
+//        std::cout << endl;
+
+        std::cout << "vel diff: ";
+        for(int j = 0; j < dim_state / 2; j++){
+            int q_index = activeModelTranslator->StateIndexToQposIndex(j);
+//            std::cout << "state index: " << j << " q index: " << q_index << "\n";
+            std::cout << vel_diff[q_index] << " ";
+            dstatedqpos(j, i) = vel_diff[q_index];
+        }
+        std::cout << "\n";
+
+        for(int j = dim_state / 2; j < dim_state; j++){
             dstatedqpos(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
         }
 
