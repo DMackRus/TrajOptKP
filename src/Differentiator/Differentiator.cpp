@@ -14,7 +14,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                                         int data_index, int thread_id, bool terminal, bool cost_derivs,
                                         bool central_diff, double eps){
 
-    std::cout << "----------------------------------------------------- \n";
+    // Aliases
+    int nq = MuJoCo_helper->model->nq, nv = MuJoCo_helper->model->nv,
+        nu = MuJoCo_helper->model->nu, na = MuJoCo_helper->model->na;
 
     // Reset some debugging timing variables
     time_mj_forwards = 0.0f;
@@ -195,15 +197,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
     // ----------------------------------------------- FD for velocities ---------------------------------------------
     mj_markStack(MuJoCo_helper->fd_data[tid]);
-    mjtNum *dpos  = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv);
-    mjtNum *next_full_state_pos = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv +
-                                                                                MuJoCo_helper->model->na+
-                                                                                MuJoCo_helper->model->nq);
-    mjtNum *next_full_state_minus = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nv +
-                                                                                  MuJoCo_helper->model->na+
-                                                                                  MuJoCo_helper->model->nq);
+    mjtNum *dpos  = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nv);
+    mjtNum *next_full_state_pos = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
+    mjtNum *next_full_state_minus = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
 
-    mjtNum *vel_diff = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], MuJoCo_helper->model->nq);
+    mjtNum *vel_diff = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq);
     for(int i = 0; i < dof; i++){
         bool compute_column = false;
 
@@ -263,31 +261,14 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         // Compute one column of the A matrix
         // compute position row using differentiate pos
         mj_differentiatePos(MuJoCo_helper->model, vel_diff, (2 * eps), next_full_state_minus, next_full_state_pos);
-//        std::cout << "next state full minus";
-//        for(int k = 0; k < MuJoCo_helper->model->nv +
-//                           MuJoCo_helper->model->na+
-//                           MuJoCo_helper->model->nq; k++){
-//            std::cout << next_full_state_minus[k] << " ";
-//        }
-//        std::cout << endl;
-
-        std::cout << "vel diff: ";
         for(int j = 0; j < dim_state / 2; j++){
             int q_index = activeModelTranslator->StateIndexToQposIndex(j);
-//            std::cout << "state index: " << j << " q index: " << q_index << "\n";
-            std::cout << vel_diff[q_index] << " ";
             dstatedqvel(j, i) = vel_diff[q_index];
         }
-        std::cout << "\n";
 
         for(int j = dim_state / 2; j < dim_state; j++){
             dstatedqvel(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
         }
-
-//        // Calculate one column of the dqveldqvel matrix
-//        for(int j = 0; j < dim_state; j++){
-//            dstatedqvel(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
-//        }
 
         if(cost_derivs){
             dcostdvel(i, 0) = (costInc - costDec)/(2*eps);
@@ -317,7 +298,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         count_integrations++;
 
         // Perturb position vector positively
-        mju_zero(dpos, MuJoCo_helper->model->nv);
+        mju_zero(dpos, nv);
         dpos[dpos_index] = 1;
         mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, eps);
 
@@ -338,7 +319,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
 
         // perturb position vector negatively
-        mju_zero(dpos, MuJoCo_helper->model->nv);
+        mju_zero(dpos, nv);
         dpos[dpos_index] = 1;
         mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, -eps);
 
@@ -358,22 +339,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         // Compute one column of the A matrix
         // compute position row using differentiate pos
         mj_differentiatePos(MuJoCo_helper->model, vel_diff, (2 * eps), next_full_state_minus, next_full_state_pos);
-//        std::cout << "next state full minus";
-//        for(int k = 0; k < MuJoCo_helper->model->nv +
-//                           MuJoCo_helper->model->na+
-//                           MuJoCo_helper->model->nq; k++){
-//            std::cout << next_full_state_minus[k] << " ";
-//        }
-//        std::cout << endl;
 
-        std::cout << "vel diff: ";
         for(int j = 0; j < dim_state / 2; j++){
             int q_index = activeModelTranslator->StateIndexToQposIndex(j);
-//            std::cout << "state index: " << j << " q index: " << q_index << "\n";
-            std::cout << vel_diff[q_index] << " ";
             dstatedqpos(j, i) = vel_diff[q_index];
         }
-        std::cout << "\n";
 
         for(int j = dim_state / 2; j < dim_state; j++){
             dstatedqpos(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
@@ -388,6 +358,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
     }
 
+    // free the stack allocated variables
     mj_freeStack(MuJoCo_helper->fd_data[tid]);
 
     // ------------ A -----------------
@@ -396,25 +367,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     // dqveldqpos       dqveldqvel
     // --------------------------------
     for(int i = 0; i < cols.size(); i++){
-//        if(USE_DQACC){
-//            A.block(dof, cols[i], dof, 1) = dqaccdqpos.block(0, cols[i], dof, 1) * MuJoCo_helper->returnModelTimeStep();
-//            for(int j = 0; j < dof; j ++){
-//                if(j == cols[i]){
-//                    A(dof + j, cols[i] + dof) = 1 + (dqaccdqvel(j, cols[i]) * MuJoCo_helper->returnModelTimeStep());
-//                }
-//                else{
-//                    A(dof + j, cols[i] + dof) = dqaccdqvel(j, cols[i]) * MuJoCo_helper->returnModelTimeStep();
-//                }
-//            }
-//        }
-//        else{
-        A.block(0, cols[i], dim_state, 1) = dstatedqpos.block(0, cols[i], dim_state, 1);
-//        A.block(0, cols[i] + dof, dof, 1) = dqposdqvel.block(0, cols[i], dof, 1);
+        A.block(0, cols[i], dim_state, 1) =
+                dstatedqpos.block(0, cols[i], dim_state, 1);
 
-        A.block(0, cols[i] + dof, dim_state, 1) = dstatedqvel.block(0, cols[i], dim_state, 1);
-//        A.block(dof, cols[i] + dof, dof, 1) = dqveldqvel.block(0, cols[i], dof, 1);
-//        }
-
+        A.block(0, cols[i] + dof, dim_state, 1) =
+                dstatedqvel.block(0, cols[i], dim_state, 1);
     }
 
     // ------------- B -------------------
@@ -423,14 +380,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     // ----------------------------------
     for(int i = 0; i < cols.size(); i++){
         if(cols[i] < num_ctrl){
-//            if(USE_DQACC){
-//                B.block(dof, cols[i], dof, 1) = dqaccdctrl.block(0, cols[i], dof, 1) * MuJoCo_helper->returnModelTimeStep();
-//            }
-//            else{
             B.block(0, cols[i], dim_state, 1) = dstatedctrl.block(0, cols[i], dim_state, 1);
-
-//            B.block(dof, cols[i], dof, 1) = dqveldctrl.block(0, cols[i], dof, 1);
-//            }
         }
     }
 

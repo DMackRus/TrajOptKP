@@ -8,19 +8,19 @@ maxN: 20
 iterativeErrorThreshold: 0.00001
 robots:
   panda:
-    jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7", "panda0_finger_joint1", "panda0_finger_joint2"]
+    jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
     actuatorNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
     torqueControl: true 
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
-    goalPos: [ 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    jointVelCosts: [0, 0, 0, 0, 0, 0.1, 0, 0, 0]
-    terminalJointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0, 0]
-    terminalJointVelCosts: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    goalPos: [ 0, 0, 0, 0, 0, 0, 0]
+    jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
+    jointVelCosts: [0, 0, 0, 0, 0, 0.1, 0]
+    terminalJointPosCosts: [0, 0, 0, 0, 0, 0, 0]
+    terminalJointVelCosts: [0, 0, 0, 0, 0, 0, 0]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
-    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0, 0]
-    magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0]
+    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
+    magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   blueTin:
     activeLinearDOF: [true, true, true]
@@ -35,7 +35,7 @@ bodies:
     linearVelCost: [0.01, 0.01, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
-    terminalAngularPosCost: [0, 0, 0]
+    terminalAngularPosCost: [0, 1000, 0]
     angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.0005, 0.0005, 0.0005 ]
