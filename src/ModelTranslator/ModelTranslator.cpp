@@ -836,7 +836,7 @@ int ModelTranslator::StateIndexToQposIndex(int state_index){
 
     if(found_body_tag){
         int bodyId = mj_name2id(MuJoCo_helper->model, mjOBJ_BODY, state_name.c_str());
-        joint_index = MuJoCo_helper->model->body_jntadr[bodyId];
+        joint_index = MuJoCo_helper->model->jnt_dofadr[MuJoCo_helper->model->body_jntadr[bodyId]];
     }
     else{
         joint_index = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_name.c_str());

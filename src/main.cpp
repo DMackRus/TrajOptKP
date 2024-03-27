@@ -303,7 +303,8 @@ int main(int argc, char **argv) {
         std::cout << "time taken for my code " << (std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now() - start).count()) / 1000.0f << "ms\n";
 
-
+        std::cout << "dim state deriv " << dim_state_derivative << "\n";
+        std::cout << "dof model translator " << dof_model_translator << "\n";
         if(dim_state_derivative != dof_model_translator*2){
             // Print theirs and print mine
             std::cout << "A from mjd_transition \n";
@@ -700,16 +701,9 @@ void optimiseOnceandShow(){
     int visualCounter = 0;
     bool showFinalControls = true;
     const char* label = "Final trajectory after optimisation";
-//    char label[50] = "Final trajectory after optimisation";
-//    const char* label_init = "Initial trajectory";
-//    const char* label_final = "Final trajectory";
 
     std::vector<MatrixXd> initControls;
     std::vector<MatrixXd> finalControls;
-
-//    activeModelTranslator->MuJoCo_helper->copySystemState(0, activeModelTranslator->MuJoCo_helper->main_data);
-//    MatrixXd test = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->main_data);
-//    cout << "test: " << test << endl;
 
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
     activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
