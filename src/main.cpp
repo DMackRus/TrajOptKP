@@ -699,7 +699,10 @@ void optimiseOnceandShow(){
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
-    char* label = "Final trajectory after optimisation";
+    const char* label = "Final trajectory after optimisation";
+//    char label[50] = "Final trajectory after optimisation";
+//    const char* label_init = "Initial trajectory";
+//    const char* label_final = "Final trajectory";
 
     std::vector<MatrixXd> initControls;
     std::vector<MatrixXd> finalControls;
@@ -749,7 +752,7 @@ void optimiseOnceandShow(){
                 label = "Final trajectory after optimisation";
             }
             else{
-                label = "Intial trajectory before optimisation";
+                label = "Initial trajectory before optimisation";
             }
         }
 
