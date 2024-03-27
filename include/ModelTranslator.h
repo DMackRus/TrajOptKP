@@ -278,13 +278,13 @@ public:
 
     // Number of degrees of freedom of the system (Note, this is set by used via yaml file, it doesnt necessary
     // include all dofs for every object, if they are intentionally left out.
-    int dof;
+    int dof = 0;
 
     // Number of actuated joints of the system
-    int num_ctrl;
+    int num_ctrl = 0;
 
     // Size of the state vector (typically 2 x dof)
-    int state_vector_size;
+    int state_vector_size = 0;
 
     // State vector object, considers robots and bodies
     struct stateVectorList active_state_vector;

@@ -231,7 +231,7 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_tr
         activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
         activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-        activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
         if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
             activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
         }
@@ -331,7 +331,7 @@ int Testing::single_asynchronus_run(bool visualise, std::string method_directory
         activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data);
 
         // Update the simulation
-        activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->vis_data);
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
 
 //        std::cout << "time: " << activeModelTranslator->MuJoCo_helper->vis_data->time << std::endl;
 

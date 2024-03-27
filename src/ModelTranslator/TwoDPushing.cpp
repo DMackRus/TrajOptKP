@@ -343,6 +343,7 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     // Set the goal position so that we can see where we are pushing to
     std::string goalMarkerName = "display_goal";
     pose_6 displayBodyPose;
+    MuJoCo_helper->getBodyPose_angle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
     displayBodyPose.position[0] = X_desired(7);
     displayBodyPose.position[1] = X_desired(8);
     displayBodyPose.position[2] = 0.0f;
@@ -600,7 +601,7 @@ std::vector<MatrixXd> TwoDPushing::generate_initControls_fromWayPoints(std::vect
         initControls.push_back(desiredControls);
 
         SetControlVector(desiredControls, MuJoCo_helper->main_data);
-        MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
+        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
     }
 

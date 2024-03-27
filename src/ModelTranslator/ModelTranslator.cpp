@@ -738,6 +738,7 @@ bool ModelTranslator::setPositionVector(MatrixXd position_vector, mjData* d){
     for(int i = 0; i < active_state_vector.bodiesStates.size(); i++){
         // Get the body's position and orientation
         pose_6 bodyPose;
+        MuJoCo_helper->getBodyPose_angle(active_state_vector.bodiesStates[i].name, bodyPose, d);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
@@ -787,6 +788,7 @@ bool ModelTranslator::setVelocityVector(MatrixXd velocity_vector, mjData* d){
     for(int i = 0; i < active_state_vector.bodiesStates.size(); i++){
         // Get the body's position and orientation
         pose_6 bodyVelocity;
+        MuJoCo_helper->getBodyVelocity(active_state_vector.bodiesStates[i].name, bodyVelocity, d);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions

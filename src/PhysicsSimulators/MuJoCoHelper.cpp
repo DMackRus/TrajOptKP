@@ -281,7 +281,7 @@ bool MuJoCoHelper::getRobotControlLimits(string robotName, vector<double> &contr
 }
 
 bool MuJoCoHelper::getRobotJointLimits(string robotName, vector<double> &jointLimits, mjData *d){
-
+    return false;
 }
 
 // --------------------------------- END OF ROBOT UTILITY ---------------------------------------
@@ -729,15 +729,15 @@ void MuJoCoHelper::copyRolloutBufferToSavedSystemStatesList(){
 
 // ------------------------------- END OF SYSTEM STATE FUNCTIONS ----------------------------------------
 
-bool MuJoCoHelper::stepSimulator(int steps, mjData *d){
-
-
-
-    for(int i = 0; i < steps; i++){
-        mj_step(model, d);
-    }
-    return true;
-}
+//bool MuJoCoHelper::stepSimulator(int steps, mjData *d){
+//
+//
+//
+//    for(int i = 0; i < steps; i++){
+//        mj_step(model, d);
+//    }
+//    return true;
+//}
 
 bool MuJoCoHelper::forwardSimulator(mjData *d){
 
@@ -861,7 +861,7 @@ void MuJoCoHelper::scroll(double yoffset){
 
 void MuJoCoHelper::initSimulator(double timestep, const char* fileName){
     char error[1000];
-    // cout << "fileName in init: " << fileName << endl;
+     cout << "fileName in init: " << fileName << endl;
     auto load_start = std::chrono::high_resolution_clock::now();
     model = mj_loadXML(fileName, NULL, error, 1000);
 

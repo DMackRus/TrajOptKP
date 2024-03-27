@@ -219,7 +219,7 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
             }
 
             SetControlVector(control, MuJoCo_helper->main_data);
-            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
+            mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
             initControls.push_back(control);
         }
     }

@@ -83,7 +83,7 @@ public:
     void scroll(double yoffset);
 
     void initSimulator(double timestep, const char* fileName);
-    bool stepSimulator(int steps, mjData *d);
+//    bool stepSimulator(int steps, mjData *d);
     bool forwardSimulator(mjData *d);
     bool forwardSimulatorWithSkip(mjData *d, int skipStage, int skipSensor);
 

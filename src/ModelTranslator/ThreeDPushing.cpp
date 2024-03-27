@@ -575,7 +575,7 @@ std::vector<MatrixXd> ThreeDPushing::generate_initControls_fromWayPoints(std::ve
         initControls.push_back(desiredControls);
 
         SetControlVector(desiredControls, MuJoCo_helper->main_data);
-        MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
+        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
     }
 

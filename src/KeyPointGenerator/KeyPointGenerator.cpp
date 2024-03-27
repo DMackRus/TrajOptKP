@@ -116,6 +116,7 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //
 
 
+
     UpdateLastPercentageDerivatives(keypoints);
 }
 
@@ -310,7 +311,7 @@ void KeypointGenerator::GenerateKeyPointsSetInterval(){
         full_row[i] = i;
     }
 
-    for(int t = 0; t < horizon - 2; t++){
+    for(int t = 0; t < horizon - 1; t++){
         if(t % current_keypoint_method.min_N == 0){
             keypoints.push_back(full_row);
         }

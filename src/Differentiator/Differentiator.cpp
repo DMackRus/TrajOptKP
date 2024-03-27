@@ -9,6 +9,8 @@ Differentiator::Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator
     dim_state = 2 * dof;
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
                                         MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
                                         int data_index, int thread_id, bool terminal, bool cost_derivs,
@@ -200,8 +202,10 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     mjtNum *dpos  = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nv);
     mjtNum *next_full_state_pos = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
     mjtNum *next_full_state_minus = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
+    mju_zero(next_full_state_pos, nq + nv + na);
+    mju_zero(next_full_state_minus, nq + nv + na);
 
-    mjtNum *vel_diff = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq);
+    mjtNum *vel_diff = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nv);
     for(int i = 0; i < dof; i++){
         bool compute_column = false;
 
@@ -228,7 +232,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
         // return the new velocity vector
-        mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_pos, mjSTATE_PHYSICS);
+//        mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_pos, mjSTATE_PHYSICS);
         next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         // If calculating cost derivs via finite-differencing
@@ -250,7 +254,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         time_mj_forwards += std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count();
 
         // Return the new velocity vector
-        mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_minus, mjSTATE_PHYSICS);
+//        mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_minus, mjSTATE_PHYSICS);
         next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         // If calculating cost derivs via finite-differencing
@@ -260,13 +264,13 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
         // Compute one column of the A matrix
         // compute position row using differentiate pos
-        mj_differentiatePos(MuJoCo_helper->model, vel_diff, (2 * eps), next_full_state_minus, next_full_state_pos);
-        for(int j = 0; j < dim_state / 2; j++){
-            int q_index = activeModelTranslator->StateIndexToQposIndex(j);
-            dstatedqvel(j, i) = vel_diff[q_index];
-        }
+//        mj_differentiatePos(MuJoCo_helper->model, vel_diff, (2 * eps), next_full_state_minus, next_full_state_pos);
+//        for(int j = 0; j < dim_state / 2; j++){
+//            int q_index = activeModelTranslator->StateIndexToQposIndex(j);
+//            dstatedqvel(j, i) = vel_diff[q_index];
+//        }
 
-        for(int j = dim_state / 2; j < dim_state; j++){
+        for(int j = 0; j < dim_state; j++){
             dstatedqvel(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
         }
 
@@ -388,6 +392,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 //    std::cout << "num of sim integration: " << count_integrations << "\n";
 //    std::cout << "diff time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - diff_start).count() / 1000.0 << std::endl;
 }
+#pragma GCC pop_options
 
 // finite difference cost derivatives graveyard
 //if(costDerivs) {

@@ -24,7 +24,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
     keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
                                                              MuJoCo_helper,
                                                              activeModelTranslator->dof,
-                                                             horizonLength);
+                                                             0);
 
     keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
     keypoint_generator->PrintKeypointMethod();
