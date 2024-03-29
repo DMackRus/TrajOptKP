@@ -11,7 +11,7 @@ task: "pushing_moderate_clutter"  # Task to be performed
 
 optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
-runMode: "Optimise_once"
+runMode: "Init_controls"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.

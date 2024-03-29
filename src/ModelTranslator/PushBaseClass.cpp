@@ -1,0 +1,263 @@
+#include "PushBaseClass.h"
+
+PushBaseClass::PushBaseClass(std::string _EE_name, std::string _body_name){
+    EE_name = _EE_name;
+    body_name = _body_name;
+}
+
+void PushBaseClass::EEWayPointsSetup(std::shared_ptr<MuJoCoHelper> MuJoCo_helper, m_point desiredObjectEnd,
+                                     std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
+
+    pose_6 EE_startPose;
+    pose_6 goalobj_startPose;
+    MuJoCo_helper->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->getBodyPose_angle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
+
+    m_point mainWayPoint;
+    // First waypoint - where the end-effector is currently
+    mainWayPoint << EE_startPose.position(0), EE_startPose.position(1), EE_startPose.position(2);
+    mainWayPoints.push_back(mainWayPoint);
+    wayPointsTiming.push_back(0);
+
+    // Calculate the angle of approach - from goal position to object start position
+    double angle_EE_push;
+    double x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
+    double y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
+    angle_EE_push = atan2(y_diff, x_diff);
+
+    double intermediatePointY = goalobj_startPose.position(1);
+    double intermediatePointX = goalobj_startPose.position(0);
+
+    // Place EE behind the object, this might need reworking slightly
+    intermediatePointX = intermediatePointX - 0.05*cos(angle_EE_push);
+    intermediatePointY = intermediatePointY - 0.05*sin(angle_EE_push);
+
+    mainWayPoint(0) = intermediatePointX;
+    mainWayPoint(1) = intermediatePointY;
+    // TODO - not great this is hardcoded
+    mainWayPoint(2) = 0.28f;
+
+    // Push the waypoint and time it should happen at
+    mainWayPoints.push_back(mainWayPoint);
+    wayPointsTiming.push_back(horizon - 1);
+}
+
+void PushBaseClass::EEWayPointsPush(std::shared_ptr<MuJoCoHelper> MuJoCo_helper, m_point desiredObjectEnd,
+                                    std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
+
+    pose_6 EE_startPose;
+    pose_6 goalobj_startPose;
+    MuJoCo_helper->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->getBodyPose_angle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
+
+    m_point mainWayPoint;
+    // First waypoint - where the end-effector is currently
+    mainWayPoint << EE_startPose.position(0), EE_startPose.position(1), EE_startPose.position(2);
+    mainWayPoints.push_back(mainWayPoint);
+    wayPointsTiming.push_back(0);
+
+    // Calculate the angle of approach - from goal position to object start position
+    float angle_EE_push;
+    float x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
+    float y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
+    angle_EE_push = atan2(y_diff, x_diff);
+
+    // TODO hard coded - get it programmatically?
+    float cylinder_radius = 0.01;
+    float x_cylinder0ffset = cylinder_radius * cos(angle_EE_push);
+    float y_cylinder0ffset = cylinder_radius * sin(angle_EE_push);
+
+    float desired_endPointX = desiredObjectEnd(0) - x_cylinder0ffset;
+    float desired_endPointY;
+
+    float endPointX;
+    float endPointY;
+    if(desiredObjectEnd(1) - goalobj_startPose.position(1) > 0){
+        desired_endPointY = desiredObjectEnd(1) + y_cylinder0ffset;
+    }
+    else{
+        desired_endPointY = desiredObjectEnd(1) - y_cylinder0ffset;
+    }
+
+    float intermediatePointY = goalobj_startPose.position(1);
+    float intermediatePointX = goalobj_startPose.position(0);
+
+    // Max speed could be a parameter
+    float maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * MuJoCo_helper->returnModelTimeStep());
+    // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
+//    cout << "max EE travel dist: " << maxDistTravelled << endl;
+    float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
+    float proportionOfDistTravelled = maxDistTravelled / desiredDistTravelled;
+//    cout << "proportion" << proportionOfDistTravelled << endl;
+    if(proportionOfDistTravelled > 1){
+        endPointX = desired_endPointX;
+        endPointY = desired_endPointY;
+    }
+    else{
+        endPointX = intermediatePointX + ((desired_endPointX - intermediatePointX) * proportionOfDistTravelled);
+        endPointY = intermediatePointY + ((desired_endPointY - intermediatePointY) * proportionOfDistTravelled);
+    }
+
+    mainWayPoint(0) = endPointX;
+    mainWayPoint(1) = endPointY;
+    // TODO not great this is hard coded
+    mainWayPoint(2) = 0.28f;
+
+    // Push the waypoint and when it should occur
+    mainWayPoints.push_back(mainWayPoint);
+    wayPointsTiming.push_back(horizon - 1);
+}
+
+std::vector<m_point> PushBaseClass::CreateAllEETransitPoints(const std::vector<m_point> &mainWayPoints, const std::vector<int> &wayPointsTiming){
+    int numMainWayPoints = mainWayPoints.size();
+    std::vector<m_point> EE_path;
+
+    EE_path.push_back(mainWayPoints[0]);
+//    wayPointsTiming[0]--;
+
+    int counter = 1;
+    for(int i = 0; i < numMainWayPoints - 1; i++){
+        float x_diff = mainWayPoints[i + 1](0) - mainWayPoints[i](0);
+        float y_diff = mainWayPoints[i + 1](1) - mainWayPoints[i](1);
+        float z_diff = mainWayPoints[i + 1](2) - mainWayPoints[i](2);
+        for(int j = 0; j < wayPointsTiming[i + 1]; j++){
+            EE_path.push_back(m_point());
+            EE_path[counter](0) = EE_path[counter - 1](0) + (x_diff / wayPointsTiming[i + 1]);
+            EE_path[counter](1) = EE_path[counter - 1](1) + (y_diff / wayPointsTiming[i + 1]);
+            EE_path[counter](2) = EE_path[counter - 1](2) + (z_diff / wayPointsTiming[i + 1]);
+
+            counter++;
+        }
+    }
+
+    return EE_path;
+}
+
+std::vector<MatrixXd> PushBaseClass::JacobianEEControl(std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
+                                                       m_point goal_pos, const std::vector<m_point> &EE_path){
+    std::vector<MatrixXd> init_controls;
+
+    pose_7 EE_start_pose;
+    pose_6 goalobj_startPose;
+    MuJoCo_helper->getBodyPose_quat_ViaXpos(EE_name, EE_start_pose, MuJoCo_helper->main_data);
+    MuJoCo_helper->getBodyPose_angle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
+
+    float angle_EE_push;
+    float x_diff = goal_pos(0) - goalobj_startPose.position(0);
+    float y_diff = goal_pos(1) - goalobj_startPose.position(1);
+    angle_EE_push = atan2(y_diff, x_diff);
+
+    angle_EE_push -= (PI / 4);
+
+    if(angle_EE_push < -(PI/2)){
+        angle_EE_push = (2 * PI) + angle_EE_push;
+    }
+
+    double convertedAngle = angle_EE_push;
+
+    // Setup the desired rotation matrix for the end-effector
+    m_point xAxis, yAxis, zAxis;
+    xAxis << cos(convertedAngle), sin(convertedAngle), 0;
+    zAxis << 0, 0, -1;
+    yAxis = crossProduct(zAxis, xAxis);
+
+    // End effector parallel to table
+    // xAxis << 0, 0, -1;
+    // zAxis << cos(convertedAngle), sin(convertedAngle), 0;
+    // yAxis = crossProduct(zAxis, xAxis);
+
+    Eigen::Matrix3d rotMat;
+    rotMat << xAxis(0), yAxis(0), zAxis(0),
+            xAxis(1), yAxis(1), zAxis(1),
+            xAxis(2), yAxis(2), zAxis(2);
+
+    m_quat desiredQuat = rotMat2Quat(rotMat);
+
+    MatrixXd currentControl(num_ctrl, 1);
+//    if(active_state_vector.robots[0].torqueControlled){
+//        MatrixXd robotPos = returnPositionVector(MuJoCo_helper->main_data);
+//        for(int i = 0; i < num_ctrl; i++){
+//            currentControl(i) = robotPos(i);
+//        }
+//    }
+
+    bool quaternion_check = false;
+
+    for(int i = 0; i < EE_path.size(); i++){
+        pose_7 currentEEPose;
+        MuJoCo_helper->getBodyPose_quat_ViaXpos(EE_name, currentEEPose, MuJoCo_helper->main_data);
+        m_quat currentEEQuat, invertedQuat, quatDiff;
+        currentEEQuat(0) = currentEEPose.quat(0);
+        currentEEQuat(1) = currentEEPose.quat(1);
+        currentEEQuat(2) = currentEEPose.quat(2);
+        currentEEQuat(3) = currentEEPose.quat(3);
+
+        if(!quaternion_check){
+            quaternion_check = true;
+            // calculate dot produce between quaternios
+            float dotProduct = 0;
+            for(int j = 0; j < 4; j++){
+                dotProduct += currentEEQuat(j) * desiredQuat(j);
+            }
+
+            // Invert the quaternion
+            if(dotProduct < 0){
+                desiredQuat(0) = -desiredQuat(0);
+                desiredQuat(1) = -desiredQuat(1);
+                desiredQuat(2) = -desiredQuat(2);
+                desiredQuat(3) = -desiredQuat(3);
+            }
+        }
+        invertedQuat = invQuat(currentEEQuat);
+        quatDiff = multQuat(desiredQuat, invertedQuat);
+
+
+        m_point axisDiff = quat2Axis(quatDiff);
+        MatrixXd differenceFromPath(6, 1);
+        float gainsTorque[6] = {100, 100, 200, 80, 80, 80};
+        float gainsPositionControl[6] = {10000, 10000, 30000, 5000, 5000, 5000};
+
+        for(int j = 0; j < 3; j++){
+            differenceFromPath(j) = EE_path[i](j) - currentEEPose.position(j);
+            differenceFromPath(j + 3) = axisDiff(j);
+        }
+
+        MatrixXd Jac, JacInv;
+
+        Jac = MuJoCo_helper->calculateJacobian(EE_name, MuJoCo_helper->main_data);
+        JacInv = Jac.completeOrthogonalDecomposition().pseudoInverse();
+
+        MatrixXd desiredEEForce(6, 1);
+        MatrixXd desiredControls(num_ctrl, 1);
+
+        if(active_state_vector.robots[0].torqueControlled){
+            for(int j = 0; j < 6; j++) {
+                desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
+            }
+            desiredControls = JacInv * desiredEEForce;
+
+            std::vector<double> gravCompensation;
+            MatrixXd gravCompControl(num_ctrl, 1);
+            MuJoCo_helper->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
+            for(int j = 0; j < num_ctrl; j++){
+                gravCompControl(j) = gravCompensation[j];
+            }
+            desiredControls += gravCompControl;
+        }
+        // Position control
+        else{
+            for(int j = 0; j < 6; j++) {
+                desiredEEForce(j) = differenceFromPath(j) * gainsPositionControl[j] * 0.000001;
+            }
+            desiredControls += JacInv * desiredEEForce;
+        }
+
+        init_controls.push_back(desiredControls);
+
+        SetControlVector(desiredControls, MuJoCo_helper->main_data);
+        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
+
+    }
+
+    return init_controls;
+}
