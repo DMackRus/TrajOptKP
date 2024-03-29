@@ -9,8 +9,8 @@
 #include "ThreeDPushing.h"
 #include "BoxFlick.h"
 #include "Walker.h"
-#include "Hopper.h"
-#include "humanoid.h"
+//#include "Hopper.h"
+//#include "humanoid.h"
 #include "BoxSweep.h"
 
 #include "Visualiser.h"
@@ -26,7 +26,6 @@
 
 // --------------------- other -----------------------
 #include <mutex>
-#include <atomic>
 
 // ------------ MODES OF OPERATION -------------------------------
 #define ASYNC_MPC   true
@@ -296,7 +295,7 @@ int main(int argc, char **argv) {
         double time = 0.0f;
         start = std::chrono::high_resolution_clock::now();
         for(int i = 0; i < T; i++){
-            activeDifferentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, l_x, l_xx, l_u, l_uu, 0, 0, false, false, true, 1e-6);
+            activeDifferentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, l_x, l_u, l_xx, l_uu, 0, 0, false, false, true, 1e-6);
             time += activeDifferentiator->time_mj_forwards;
         }
         std::cout << "time of mj_forwards calls " << (time / 1000.0f) << "ms\n";
@@ -431,7 +430,7 @@ void onetaskGenerateTestingData(){
         }
 
 
-        if(activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0) == false){
+        if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
             activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
         }
 
@@ -581,9 +580,9 @@ void generateFilteringData(){
 
         // ---------------------- Low pass filter tests ----------------------
 
-        for(int j = 0; j < lowPassTests.size(); j++){
+        for(double lowPassTest : lowPassTests){
             activeOptimiser->filteringMethod = "low_pass";
-            activeOptimiser->lowPassACoefficient = lowPassTests[j];
+            activeOptimiser->lowPassACoefficient = lowPassTest;
             // Load a task from saved tasks
 
             activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -597,7 +596,7 @@ void generateFilteringData(){
             // Save cost history to file
             std::string filePrefix;
 
-            filePrefix = activeModelTranslator->model_name + "/lowPass" + std::to_string(lowPassTests[j]) + "/";
+            filePrefix = activeModelTranslator->model_name + "/lowPass" + std::to_string(lowPassTest) + "/";
 
             yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
         }
@@ -1188,7 +1187,7 @@ void generateTestingData_MPC(){
                 mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
             }
 
-            if(activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0) == false){
+            if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
                 activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
             }
 
@@ -1293,16 +1292,16 @@ int generateTestingData_MPCHorizons(){
         horizonNames.push_back(std::to_string(horizons[i]));
     }
 
-    if(testingMethods.size() == 0){
+    if(testingMethods.empty()){
         return 0;
     }
 
     std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk2", "iterative_error", "magvel_change2"};
     std::vector<int> testIndices;
     bool anyMatch = false;
-    for(int i = 0; i < testingMethods.size(); i++){
+    for(const auto & testingMethod : testingMethods){
         for(int j = 0; j < methodNames.size(); j++){
-            if(testingMethods[i] == methodNames[j]){
+            if(testingMethod == methodNames[j]){
                 anyMatch = true;
                 testIndices.push_back(j);
             }
@@ -1310,7 +1309,7 @@ int generateTestingData_MPCHorizons(){
 
     }
 
-    if(anyMatch == false){
+    if(!anyMatch){
         cout << "passed testing arguments didnt match any allowed methods \n";
         return 0;
     }
@@ -1333,8 +1332,7 @@ int generateTestingData_MPCHorizons(){
     auto startTimer = std::chrono::high_resolution_clock::now();
     activeOptimiser->verbose_output = false;
 
-    for(int k = 0; k < testIndices.size(); k++) {
-        int testIndex = testIndices[k];
+    for(int testIndex : testIndices) {
         cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
 
         struct keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
@@ -1378,7 +1376,7 @@ int generateTestingData_MPCHorizons(){
                 mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
             }
 
-            if(activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0) == false){
+            if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
                 activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
             }
 

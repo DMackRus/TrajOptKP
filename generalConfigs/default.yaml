@@ -11,7 +11,7 @@ task: "pushing_moderate_clutter"  # Task to be performed
 
 optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
-runMode: "Optimise_once"
+runMode: "-"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -23,7 +23,7 @@ runMode: "Optimise_once"
 # "Generate_testing_data"   - Loop through all test scenes and evaluate the Optimiser and key-point performance.
 # "Generate_filtering_data" - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 
-taskInitMode: "fromCSV"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
+taskInitMode: "fromYAML"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
