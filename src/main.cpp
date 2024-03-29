@@ -258,12 +258,13 @@ int main(int argc, char **argv) {
 //        MatrixXd control_vector = MatrixXd::Zero(dim_action, 1);
 //        control_vector << -1, -1, -1, -1, -1, -1;
 //        activeModelTranslator->SetControlVector(control_vector, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0]);
+        bool flg_centred = false;
 
         std::cout << "start of mjd_transitionFD \n";
         auto start = std::chrono::high_resolution_clock::now();
         for(int i = 0; i < T; i++){
             mjd_transitionFD(
-                    activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], 1e-6, 1,
+                    activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], 1e-6, flg_centred,
                     DataAt(A, t * (dim_state_derivative * dim_state_derivative)),
                     DataAt(B, t * (dim_state_derivative * dim_action)),
                     DataAt(C, t * (dim_sensor * dim_state_derivative)),
@@ -295,7 +296,8 @@ int main(int argc, char **argv) {
         double time = 0.0f;
         start = std::chrono::high_resolution_clock::now();
         for(int i = 0; i < T; i++){
-            activeDifferentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, l_x, l_u, l_xx, l_uu, 0, 0, false, false, true, 1e-6);
+            activeDifferentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, l_x, l_u, l_xx, l_uu,
+                                                     0, 0, false, false, flg_centred, 1e-6);
             time += activeDifferentiator->time_mj_forwards;
         }
         std::cout << "time of mj_forwards calls " << (time / 1000.0f) << "ms\n";
