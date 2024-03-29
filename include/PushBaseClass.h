@@ -9,15 +9,15 @@ public:
 
     PushBaseClass(std::string _EE_name, std::string _body_name);
 
-    void EEWayPointsSetup(std::shared_ptr<MuJoCoHelper> MuJoCo_helper, m_point desiredObjectEnd,
+    void EEWayPointsSetup(m_point desiredObjectEnd,
                           std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon);
 
-    void EEWayPointsPush(std::shared_ptr<MuJoCoHelper> MuJoCo_helper, m_point desiredObjectEnd,
+    void EEWayPointsPush(m_point desiredObjectEnd,
                          std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon);
 
     std::vector<m_point> CreateAllEETransitPoints(const std::vector<m_point> &mainWayPoints, const std::vector<int> &wayPointsTiming);
 
-    std::vector<MatrixXd> JacobianEEControl(std::shared_ptr<MuJoCoHelper> MuJoCo_helper, m_point goal_pos, const std::vector<m_point> &EE_path);
+    std::vector<MatrixXd> JacobianEEControl(m_point goal_pos, const std::vector<m_point> &EE_path);
 
 
 private:

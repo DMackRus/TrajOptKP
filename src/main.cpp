@@ -172,15 +172,12 @@ int main(int argc, char **argv) {
     activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     //Instantiate my visualiser
-    std::cout << "before make visualiser \n";
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
 
     // Choose an Optimiser
     if(optimiser == "interpolated_iLQR"){
-        std::cout << "before make optimiser \n";
         iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
-        std::cout << "after make optimiser \n";
     }
     else if(optimiser == "PredictiveSampling"){
         stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, yamlReader->maxHorizon, 8);
@@ -366,7 +363,6 @@ int main(int argc, char **argv) {
 
         return EXIT_FAILURE;
     }
-    std::cout << "before program exit \n";
 
     return EXIT_SUCCESS;
 }

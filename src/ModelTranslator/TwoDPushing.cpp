@@ -273,7 +273,7 @@ std::vector<MatrixXd> TwoDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<m_point> allWayPoints;
     goalPos(0) = X_desired(7);
     goalPos(1) = X_desired(8);
-    EEWayPointsSetup(MuJoCo_helper, goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
+    EEWayPointsSetup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
 //    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
 
@@ -281,7 +281,7 @@ std::vector<MatrixXd> TwoDPushing::CreateInitSetupControls(int horizonLength){
     allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
 
     // Step 3 - follow the points via the jacobian
-    initSetupControls = JacobianEEControl(MuJoCo_helper, goalPos, allWayPoints);
+    initSetupControls = JacobianEEControl(goalPos, allWayPoints);
 
     return initSetupControls;
 }
@@ -306,7 +306,7 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     std::vector<m_point> allWayPoints;
     goalPos(0) = X_desired(7);
     goalPos(1) = X_desired(8);
-    EEWayPointsPush(MuJoCo_helper, goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
+    EEWayPointsPush(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << mainWayPoints.size() << " waypoints created" << endl;
 //    cout << "mainwaypoint 0: " << mainWayPoints[1] << endl;
 //    cout << "mainWayPoint 1: " << mainWayPoints[2] << endl;
@@ -315,7 +315,7 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
 
     // Step 3 - follow the points via the jacobian
-    initControls = JacobianEEControl(MuJoCo_helper, goalPos, allWayPoints);
+    initControls = JacobianEEControl(goalPos, allWayPoints);
 
     return initControls;
 }

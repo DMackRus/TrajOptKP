@@ -5,7 +5,7 @@ PushBaseClass::PushBaseClass(std::string _EE_name, std::string _body_name){
     body_name = _body_name;
 }
 
-void PushBaseClass::EEWayPointsSetup(std::shared_ptr<MuJoCoHelper> MuJoCo_helper, m_point desiredObjectEnd,
+void PushBaseClass::EEWayPointsSetup(m_point desiredObjectEnd,
                                      std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
 
     pose_6 EE_startPose;
@@ -42,7 +42,7 @@ void PushBaseClass::EEWayPointsSetup(std::shared_ptr<MuJoCoHelper> MuJoCo_helper
     wayPointsTiming.push_back(horizon - 1);
 }
 
-void PushBaseClass::EEWayPointsPush(std::shared_ptr<MuJoCoHelper> MuJoCo_helper, m_point desiredObjectEnd,
+void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
                                     std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon){
 
     pose_6 EE_startPose;
@@ -133,8 +133,7 @@ std::vector<m_point> PushBaseClass::CreateAllEETransitPoints(const std::vector<m
     return EE_path;
 }
 
-std::vector<MatrixXd> PushBaseClass::JacobianEEControl(std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
-                                                       m_point goal_pos, const std::vector<m_point> &EE_path){
+std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const std::vector<m_point> &EE_path){
     std::vector<MatrixXd> init_controls;
 
     pose_7 EE_start_pose;

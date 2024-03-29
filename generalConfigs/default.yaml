@@ -2,7 +2,7 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "pushing_moderate_clutter"  # Task to be performed
+task: "3D_pushing"  # Task to be performed
 # Current implemented tasks are:
 # "double_pendulum", "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
 # "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
@@ -23,7 +23,7 @@ runMode: "Init_controls"
 # "Generate_testing_data"   - Loop through all test scenes and evaluate the Optimiser and key-point performance.
 # "Generate_filtering_data" - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 
-taskInitMode: "fromCSV"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
+taskInitMode: "fromYAML"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
