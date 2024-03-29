@@ -176,3 +176,10 @@ std::vector<int> sortIndices(const std::vector<double>& values) {
     }
     return sortedIndices;
 }
+
+bool endsWith(const std::string& mainString, const std::string& subString) {
+    if (mainString.length() < subString.length())
+        return false;
+
+    return mainString.substr(mainString.length() - subString.length()) == subString;
+}

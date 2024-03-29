@@ -7,9 +7,14 @@ enum terrains{
     UNEVEN
 };
 
+enum locomotion_types{
+    WALK,
+    RUN
+};
+
 class walker : public ModelTranslator {
 public:
-    walker(int terrain);
+    walker(int terrain, int locomotion_type);
 
     bool TaskComplete(mjData *d, double &dist) override;
     void GenerateRandomGoalAndStartState() override;
@@ -18,7 +23,8 @@ public:
 
     std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
 
-//    double CostFunction(mjData *d, bool terminal) override;
-//    void CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
+private:
+    double low_bound_velocity;
+    double high_bound_velocity;
 
 };

@@ -596,7 +596,7 @@ std::vector<MatrixXd> BoxFlick::generate_initControls_fromWayPoints(std::vector<
         initControls.push_back(desiredControls);
 
         SetControlVector(desiredControls, MuJoCo_helper->main_data);
-        MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
+        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
     }
 

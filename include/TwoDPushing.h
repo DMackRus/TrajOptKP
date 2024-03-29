@@ -1,5 +1,4 @@
-#ifndef TWOD_PUSHING_H
-#define TWOD_PUSHING_H
+#pragma once
 
 #include "ModelTranslator.h"
 
@@ -34,6 +33,3 @@ private:
     Matrix<double, 6, 6> cost_reach;
 
 };
-
-
-#endif

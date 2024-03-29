@@ -6,10 +6,11 @@
 #include "Acrobot.h"
 #include "Reaching.h"
 #include "TwoDPushing.h"
+#include "ThreeDPushing.h"
 #include "BoxFlick.h"
 #include "Walker.h"
-#include "Hopper.h"
-#include "humanoid.h"
+//#include "Hopper.h"
+//#include "humanoid.h"
 #include "BoxSweep.h"
 
 #include "Visualiser.h"
@@ -25,7 +26,6 @@
 
 // --------------------- other -----------------------
 #include <mutex>
-#include <atomic>
 
 // ------------ MODES OF OPERATION -------------------------------
 #define ASYNC_MPC   true
@@ -71,6 +71,25 @@ bool stopMPC = false;
 
 int main(int argc, char **argv) {
 
+//    mjModel *temp_model;
+//    mjData *temp_data;
+//    char error[1000];
+//    temp_model = mj_loadXML("/home/davidrussell/catkin_ws/src/TrajOptKP/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml", NULL, error, 1000);
+//    if( !temp_model ) {
+//        printf("%s\n", error);
+//    }
+//    temp_data = mj_makeData(temp_model);
+//
+//    for(int j = 0; j < 5; j++){
+//        mj_step(temp_model, temp_data);
+//    }
+//
+//    mj_deleteData(temp_data);
+//    mj_deleteModel(temp_model);
+//
+//
+//    return -1;
+
 //    vector<robot> temp1;
 //    vector<string> temp2;
 //    MuJoCoHelper temp(temp1, temp2);
@@ -87,7 +106,7 @@ int main(int argc, char **argv) {
     }
 
     std::string configFileName = argv[1];
-    std::cout << "config file name: " << configFileName << endl;
+//    std::cout << "config file name: " << configFileName << endl;
 
     // Optional arguments
     // 3. key-point method (only used for generating testing data)
@@ -129,6 +148,7 @@ int main(int argc, char **argv) {
     }
 
     startStateVector.resize(activeModelTranslator->state_vector_size, 1);
+    std::cout << "X start: " << activeModelTranslator->X_start << "\n";
     startStateVector = activeModelTranslator->X_start;
 
     // random start and goal state
@@ -141,21 +161,26 @@ int main(int argc, char **argv) {
         activeModelTranslator->X_start = startStateVector;
     }
 
-    cout << "start state " << activeModelTranslator->X_start.transpose() << endl;
+    cout << "start state " << startStateVector << endl;
     cout << "desired state " << activeModelTranslator->X_desired.transpose() << endl;
 
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
     activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-    activeModelTranslator->MuJoCo_helper->stepSimulator(5, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    for(int j = 0; j < 5; j++){
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    }
     activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     //Instantiate my visualiser
+    std::cout << "before make visualiser \n";
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
 
     // Choose an Optimiser
     if(optimiser == "interpolated_iLQR"){
+        std::cout << "before make optimiser \n";
         iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
+        std::cout << "after make optimiser \n";
     }
     else if(optimiser == "PredictiveSampling"){
         stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, yamlReader->maxHorizon, 8);
@@ -195,6 +220,14 @@ int main(int argc, char **argv) {
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
 
+        // Test ability to convert state vector to q pos index.
+        std::cout << "indices: ";
+        for(int i = 0; i < activeModelTranslator->state_vector_names.size(); i++){
+            int index = activeModelTranslator->StateIndexToQposIndex(i);
+            std::cout << index << " ";
+        }
+        std::cout << "\n";
+
         // Compare my fd code versus mjd_transitionFD;
 
         // Start with mjd_transitionFD
@@ -222,12 +255,16 @@ int main(int argc, char **argv) {
         int t = 0;
 
         activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+//        MatrixXd control_vector = MatrixXd::Zero(dim_action, 1);
+//        control_vector << -1, -1, -1, -1, -1, -1;
+//        activeModelTranslator->SetControlVector(control_vector, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0]);
+        bool flg_centred = false;
 
         std::cout << "start of mjd_transitionFD \n";
         auto start = std::chrono::high_resolution_clock::now();
         for(int i = 0; i < T; i++){
             mjd_transitionFD(
-                    activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], 1e-6, 1,
+                    activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], 1e-6, flg_centred,
                     DataAt(A, t * (dim_state_derivative * dim_state_derivative)),
                     DataAt(B, t * (dim_state_derivative * dim_action)),
                     DataAt(C, t * (dim_sensor * dim_state_derivative)),
@@ -240,17 +277,6 @@ int main(int argc, char **argv) {
         std::vector<MatrixXd> A_mine;
         std::vector<MatrixXd> B_mine;
 
-        std::cout << "A from mjd_transition \n";
-        // Print their A matrix
-//        std::cout << setw(6);
-        for(int i = 0; i < dim_state_derivative; i++){
-            for(int j = 0; j < dim_state_derivative; j++){
-                std::cout << setw(6) << A[i * dim_state_derivative + j] << " ";
-            }
-            std::cout << std::endl;
-        }
-
-
         int dof_model_translator = activeModelTranslator->dof;
 
         A_mine.push_back(MatrixXd(dof_model_translator*2, dof_model_translator*2));
@@ -262,7 +288,7 @@ int main(int argc, char **argv) {
         B_mine[0].setZero();
 
         std::vector<int> cols(dof_model_translator, 0);
-        for (int i = 0; i < dof; i++) {
+        for (int i = 0; i < dof_model_translator; i++) {
             cols[i] = i;
         }
 
@@ -270,35 +296,77 @@ int main(int argc, char **argv) {
         double time = 0.0f;
         start = std::chrono::high_resolution_clock::now();
         for(int i = 0; i < T; i++){
-            activeDifferentiator->getDerivatives(A_mine[0], B_mine[0], cols, l_x, l_xx, l_u, l_uu, false, 0, false, 0);
+            activeDifferentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, l_x, l_u, l_xx, l_uu,
+                                                     0, 0, false, false, flg_centred, 1e-6);
             time += activeDifferentiator->time_mj_forwards;
         }
         std::cout << "time of mj_forwards calls " << (time / 1000.0f) << "ms\n";
         std::cout << "time taken for my code " << (std::chrono::duration_cast<std::chrono::microseconds>(
                 std::chrono::high_resolution_clock::now() - start).count()) / 1000.0f << "ms\n";
 
-        // print my A matrix
-        std::cout << "A_mine[0] \n";
-        std::cout << A_mine[0] << std::endl;
-//
-
-
-        MatrixXd A_diff;
-        A_diff.resize(dim_state_derivative, dim_state_derivative);
-
-        for(int i = 0; i < dim_state_derivative; i++){
-            for(int j = 0; j < dim_state_derivative; j++){
-                A_diff(i, j) = abs(A[i * dim_state_derivative + j] - A_mine[0](i, j));
-                if(A_diff(i, j) < 1e-6) A_diff(i, j) = 0;
+        std::cout << "dim state deriv " << dim_state_derivative << "\n";
+        std::cout << "dof model translator " << dof_model_translator << "\n";
+        if(dim_state_derivative != dof_model_translator*2){
+            // Print theirs and print mine
+            std::cout << "A from mjd_transition \n";
+            for(int i = 0; i < dim_state_derivative; i++){
+                for(int j = 0; j < dim_state_derivative; j++){
+                    std::cout << setw(6) << A[i * dim_state_derivative + j] << " ";
+                }
+                std::cout << std::endl;
             }
+
+            std::cout << "A_mine[0] \n";
+            std::cout << A_mine[0] << std::endl;
+
+            // Print their B matrix
+            std::cout << "B from mjd_transition \n";
+            for(int i = 0; i < dim_state_derivative; i++){
+                for(int j = 0; j < dim_action; j++){
+                    std::cout << setw(6) << B[i * dim_action + j] << " ";
+                }
+                std::cout << std::endl;
+            }
+
+            // Print our B matrix
+            std::cout << "B_mine[0] \n";
+            std::cout << B_mine[0] << std::endl;
+
+
         }
+        else{
+            // compute difference and print
+            MatrixXd A_diff;
+            MatrixXd B_diff;
+            A_diff.resize(dim_state_derivative, dim_state_derivative);
+            B_diff.resize(dim_state_derivative, dim_action);
+            std::cout << "A_mine[0] \n";
+            std::cout << A_mine[0] << std::endl;
 
-        std::cout << "A_diff \n";
-        std::cout << A_diff << std::endl;
+            for(int i = 0; i < dim_state_derivative; i++){
+                for(int j = 0; j < dim_state_derivative; j++){
+                    A_diff(i, j) = abs(A[i * dim_state_derivative + j] - A_mine[0](i, j));
+                    if(A_diff(i, j) < 1e-6) A_diff(i, j) = 0;
+                }
+            }
 
+            std::cout << "A_diff \n";
+            std::cout << A_diff << std::endl;
+
+            for(int i = 0; i < dim_state_derivative; i++){
+                for(int j = 0; j < dim_action; j++){
+                    B_diff(i, j) = abs(B[i * dim_action + j] - B_mine[0](i, j));
+                    if(B_diff(i, j) < 1e-6) B_diff(i, j) = 0;
+                }
+            }
+
+            std::cout << "B_diff \n";
+            std::cout << B_diff << std::endl;
+        }
 
         return EXIT_FAILURE;
     }
+    std::cout << "before program exit \n";
 
     return EXIT_SUCCESS;
 }
@@ -359,9 +427,12 @@ void onetaskGenerateTestingData(){
         yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, startStateVector, activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
         activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-        activeModelTranslator->MuJoCo_helper->stepSimulator(5, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        for(int j = 0; j < 5; j++){
+            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        }
 
-        if(activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0) == false){
+
+        if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
             activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
         }
 
@@ -446,7 +517,7 @@ void generateTestingData(){
     startStateVector.resize(activeModelTranslator->state_vector_size, 1);
     startStateVector = activeModelTranslator->X_start;
     activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-    activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->main_data);
+    mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->main_data);
     activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->main_data);
 
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
@@ -482,7 +553,7 @@ void generateFilteringData(){
                                      activeModelTranslator->X_desired);
         activeModelTranslator->X_start = startStateVector;
         activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-        activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(setupHorizon);
         activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
@@ -511,9 +582,9 @@ void generateFilteringData(){
 
         // ---------------------- Low pass filter tests ----------------------
 
-        for(int j = 0; j < lowPassTests.size(); j++){
+        for(double lowPassTest : lowPassTests){
             activeOptimiser->filteringMethod = "low_pass";
-            activeOptimiser->lowPassACoefficient = lowPassTests[j];
+            activeOptimiser->lowPassACoefficient = lowPassTest;
             // Load a task from saved tasks
 
             activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -527,7 +598,7 @@ void generateFilteringData(){
             // Save cost history to file
             std::string filePrefix;
 
-            filePrefix = activeModelTranslator->model_name + "/lowPass" + std::to_string(lowPassTests[j]) + "/";
+            filePrefix = activeModelTranslator->model_name + "/lowPass" + std::to_string(lowPassTest) + "/";
 
             yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
         }
@@ -559,12 +630,11 @@ void generateFilteringData(){
 }
 
 void generateTestScenes(){
-    for(int i = 0; i < 100; i++){
+    for(int i = 0; i < 200; i++){
         activeModelTranslator->GenerateRandomGoalAndStartState();
         activeModelTranslator->SetStateVector(activeModelTranslator->X_start, activeModelTranslator->MuJoCo_helper->main_data);
         activeVisualiser->render("init state");
-        cout << "starting state: " << activeModelTranslator->X_start.transpose() << endl;
-
+        std::cout << "X_desired: " << activeModelTranslator->X_desired << std::endl;
         yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->X_start, activeModelTranslator->X_desired);
     }
 }
@@ -590,7 +660,7 @@ void showInitControls(){
     while(activeVisualiser->windowOpen()){
 
         activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data);
-        activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->main_data);
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->main_data);
 
 
         controlCounter++;
@@ -631,14 +701,10 @@ void optimiseOnceandShow(){
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
-    char* label = "Final trajectory after optimisation";
+    const char* label = "Final trajectory after optimisation";
 
     std::vector<MatrixXd> initControls;
     std::vector<MatrixXd> finalControls;
-
-//    activeModelTranslator->MuJoCo_helper->copySystemState(0, activeModelTranslator->MuJoCo_helper->main_data);
-//    MatrixXd test = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->main_data);
-//    cout << "test: " << test << endl;
 
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
     activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
@@ -668,7 +734,7 @@ void optimiseOnceandShow(){
             activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data);
         }
 
-        activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->main_data);
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->main_data);
 
         controlCounter++;
         visualCounter++;
@@ -681,7 +747,7 @@ void optimiseOnceandShow(){
                 label = "Final trajectory after optimisation";
             }
             else{
-                label = "Intial trajectory before optimisation";
+                label = "Initial trajectory before optimisation";
             }
         }
 
@@ -744,7 +810,7 @@ void async_MPC_testing(){
             activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data);
 
             // Update the simulation
-            activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->vis_data);
+            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
 
             // Check if task complete
             double dist;
@@ -860,7 +926,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
 
             activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
-            activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->vis_data);
+            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
         }
 
         reInitialiseCounter++;
@@ -967,7 +1033,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             trajecCost += stateCost  * activeModelTranslator->MuJoCo_helper->returnModelTimeStep();
 
             activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
-            activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->vis_data);
+            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
         }
     }
 
@@ -1009,7 +1075,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
                     activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
 
-                    activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->vis_data);
+                    mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
 
                     controlCounter++;
 
@@ -1119,9 +1185,11 @@ void generateTestingData_MPC(){
 
             activeModelTranslator->X_start = startStateVector;
             activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-            activeModelTranslator->MuJoCo_helper->stepSimulator(5, activeModelTranslator->MuJoCo_helper->master_reset_data);
+            for(int j = 0; j < 5; j++){
+                mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+            }
 
-            if(activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0) == false){
+            if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
                 activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
             }
 
@@ -1226,16 +1294,16 @@ int generateTestingData_MPCHorizons(){
         horizonNames.push_back(std::to_string(horizons[i]));
     }
 
-    if(testingMethods.size() == 0){
+    if(testingMethods.empty()){
         return 0;
     }
 
     std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk2", "iterative_error", "magvel_change2"};
     std::vector<int> testIndices;
     bool anyMatch = false;
-    for(int i = 0; i < testingMethods.size(); i++){
+    for(const auto & testingMethod : testingMethods){
         for(int j = 0; j < methodNames.size(); j++){
-            if(testingMethods[i] == methodNames[j]){
+            if(testingMethod == methodNames[j]){
                 anyMatch = true;
                 testIndices.push_back(j);
             }
@@ -1243,7 +1311,7 @@ int generateTestingData_MPCHorizons(){
 
     }
 
-    if(anyMatch == false){
+    if(!anyMatch){
         cout << "passed testing arguments didnt match any allowed methods \n";
         return 0;
     }
@@ -1266,8 +1334,7 @@ int generateTestingData_MPCHorizons(){
     auto startTimer = std::chrono::high_resolution_clock::now();
     activeOptimiser->verbose_output = false;
 
-    for(int k = 0; k < testIndices.size(); k++) {
-        int testIndex = testIndices[k];
+    for(int testIndex : testIndices) {
         cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
 
         struct keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
@@ -1307,9 +1374,11 @@ int generateTestingData_MPCHorizons(){
 
             activeModelTranslator->X_start = startStateVector;
             activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-            activeModelTranslator->MuJoCo_helper->stepSimulator(5, activeModelTranslator->MuJoCo_helper->master_reset_data);
+            for(int j = 0; j < 5; j++){
+                mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+            }
 
-            if(activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0) == false){
+            if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
                 activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
             }
 
@@ -1397,6 +1466,10 @@ int assign_task(){
         std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(constrainedClutter);
         activeModelTranslator = myTwoDPushing;
     }
+    else if(task == "3D_pushing"){
+        std::shared_ptr<ThreeDPushing> myThreeDPushing = std::make_shared<ThreeDPushing>();
+        activeModelTranslator = myThreeDPushing;
+    }
     else if(task == "box_push_toppling"){
         cout << "not implemented task yet " << endl;
         return EXIT_FAILURE;
@@ -1413,17 +1486,19 @@ int assign_task(){
         std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(heavyClutter);
         activeModelTranslator = myBoxFlick;
     }
-    else if(task == "walker"){
-        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(PLANE);
+    else if(task == "walker_walk"){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(PLANE, WALK);
+        activeModelTranslator = myLocomotion;
+    }
+    else if(task == "walker_run"){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN, RUN);
         activeModelTranslator = myLocomotion;
     }
     else if(task == "walker_uneven"){
-        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN);
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN, WALK);
         activeModelTranslator = myLocomotion;
     }
     else if(task == "Hopper"){
-//        std::shared_ptr<Hopper> myHopper = std::make_shared<Hopper>();
-//        activeModelTranslator = myHopper;
         cout << "not implemented task yet " << endl;
         return EXIT_FAILURE;
     }

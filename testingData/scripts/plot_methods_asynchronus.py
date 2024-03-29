@@ -5,8 +5,6 @@ import csv
 import os
 import sys
 
-
-
 task = "walker_plane"
 task_num = -1
 
@@ -110,9 +108,6 @@ def plot_task(task_name, method_name, task_number):
     plt.show()
     
     
-    
-    
-    
 def plot_summary(task_name):
     
     directory = "../" + task_name
@@ -144,7 +139,7 @@ def plot_summary(task_name):
         final_data.append([method_names[i], mean_final_cost[i], mean_opt_time[i], mean_percent_derivs[i]])
 
     #sort the data
-    final_data = sorted(final_data, key=lambda x: x[2])
+    final_data = sorted(final_data, key=lambda x: x[3])
 
     # extract the data for plotting
     methods = [item[0] for item in final_data]

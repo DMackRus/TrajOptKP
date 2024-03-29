@@ -24,7 +24,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
     keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
                                                              MuJoCo_helper,
                                                              activeModelTranslator->dof,
-                                                             horizonLength);
+                                                             0);
 
     keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
     keypoint_generator->PrintKeypointMethod();
@@ -163,7 +163,7 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
 
     // Setup all the required tasks
     for (int i = 0; i < keyPoints.size(); ++i) {
-        tasks.push_back(&Differentiator::getDerivatives);
+        tasks.push_back(&Differentiator::ComputeDerivatives);
     }
 
     // Get the number of threads available
@@ -180,7 +180,7 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     // compute derivs serially
 //    for(int i = 0; i < horizonLength; i++){
 //        if(keyPoints[i].size() != 0){
-//            activeDifferentiator->getDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false, i, false, 0);
+//            activeDifferentiator->ComputeDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false, i, false, 0);
 //        }
 //    }
       
@@ -222,7 +222,7 @@ void Optimiser::WorkerComputeDerivatives(int threadId) {
         std::vector<int> keyPoints;
         (activeDifferentiator.get()->*(tasks[iteration]))(A[timeIndex], B[timeIndex],
                                         keypointsGlobal[iteration], l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex],
-                                        activeYamlReader->costDerivsFD, timeIndex, terminal, threadId);
+                                        timeIndex, threadId, terminal, activeYamlReader->costDerivsFD, true, 1e-6);
     }
 }
 

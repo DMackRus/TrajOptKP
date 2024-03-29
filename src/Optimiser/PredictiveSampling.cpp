@@ -59,7 +59,7 @@ double PredictiveSampling::RolloutTrajectory(mjData *d, bool saveStates, std::ve
         activeModelTranslator->SetControlVector(initControls[i], d);
 
         // Integrate simulator
-        MuJoCo_helper->stepSimulator(1, d);
+        mj_step(MuJoCo_helper->model, d);
 
         // return cost for this state
         Xt = activeModelTranslator->ReturnStateVector(d);

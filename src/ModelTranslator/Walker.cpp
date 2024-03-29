@@ -3,13 +3,24 @@
 //
 #include "Walker.h"
 
-walker::walker(int terrain): ModelTranslator(){
+walker::walker(int terrain, int locomotion_type): ModelTranslator(){
     std::string yaml_file_path;
-    if(terrain == PLANE)
-        yaml_file_path = "/taskConfigs/locomotionConfig.yaml";
-    else if(terrain == UNEVEN){
-        yaml_file_path = "/taskConfigs/locomotionUnevenConfig.yaml";
+
+    if(locomotion_type == WALK){
+        low_bound_velocity = 0.1;
+        high_bound_velocity = 0.8;
+        if(terrain == PLANE)
+            yaml_file_path = "/taskConfigs/walk_plane_config.yaml";
+        else if(terrain == UNEVEN)
+            yaml_file_path = "/taskConfigs/walk_uneven_config.yaml";
+
     }
+    else if(locomotion_type == RUN){
+        low_bound_velocity = 1.5;
+        high_bound_velocity = 2.5;
+        yaml_file_path = "/taskConfigs/run_plane_config.yaml";
+    }
+
     InitModelTranslator(yaml_file_path);
 }
 
@@ -37,7 +48,7 @@ MatrixXd walker::ReturnRandomStartState(){
 MatrixXd walker::ReturnRandomGoalState(MatrixXd X0){
     MatrixXd goalState(state_vector_size, 1);
 
-    double rand_body_velocity = randFloat(1.5f, 2.5f);
+    double rand_body_velocity = randFloat(low_bound_velocity, high_bound_velocity);
 
     goalState << 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, rand_body_velocity, 0, 0, 0, 0, 0, 0, 0;

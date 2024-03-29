@@ -76,7 +76,7 @@ double GradDescent::RolloutTrajectory(mjData *d, bool saveStates, std::vector<Ma
         activeModelTranslator->SetControlVector(initControls[i], MuJoCo_helper->main_data);
 
         // Integrate simulator
-        MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
+        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
         // return cost for this state
         Xt = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
@@ -275,7 +275,7 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
 
             newCost += (newStateCost * MuJoCo_helper->returnModelTimeStep());
 
-            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
+            mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
              if(t % 20 == 0){
                  const char* fplabel = "fp";
@@ -309,7 +309,7 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
         for(int i = 0; i < horizonLength; i++){
 
             activeModelTranslator->SetControlVector(U_new[i], MuJoCo_helper->main_data);
-            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
+            mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
             // Log the old state
             X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
@@ -384,7 +384,7 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
 
             newCosts[i] += (newStateCost * MuJoCo_helper->returnModelTimeStep());
 
-            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->savedSystemStatesList[i+1]);
+            mj_step(MuJoCo_helper->model, MuJoCo_helper->savedSystemStatesList[i+1]);
 
             X_last = Xt.replicate(1, 1);
             U_last = Ut.replicate(1, 1);
@@ -410,7 +410,7 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
         for(int i = 0; i < horizonLength; i++){
 
             activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MuJoCo_helper->main_data);
-            MuJoCo_helper->stepSimulator(1, MuJoCo_helper->main_data);
+            mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
             // Log the old state
             X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);

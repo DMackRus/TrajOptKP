@@ -116,6 +116,7 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //
 
 
+
     UpdateLastPercentageDerivatives(keypoints);
 }
 
@@ -206,7 +207,7 @@ std::vector<double> KeypointGenerator::DesiredPercentageDerivs(double expected, 
         // When surprise is low, dont update
         double raw_adjust_factor;
         if(surprise < surprise_lower){
-            std::cout << "surprise was low" << std::endl;
+//            std::cout << "surprise was low" << std::endl;
             raw_adjust_factor = -2 - pow(expected, 2);
 
             if(raw_adjust_factor < -5){
@@ -310,7 +311,7 @@ void KeypointGenerator::GenerateKeyPointsSetInterval(){
         full_row[i] = i;
     }
 
-    for(int t = 0; t < horizon - 2; t++){
+    for(int t = 0; t < horizon - 1; t++){
         if(t % current_keypoint_method.min_N == 0){
             keypoints.push_back(full_row);
         }
@@ -570,17 +571,17 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
     int tid = omp_get_thread_num();
 
     if(!start_index_computed){
-        differentiator->getDerivatives(A[indices.start_index], B[indices.start_index], cols, blank1, blank2, blank3, blank4, false, indices.start_index, false, tid);
+        differentiator->ComputeDerivatives(A[indices.start_index], B[indices.start_index], cols, blank1, blank2, blank3, blank4, false, indices.start_index, false, tid, true, 1e-6);
         computed_keypoints[dof_index].push_back(indices.start_index);
     }
 
     if(!mid_index_computed){
-        differentiator->getDerivatives(A[mid_index], B[mid_index], cols, blank1, blank2, blank3, blank4, false, mid_index, false, tid);
+        differentiator->ComputeDerivatives(A[mid_index], B[mid_index], cols, blank1, blank2, blank3, blank4, false, mid_index, false, tid, true, 1e-6);
         computed_keypoints[dof_index].push_back(mid_index);
     }
 
     if(!end_index_computed){
-        differentiator->getDerivatives(A[indices.end_index], B[indices.end_index], cols, blank1, blank2, blank3, blank4, false, indices.end_index, false, tid);
+        differentiator->ComputeDerivatives(A[indices.end_index], B[indices.end_index], cols, blank1, blank2, blank3, blank4, false, indices.end_index, false, tid, true, 1e-6);
         computed_keypoints[dof_index].push_back(indices.end_index);
     }
 

@@ -190,6 +190,16 @@ public:
     MatrixXd ReturnControlVector(mjData* d);
 
     /**
+     * Returns the control limits
+     *
+     * @return MatrixXd The control limits of actuators present in the state vector.
+     * The return length is twice the active number of controls and is oredered,
+     * low limit, high limit, low limit, high limit, ...
+     *
+     */
+    MatrixXd ReturnControlLimits();
+
+    /**
      * Sets the current control vector of the system in the specified data index.
      *
      * @param  control_vector The control vector to set.
@@ -255,19 +265,30 @@ public:
      */
     bool setVelocityVector(MatrixXd velocity_vector, mjData* d);
 
+    /**
+     * Converts a state vector index to a position vector index in MuJoCo
+     *
+     * @param  state_index The state index to convert to a position vector index.
+     *
+     * @return int the position vector index in MuJoCo
+     *
+     */
+    int StateIndexToQposIndex(int state_index);
+
 
     // Number of degrees of freedom of the system (Note, this is set by used via yaml file, it doesnt necessary
     // include all dofs for every object, if they are intentionally left out.
-    int dof;
+    int dof = 0;
 
     // Number of actuated joints of the system
-    int num_ctrl;
+    int num_ctrl = 0;
 
     // Size of the state vector (typically 2 x dof)
-    int state_vector_size;
+    int state_vector_size = 0;
 
     // State vector object, considers robots and bodies
     struct stateVectorList active_state_vector;
+    std::vector<std::string> state_vector_names;
 
     // Desired state, used for cost function
     MatrixXd X_desired;
@@ -301,7 +322,5 @@ public:
 
 protected:
 
-
 private:
-
 };

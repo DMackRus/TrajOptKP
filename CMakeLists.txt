@@ -3,8 +3,8 @@ project(TrajOptKP)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
-set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3")
-set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
+#set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3")
+#set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
@@ -30,7 +30,6 @@ endif (TARGET Eigen3::Eigen)
 
 set(Mujoco_INCLUDE_DIRS ${MUJOCO_DIR}/include/mujoco)
 message(STATUS "Mujoco directory: " ${MUJOCO_DIR})
-#file(GLOB LIB_MUJOCO ${MUJOCO_DIR}/lib/libmujoco.so.2.3.2)
 file(GLOB LIB_MUJOCO "${MUJOCO_DIR}/lib/libmujoco.so.*")
 message(STATUS "parent directory: " ${PARENT_DIR})
 message(STATUS "MuJoCo lib found at: " ${LIB_MUJOCO})
@@ -67,7 +66,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/Acrobot.cpp
             src/ModelTranslator/Hopper.cpp
             src/Testing.cpp
-            src/KeyPointGenerator/KeyPointGenerator.cpp)
+            src/KeyPointGenerator/KeyPointGenerator.cpp
+            src/ModelTranslator/ThreeDPushing.cpp)
 
 include_directories(
         include
