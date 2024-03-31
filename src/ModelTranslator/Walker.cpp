@@ -48,7 +48,7 @@ MatrixXd walker::ReturnRandomStartState(){
 MatrixXd walker::ReturnRandomGoalState(MatrixXd X0){
     MatrixXd goalState(state_vector_size, 1);
 
-    double rand_body_velocity = randFloat(low_bound_velocity, high_bound_velocity);
+    float rand_body_velocity = randFloat(low_bound_velocity, high_bound_velocity);
 
     goalState << 0, 0, 0, 0, 0, 0, 0, 0, 0,
             0, rand_body_velocity, 0, 0, 0, 0, 0, 0, 0;
