@@ -16,7 +16,6 @@ public:
     bool TaskComplete(mjData *d, double &dist) override;
 
 private:
-    int clutterLevel = noClutter;
     double randomGoalX = 0.0;
     double randomGoalY = 0.0;
 
