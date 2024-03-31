@@ -7,7 +7,7 @@
 class PushBaseClass: virtual public ModelTranslator{
 public:
 
-    PushBaseClass(std::string _EE_name, std::string _body_name);
+    PushBaseClass(std::string EE_name, std::string body_name);
 
     void EEWayPointsSetup(m_point desiredObjectEnd,
                           std::vector<m_point>& mainWayPoints, std::vector<int>& wayPointsTiming, int horizon);

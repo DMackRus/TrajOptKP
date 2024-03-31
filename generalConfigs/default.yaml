@@ -2,7 +2,7 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "3D_pushing"  # Task to be performed
+task: "box_sweep"  # Task to be performed
 # Current implemented tasks are:
 # "double_pendulum", "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
 # "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
@@ -11,7 +11,7 @@ task: "3D_pushing"  # Task to be performed
 
 optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
-runMode: "Init_controls"
+runMode: "Optimise_once"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.

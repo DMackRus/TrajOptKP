@@ -1,8 +1,8 @@
 #include "PushBaseClass.h"
 
-PushBaseClass::PushBaseClass(std::string _EE_name, std::string _body_name){
-    EE_name = _EE_name;
-    body_name = _body_name;
+PushBaseClass::PushBaseClass(std::string EE_name, std::string body_name){
+    this->EE_name = EE_name;
+    this->body_name = body_name;
 }
 
 void PushBaseClass::EEWayPointsSetup(m_point desiredObjectEnd,
@@ -57,21 +57,21 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
     wayPointsTiming.push_back(0);
 
     // Calculate the angle of approach - from goal position to object start position
-    float angle_EE_push;
-    float x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
-    float y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
+    double angle_EE_push;
+    double x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
+    double y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
     angle_EE_push = atan2(y_diff, x_diff);
 
     // TODO hard coded - get it programmatically?
-    float cylinder_radius = 0.01;
-    float x_cylinder0ffset = cylinder_radius * cos(angle_EE_push);
-    float y_cylinder0ffset = cylinder_radius * sin(angle_EE_push);
+    double cylinder_radius = 0.01;
+    double x_cylinder0ffset = cylinder_radius * cos(angle_EE_push);
+    double y_cylinder0ffset = cylinder_radius * sin(angle_EE_push);
 
-    float desired_endPointX = desiredObjectEnd(0) - x_cylinder0ffset;
-    float desired_endPointY;
+    double desired_endPointX = desiredObjectEnd(0) - x_cylinder0ffset;
+    double desired_endPointY;
 
-    float endPointX;
-    float endPointY;
+    double endPointX;
+    double endPointY;
     if(desiredObjectEnd(1) - goalobj_startPose.position(1) > 0){
         desired_endPointY = desiredObjectEnd(1) + y_cylinder0ffset;
     }
@@ -79,15 +79,15 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
         desired_endPointY = desiredObjectEnd(1) - y_cylinder0ffset;
     }
 
-    float intermediatePointY = goalobj_startPose.position(1);
-    float intermediatePointX = goalobj_startPose.position(0);
+    double intermediatePointY = goalobj_startPose.position(1);
+    double intermediatePointX = goalobj_startPose.position(0);
 
     // Max speed could be a parameter
-    float maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * MuJoCo_helper->returnModelTimeStep());
+    double maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * MuJoCo_helper->returnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
-    float desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
-    float proportionOfDistTravelled = maxDistTravelled / desiredDistTravelled;
+    double desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
+    double proportionOfDistTravelled = maxDistTravelled / desiredDistTravelled;
 //    cout << "proportion" << proportionOfDistTravelled << endl;
     if(proportionOfDistTravelled > 1){
         endPointX = desired_endPointX;
@@ -109,24 +109,23 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
 }
 
 std::vector<m_point> PushBaseClass::CreateAllEETransitPoints(const std::vector<m_point> &mainWayPoints, const std::vector<int> &wayPointsTiming){
-    int numMainWayPoints = mainWayPoints.size();
     std::vector<m_point> EE_path;
 
     EE_path.push_back(mainWayPoints[0]);
-//    wayPointsTiming[0]--;
 
-    int counter = 1;
-    for(int i = 0; i < numMainWayPoints - 1; i++){
-        float x_diff = mainWayPoints[i + 1](0) - mainWayPoints[i](0);
-        float y_diff = mainWayPoints[i + 1](1) - mainWayPoints[i](1);
-        float z_diff = mainWayPoints[i + 1](2) - mainWayPoints[i](2);
+    int path_counter = 1;
+    for(int i = 0; i < mainWayPoints.size(); i++){
+        double x_diff = mainWayPoints[i + 1](0) - mainWayPoints[i](0);
+        double y_diff = mainWayPoints[i + 1](1) - mainWayPoints[i](1);
+        double z_diff = mainWayPoints[i + 1](2) - mainWayPoints[i](2);
         for(int j = 0; j < wayPointsTiming[i + 1]; j++){
-            EE_path.push_back(m_point());
-            EE_path[counter](0) = EE_path[counter - 1](0) + (x_diff / wayPointsTiming[i + 1]);
-            EE_path[counter](1) = EE_path[counter - 1](1) + (y_diff / wayPointsTiming[i + 1]);
-            EE_path[counter](2) = EE_path[counter - 1](2) + (z_diff / wayPointsTiming[i + 1]);
+            m_point path_point;
+            path_point(0) = EE_path[path_counter - 1](0) + (x_diff / wayPointsTiming[i + 1]);
+            path_point(1) = EE_path[path_counter - 1](1) + (y_diff / wayPointsTiming[i + 1]);
+            path_point(2) = EE_path[path_counter - 1](2) + (z_diff / wayPointsTiming[i + 1]);
+            EE_path.push_back(path_point);
 
-            counter++;
+            path_counter++;
         }
     }
 
@@ -141,9 +140,11 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
     MuJoCo_helper->getBodyPose_quat_ViaXpos(EE_name, EE_start_pose, MuJoCo_helper->main_data);
     MuJoCo_helper->getBodyPose_angle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
 
-    float angle_EE_push;
-    float x_diff = goal_pos(0) - goalobj_startPose.position(0);
-    float y_diff = goal_pos(1) - goalobj_startPose.position(1);
+    // TODO - this shouldnt be here, this function should take a fixed axis rotation of the end-effector
+    // as an input.
+    double angle_EE_push;
+    double x_diff = goal_pos(0) - goalobj_startPose.position(0);
+    double y_diff = goal_pos(1) - goalobj_startPose.position(1);
     angle_EE_push = atan2(y_diff, x_diff);
 
     angle_EE_push -= (PI / 4);
@@ -173,16 +174,10 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
     m_quat desiredQuat = rotMat2Quat(rotMat);
 
     MatrixXd currentControl(num_ctrl, 1);
-//    if(active_state_vector.robots[0].torqueControlled){
-//        MatrixXd robotPos = returnPositionVector(MuJoCo_helper->main_data);
-//        for(int i = 0; i < num_ctrl; i++){
-//            currentControl(i) = robotPos(i);
-//        }
-//    }
 
     bool quaternion_check = false;
 
-    for(int i = 0; i < EE_path.size(); i++){
+    for(const auto & i : EE_path){
         pose_7 currentEEPose;
         MuJoCo_helper->getBodyPose_quat_ViaXpos(EE_name, currentEEPose, MuJoCo_helper->main_data);
         m_quat currentEEQuat, invertedQuat, quatDiff;
@@ -194,7 +189,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
         if(!quaternion_check){
             quaternion_check = true;
             // calculate dot produce between quaternios
-            float dotProduct = 0;
+            double dotProduct = 0;
             for(int j = 0; j < 4; j++){
                 dotProduct += currentEEQuat(j) * desiredQuat(j);
             }
@@ -217,7 +212,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
         float gainsPositionControl[6] = {10000, 10000, 30000, 5000, 5000, 5000};
 
         for(int j = 0; j < 3; j++){
-            differenceFromPath(j) = EE_path[i](j) - currentEEPose.position(j);
+            differenceFromPath(j) = i(j) - currentEEPose.position(j);
             differenceFromPath(j + 3) = axisDiff(j);
         }
 
