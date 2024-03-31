@@ -1,11 +1,11 @@
 #include "Differentiator.h"
 
-Differentiator::Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _MuJoCo_helper){
-    activeModelTranslator = _modelTranslator;
-    MuJoCo_helper = _MuJoCo_helper;
+Differentiator::Differentiator(std::shared_ptr<ModelTranslator> model_translator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper){
+    this->model_translator = model_translator;
+    this->MuJoCo_helper = MuJoCo_helper;
 
-    dof = activeModelTranslator->dof;
-    num_ctrl = activeModelTranslator->num_ctrl;
+    dof = model_translator->dof;
+    num_ctrl = model_translator->num_ctrl;
     dim_state = 2 * dof;
 }
 
@@ -75,18 +75,18 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     // TODO (DMackRus) We could in theory use the information from the rollout here instead, except for t = T - 1
     // Compute next state with no perturbations
     mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
-    next_state = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
+    next_state = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
     mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state, mjSTATE_PHYSICS);
-    cost = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+    cost = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
 
     // Reset the simulator to the initial state
     MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
 
-    unperturbed_controls = activeModelTranslator->ReturnControlVector(MuJoCo_helper->fd_data[tid]);
-    unperturbed_velocities = activeModelTranslator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
+    unperturbed_controls = model_translator->ReturnControlVector(MuJoCo_helper->fd_data[tid]);
+    unperturbed_velocities = model_translator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
 
     // --------------------------------------------- FD for controls ---------------------------------------------
-    MatrixXd control_limits = activeModelTranslator->ReturnControlLimits();
+    MatrixXd control_limits = model_translator->ReturnControlLimits();
     for(int i = 0; i < num_ctrl; i++){
         bool compute_column = false;
         for(int col : cols){
@@ -115,7 +115,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             count_integrations++;
 
             // Set perturbed control vector
-            activeModelTranslator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid]);
+            model_translator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid]);
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
@@ -123,11 +123,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
             // return the new state vector
-            next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
+            next_state_plus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
             // If computing cost derivatives
             if(cost_derivs){
-                cost_inc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+                cost_inc = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
             }
 
             // Undo the perturbation
@@ -151,7 +151,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         }
 
         if(nudge_back){
-            activeModelTranslator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid]);
+            model_translator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid]);
 
             // integrate simulator
             start = std::chrono::high_resolution_clock::now();
@@ -159,11 +159,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
             // return the new state vector
-            next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
+            next_state_minus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
             // If calculating cost derivatives via finite-differencing
             if(cost_derivs){
-                cost_dec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+                cost_dec = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
             }
 
             // Undo perturbation
@@ -221,7 +221,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         // Perturb velocity vector positively
         perturbed_velocities = unperturbed_velocities.replicate(1, 1);
         perturbed_velocities(i) += eps;
-        activeModelTranslator->setVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid]);
+        model_translator->setVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid]);
 
         // Integrate the simulator
         start = std::chrono::high_resolution_clock::now();
@@ -230,11 +230,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
         // return the new velocity vector
         mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_pos, mjSTATE_PHYSICS);
-        next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
+        next_state_plus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         // If calculating cost derivs via finite-differencing
         if(cost_derivs){
-            cost_inc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+            cost_inc = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
         }
 
         if(central_diff){
@@ -244,7 +244,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             // perturb velocity vector negatively
             perturbed_velocities = unperturbed_velocities.replicate(1, 1);
             perturbed_velocities(i) -= eps;
-            activeModelTranslator->setVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid]);
+            model_translator->setVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid]);
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
@@ -253,11 +253,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
             // Return the new velocity vector
             mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_minus, mjSTATE_PHYSICS);
-            next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
+            next_state_minus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
             // If calculating cost derivs via finite-differencing
             if(cost_derivs){
-                cost_dec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+                cost_dec = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
             }
 
         }
@@ -267,7 +267,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             // Compute one column of the A matrix
             mj_differentiatePos(MuJoCo_helper->model, vel_diff, (2 * eps), next_full_state_minus, next_full_state_pos);
             for(int j = 0; j < dim_state / 2; j++){
-                int q_index = activeModelTranslator->StateIndexToQposIndex(j);
+                int q_index = model_translator->StateIndexToQposIndex(j);
                 dstatedqvel(j, i) = vel_diff[q_index];
             }
 
@@ -282,7 +282,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         else{
             mj_differentiatePos(MuJoCo_helper->model, vel_diff, eps, next_full_state, next_full_state_pos);
             for(int j = 0; j < dim_state / 2; j++){
-                int q_index = activeModelTranslator->StateIndexToQposIndex(j);
+                int q_index = model_translator->StateIndexToQposIndex(j);
                 dstatedqvel(j, i) = vel_diff[q_index];
             }
 
@@ -314,7 +314,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         }
 
         // Compute the index of the position vector in MuJoCo that corresponds to the index of the state vector
-        int dpos_index = activeModelTranslator->StateIndexToQposIndex(i);
+        int dpos_index = model_translator->StateIndexToQposIndex(i);
 
         count_integrations++;
 
@@ -330,10 +330,10 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
         // return the positive perturbed next state vector
         mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_pos, mjSTATE_PHYSICS);
-        next_state_plus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
+        next_state_plus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
         if(cost_derivs){
-            cost_inc = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+            cost_inc = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
         }
 
         if(central_diff){
@@ -350,10 +350,10 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
             // Return the decremented state vector
             mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_minus, mjSTATE_PHYSICS);
-            next_state_minus = activeModelTranslator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
+            next_state_minus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid]);
 
             if(cost_derivs){
-                cost_dec = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
+                cost_dec = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
             }
         }
 
@@ -362,7 +362,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             mj_differentiatePos(MuJoCo_helper->model, vel_diff, (2 * eps), next_full_state_minus, next_full_state_pos);
 
             for(int j = 0; j < dim_state / 2; j++){
-                int q_index = activeModelTranslator->StateIndexToQposIndex(j);
+                int q_index = model_translator->StateIndexToQposIndex(j);
                 dstatedqpos(j, i) = vel_diff[q_index];
             }
 
@@ -378,7 +378,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             mj_differentiatePos(MuJoCo_helper->model, vel_diff, eps, next_full_state, next_full_state_pos);
 
             for(int j = 0; j < dim_state / 2; j++){
-                int q_index = activeModelTranslator->StateIndexToQposIndex(j);
+                int q_index = model_translator->StateIndexToQposIndex(j);
                 dstatedqpos(j, i) = vel_diff[q_index];
             }
 

@@ -26,13 +26,13 @@ MatrixXd BoxSweep::ReturnRandomStartState(){
 MatrixXd BoxSweep::ReturnRandomGoalState(MatrixXd X0){
     MatrixXd randomGoalState(state_vector_size, 1);
 
-    double upperBoundX = 0.7;
-    double lowerBoundX = 0.6;
-    double upperBoundY = 0.5;
-    double lowerBoundY = 0.3;
+    float upperBoundX = 0.7;
+    float lowerBoundX = 0.6;
+    float upperBoundY = 0.5;
+    float lowerBoundY = 0.3;
 
-    double randX = randFloat(lowerBoundX, upperBoundX);
-    double randY = randFloat(lowerBoundY, upperBoundY);
+    float randX = randFloat(lowerBoundX, upperBoundX);
+    float randY = randFloat(lowerBoundY, upperBoundY);
 
     randomGoalState << 0, 0, 0, 0, 0, 0, 0,
                         randX, randY,
@@ -86,8 +86,8 @@ bool BoxSweep::TaskComplete(mjData *d, double &dist){
 
     MatrixXd currentState = ReturnStateVector(d);
 
-    float x_diff = currentState(7) - X_desired(7);
-    float y_diff = currentState(8) - X_desired(8);
+    double x_diff = currentState(7) - X_desired(7);
+    double y_diff = currentState(8) - X_desired(8);
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 

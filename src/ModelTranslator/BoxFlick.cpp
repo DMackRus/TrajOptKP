@@ -29,9 +29,6 @@ void BoxFlick::GenerateRandomGoalAndStartState() {
 MatrixXd BoxFlick::ReturnRandomStartState(){
     MatrixXd randomStartState(state_vector_size, 1);
 
-    float randStartAngle = randFloat(0, PI);
-    float randStartDist = randFloat(0.05, 0.2);
-
     float startX = randFloat(0.4, 0.55);
     float startY = randFloat(-0.2, 0.2);
 
@@ -69,7 +66,7 @@ MatrixXd BoxFlick::ReturnRandomStartState(){
         std::string objectNames[2] = {"obstacle1", "obstacle2"};
         int validObjectCounter = 0;
 
-        for(int i = 0; i < 2; i++){
+        for(const auto & objectName : objectNames){
             bool validPlacement = false;
             float sizeX = 0.08;
             float sizeY = 0.04;
@@ -80,16 +77,15 @@ MatrixXd BoxFlick::ReturnRandomStartState(){
                 float randX = randFloat(startX, startX + sizeX);
                 float randY = randFloat(startY - sizeY, startY + sizeY);
 
-                pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                MuJoCo_helper->getBodyPose_angle(objectNames[i], objectCurrentPose, MuJoCo_helper->master_reset_data);
+                MuJoCo_helper->getBodyPose_angle(objectName, objectCurrentPose, MuJoCo_helper->master_reset_data);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
-                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MuJoCo_helper->main_data);
+                MuJoCo_helper->setBodyPose_angle(objectName, newObjectPose, MuJoCo_helper->main_data);
 
-                if(MuJoCo_helper->checkBodyForCollisions(objectNames[i], MuJoCo_helper->main_data)){
+                if(MuJoCo_helper->checkBodyForCollisions(objectName, MuJoCo_helper->main_data)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
@@ -114,7 +110,7 @@ MatrixXd BoxFlick::ReturnRandomStartState(){
         std::string objectNames[6] = {"obstacle1", "obstacle2", "obstacle3", "obstacle4", "obstacle5", "obstacle6"};
         int validObjectCounter = 0;
 
-        for(int i = 0; i < 6; i++){
+        for(const auto & objectName : objectNames){
             bool validPlacement = false;
             float sizeX = 0.08;
             float sizeY = 0.05;
@@ -122,19 +118,18 @@ MatrixXd BoxFlick::ReturnRandomStartState(){
                 sizeX += 0.002;
                 sizeY += 0.001;
 
-                float randX = randFloat(startX + 0.04, startX + 0.04 + sizeX);
+                float randX = randFloat(startX + 0.04f, startX+ 0.04f + sizeX);
                 float randY = randFloat(startY - sizeY, startY + sizeY);
 
-                pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                MuJoCo_helper->getBodyPose_angle(objectNames[i], objectCurrentPose, MuJoCo_helper->master_reset_data);
+                MuJoCo_helper->getBodyPose_angle(objectName, objectCurrentPose, MuJoCo_helper->master_reset_data);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
-                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MuJoCo_helper->main_data);
+                MuJoCo_helper->setBodyPose_angle(objectName, newObjectPose, MuJoCo_helper->main_data);
 
-                if(MuJoCo_helper->checkBodyForCollisions(objectNames[i], MuJoCo_helper->main_data)){
+                if(MuJoCo_helper->checkBodyForCollisions(objectName, MuJoCo_helper->main_data)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
@@ -198,14 +193,14 @@ MatrixXd BoxFlick::ReturnRandomGoalState(MatrixXd X0){
 }
 
 double BoxFlick::CostFunction(mjData *d, bool terminal){
-    double cost = 0.0f;
+    double cost;
     MatrixXd Xt = ReturnStateVector(d);
     MatrixXd Ut = ReturnControlVector(d);
 
     MatrixXd X_diff = Xt - X_desired;
     MatrixXd temp;
 
-    double obstacleDistCost = 0.0f;
+    double obstacleDistCost;
 
     double objectsDiffX = Xt(9) - boxStartX;
     double objectsDiffY = Xt(10) - boxStartY;
@@ -226,8 +221,6 @@ double BoxFlick::CostFunction(mjData *d, bool terminal){
     }
 
     cost = temp(0) + obstacleDistCost;
-
-    cost = obstacleDistCost;
 
     return cost;
 }
@@ -344,8 +337,8 @@ bool BoxFlick::TaskComplete(mjData *d, double &dist){
 
     MatrixXd currentState = ReturnStateVector(d);
 
-    float x_diff = currentState(9) - currentState(7);
-    float y_diff = currentState(10) - currentState(8);
+    double x_diff = currentState(9) - currentState(7);
+    double y_diff = currentState(10) - currentState(8);
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
     std::cout << "distance is: " << dist << std::endl;

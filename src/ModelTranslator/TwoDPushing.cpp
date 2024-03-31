@@ -52,8 +52,6 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
 
     }
     else{
-//        float randStartAngle = randFloat(0, PI);
-//        float randStartDist = randFloat(0.05, 0.1);
 
         startX = 0.4;
         startY = randFloat(-0.1, 0.1);
@@ -94,7 +92,7 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
         std::string objectNames[3] = {"bigBox", "smallBox","tallCylinder"};
         int validObjectCounter = 0;
 
-        for(int i = 0; i < 3; i++){
+        for(const auto & objectName : objectNames){
             bool validPlacement = false;
             float sizeX = 0.01;
             float sizeY = 0.05;
@@ -105,7 +103,7 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
                 float randX, randY;
 
                 if(clutterLevel == constrainedClutter){
-                    randX = randFloat(startX, goalX + 0.1);
+                    randX = randFloat(startX, goalX + 0.1f);
                     randY = randFloat(goalY - sizeY, goalY + sizeY);
                 }
                 else{
@@ -116,14 +114,14 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                MuJoCo_helper->getBodyPose_angle(objectNames[i], objectCurrentPose, MuJoCo_helper->main_data);
+                MuJoCo_helper->getBodyPose_angle(objectName, objectCurrentPose, MuJoCo_helper->main_data);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
-                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MuJoCo_helper->main_data);
-                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MuJoCo_helper->master_reset_data);
+                MuJoCo_helper->setBodyPose_angle(objectName, newObjectPose, MuJoCo_helper->main_data);
+                MuJoCo_helper->setBodyPose_angle(objectName, newObjectPose, MuJoCo_helper->master_reset_data);
 
-                if(MuJoCo_helper->checkBodyForCollisions(objectNames[i], MuJoCo_helper->main_data)){
+                if(MuJoCo_helper->checkBodyForCollisions(objectName, MuJoCo_helper->main_data)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
@@ -152,7 +150,7 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
             sizeX += 0.001;
             sizeY += 0.0005;
 
-            float randX = randFloat(goalX + 0.1, goalX +  + 0.1 + sizeX);
+            float randX = randFloat(goalX + 0.1f, goalX +  + 0.1f + sizeX);
             float randY = randFloat(goalY - sizeY, goalY + sizeY);
 
             pose_6 objectCurrentPose;
@@ -180,29 +178,26 @@ MatrixXd TwoDPushing::ReturnRandomStartState(){
 
         std::string objectNames[6] = {"mediumCylinder", "bigBox", "obstacle1","obstacle2", "obstacle3", "obstacle4"};
 
-        for(int i = 0; i < 6; i++){
-            bool validPlacement = false;
-            float sizeX = 0.08;
-            float sizeY = 0.04;
+        for(const auto & objectName : objectNames){
             while(!validPlacement){
                 sizeX += 0.001;
                 sizeY += 0.0005;
 
-                float randX = randFloat(goalX - sizeX, goalX + (0.5 * sizeX));
+                float randX = randFloat(goalX - sizeX, goalX + (0.5f * sizeX));
                 float randY = randFloat(goalY - sizeY, goalY + sizeY);
 
                 pose_6 objectCurrentPose;
                 pose_6 newObjectPose;
 
-                MuJoCo_helper->getBodyPose_angle(objectNames[i], objectCurrentPose, MuJoCo_helper->master_reset_data);
+                MuJoCo_helper->getBodyPose_angle(objectName, objectCurrentPose, MuJoCo_helper->master_reset_data);
                 newObjectPose = objectCurrentPose;
                 newObjectPose.position(0) = randX;
                 newObjectPose.position(1) = randY;
                 newObjectPose.position(2) = objectCurrentPose.position(2);
-                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MuJoCo_helper->main_data);
-                MuJoCo_helper->setBodyPose_angle(objectNames[i], newObjectPose, MuJoCo_helper->master_reset_data);
+                MuJoCo_helper->setBodyPose_angle(objectName, newObjectPose, MuJoCo_helper->main_data);
+                MuJoCo_helper->setBodyPose_angle(objectName, newObjectPose, MuJoCo_helper->master_reset_data);
 
-                if(MuJoCo_helper->checkBodyForCollisions(objectNames[i], MuJoCo_helper->main_data)){
+                if(MuJoCo_helper->checkBodyForCollisions(objectName, MuJoCo_helper->main_data)){
                     cout << "invalid placement at : " << randX << ", " << randY << endl;
                 }
                 else{
@@ -406,8 +401,8 @@ bool TwoDPushing::TaskComplete(mjData *d, double &dist){
 
     MatrixXd currentState = ReturnStateVector(d);
 
-    float x_diff = currentState(7) - X_desired(7);
-    float y_diff = currentState(8) - X_desired(8);
+    double x_diff = currentState(7) - X_desired(7);
+    double y_diff = currentState(8) - X_desired(8);
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 

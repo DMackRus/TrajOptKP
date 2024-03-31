@@ -44,7 +44,7 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
             // Generate a random robot configuration
             std::string robotName = "panda";
             for(int i = 0; i < 7; i++){
-                double randomJoint = randFloat(jointLimsMin[i], jointLimsMax[i]);
+                float randomJoint = randFloat(jointLimsMin[i], jointLimsMax[i]);
                 jointStartPositions[i] = randomJoint;
             }
 
@@ -74,7 +74,7 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
             // Generate a random robot configuration
             std::string robotName = "panda";
             for(int i = 0; i < 7; i++){
-                double targetJointVal;
+                float targetJointVal;
                 if(jointStartPositions[i] - jointOffsets[i] > jointLimsMin[i]){
                     targetJointVal = jointStartPositions[i] - jointOffsets[i];
                 }
@@ -82,7 +82,7 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
                     targetJointVal = jointStartPositions[i] + jointOffsets[i];
                 }
 
-                double randomJoint = randFloat(targetJointVal - jointOffsetNoise[i], targetJointVal + jointOffsetNoise[i]);
+                float randomJoint = randFloat(targetJointVal - jointOffsetNoise[i], targetJointVal + jointOffsetNoise[i]);
                 jointGoalPositions[i] = randomJoint;
             }
 

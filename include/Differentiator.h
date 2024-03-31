@@ -14,7 +14,7 @@
 
 class Differentiator{
 public:
-    Differentiator(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _MuJoCo_helper);
+    Differentiator(std::shared_ptr<ModelTranslator> model_translator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper);
 
     void ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
                             MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
@@ -27,7 +27,7 @@ public:
 
 private:
 
-    std::shared_ptr<ModelTranslator> activeModelTranslator;
+    std::shared_ptr<ModelTranslator> model_translator;
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
 
     int dof = 0;

@@ -24,7 +24,7 @@ public:
     std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
 
 private:
-    double low_bound_velocity;
-    double high_bound_velocity;
+    float low_bound_velocity;
+    float high_bound_velocity;
 
 };
