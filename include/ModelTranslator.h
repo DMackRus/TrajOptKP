@@ -155,7 +155,7 @@ public:
      * information about the system. These files can be found in the taskConfigs folder.
      *
      */
-    void InitModelTranslator(std::string file_path);
+    void InitModelTranslator(const std::string& file_path);
 
     /**
      * Returns the current state vector of the system in the specified data index.
