@@ -82,17 +82,17 @@ target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.s
 # ------------------------------------------   TESTS   -------------------------------------------------------------
 #find_package(gtest)
 
-add_executable(test_derivs src/Derivs_Test.cpp
+add_executable(test_derivs src/tests/Derivs_Test.cpp
             src/Differentiator/Differentiator.cpp
             src/ModelTranslator/ModelTranslator.cpp
             src/ModelTranslator/Acrobot.cpp
+            src/tests/3D_test_class.h
             src/PhysicsSimulators/MuJoCoHelper.cpp
             src/StdInclude/StdInclude.cpp
-            src/FileHandler/FileHandler.cpp
-            src/Visualiser/Visualiser.cpp)
+            src/FileHandler/FileHandler.cpp)
 
 target_include_directories(test_derivs PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
 target_link_libraries(test_derivs Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
 
-add_test(Derivs test_derics)
+add_test(Derivs test_derivs)
