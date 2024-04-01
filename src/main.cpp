@@ -22,7 +22,7 @@
 #include "GradDescent.h"
 
 //----------------------- Testing methods ---------------------------
-#include "Testing.h"
+#include "GenTestingData.h"
 
 // --------------------- other -----------------------
 #include <mutex>
@@ -71,32 +71,6 @@ bool stopMPC = false;
 
 int main(int argc, char **argv) {
 
-//    mjModel *temp_model;
-//    mjData *temp_data;
-//    char error[1000];
-//    temp_model = mj_loadXML("/home/davidrussell/catkin_ws/src/TrajOptKP/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml", NULL, error, 1000);
-//    if( !temp_model ) {
-//        printf("%s\n", error);
-//    }
-//    temp_data = mj_makeData(temp_model);
-//
-//    for(int j = 0; j < 5; j++){
-//        mj_step(temp_model, temp_data);
-//    }
-//
-//    mj_deleteData(temp_data);
-//    mj_deleteModel(temp_model);
-//
-//
-//    return -1;
-
-//    vector<robot> temp1;
-//    vector<string> temp2;
-//    MuJoCoHelper temp(temp1, temp2);
-//    temp._mjdTransitionFD();
-
-//    return -1;
-
     // Expected arguments
     // 1. Program name
     // 2. Task name
@@ -141,8 +115,8 @@ int main(int argc, char **argv) {
     if(runMode == "Generate_testing_data"){
 //    	 return generateTestingData_MPCHorizons();
 //         return generateTestingData_MPC_asynchronous();
-        Testing myTestingObject(iLQROptimiser, activeModelTranslator,
-                                activeDifferentiator, activeVisualiser, yamlReader);
+        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
         return myTestingObject.testing_different_velocity_change_asynchronus_mpc();
 
     }

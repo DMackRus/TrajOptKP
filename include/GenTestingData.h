@@ -12,14 +12,14 @@
 
 #define APPLY_NOISE 1
 
-class Testing{
+class GenTestingData{
 
 public:
-    Testing(std::shared_ptr<iLQR> iLQROptimiser_,
-            std::shared_ptr<ModelTranslator> activeModelTranslator_,
-            std::shared_ptr<Differentiator> activeDifferentiator_,
-            std::shared_ptr<Visualiser> activeVisualiser_,
-            std::shared_ptr<FileHandler> yamlReader_);
+    GenTestingData(std::shared_ptr<iLQR> iLQROptimiser_,
+                   std::shared_ptr<ModelTranslator> activeModelTranslator_,
+                   std::shared_ptr<Differentiator> activeDifferentiator_,
+                   std::shared_ptr<Visualiser> activeVisualiser_,
+                   std::shared_ptr<FileHandler> yamlReader_);
 
 
     /**

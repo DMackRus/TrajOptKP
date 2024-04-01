@@ -3,8 +3,6 @@ project(TrajOptKP)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
-#set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3")
-#set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
@@ -65,9 +63,10 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/BoxSweep.cpp
             src/ModelTranslator/Acrobot.cpp
             src/ModelTranslator/Hopper.cpp
-            src/Testing.cpp
+            src/GenTestingData.cpp
             src/KeyPointGenerator/KeyPointGenerator.cpp
-            src/ModelTranslator/ThreeDPushing.cpp src/ModelTranslator/PushBaseClass.cpp include/PushBaseClass.h)
+            src/ModelTranslator/ThreeDPushing.cpp
+            src/ModelTranslator/PushBaseClass.cpp)
 
 include_directories(
         include
@@ -76,6 +75,24 @@ include_directories(
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC ${BULLET_DEFINITIONS})
+#target_compile_definitions(${PROJECT_NAME} PUBLIC ${BULLET_DEFINITIONS})
 
 target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
+
+# ------------------------------------------   TESTS   -------------------------------------------------------------
+#find_package(gtest)
+
+add_executable(test_derivs src/Derivs_Test.cpp
+            src/Differentiator/Differentiator.cpp
+            src/ModelTranslator/ModelTranslator.cpp
+            src/ModelTranslator/Acrobot.cpp
+            src/PhysicsSimulators/MuJoCoHelper.cpp
+            src/StdInclude/StdInclude.cpp
+            src/FileHandler/FileHandler.cpp
+            src/Visualiser/Visualiser.cpp)
+
+target_include_directories(test_derivs PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+
+target_link_libraries(test_derivs Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
+
+add_test(Derivs test_derics)
