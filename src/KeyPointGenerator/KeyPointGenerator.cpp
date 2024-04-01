@@ -81,7 +81,7 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
     keypoints.clear();
 //    std::cout << "Clearing keypoint vectors: " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - clear_start).count() / 1000.0f << "ms\n";
 
-    if(current_keypoint_method.name == "setInterval"){
+    if(current_keypoint_method.name == "set_interval"){
 //        auto start_interval = std::chrono::high_resolution_clock::now();
         GenerateKeyPointsSetInterval();
 //        std::cout << "Interval keypoint generation time: " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start_interval).count() / 1000.0f << "ms\n";
@@ -104,7 +104,7 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
         physics_simulator->resetModelAfterFiniteDifferencing();
 
     }
-    else if(current_keypoint_method.name == "magvel_change"){
+    else if(current_keypoint_method.name == "velocity_change"){
         GenerateVelocityProfile(trajectory_states);
         GenerateKeyPointsVelocityChange(velocity_profile);
     }
@@ -114,8 +114,6 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 
     //Print out the key points
 //
-
-
 
     UpdateLastPercentageDerivatives(keypoints);
 }

@@ -372,7 +372,7 @@ void onetaskGenerateTestingData(){
 
     std::vector<std::string> methodNames = {"baseline", "SI5", "SI1000", "adaptive_jerk_5", "iterative_error_5", "magvel_change_5"};
     int numMethods = methodNames.size();
-    std::vector<string> keyPointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
+    std::vector<string> keyPointMethods = {"set_interval", "set_interval", "set_interval", "adaptive_jerk", "iterative_error", "magvel_change"};
     std::vector<int> minN = {1, 5, 1000, 2, 2, 2};
     std::vector<int> maxN = {1, 5, 1000, 10, 10, 10};
 
