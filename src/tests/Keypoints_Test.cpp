@@ -78,6 +78,10 @@ TEST(keypoints, set_interval){
 //    }
 }
 
+TEST(keypoints, adaptive_jerk){
+
+}
+
 int main(int argc, char* argv[]){
 
     testing::InitGoogleTest(&argc, argv);

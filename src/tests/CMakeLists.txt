@@ -1,6 +1,4 @@
 # ------------------------------------------   TESTS   -------------------------------------------------------------
-#find_package(gtest)
-
 add_executable(test_derivs ../../src/tests/Derivs_Test.cpp
         ../../src/Differentiator/Differentiator.cpp
         ../../src/ModelTranslator/ModelTranslator.cpp
