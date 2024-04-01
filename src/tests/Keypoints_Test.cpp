@@ -69,13 +69,13 @@ TEST(keypoints, set_interval){
         ASSERT_EQ(i, keypoint_generator->keypoints[T-1][i]);
     }
 
-    for(int t = 0; t < T; t++){
-        std::cout << "time index " << t << ": ";
-        for(int i = 0; i < keypoint_generator->keypoints[t].size(); i++){
-            std::cout << keypoint_generator->keypoints[t][i] << " ";
-        }
-        std::cout << "\n";
-    }
+//    for(int t = 0; t < T; t++){
+//        std::cout << "time index " << t << ": ";
+//        for(int i = 0; i < keypoint_generator->keypoints[t].size(); i++){
+//            std::cout << keypoint_generator->keypoints[t][i] << " ";
+//        }
+//        std::cout << "\n";
+//    }
 }
 
 int main(int argc, char* argv[]){
