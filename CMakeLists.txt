@@ -3,8 +3,6 @@ project(TrajOptKP)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3")
-#set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O3")
-#set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
@@ -65,9 +63,10 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/BoxSweep.cpp
             src/ModelTranslator/Acrobot.cpp
             src/ModelTranslator/Hopper.cpp
-            src/Testing.cpp
+            src/GenTestingData.cpp
             src/KeyPointGenerator/KeyPointGenerator.cpp
-            src/ModelTranslator/ThreeDPushing.cpp src/ModelTranslator/PushBaseClass.cpp include/PushBaseClass.h)
+            src/ModelTranslator/ThreeDPushing.cpp
+            src/ModelTranslator/PushBaseClass.cpp)
 
 include_directories(
         include
@@ -76,6 +75,58 @@ include_directories(
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC ${BULLET_DEFINITIONS})
-
 target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
+
+enable_testing()
+
+#add_subdirectory(src/tests)
+
+# ------------------------------------------   TESTS   -------------------------------------------------------------
+
+# ------- Computing derivatives test -------------
+add_executable(test_derivs src/tests/Derivs_Test.cpp
+        src/Differentiator/Differentiator.cpp
+        src/ModelTranslator/ModelTranslator.cpp
+        src/tests/test_acrobot.h
+        src/tests/3D_test_class.h
+        src/PhysicsSimulators/MuJoCoHelper.cpp
+        src/StdInclude/StdInclude.cpp
+        src/FileHandler/FileHandler.cpp)
+
+target_include_directories(test_derivs PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+
+target_link_libraries(test_derivs Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
+
+add_test(Derivs test_derivs)
+
+# ----------- Keypoint generation tests ------------
+add_executable(test_keypoints src/tests/Keypoints_Test.cpp
+        src/KeyPointGenerator/KeyPointGenerator.cpp
+        src/Differentiator/Differentiator.cpp
+        src/ModelTranslator/ModelTranslator.cpp
+        src/tests/test_acrobot.h
+        src/tests/3D_test_class.h
+        src/PhysicsSimulators/MuJoCoHelper.cpp
+        src/StdInclude/StdInclude.cpp
+        src/FileHandler/FileHandler.cpp)
+
+target_include_directories(test_keypoints PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+
+target_link_libraries(test_keypoints Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
+
+add_test(Keypoints test_keypoints)
+
+# ---------- Model translator tests ------------
+add_executable(test_model_translator src/tests/ModelTranslator_Test.cpp
+        src/ModelTranslator/ModelTranslator.cpp
+        src/tests/test_acrobot.h
+        src/tests/3D_test_class.h
+        src/PhysicsSimulators/MuJoCoHelper.cpp
+        src/StdInclude/StdInclude.cpp
+        src/FileHandler/FileHandler.cpp)
+
+target_include_directories(test_model_translator PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+
+target_link_libraries(test_model_translator Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
+
+add_test(ModelTranslator test_model_translator)

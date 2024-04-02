@@ -2,13 +2,13 @@
 // Created by davidrussell on 1/17/24.
 //
 
-#include "Testing.h"
+#include "GenTestingData.h"
 
-Testing::Testing(std::shared_ptr<iLQR> iLQROptimiser_,
-                 std::shared_ptr<ModelTranslator> activeModelTranslator_,
-                 std::shared_ptr<Differentiator> activeDifferentiator_,
-                 std::shared_ptr<Visualiser> activeVisualiser_,
-                 std::shared_ptr<FileHandler> yamlReader_) {
+GenTestingData::GenTestingData(std::shared_ptr<iLQR> iLQROptimiser_,
+                               std::shared_ptr<ModelTranslator> activeModelTranslator_,
+                               std::shared_ptr<Differentiator> activeDifferentiator_,
+                               std::shared_ptr<Visualiser> activeVisualiser_,
+                               std::shared_ptr<FileHandler> yamlReader_) {
 
     iLQROptimiser = iLQROptimiser_;
     activeModelTranslator = activeModelTranslator_;
@@ -24,7 +24,7 @@ Testing::Testing(std::shared_ptr<iLQR> iLQROptimiser_,
                                            yamlReader);
 }
 
-int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size){
+int GenTestingData::testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size){
 
     for(int i = lowest_minN; i <= higherst_minN; i += step_size){
         keypoint_method keypoint_method;
@@ -38,7 +38,7 @@ int Testing::testing_different_minN_asynchronus_mpc(int lowest_minN, int highers
     return EXIT_SUCCESS;
 }
 
-int Testing::testing_different_velocity_change_asynchronus_mpc(){
+int GenTestingData::testing_different_velocity_change_asynchronus_mpc(){
 
     std::cout << "beginning testing asynchronus MPC for " << activeModelTranslator->model_name << std::endl;
 
@@ -113,7 +113,7 @@ int Testing::testing_different_velocity_change_asynchronus_mpc(){
     return EXIT_SUCCESS;
 }
 
-int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials){
+int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials){
 
     // ------------------ make method name ------------------
     std::string method_name;
@@ -280,7 +280,7 @@ int Testing::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_tr
     return 1;
 }
 
-int Testing::single_asynchronus_run(bool visualise, std::string method_directory, int task_number){
+int GenTestingData::single_asynchronus_run(bool visualise, std::string method_directory, int task_number){
 
     activeVisualiser->trajectory_controls.clear();
     activeVisualiser->trajectory_states.clear();
@@ -288,7 +288,7 @@ int Testing::single_asynchronus_run(bool visualise, std::string method_directory
     // Make a thread for the Optimiser
     std::thread MPC_controls_thread;
     // Start the thread running
-    MPC_controls_thread = std::thread(&Testing::asynchronus_optimiser_worker, this, method_directory, task_number);
+    MPC_controls_thread = std::thread(&GenTestingData::asynchronus_optimiser_worker, this, method_directory, task_number);
     int vis_counter = 0;
     MatrixXd next_control;
     // timer variables
@@ -397,7 +397,7 @@ int Testing::single_asynchronus_run(bool visualise, std::string method_directory
     return 1;
 }
 
-void Testing::asynchronus_optimiser_worker(std::string method_directory, int task_number){
+void GenTestingData::asynchronus_optimiser_worker(std::string method_directory, int task_number){
 
     bool taskComplete = false;
     int visualCounter = 0;
