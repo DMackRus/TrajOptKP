@@ -109,7 +109,8 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
         GenerateKeyPointsVelocityChange(velocity_profile);
     }
     else{
-        std::cout << "ERROR: keyPointsMethod not recognised \n";
+        std::cerr << "ERROR: keyPointsMethod not recognised \n";
+        exit(1);
     }
 
     //Print out the key points

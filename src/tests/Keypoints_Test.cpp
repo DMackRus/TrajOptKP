@@ -3,7 +3,7 @@
 #include "KeyPointGenerator.h"
 #include "Differentiator.h"
 #include "ModelTranslator.h"
-#include "Acrobot.h"
+#include "test_acrobot.h"
 
 std::shared_ptr<ModelTranslator> model_translator;
 
@@ -201,7 +201,6 @@ TEST(keypoints, velocity_change){
 //}
 
 int main(int argc, char* argv[]){
-
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -1,0 +1,33 @@
+<mujoco model="object pushing - franka_panda">
+    <!-- =================================================
+            Copyright 2018 Vikash Kumar
+            Model   :: Franka (MuJoCoV2.0)
+            Author  :: Vikash Kumar (vikashplus@gmail.com)
+            source  :: https://github.com/vikashplus/franka_sim
+        ====================================================== -->
+
+    <include file="assets/basic_scene.xml"/>
+    <include file="assets/assets.xml"/>
+    <include file="assets/gripper_assets.xml"/>
+    <compiler meshdir=""/>
+
+    <worldbody>
+        <!-- Include the franka_panda robot arm model -->
+        <include file="assets/chain0.xml"/>
+        <body pos="0.5 0.0 0.1" name="sphere">
+            <joint type="free" />
+            <geom type = "sphere" pos = "0 0 0" size = "0.1" mass="0.74" rgba = "0 1 0 1" solimp="0 0.4 0.001 0.5 2" solref = "0.2 0.7" condim="1" margin = "0.001" contype = "3" conaffinity = "3"/>
+        </body>
+
+        <body pos="1 0 0" name="display_goal">
+            <joint type="free" />
+            <geom type = "box" pos = "0 0 0" size = ".0001 .0001 .0000001" rgba = "0 0 0 0" mass="1" margin = "0.001" contype = "4" conaffinity = "4" />
+            <site type="sphere" pos="0 0 0.085" size="0.1" rgba="0 1 0 0.4"/>
+        </body>
+
+    </worldbody>
+
+    <size njmax="500" nconmax="500"/>
+
+    <include file='assets/actuator0.xml'/>
+</mujoco>

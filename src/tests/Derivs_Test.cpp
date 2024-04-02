@@ -2,7 +2,7 @@
 
 #include "Differentiator.h"
 #include "ModelTranslator.h"
-#include "Acrobot.h"
+#include "test_acrobot.h"
 
 #include "3D_test_class.h"
 

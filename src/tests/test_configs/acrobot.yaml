@@ -1,0 +1,24 @@
+modelFile: "/src/tests/test_xml/Acrobot/acrobot.xml"   # Path to the model xml file
+modelName: "/acrobot"                             # Name of the model, used for saving data
+timeStep: 0.004                                   # Time step for simulation
+keypointMethod: "setInterval"                     # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+minN: 1                                           # Minimum interval between key-points
+maxN: 10                                          # Maximum interval between key-points
+iterativeErrorThreshold: 0.0000001                # Threshold for iterative error method
+
+# stable down pos [3.1415, 0], half up unstable pos [3.14, 3.14], full up unstable pos [0, 0]
+robots:
+  acrobot:
+    jointNames: [shoulder, elbow]
+    actuatorNames: [shoulder]
+    torqueControl: true
+    torqueLimits: [100]
+    startPos: [3.1415, 0]
+    goalPos: [0, 0]
+    jointPosCosts: [0, 0]
+    jointVelCosts: [0.001, 0.001]
+    terminalJointPosCosts: [100, 100]
+    terminalJointVelCosts: [1, 1]
+    jointControlCosts: [0.1]
+    jointJerkThresholds: [0.001, 0.001]
+    magVelThresholds: [0.2, 0.2]

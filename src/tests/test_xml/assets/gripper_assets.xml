@@ -1,0 +1,68 @@
+<mujocoinclude>
+<!-- =================================================
+    Copyright 2018 Vikash Kumar
+    Model   :: Franka (MuJoCoV2.0)
+    Author  :: Vikash Kumar (vikashplus@gmail.com)
+    source  :: https://github.com/vikashplus/franka_sim
+    License :: Under Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+====================================================== -->
+
+    <asset>
+        <mesh name="finger_col" file="meshes/visual/finger.obj" scale='1 1 1'/>
+        <mesh name="finger_viz" file="meshes/visual/finger.obj" scale='1 1 1'/>
+    </asset>
+
+    <default>
+        <default class="panda_overlay">
+            <joint limited="false" damping="1000" armature="1" frictionloss="10"/>
+            <geom contype="0" conaffinity="0" group="2" type="mesh" rgba=".42 0.42 0.42 .5"/>
+        </default>
+
+        <default class="finger">
+            <joint axis="0 1 0" type="slide" range="0 0.04"/>
+        </default>
+
+        <default class="visual">
+            <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+        </default>
+<!--        <default class="collision">-->
+<!--            <geom type="mesh" group="3"/>-->
+<!--            <default class="fingertip_pad_collision_1">-->
+<!--                <geom type="box" size="0.0085 0.004 0.0085" pos="0 0.0055 0.0445"/>-->
+<!--            </default>-->
+<!--            <default class="fingertip_pad_collision_2">-->
+<!--                <geom type="box" size="0.003 0.002 0.003" pos="0.0055 0.002 0.05"/>-->
+<!--            </default>-->
+<!--            <default class="fingertip_pad_collision_3">-->
+<!--                <geom type="box" size="0.003 0.002 0.003" pos="-0.0055 0.002 0.05"/>-->
+<!--            </default>-->
+<!--            <default class="fingertip_pad_collision_4">-->
+<!--                <geom type="box" size="0.003 0.002 0.0035" pos="0.0055 0.002 0.0395"/>-->
+<!--            </default>-->
+<!--            <default class="fingertip_pad_collision_5">-->
+<!--                <geom type="box" size="0.003 0.002 0.0035" pos="-0.0055 0.002 0.0395"/>-->
+<!--            </default>-->
+<!--        </default>-->
+    </default>
+
+    <asset>
+        <material class="panda" name="white" rgba="1 1 1 1"/>
+        <material class="panda" name="off_white" rgba="0.901961 0.921569 0.929412 1"/>
+        <material class="panda" name="black" rgba="0.25 0.25 0.25 1"/>
+
+
+<!--        <mesh file="meshes/collision/finger_0.obj"/>-->
+<!--        <mesh file="meshes/collision/finger_1.obj"/>-->
+        <mesh file="meshes/visual/finger.obj"/>
+        <mesh file="meshes/visual/finger.obj"/>
+
+    </asset>
+
+    <sensor>
+        <jointpos name="fr_fin_jp1" joint="panda0_finger_joint1"/>
+        <jointpos name="fr_fin_jp2" joint="panda0_finger_joint2"/>
+        <jointvel name="fr_fin_jv1" joint="panda0_finger_joint1"/>
+        <jointvel name="fr_fin_jv2" joint="panda0_finger_joint2"/>
+    </sensor>
+
+</mujocoinclude>

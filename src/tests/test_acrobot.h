@@ -1,10 +1,12 @@
+#pragma once
+
 #include "ModelTranslator.h"
 
-class threeDTestClass : virtual public ModelTranslator{
+class Acrobot : virtual public ModelTranslator{
 public:
 
-    threeDTestClass(){
-        std::string yamlFilePath = "/src/tests/test_configs/threeDPushTest.yaml";
+    Acrobot(){
+        std::string yamlFilePath = "/src/tests/test_configs/acrobot.yaml";
 
         InitModelTranslator(yamlFilePath);
     }
@@ -20,6 +22,4 @@ public:
     void GenerateRandomGoalAndStartState() override{
 
     }
-
-
 };
