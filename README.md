@@ -54,7 +54,7 @@ GLFW is used for visualisation. Download with the following command.
 ## Installation
 
 1. Clone this repository (Please note that this repository uses submodules, 
-so you need to clone recursively.
+so you need to clone recursively).
    ```
    git clone --recursive https://github.com/DMackRus/TrajOptKP.git
    ```  
@@ -192,14 +192,10 @@ This iterative process is repeated until all segments satisfy the error requirem
 interval is reached.
 
 ## To-Do
-- [ ] Change F.D between qacc and qvel methods depending on task
-- [ ] Implement rotation of bodies in state vector and F.D.
 - [ ] Rework main.cpp so that all tasks are their own executable instead.
-- [ ] Improve optimisation iteration terminal statements.
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.
 - [ ] Add more examples
-- [ ] Asynchronus MPC display
 - [ ] starting camera variables in model file
 - [ ] improved parallelisation on iterative error method
 
