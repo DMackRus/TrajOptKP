@@ -1,7 +1,3 @@
-//
-// Created by davidrussell on 1/17/24.
-//
-
 #include "GenTestingData.h"
 
 GenTestingData::GenTestingData(std::shared_ptr<iLQR> iLQROptimiser_,
@@ -121,10 +117,10 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         method_name = "AA_" + std::to_string(keypoint_method.min_N) + "_" + std::to_string(keypoint_method.max_N);
     }
     else{
-        if(keypoint_method.name == "setInterval") {
+        if(keypoint_method.name == "set_interval") {
             method_name = "SI_" + std::to_string(keypoint_method.min_N);
         }
-        else if(keypoint_method.name == "magvel_change"){
+        else if(keypoint_method.name == "velocity_change"){
             int substring_length = 3;
             if(keypoint_method.velocity_change_thresholds[0] < 0.1){
                 substring_length = 4;

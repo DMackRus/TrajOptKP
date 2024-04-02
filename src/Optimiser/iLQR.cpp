@@ -188,6 +188,9 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         if(costReducedLastIter){
             GenerateDerivatives();
             std::cout << "A[0]: \n" << A[0] << "\n";
+            std::cout << "A[1]: \n" << A[1] << "\n";
+            std::cout << "A[2]: \n" << A[2] << "\n";
+            std::cout << "A[T-1]: \n" << A[horizonLength - 1] << "\n";
         }
         auto derivsstop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(derivsstop - derivsstart);

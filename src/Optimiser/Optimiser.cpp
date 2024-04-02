@@ -109,7 +109,7 @@ void Optimiser::GenerateDerivatives(){
 
     auto start_interp_time = high_resolution_clock::now();
     InterpolateDerivatives(keypoint_generator->keypoints, activeYamlReader->costDerivsFD);
-//    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
+    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
 
     double average_percent_derivs = 0.0f;
@@ -231,6 +231,14 @@ void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyP
     MatrixXd endB;
     MatrixXd addB;
 
+    MatrixXd startACol1;
+    MatrixXd endACol1;
+    MatrixXd addACol1;
+
+    MatrixXd startACol2;
+    MatrixXd endACol2;
+    MatrixXd addACol2;
+
     double start_l_x_col1;
     double end_l_x_col1;
     double add_l_x_col1;
@@ -260,7 +268,7 @@ void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyP
             std::vector<int> columns = keyPoints[t];
 
             // If there are no keypoints, continue onto second run of the loop
-            if(columns.size() == 0){
+            if(columns.empty()){
                 continue;
             }
 
@@ -270,14 +278,14 @@ void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyP
                 // For the given columns
                 if(i == columns[j]){
 //                    cout << "dof: " << i << " end index: " << t << " start index: " << startIndices[i] << "\n";
-                    MatrixXd startACol1 = A[startIndices[i]].block(dof, i, dof, 1);
-                    MatrixXd endACol1 = A[t].block(dof, i, dof, 1);
-                    MatrixXd addACol1 = (endACol1 - startACol1) / (t - startIndices[i]);
+                    startACol1 = A[startIndices[i]].block(0, i, 2*dof, 1);
+                    endACol1 = A[t].block(0, i, 2*dof, 1);
+                    addACol1 = (endACol1 - startACol1) / (t - startIndices[i]);
 
                     // Same again for column 2 which is dof + i
-                    MatrixXd startACol2 = A[startIndices[i]].block(dof, i + dof, dof, 1);
-                    MatrixXd endACol2 = A[t].block(dof, i + dof, dof, 1);
-                    MatrixXd addACol2 = (endACol2 - startACol2) / (t - startIndices[i]);
+                    startACol2 = A[startIndices[i]].block(0, i + dof, 2*dof, 1);
+                    endACol2 = A[t].block(0, i + dof, 2*dof, 1);
+                    addACol2 = (endACol2 - startACol2) / (t - startIndices[i]);
 
                     if(costDerivs){
                         start_l_x_col1 = l_x[startIndices[i]](i, 0);
@@ -298,15 +306,15 @@ void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyP
                     }
 
                     if(i < num_ctrl){
-                        startB = B[startIndices[i]].block(dof, i, dof, 1);
-                        endB = B[t].block(dof, i, dof, 1);
+                        startB = B[startIndices[i]].block(0, i, 2*dof, 1);
+                        endB = B[t].block(0, i, 2*dof, 1);
                         addB = (endB - startB) / (t - startIndices[i]);
                     }
 
                     for(int k = startIndices[i]; k < t; k++){
-                        A[k].block(dof, i, dof, 1) = startACol1 + ((k - startIndices[i]) * addACol1);
+                        A[k].block(0, i, 2*dof, 1) = startACol1 + ((k - startIndices[i]) * addACol1);
 
-                        A[k].block(dof, i + dof, dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
+                        A[k].block(0, i + dof, 2*dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
 
                         if(costDerivs){
                             l_x[k](i) = start_l_x_col1 + ((k - startIndices[i]) * add_l_x_col1);
@@ -317,7 +325,7 @@ void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyP
                         }
 
                         if(i < num_ctrl){
-                            B[k].block(dof, i, dof, 1) = startB + ((k - startIndices[i]) * addB);
+                            B[k].block(0, i, 2*dof, 1) = startB + ((k - startIndices[i]) * addB);
                         }
                     }
                     startIndices[i] = t;
