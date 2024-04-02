@@ -337,7 +337,7 @@ void KeypointGenerator::GenerateKeyPointsAdaptive(const std::vector<MatrixXd> &t
         min_last_jerk[i] = trajec_profile[0](i, 0);
     }
 
-    for(int t = 1; t < horizon - 2; t++){
+    for(int t = 1; t < horizon - 1; t++){
         std::vector<int> row;
         for(int j = 0; j < dof; j++){
             if((t - last_indices[j]) >= current_keypoint_method.min_N){

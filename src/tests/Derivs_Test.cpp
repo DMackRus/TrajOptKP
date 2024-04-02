@@ -76,7 +76,7 @@ void compare_derivs(){
 
     for(int i = 0; i < dim_state_derivative; i++){
         for(int j = 0; j < dim_state_derivative; j++){
-            EXPECT_NEAR(A_mine[0](i, j), A[i * dim_state_derivative + j], 1.0e-1);
+            EXPECT_NEAR(A_mine[0](i, j), A[i * dim_state_derivative + j], 1.0e-5);
             A_diff(i, j) = abs(A[i * dim_state_derivative + j] - A_mine[0](i, j));
             if(A_diff(i, j) < 1e-6) A_diff(i, j) = 0;
         }
