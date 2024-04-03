@@ -1,4 +1,4 @@
-modelFile: "/mujoco_models/Franka_emika_scenes_V1/Franka_and_cuboid.xml"
+modelFile: "/src/tests/test_xml/Franka_and_cuboid.xml"
 modelName: "/3D_push"
 timeStep: 0.004
 keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
