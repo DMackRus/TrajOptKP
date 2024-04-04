@@ -32,7 +32,7 @@
 
 TrajOptKP
 
-#/testingData
+/testingData
 /savedTrajecInfo
 /cmake-build-debug
 /cmake-build-release
