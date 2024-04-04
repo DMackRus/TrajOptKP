@@ -1,11 +1,10 @@
-sleep 1h 30m
+#sleep 1h 30m
 cd build
-cmake --build .
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
 cd ..
-#./build/devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification baseline
-#./build/devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification SI5
-#./build/devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification adaptive_jerk2
-#./build/devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification SI10
-./build/devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification SI20
-#./build/devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification magvel_change2
-./build/devel/lib/automaticTOTaskSpecification/automaticTOTaskSpecification iterative_error
+
+./build/TrajOptKP gen_testing_data 50 2000
+./build/TrajOptKP gen_testing_data 100 2000
+./build/TrajOptKP gen_testing_data 150 2000
+

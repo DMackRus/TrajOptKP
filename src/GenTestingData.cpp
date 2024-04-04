@@ -47,7 +47,7 @@ int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
 //        for(int j = 0; j < maxN_multiplier.size(); j++){
 //            for(int k = 0; k < velocity_change_thresholds.size(); k++){
 //                keypoint_method keypoint_method;
-//                keypoint_method.name = "magvel_change";
+//                keypoint_method.name = "velocity_change";
 //                keypoint_method.min_N = minN[i];
 //                keypoint_method.max_N = minN[i] * maxN_multiplier[j];
 //                for(int l = 0; l < activeModelTranslator->dof; l++){
@@ -63,7 +63,7 @@ int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
 
     keypoint_method keypoint_method;
 
-    int num_trials = 100;
+    int num_trials = 20;
 
     keypoint_method.name = "adaptive_jerk";
     keypoint_method.min_N = 1;
@@ -75,10 +75,11 @@ int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
     testing_asynchronus_mpc(keypoint_method, num_trials, task_horizon, task_timeout);
 
     // Test set interval methods
-    keypoint_method.name = "setInterval";
+    keypoint_method.name = "set_interval";
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
     std::vector<int> minNs = {1, 2, 5, 10, 20, 40, 60, 80, 150};
+//    std::vector<int> minNs = {10, 110};
     for(int minN : minNs){
         // Only test for minN's < task_horizon
         if(minN <= task_horizon){

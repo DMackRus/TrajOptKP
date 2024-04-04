@@ -114,7 +114,13 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
     }
 
     //Print out the key points
-//
+//    for(int t = 0; t < horizon; t++){
+//        std::cout << "time " << t << " :";
+//        for(int i = 0; i < keypoints[t].size(); i++){
+//            std::cout << keypoints[t][i] << " ";
+//        }
+//        std::cout << "\n";
+//    }
 
     UpdateLastPercentageDerivatives(keypoints);
 }
@@ -384,8 +390,9 @@ void KeypointGenerator::GenerateKeypointsOrderOfImportance(const std::vector<Mat
 
         // Have to push the first and last time indices
         keypoints_per_dof[i].push_back(0);
-        keypoints_per_dof[i].push_back(horizon - 2);
+        keypoints_per_dof[i].push_back(horizon - 1);
 
+        // Minus 2 as we enforce first and last timestep
         for (int k = 0; k < num_keypoints[i] - 2; k++) {
             keypoints_per_dof[i].push_back(sorted_indices[k]);
         }
@@ -404,7 +411,7 @@ void KeypointGenerator::GenerateKeypointsOrderOfImportance(const std::vector<Mat
     keypoints.clear();
 
     // Construct keypoints per timestep
-    for(int i = 0; i < horizon - 1; i++){
+    for(int i = 0; i < horizon; i++){
         std::vector<int> row;
         for(int j = 0; j < dof; j++){
             // loop throguh keypoints_per_dof
