@@ -25,6 +25,7 @@ walker::walker(int terrain, int locomotion_type): ModelTranslator(){
 }
 
 bool walker::TaskComplete(mjData *d, double &dist){
+    dist = 0.0f;
     return false;
 }
 

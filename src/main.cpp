@@ -116,6 +116,15 @@ int main(int argc, char **argv) {
 
         int task_horizon = 100;
         int task_timeout = 2000;
+
+        if(argc > 2){
+            task_horizon = std::atoi(argv[2]);
+        }
+
+        if(argc > 3){
+            task_timeout = std::atoi(argv[3]);
+        }
+
         return myTestingObject.gen_data_async_mpc(task_horizon, task_timeout);
 
     }
@@ -183,10 +192,10 @@ int main(int argc, char **argv) {
         cout << "TASK INIT MODE \n";
         generateTestScenes();
     }
-    else if(runMode == "GENERATE_FILTERING_DATA"){
-        cout << "GENERATE FILTERING DATA MODE \n";
-        generateFilteringData();
-    }
+//    else if(runMode == "GENERATE_FILTERING_DATA"){
+//        cout << "GENERATE FILTERING DATA MODE \n";
+//        generateFilteringData();
+//    }
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
 

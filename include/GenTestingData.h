@@ -91,6 +91,7 @@ private:
     bool stop_opt_thread = false;
 
     double final_cost = 0.0f;
+    double final_dist = 0.0f;
     double average_opt_time_ms = 0.0f;
     double average_percent_derivs = 0.0f;
     double average_time_derivs_ms = 0.0f;

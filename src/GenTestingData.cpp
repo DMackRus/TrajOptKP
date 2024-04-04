@@ -37,6 +37,7 @@ int GenTestingData::testing_different_minN_asynchronus_mpc(int lowest_minN, int 
 int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
 
     std::cout << "beginning testing asynchronus MPC for " << activeModelTranslator->model_name << std::endl;
+    std::cout << "optimisation horizon is: " << task_horizon << " task timeout : " << task_timeout << "\n";
 
 //    std::vector<int> minN = {1};
 //    std::vector<int> maxN_multiplier = {20};
@@ -155,7 +156,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
     projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
     projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
 
-    std::string rootPath = projectParentPath + "/testingData/" + task_prefix;
+    std::string rootPath = projectParentPath + "/testingData/" + task_prefix +  "_" + std::to_string(task_horizon);
     // Check if task directory exists, if not create it
     if (!filesystem::exists(rootPath)) {
         if (!filesystem::create_directories(rootPath)) {
@@ -176,8 +177,11 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
     auto startTime = std::chrono::high_resolution_clock::now();
 
     // ------------------------- data storage -------------------------------------
-    std::vector<std::vector<double>> finalCosts;
+//    std::vector<std::vector<double>> finalCosts;
     std::vector<double> finalCostsRow;
+
+    std::vector<std::vector<double>> finalDistances;
+    std::vector<double> finalDistRow;
 
     std::vector<std::vector<double>> avgOptTimes;
     std::vector<double> avgOptTimesRow;
@@ -203,7 +207,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
 
     iLQROptimiser->SetCurrentKeypointMethod(keypoint_method);
 
-    finalCosts.clear();
+//    finalCosts.clear();
     avgTimeForDerivs.clear();
     avgTimeBP.clear();
     avgTimeFP.clear();
@@ -245,11 +249,12 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         // Perform the optimisation MPC test here asynchronously
         // Reset gravity back to normal
 //        activeModelTranslator->MuJoCo_helper->model->opt.gravity[2] = -9.81;
-        single_asynchronus_run(true, method_directory, i, task_timeout);
+        single_asynchronus_run(true, method_directory, i, task_horizon, task_timeout);
         stop_opt_thread = false;
 
         // ------------------------- data storage -------------------------------------
         finalCostsRow.push_back(final_cost);
+        finalDistRow.push_back(final_dist);
         avgOptTimesRow.push_back(average_opt_time_ms);
         avgPercentDerivsRow.push_back(average_percent_derivs);
         avgTimeForDerivsRow.push_back(average_time_derivs_ms);
@@ -266,12 +271,12 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
     file_output.open(filename);
 
     // Make header
-    file_output << "Final cost" << "," << "Average optimisation time" << "," << "Average percent derivs" << ",";
+    file_output << "Final cost" << "," << "Final dist" << "," << "Average optimisation time" << "," << "Average percent derivs" << ",";
     file_output << "Average time derivs" << "," << "Average time BP" << "," << "Average time FP" << "," << "average_surprise" << std::endl;
 
     // Loop through rows
     for(int i = 0; i < num_trials; i++){
-        file_output << finalCostsRow[i] << "," << avgOptTimesRow[i] << "," << avgPercentDerivsRow[i] << ",";
+        file_output << finalCostsRow[i] << "," << finalDistRow[i] << "," << avgOptTimesRow[i] << "," << avgPercentDerivsRow[i] << ",";
         file_output << avgTimeForDerivsRow[i] << "," << avgTimeBPRow[i] << "," << avgTimeFPRow[i] << "," <<  avgSurpriseRow[i] << std::endl;
     }
 
@@ -299,8 +304,7 @@ int GenTestingData::single_asynchronus_run(bool visualise,
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     std::chrono::steady_clock::time_point end;
 
-    // How long to perform the task for
-//    int MAX_TASK_TIME = 2000;
+    // elapsed task time
     int task_time = 0;
 
     activeModelTranslator->MuJoCo_helper->vis_data->time = 0.0f;
@@ -372,6 +376,9 @@ int GenTestingData::single_asynchronus_run(bool visualise,
 //            activeModelTranslator->MuJoCo_helper->model->opt.gravity[2] = -13;
 //        }
     }
+
+    // Store final distance in final_dist
+    activeModelTranslator->TaskComplete(activeModelTranslator->MuJoCo_helper->vis_data, final_dist);
 
     std::mutex mtx;
     mtx.lock();
