@@ -43,7 +43,6 @@ std::shared_ptr<FileHandler> yamlReader;
 std::string task;
 bool mpcVisualise = true;
 bool playback = true;
-std::vector<std::string> testingMethods;
 
 int assign_task();
 
@@ -85,11 +84,11 @@ int main(int argc, char **argv) {
     // Optional arguments
     // 3. key-point method (only used for generating testing data)
     // Only used for generating testing data for different key-point methods
-    if(argc > 2){
-        for (int i = 1; i < argc; i++) {
-            testingMethods.push_back(argv[i]);
-        }
-    }
+//    if(argc > 2){
+//        for (int i = 1; i < argc; i++) {
+//            testingMethods.push_back(argv[i]);
+//        }
+//    }
 
     std::string optimiser;
     std::string runMode;
@@ -103,7 +102,6 @@ int main(int argc, char **argv) {
     task = yamlReader->taskName;
     taskInitMode = yamlReader->taskInitMode;
 
-    std::cout << "task: " << task << endl;
 
     MatrixXd startStateVector(1, 1);
 
@@ -115,7 +113,10 @@ int main(int argc, char **argv) {
     if(runMode == "Generate_testing_data"){
         GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
-        return myTestingObject.testing_different_velocity_change_asynchronus_mpc();
+
+        int task_horizon = 100;
+        int task_timeout = 2000;
+        return myTestingObject.gen_data_async_mpc(task_horizon, task_timeout);
 
     }
 
@@ -188,150 +189,6 @@ int main(int argc, char **argv) {
     }
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
-
-        // Test ability to convert state vector to q pos index.
-        std::cout << "indices: ";
-        for(int i = 0; i < activeModelTranslator->state_vector_names.size(); i++){
-            int index = activeModelTranslator->StateIndexToQposIndex(i);
-            std::cout << index << " ";
-        }
-        std::cout << "\n";
-
-        // Compare my fd code versus mjd_transitionFD;
-
-        // Start with mjd_transitionFD
-
-        // - Allocate A, B, C and D matrices.
-        int dim_state_derivative = activeModelTranslator->MuJoCo_helper->model->nv * 2;
-        int dof = dim_state_derivative / 2;
-        int dim_action = activeModelTranslator->MuJoCo_helper->model->nu;
-        int dim_sensor = activeModelTranslator->MuJoCo_helper->model->nsensordata;
-        int T = 200;
-        std::vector<double> A;
-        std::vector<double> B;
-        std::vector<double> C;
-        std::vector<double> D;
-
-        std::cout << "dim state derivative: " << dim_state_derivative << "\n";
-        std::cout << "dim action: " << dim_action << "\n";
-        std::cout << "dim sensor: " << dim_sensor << "\n";
-
-        A.resize(dim_state_derivative * dim_state_derivative * T);
-        B.resize(dim_state_derivative * dim_action * T);
-        C.resize(dim_sensor * dim_state_derivative * T);
-        D.resize(dim_sensor * dim_action * T);
-
-        int t = 0;
-
-        activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        MatrixXd control_vector = MatrixXd::Zero(dim_action, 1);
-//        control_vector << -1, -1, -1, -1, -1, -1;
-//        activeModelTranslator->SetControlVector(control_vector, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0]);
-        bool flg_centred = false;
-
-        std::cout << "start of mjd_transitionFD \n";
-        auto start = std::chrono::high_resolution_clock::now();
-        for(int i = 0; i < T; i++){
-            mjd_transitionFD(
-                    activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], 1e-6, flg_centred,
-                    DataAt(A, t * (dim_state_derivative * dim_state_derivative)),
-                    DataAt(B, t * (dim_state_derivative * dim_action)),
-                    DataAt(C, t * (dim_sensor * dim_state_derivative)),
-                    DataAt(D, t * (dim_sensor * dim_action)));
-        }
-        std::cout << "time taken for mjd_transitionFD " << std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::high_resolution_clock::now() - start).count() / 1000.0f << "ms\n";
-
-        // Now my code
-        std::vector<MatrixXd> A_mine;
-        std::vector<MatrixXd> B_mine;
-
-        int dof_model_translator = activeModelTranslator->dof;
-
-        A_mine.push_back(MatrixXd(dof_model_translator*2, dof_model_translator*2));
-        B_mine.push_back(MatrixXd(dof_model_translator*2, dim_action));
-
-        A_mine[0].block(0, 0, dof_model_translator, dof_model_translator).setIdentity();
-        A_mine[0].block(0, dof_model_translator, dof_model_translator, dof_model_translator).setIdentity();
-        A_mine[0].block(0, dof_model_translator, dof_model_translator, dof_model_translator) *= activeModelTranslator->MuJoCo_helper->returnModelTimeStep();
-        B_mine[0].setZero();
-
-        std::vector<int> cols(dof_model_translator, 0);
-        for (int i = 0; i < dof_model_translator; i++) {
-            cols[i] = i;
-        }
-
-        MatrixXd l_x, l_xx, l_u, l_uu;
-        double time = 0.0f;
-        start = std::chrono::high_resolution_clock::now();
-        for(int i = 0; i < T; i++){
-            activeDifferentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, l_x, l_u, l_xx, l_uu,
-                                                     0, 0, false, false, flg_centred, 1e-6);
-            time += activeDifferentiator->time_mj_forwards;
-        }
-        std::cout << "time of mj_forwards calls " << (time / 1000.0f) << "ms\n";
-        std::cout << "time taken for my code " << (std::chrono::duration_cast<std::chrono::microseconds>(
-                std::chrono::high_resolution_clock::now() - start).count()) / 1000.0f << "ms\n";
-
-        std::cout << "dim state deriv " << dim_state_derivative << "\n";
-        std::cout << "dof model translator " << dof_model_translator << "\n";
-        if(dim_state_derivative != dof_model_translator*2){
-            // Print theirs and print mine
-            std::cout << "A from mjd_transition \n";
-            for(int i = 0; i < dim_state_derivative; i++){
-                for(int j = 0; j < dim_state_derivative; j++){
-                    std::cout << setw(6) << A[i * dim_state_derivative + j] << " ";
-                }
-                std::cout << std::endl;
-            }
-
-            std::cout << "A_mine[0] \n";
-            std::cout << A_mine[0] << std::endl;
-
-            // Print their B matrix
-            std::cout << "B from mjd_transition \n";
-            for(int i = 0; i < dim_state_derivative; i++){
-                for(int j = 0; j < dim_action; j++){
-                    std::cout << setw(6) << B[i * dim_action + j] << " ";
-                }
-                std::cout << std::endl;
-            }
-
-            // Print our B matrix
-            std::cout << "B_mine[0] \n";
-            std::cout << B_mine[0] << std::endl;
-
-
-        }
-        else{
-            // compute difference and print
-            MatrixXd A_diff;
-            MatrixXd B_diff;
-            A_diff.resize(dim_state_derivative, dim_state_derivative);
-            B_diff.resize(dim_state_derivative, dim_action);
-            std::cout << "A_mine[0] \n";
-            std::cout << A_mine[0] << std::endl;
-
-            for(int i = 0; i < dim_state_derivative; i++){
-                for(int j = 0; j < dim_state_derivative; j++){
-                    A_diff(i, j) = abs(A[i * dim_state_derivative + j] - A_mine[0](i, j));
-                    if(A_diff(i, j) < 1e-6) A_diff(i, j) = 0;
-                }
-            }
-
-            std::cout << "A_diff \n";
-            std::cout << A_diff << std::endl;
-
-            for(int i = 0; i < dim_state_derivative; i++){
-                for(int j = 0; j < dim_action; j++){
-                    B_diff(i, j) = abs(B[i * dim_action + j] - B_mine[0](i, j));
-                    if(B_diff(i, j) < 1e-6) B_diff(i, j) = 0;
-                }
-            }
-
-            std::cout << "B_diff \n";
-            std::cout << B_diff << std::endl;
-        }
 
         return EXIT_FAILURE;
     }

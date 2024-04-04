@@ -24,17 +24,17 @@ int GenTestingData::testing_different_minN_asynchronus_mpc(int lowest_minN, int 
 
     for(int i = lowest_minN; i <= higherst_minN; i += step_size){
         keypoint_method keypoint_method;
-        keypoint_method.name = "setInterval";
+        keypoint_method.name = "set_interval";
         keypoint_method.min_N = i;
         keypoint_method.max_N = i;
 
-        testing_asynchronus_mpc(keypoint_method, 100);
+        testing_asynchronus_mpc(keypoint_method, 100, 100, 2000);
     }
 
     return EXIT_SUCCESS;
 }
 
-int GenTestingData::testing_different_velocity_change_asynchronus_mpc(){
+int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
 
     std::cout << "beginning testing asynchronus MPC for " << activeModelTranslator->model_name << std::endl;
 
@@ -71,16 +71,19 @@ int GenTestingData::testing_different_velocity_change_asynchronus_mpc(){
     for(int i = 0; i < activeModelTranslator->dof; i++){
         keypoint_method.jerk_thresholds.push_back(1e-15);
     }
-    testing_asynchronus_mpc(keypoint_method, num_trials);
+    testing_asynchronus_mpc(keypoint_method, num_trials, task_horizon, task_timeout);
 
     // Test set interval methods
     keypoint_method.name = "setInterval";
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
     std::vector<int> minNs = {1, 2, 5, 10, 20, 40, 60, 80, 150};
-    for(int i = 0; i < minNs.size(); i++){
-        keypoint_method.min_N = minNs[i];
-        testing_asynchronus_mpc(keypoint_method, num_trials);
+    for(int minN : minNs){
+        // Only test for minN's < task_horizon
+        if(minN <= task_horizon){
+            keypoint_method.min_N = minN;
+            testing_asynchronus_mpc(keypoint_method, num_trials, task_horizon, task_timeout);
+        }
     }
 
 
@@ -109,11 +112,11 @@ int GenTestingData::testing_different_velocity_change_asynchronus_mpc(){
     return EXIT_SUCCESS;
 }
 
-int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials){
+int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials, int task_horizon, int task_timeout){
 
     // ------------------ make method name ------------------
     std::string method_name;
-    if(keypoint_method.auto_adjust == true){
+    if(keypoint_method.auto_adjust){
         method_name = "AA_" + std::to_string(keypoint_method.min_N) + "_" + std::to_string(keypoint_method.max_N);
     }
     else{
@@ -217,11 +220,11 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         activeModelTranslator->MuJoCo_helper->master_reset_data->time = 0.0f;
         activeModelTranslator->MuJoCo_helper->vis_data->time = 0.0f;
         activeModelTranslator->MuJoCo_helper->main_data->time = 0.0f;
-        for(int j = 0; j < activeModelTranslator->MuJoCo_helper->fd_data.size(); j++){
-            activeModelTranslator->MuJoCo_helper->fd_data[j]->time = 0.0f;
+        for(auto & j : activeModelTranslator->MuJoCo_helper->fd_data){
+            j->time = 0.0f;
         }
-        for(int j = 0; j < activeModelTranslator->MuJoCo_helper->savedSystemStatesList.size(); j++) {
-            activeModelTranslator->MuJoCo_helper->savedSystemStatesList[j]->time = 0.0f;
+        for(auto & j : activeModelTranslator->MuJoCo_helper->savedSystemStatesList) {
+            j->time = 0.0f;
         }
 
         activeModelTranslator->SetStateVector(X_start, activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -242,7 +245,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         // Perform the optimisation MPC test here asynchronously
         // Reset gravity back to normal
 //        activeModelTranslator->MuJoCo_helper->model->opt.gravity[2] = -9.81;
-        single_asynchronus_run(true, method_directory, i);
+        single_asynchronus_run(true, method_directory, i, task_timeout);
         stop_opt_thread = false;
 
         // ------------------------- data storage -------------------------------------
@@ -277,7 +280,11 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
     return 1;
 }
 
-int GenTestingData::single_asynchronus_run(bool visualise, std::string method_directory, int task_number){
+int GenTestingData::single_asynchronus_run(bool visualise,
+                                           const std::string method_directory,
+                                           int task_number,
+                                           int task_horizon,
+                                           const int TASK_TIMEOUT){
 
     activeVisualiser->trajectory_controls.clear();
     activeVisualiser->trajectory_states.clear();
@@ -285,7 +292,7 @@ int GenTestingData::single_asynchronus_run(bool visualise, std::string method_di
     // Make a thread for the Optimiser
     std::thread MPC_controls_thread;
     // Start the thread running
-    MPC_controls_thread = std::thread(&GenTestingData::asynchronus_optimiser_worker, this, method_directory, task_number);
+    MPC_controls_thread = std::thread(&GenTestingData::asynchronus_optimiser_worker, this, method_directory, task_number, task_horizon);
     int vis_counter = 0;
     MatrixXd next_control;
     // timer variables
@@ -293,12 +300,12 @@ int GenTestingData::single_asynchronus_run(bool visualise, std::string method_di
     std::chrono::steady_clock::time_point end;
 
     // How long to perform the task for
-    int MAX_TASK_TIME = 2000;
+//    int MAX_TASK_TIME = 2000;
     int task_time = 0;
 
     activeModelTranslator->MuJoCo_helper->vis_data->time = 0.0f;
 
-    while(task_time++ < MAX_TASK_TIME){
+    while(task_time++ < TASK_TIMEOUT){
         begin = std::chrono::steady_clock::now();
 
         if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
@@ -394,7 +401,7 @@ int GenTestingData::single_asynchronus_run(bool visualise, std::string method_di
     return 1;
 }
 
-void GenTestingData::asynchronus_optimiser_worker(std::string method_directory, int task_number){
+void GenTestingData::asynchronus_optimiser_worker(std::string method_directory, int task_number, int task_horizon){
 
     bool taskComplete = false;
     int visualCounter = 0;

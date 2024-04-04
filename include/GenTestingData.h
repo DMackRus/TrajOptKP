@@ -39,7 +39,7 @@ public:
      *
      * @return 1 if successful, 0 if not
      */
-    int testing_different_velocity_change_asynchronus_mpc();
+    int gen_data_async_mpc(int task_horizon, int task_timeout);
 
     /**
      * This function tests a particular keypoint method for a static number
@@ -47,10 +47,12 @@ public:
      *
      * @Param keypoint_method: The keypoint method to be tested
      * @Param num_trials: The number of trials to be run
+     * @Param task_horizon: Optimisation horizon of the task
+     * @Param task_timeout: When to stop the task, if no other exit condition
      *
      * @Return: 1 if successful, 0 if not
      */
-    int testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials);
+    int testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials, int task_horzion, int task_timeout);
 
     /**
      * This function performs an asynchronus MPC optimisation for a set number of time-steps
@@ -63,7 +65,7 @@ public:
      *
      * @Return: 1 if successful, 0 if not
      */
-    int single_asynchronus_run(bool visualise, std::string method_directory, int task_number);
+    int single_asynchronus_run(bool visualise, const std::string method_directory, int task_number, int task_horizon, const int TASK_TIMEOUT);
 
     /**
      * This function performs an asynchronus MPC optimisation with another thread doing simulation
@@ -74,7 +76,7 @@ public:
      * @Param task_number: The task number to be performed
      *
      */
-    void asynchronus_optimiser_worker(std::string method_directory, int task_number);
+    void asynchronus_optimiser_worker(std::string method_directory, int task_number, int task_horizon);
 
 
     std::shared_ptr<iLQR> iLQROptimiser;
