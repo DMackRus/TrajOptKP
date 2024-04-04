@@ -113,8 +113,6 @@ int main(int argc, char **argv) {
     }
 
     if(runMode == "Generate_testing_data"){
-//    	 return generateTestingData_MPCHorizons();
-//         return generateTestingData_MPC_asynchronous();
         GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
         return myTestingObject.testing_different_velocity_change_asynchronus_mpc();

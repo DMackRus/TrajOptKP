@@ -10,7 +10,7 @@
 #include <mutex>
 #include <filesystem>
 
-#define APPLY_NOISE 1
+#define APPLY_NOISE 0
 
 class GenTestingData{
 

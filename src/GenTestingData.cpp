@@ -165,6 +165,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
     if (!filesystem::exists(method_directory)) {
         if (!filesystem::create_directories(method_directory)) {
             std::cerr << "Failed to create directory: " << method_directory << std::endl;
+            exit(1);
         }
     }
 
@@ -360,9 +361,9 @@ int GenTestingData::single_asynchronus_run(bool visualise, std::string method_di
 
 
         // Testing condition - change gravity halfway through task.
-        if(task_time == 1000){
+//        if(task_time == 1000){
 //            activeModelTranslator->MuJoCo_helper->model->opt.gravity[2] = -13;
-        }
+//        }
     }
 
     std::mutex mtx;
