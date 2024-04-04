@@ -14,18 +14,21 @@ Please note that this code is still under active development.
 
 ## Dependencies
 ### [MuJoCo 2.32](http://www.mujoco.org/) or newer
-This repository used MuJoCo v2.3.2, however newer versions of MuJoCo **should** be compatible. 
-Use the following commands to install MuJoCo, please change the version number as required (it
-is currently set to download V2.3.2)
+This repository uses a custom fork of MuJoCo (simply for the access to one private function - please 
+see this [issue](https://github.com/google-deepmind/mujoco/issues/1453)).
+
+As such you need to git clone my custom fork and then build from source.
 
 ```
-   MUJOCO_URL="https://github.com/google-deepmind/mujoco/releases/download/2.3.2/mujoco-2.3.2-linux-x86_64.tar.gz"
-   INSTALL_DIR="$HOME/.mujoco/mujoco-2.3.2"
-   mkdir -p "$INSTALL_DIR"
-   wget "$MUJOCO_URL" -O mujoco.tar.gz
-   tar -xzf mujoco.tar.gz -C "$INSTALL_DIR" --strip-components 1
-   rm mujoco.tar.gz
-   echo 'export MJ_HOME="'$INSTALL_DIR'"' >> ~/.bashrc
+    git clone git@github.com:DMackRus/mujoco.git mujoco_temp
+	cd mujoco_temp
+	mkdir build
+	cd build
+	cmake ..
+	cmake --build .
+	cmake .. -DCMAKE_INSTALL_PREFIX="~/mujoco"
+	cmake --install .
+    echo export MJ_HOME='"'$(pwd)/mujoco'"' >> ~/.bashrc
 ```
 
 These commands also set an environment variable "MJ_HOME" for CMake, if you are installing
@@ -50,6 +53,11 @@ GLFW is used for visualisation. Download with the following command.
 ```
    sudo apt install -y libglfw3 libglfw3-dev
 ```
+
+## Container
+If you have singularity installed, you can use this 
+[singularity container](https://github.com/DMackRus/Apptainer_TrajOptKP) which has all the dependancies 
+installation and setup.
 
 ## Installation
 
