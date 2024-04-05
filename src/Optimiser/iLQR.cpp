@@ -187,6 +187,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         auto derivsstart = high_resolution_clock::now();
         if(costReducedLastIter){
             GenerateDerivatives();
+            std::cout << "A[1]" << A[1] << "\n";
         }
         auto derivsstop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(derivsstop - derivsstart);

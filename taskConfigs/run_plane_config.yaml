@@ -1,9 +1,9 @@
 modelFile: "/mujoco_models/walker/walker_plane.xml"
 modelName: "/walker_run"
 timeStep: 0.005
-keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+keypointMethod: "set_interval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 auto_adjust: false
-minN: 20
+minN: 150
 maxN: 20
 iterativeErrorThreshold: 0.1
 

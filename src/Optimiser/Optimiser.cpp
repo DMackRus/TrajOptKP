@@ -260,7 +260,7 @@ void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyP
 
     // Loop through all the time indices - can skip the first
     // index as we preload the first index as the start index for all dofs.
-    for(int t = 1; t < horizonLength - 1; t++){
+    for(int t = 1; t < horizonLength; t++){
         // Loop through all the dofs
         for(int i = 0; i < dof; i++){
             // Check the current vector at that time segment for the current dof
