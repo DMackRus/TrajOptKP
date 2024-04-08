@@ -183,7 +183,7 @@ modelName: "/push_hCl"
 timeStep: 0.004
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
-minN: 5
+minN: 20
 maxN: 50
 iterativeErrorThreshold: 0.0001
 robots:

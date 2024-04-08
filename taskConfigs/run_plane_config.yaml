@@ -3,7 +3,7 @@ modelName: "/walker_run"
 timeStep: 0.005
 keypointMethod: "set_interval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 auto_adjust: false
-minN: 150
+minN: 10
 maxN: 20
 iterativeErrorThreshold: 0.1
 

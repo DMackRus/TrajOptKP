@@ -20,15 +20,15 @@ see this [issue](https://github.com/google-deepmind/mujoco/issues/1453)).
 As such you need to git clone my custom fork and then build from source.
 
 ```
-    git clone git@github.com:DMackRus/mujoco.git mujoco_temp
-	cd mujoco_temp
-	mkdir build
-	cd build
-	cmake ..
-	cmake --build .
-	cmake .. -DCMAKE_INSTALL_PREFIX="~/mujoco"
-	cmake --install .
-    echo export MJ_HOME='"'$(pwd)/mujoco'"' >> ~/.bashrc
+git clone git@github.com:DMackRus/mujoco.git mujoco_temp
+cd mujoco_temp
+mkdir build
+cd build
+cmake ..
+make --build .
+cmake .. -DCMAKE_INSTALL_PREFIX="~/mujoco"
+cmake --install .
+echo export MJ_HOME='"'$(pwd)/mujoco'"' >> ~/.bashrc
 ```
 
 These commands also set an environment variable "MJ_HOME" for CMake, if you are installing
@@ -39,19 +39,19 @@ Eigen is used for matrix computations in trajectory optimisation. Download and i
 with the following command:
 
 ``` 
-   sudo apt install -y libeigen3-dev
+sudo apt install -y libeigen3-dev
 ```
 
 ### [YAML](https://github.com/jbeder/yaml-cpp)
 This repository uses YAML for configuration files. Install YAML with the following command.
 ```
-   sudo apt install -y libyaml-cpp-dev
+sudo apt install -y libyaml-cpp-dev
 ```
 
 ### [GLFW](https://www.glfw.org/)
 GLFW is used for visualisation. Download with the following command.
 ```
-   sudo apt install -y libglfw3 libglfw3-dev
+sudo apt install -y libglfw3 libglfw3-dev
 ```
 
 ## Container
@@ -63,22 +63,22 @@ installation and setup.
 
 1. Clone this repository (Please note that this repository uses submodules, 
 so you need to clone recursively).
-   ```
-   git clone --recursive https://github.com/DMackRus/TrajOptKP.git
-   ```  
+```
+git clone --recursive https://github.com/DMackRus/TrajOptKP.git
+```  
 2. Set the following environment variables.
-   ```
-   export MJ_HOME=$HOME/*path to the home directory of MuJoCo*
-   (NOTE: "~/" does not work)
-   ```
+```
+export MJ_HOME=$HOME/*path to the home directory of MuJoCo*
+(NOTE: "~/" does not work)
+```
 3. Build the package.
-   ```
-   cd TrajOptKP
-   mkdir build
-   cd build
-   cmake -DCMAKE_BUILD_TYPE=Release ..
-   make
-   ```
+```
+cd TrajOptKP
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+```
 
 ## Usage
 ### Setup

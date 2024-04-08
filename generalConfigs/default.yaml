@@ -2,7 +2,7 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "walker_run"  # Task to be performed
+task: "pushing_moderate_clutter"  # Task to be performed
 # Current implemented tasks are:
 # "double_pendulum", "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
 # "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
