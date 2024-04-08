@@ -9,7 +9,7 @@ BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "bigBox"){
 
 void BoxSweep::GenerateRandomGoalAndStartState() {
     X_start = ReturnRandomStartState();
-    X_desired = ReturnRandomGoalState(X_start);
+//    X_desired = ReturnRandomGoalState(X_start);
 }
 
 MatrixXd BoxSweep::ReturnRandomStartState(){
@@ -57,8 +57,8 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     // Set the goal position so that we can see where we are pushing to
     std::string goalMarkerName = "display_goal";
     pose_6 display_goal_pose;
-    display_goal_pose.position[0] = X_desired(7);
-    display_goal_pose.position[1] = X_desired(8);
+    display_goal_pose.position[0] = active_state_vector.bodiesStates[0].goalLinearPos[0];
+    display_goal_pose.position[1] = active_state_vector.bodiesStates[0].goalLinearPos[1];
     display_goal_pose.position[2] = 0.0f;
     MuJoCo_helper->setBodyPose_angle(goalMarkerName, display_goal_pose, MuJoCo_helper->master_reset_data);
 
@@ -68,8 +68,8 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goal_pos(0) = X_desired(7);
-    goal_pos(1) = X_desired(8);
+    goal_pos(0) = active_state_vector.bodiesStates[0].goalLinearPos[0];
+    goal_pos(1) = active_state_vector.bodiesStates[0].goalLinearPos[1];
     EEWayPointsPush(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
 
     // Step 2 - create all subwaypoints over the entire trajectory
@@ -86,8 +86,8 @@ bool BoxSweep::TaskComplete(mjData *d, double &dist){
 
     MatrixXd currentState = ReturnStateVector(d);
 
-    double x_diff = currentState(7) - X_desired(7);
-    double y_diff = currentState(8) - X_desired(8);
+    double x_diff = currentState(7) - active_state_vector.bodiesStates[0].goalLinearPos[0];
+    double y_diff = currentState(8) - active_state_vector.bodiesStates[0].goalLinearPos[1];
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 

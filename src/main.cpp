@@ -139,12 +139,12 @@ int main(int argc, char **argv) {
         activeModelTranslator->GenerateRandomGoalAndStartState();
     }
     else if(taskInitMode == "fromCSV"){
-        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, startStateVector, activeModelTranslator->X_desired);
-        activeModelTranslator->X_start = startStateVector;
+        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->active_state_vector);
     }
 
+    startStateVector = activeModelTranslator->StartStateVector();
+
     cout << "start state " << startStateVector << endl;
-    cout << "desired state " << activeModelTranslator->X_desired.transpose() << endl;
 
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
     activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -210,8 +210,7 @@ void generateTestScenes(){
         activeModelTranslator->GenerateRandomGoalAndStartState();
         activeModelTranslator->SetStateVector(activeModelTranslator->X_start, activeModelTranslator->MuJoCo_helper->main_data);
         activeVisualiser->render("init state");
-        std::cout << "X_desired: " << activeModelTranslator->X_desired << std::endl;
-        yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->X_start, activeModelTranslator->X_desired);
+        yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->active_state_vector);
     }
 }
 

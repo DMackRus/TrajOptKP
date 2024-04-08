@@ -1,9 +1,4 @@
-//
-// Created by dave on 3/30/23.
-//
-
-#ifndef PHYSICSSIMSWITCHING_FILEHANDLER_H
-#define PHYSICSSIMSWITCHING_FILEHANDLER_H
+#pragma once
 
 #include "StdInclude.h"
 #include <yaml-cpp/yaml.h>
@@ -12,12 +7,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-enum optimisers{
-        opt_iLQR = 0,
-        opt_stomp = 1,
-        opt_gradDescent = 2
-};
 
 class FileHandler{
 public:
@@ -29,8 +18,8 @@ public:
 
     void saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength);
 
-    void saveTaskToFile(std::string filePrefix, int fileNum, MatrixXd startState, MatrixXd goalState);
-    void loadTaskFromFile(std::string filePrefix, int fileNum, MatrixXd &startState, MatrixXd &goalState);
+    void saveTaskToFile(std::string filePrefix, int fileNum, const stateVectorList &state_vector);
+    void loadTaskFromFile(std::string filePrefix, int fileNum, stateVectorList &state_vector);
 
     void saveCostHistory(std::vector<double> costHistory, std::string filePrefix, int trajecNumber);
 
@@ -61,5 +50,3 @@ private:
     std::string projectParentPath;
 
 };
-
-#endif //PHYSICSSIMSWITCHING_FILEHANDLER_H

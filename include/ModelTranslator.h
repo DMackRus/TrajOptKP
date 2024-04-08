@@ -275,6 +275,8 @@ public:
      */
     int StateIndexToQposIndex(int state_index);
 
+    MatrixXd StartStateVector();
+
 
     // Number of degrees of freedom of the system (Note, this is set by used via yaml file, it doesnt necessary
     // include all dofs for every object, if they are intentionally left out.
@@ -291,7 +293,7 @@ public:
     std::vector<std::string> state_vector_names;
 
     // Desired state, used for cost function
-    MatrixXd X_desired;
+//    MatrixXd X_desired;
 
     // Starting state of the system
     MatrixXd X_start;

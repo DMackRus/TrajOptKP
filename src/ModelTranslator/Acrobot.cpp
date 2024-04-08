@@ -5,13 +5,14 @@ Acrobot::Acrobot(): ModelTranslator(){
     InitModelTranslator(yamlFilePath);
 }
 
+// TODO fix
 bool Acrobot::TaskComplete(mjData *d, double &dist){
     double diff = 0.0f;
 
     MatrixXd Xt = ReturnStateVector(d);
 
     for(int i = 0; i < dof; i++){
-        diff += abs(X_desired(i) - Xt(i));
+//        diff += abs(X_desired(i) - Xt(i));
     }
 
     dist = diff;
@@ -24,26 +25,26 @@ bool Acrobot::TaskComplete(mjData *d, double &dist){
 
 void Acrobot::GenerateRandomGoalAndStartState() {
     X_start.resize(state_vector_size, 1);
-    X_desired.resize(state_vector_size, 1);
+//    X_desired.resize(state_vector_size, 1);
 
-    float arm1Pos = randFloat(0, 3);
-    float arm2Pos = randFloat(0, 3);
-
-    X_start << arm1Pos, arm2Pos, 0, 0;
-
-    float randomNum = randFloat(0, 1);
-    // stable down position
-    if(randomNum < 0.33){
-        X_desired << 3.1415, 0, 0, 0;
-    }
-        // Half up unstable
-    else if(randomNum > 0.33 && randomNum < 0.66){
-        X_desired << 3.1415, 3.1415, 0, 0;
-    }
-        // Unstable up position
-    else{
-        X_desired << 0, 0, 0, 0;
-    }
+//    float arm1Pos = randFloat(0, 3);
+//    float arm2Pos = randFloat(0, 3);
+//
+//    X_start << arm1Pos, arm2Pos, 0, 0;
+//
+//    float randomNum = randFloat(0, 1);
+//    // stable down position
+//    if(randomNum < 0.33){
+//        X_desired << 3.1415, 0, 0, 0;
+//    }
+//        // Half up unstable
+//    else if(randomNum > 0.33 && randomNum < 0.66){
+//        X_desired << 3.1415, 3.1415, 0, 0;
+//    }
+//        // Unstable up position
+//    else{
+//        X_desired << 0, 0, 0, 0;
+//    }
 
 }
 

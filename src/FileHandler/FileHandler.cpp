@@ -330,20 +330,21 @@ void FileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     fileOutput.close();
 }
 
-void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, MatrixXd startState, MatrixXd goalState){
+void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stateVectorList &state_vector){
 
     std::string rootPath = projectParentPath + "/testTasks/" + taskPrefix;
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < startState.rows(); i++){
-        fileOutput << startState(i) << ",";
-    }
-
-    for(int i = 0; i < goalState.rows(); i++){
-        fileOutput << goalState(i) << ",";
-    }
+    // TODO - Add this
+//    for(int i = 0; i < startState.rows(); i++){
+//        fileOutput << startState(i) << ",";
+//    }
+//
+//    for(int i = 0; i < goalState.rows(); i++){
+//        fileOutput << goalState(i) << ",";
+//    }
 
     fileOutput << std::endl;
 
@@ -351,7 +352,7 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, MatrixXd s
 
 }
 
-void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, MatrixXd &startState, MatrixXd &goalState){
+void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVectorList &state_vector){
 
     std::string rootPath = projectParentPath + "/testTasks" + taskPrefix;
     mkdir(rootPath.c_str(), 0777);
@@ -363,6 +364,31 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, MatrixXd
     std::vector<string> row;
     std::string line, word, temp;
 
+    // Sanity check to compute state vector size and compare it with file size
+    // Loop through robots
+    int state_vector_size = 0;
+    for(auto & robot : state_vector.robots){
+        state_vector_size += static_cast<int>(robot.jointNames.size());
+    }
+
+    // Loop through bodies
+    for( auto body : state_vector.bodiesStates){
+        // Check default linear and angular
+        for(int i = 0; i < 3; i++){
+
+            if(body.activeLinearDOF[i]){
+                state_vector_size++;
+            }
+
+            if(body.activeAngularDOF[i]){
+                state_vector_size++;
+            }
+        }
+    }
+    // position and velocity
+    state_vector_size *= 2;
+
+    // Only one row in this file so this while loop should only perform one iteration
     while(fin >> temp){
         row.clear();
 
@@ -373,11 +399,47 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, MatrixXd
         while(getline(s, word, ',')){
             row.push_back(word);
         }
-        int stateVecSize = startState.size();
-        for(int i = 0; i < stateVecSize; i++){
-            startState(i) = stod(row[i]);
-            goalState(i) = stod(row[i + stateVecSize]);
+
+        // Start state and goal state
+        if(row.size() != 2 * state_vector_size){
+            std::cerr << "CSV file has " << row.size() << "elements, state vector size is: " << state_vector_size << "\n";
+            exit(1);
         }
+
+        int counter = 0;
+        // TODO - add desired velocities
+        for(auto & robot : state_vector.robots){
+            for(int i = 0; i < robot.jointNames.size(); i++){
+                robot.startPos[i] = stod(row[counter]);
+                robot.goalPos[i] = stod(row[counter + state_vector_size]);
+                counter++;
+            }
+        }
+
+        for(auto & body : state_vector.bodiesStates){
+            // Linear (x, y, z)
+            for(int i = 0; i < 3; i++){
+                if(body.activeLinearDOF[i]){
+                    body.startLinearPos[i] = stod(row[counter]);
+                    body.goalLinearPos[i] = stod(row[counter + state_vector_size]);
+                    counter++;
+                }
+            }
+
+            for(int i = 0; i < 3; i++){
+                if(body.activeLinearDOF[i]){
+                    body.startAngularPos[i] = stod(row[counter]);
+                    body.goalAngularPos[i] = stod(row[counter + state_vector_size]);
+                    counter++;
+                }
+            }
+        }
+
+//        int stateVecSize = startState.size();
+//        for(int i = 0; i < stateVecSize; i++){
+//            startState(i) = stod(row[i]);
+//            goalState(i) = stod(row[i + stateVecSize]);
+//        }
 
     }
 }

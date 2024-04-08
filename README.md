@@ -200,6 +200,9 @@ This iterative process is repeated until all segments satisfy the error requirem
 interval is reached.
 
 ## To-Do
+- [ ] Overhaul method of loading and saving tasks. 
+Store all dofs rather than just defualt state vector. This will be easier in the long run.
+- [ ] Fix all random state task generation after deletion of X_desired vector.
 - [ ] Rework main.cpp so that all tasks are their own executable instead.
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.

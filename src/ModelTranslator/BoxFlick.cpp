@@ -23,7 +23,7 @@ BoxFlick::BoxFlick(int _clutterLevel) : PushBaseClass("franka_gripper", "goal"){
 
 void BoxFlick::GenerateRandomGoalAndStartState() {
     X_start = ReturnRandomStartState();
-    X_desired = ReturnRandomGoalState(X_start);
+//    X_desired = ReturnRandomGoalState(X_start);
 }
 
 MatrixXd BoxFlick::ReturnRandomStartState(){
@@ -194,79 +194,79 @@ MatrixXd BoxFlick::ReturnRandomGoalState(MatrixXd X0){
 
 double BoxFlick::CostFunction(mjData *d, bool terminal){
     double cost;
-    MatrixXd Xt = ReturnStateVector(d);
-    MatrixXd Ut = ReturnControlVector(d);
-
-    MatrixXd X_diff = Xt - X_desired;
-    MatrixXd temp;
-
-    double obstacleDistCost;
-
-    double objectsDiffX = Xt(9) - boxStartX;
-    double objectsDiffY = Xt(10) - boxStartY;
-
-    obstacleDistCost = (A * exp(-(pow(objectsDiffX,2)/sigma))) + (A * exp(-(pow(objectsDiffY,2)/sigma)));
-
-//    obstacleDistCost = 0.01/(pow(objectsDiffX,2) + 0.1) + 0.01/(pow(objectsDiffY,2) + 0.1);
-
+//    MatrixXd Xt = ReturnStateVector(d);
+//    MatrixXd Ut = ReturnControlVector(d);
+//
+//    MatrixXd X_diff = Xt - X_desired;
+//    MatrixXd temp;
+//
+//    double obstacleDistCost;
+//
+//    double objectsDiffX = Xt(9) - boxStartX;
+//    double objectsDiffY = Xt(10) - boxStartY;
+//
+//    obstacleDistCost = (A * exp(-(pow(objectsDiffX,2)/sigma))) + (A * exp(-(pow(objectsDiffY,2)/sigma)));
+//
+////    obstacleDistCost = 0.01/(pow(objectsDiffX,2) + 0.1) + 0.01/(pow(objectsDiffY,2) + 0.1);
+//
+////    if(terminal){
+////        obstacleDistCost = 1/(pow(hypotenuseDiff,2) + 0.1);
+////    }
+//
 //    if(terminal){
-//        obstacleDistCost = 1/(pow(hypotenuseDiff,2) + 0.1);
+//        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
 //    }
-
-    if(terminal){
-        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
-    }
-    else{
-        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
-    }
-
-    cost = temp(0) + obstacleDistCost;
+//    else{
+//        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
+//    }
+//
+//    cost = temp(0) + obstacleDistCost;
 
     return cost;
 }
 
 void BoxFlick::CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-    MatrixXd Xt = ReturnStateVector(d);
-    MatrixXd Ut = ReturnControlVector(d);
-    MatrixXd X_diff = Xt - X_desired;
-
-    // Special elemetns for gaussian distance of obstacle1 to goal
-    double objectsDiffX = Xt(9) - boxStartX;
-    double objectsDiffY = Xt(10) - boxStartY;
-
-    double exponentialX = exp(-(pow(objectsDiffX,2)/sigma));
-    double exponentialY = exp(-(pow(objectsDiffY,2)/sigma));
-
-    double l_x_X_add = -(2 * A * objectsDiffX * exponentialX)/sigma;
-    double l_x_Y_add = -(2 * A * objectsDiffY * exponentialY)/sigma;
-
-    double l_xx_X_add = (-2 * A * objectsDiffX * exponentialX)/sigma + (4 * pow(A, 2) * pow(objectsDiffX,2) * exponentialX)/pow(sigma,2);
-    double l_xx_y_add = (-2 * A * objectsDiffY * exponentialY)/sigma + (4 * pow(A, 2) * pow(objectsDiffY,2) * exponentialY)/pow(sigma,2);
-
-    // Size cost derivatives appropriately
-    l_x.resize(state_vector_size, 1);
-    l_xx.resize(state_vector_size, state_vector_size);
-
-    l_u.resize(num_ctrl, 1);
-    l_uu.resize(num_ctrl, num_ctrl);
-
-    if(terminal){
-        l_x = 2 * Q_terminal * X_diff;
-        l_xx = 2 * Q_terminal;
-    }
-    else{
-        l_x = 2 * Q * X_diff;
-        l_xx = 2 * Q;
-    }
-
-    l_x(9) = l_x(9) + l_x_X_add;
-    l_x(10) = l_x(10) + l_x_Y_add;
-
-    l_xx(9,9) = l_xx(9,9) + l_xx_X_add;
-    l_xx(10,10) = l_xx(10,10) + l_xx_y_add;
-
-    l_u = 2 * R * Ut;
-    l_uu = 2 * R;
+//    MatrixXd Xt = ReturnStateVector(d);
+//    MatrixXd Ut = ReturnControlVector(d);
+//    MatrixXd X_diff = Xt - X_desired;
+//
+//    // Special elemetns for gaussian distance of obstacle1 to goal
+//    double objectsDiffX = Xt(9) - boxStartX;
+//    double objectsDiffY = Xt(10) - boxStartY;
+//
+//    double exponentialX = exp(-(pow(objectsDiffX,2)/sigma));
+//    double exponentialY = exp(-(pow(objectsDiffY,2)/sigma));
+//
+//    double l_x_X_add = -(2 * A * objectsDiffX * exponentialX)/sigma;
+//    double l_x_Y_add = -(2 * A * objectsDiffY * exponentialY)/sigma;
+//
+//    double l_xx_X_add = (-2 * A * objectsDiffX * exponentialX)/sigma + (4 * pow(A, 2) * pow(objectsDiffX,2) * exponentialX)/pow(sigma,2);
+//    double l_xx_y_add = (-2 * A * objectsDiffY * exponentialY)/sigma + (4 * pow(A, 2) * pow(objectsDiffY,2) * exponentialY)/pow(sigma,2);
+//
+//    // Size cost derivatives appropriately
+//    l_x.resize(state_vector_size, 1);
+//    l_xx.resize(state_vector_size, state_vector_size);
+//
+//    l_u.resize(num_ctrl, 1);
+//    l_uu.resize(num_ctrl, num_ctrl);
+//
+//    if(terminal){
+//        l_x = 2 * Q_terminal * X_diff;
+//        l_xx = 2 * Q_terminal;
+//    }
+//    else{
+//        l_x = 2 * Q * X_diff;
+//        l_xx = 2 * Q;
+//    }
+//
+//    l_x(9) = l_x(9) + l_x_X_add;
+//    l_x(10) = l_x(10) + l_x_Y_add;
+//
+//    l_xx(9,9) = l_xx(9,9) + l_xx_X_add;
+//    l_xx(10,10) = l_xx(10,10) + l_xx_y_add;
+//
+//    l_u = 2 * R * Ut;
+//    l_uu = 2 * R;
 }
 
 std::vector<MatrixXd> BoxFlick::CreateInitSetupControls(int horizonLength){
@@ -281,13 +281,13 @@ std::vector<MatrixXd> BoxFlick::CreateInitSetupControls(int horizonLength){
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goal_pos(0) = X_desired(7) + 0.2;
-    goal_pos(1) = X_desired(8) + 0.01;
+//    goal_pos(0) = X_desired(7) + 0.2;
+//    goal_pos(1) = X_desired(8) + 0.01;
 
     EEWayPointsSetup(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
 
-    boxStartX = X_desired(7);
-    boxStartY = X_desired(8);
+//    boxStartX = X_desired(7);
+//    boxStartY = X_desired(8);
 
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
@@ -310,8 +310,8 @@ std::vector<MatrixXd> BoxFlick::CreateInitOptimisationControls(int horizonLength
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goal_pos(0) = X_desired(7) + 0.2;
-    goal_pos(1) = X_desired(8) + 0.01;
+//    goal_pos(0) = X_desired(7) + 0.2;
+//    goal_pos(1) = X_desired(8) + 0.01;
 
     std::string goalMarkerName = "display_goal";
     pose_6 displayBodyPose;

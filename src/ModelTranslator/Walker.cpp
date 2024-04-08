@@ -31,10 +31,10 @@ bool walker::TaskComplete(mjData *d, double &dist){
 
 void walker::GenerateRandomGoalAndStartState(){
     X_start.resize(state_vector_size, 1);
-    X_desired.resize(state_vector_size, 1);
+//    X_desired.resize(state_vector_size, 1);
 
     X_start = ReturnRandomStartState();
-    X_desired = ReturnRandomGoalState(X_start);
+//    X_desired = ReturnRandomGoalState(X_start);
 }
 
 MatrixXd walker::ReturnRandomStartState(){

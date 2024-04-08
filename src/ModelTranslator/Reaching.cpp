@@ -11,7 +11,7 @@ bool pandaReaching::TaskComplete(mjData *d, double &dist){
     MatrixXd X = ReturnStateVector(d);
 
     for(int i = 0; i < dof; i++){
-        double diff = X_desired(i) - X(i);
+        double diff = active_state_vector.robots[0].goalPos[i] - X(i);
         cumError += diff;
     }
 
@@ -111,8 +111,10 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
 
     X_start << jointStartPositions[0], jointStartPositions[1], jointStartPositions[2], jointStartPositions[3], jointStartPositions[4], jointStartPositions[5], jointStartPositions[6],
             0, 0, 0, 0, 0, 0, 0;
-    X_desired << jointGoalPositions[0], jointGoalPositions[1], jointGoalPositions[2], jointGoalPositions[3], jointGoalPositions[4], jointGoalPositions[5], jointGoalPositions[6],
-            0, 0, 0, 0, 0, 0, 0;
+
+    for(int i = 0; i < dof; i++){
+        active_state_vector.robots[0].goalPos[i] = jointGoalPositions[i];
+    }
 }
 
 MatrixXd pandaReaching::ReturnRandomStartState(){
@@ -224,25 +226,6 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
         }
     }
     else{
-        MatrixXd startState = ReturnStateVector(MuJoCo_helper->main_data);
-        MatrixXd goalState = X_desired.replicate(1, 1);
-        MatrixXd difference = goalState - startState;
-
-
-        MatrixXd controlDiff(num_ctrl, 1);
-
-        MatrixXd control(num_ctrl, 1);
-        for(int i = 0; i < num_ctrl; i++){
-            control(i) = startState(i);
-            controlDiff(i) = difference(i);
-        }
-
-        for(int i = 0; i < horizonLength; i++){
-            initControls.push_back(control);
-
-            control += (controlDiff / horizonLength);
-            //cout << "control: " << control << endl;
-        }
 
     }
 

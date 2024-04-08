@@ -67,7 +67,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     }
 
     dof = state_vector_size / 2;
-    X_desired.resize(state_vector_size, 1);
+//    X_desired.resize(state_vector_size, 1);
     X_start.resize(state_vector_size, 1);
 
     // --------- Set size of cost matrices correctly ------------
@@ -95,8 +95,8 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
             Q.diagonal()[Q_index + j + dof] = robot.jointVelCosts[j];
             Q_terminal.diagonal()[Q_index + j + dof] = robot.terminalJointVelCosts[j];
 
-            X_desired(Q_index + j, 0) = robot.goalPos[j];
-            X_desired(Q_index + j + dof, 0) = 0.0f;
+//            X_desired(Q_index + j, 0) = robot.goalPos[j];
+//            X_desired(Q_index + j + dof, 0) = 0.0f;
 
             X_start(Q_index + j, 0) = robot.startPos[j];
             X_start(Q_index + j + dof, 0) = 0.0f;
@@ -117,8 +117,8 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
                 Q.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.linearVelCost[j];
                 Q_terminal.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.terminalLinearVelCost[j];
 
-                X_desired(Q_index + activeDofCounter, 0) = bodiesState.goalLinearPos[j];
-                X_desired(Q_index + activeDofCounter + dof, 0) = 0.0f;
+//                X_desired(Q_index + activeDofCounter, 0) = bodiesState.goalLinearPos[j];
+//                X_desired(Q_index + activeDofCounter + dof, 0) = 0.0f;
 
                 X_start(Q_index + activeDofCounter, 0) = bodiesState.startLinearPos[j];
                 X_start(Q_index + activeDofCounter + dof, 0) = 0.0f;
@@ -136,8 +136,8 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
                 Q.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.angularVelCost[j];
                 Q_terminal.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.terminalAngularVelCost[j];
 
-                X_desired(Q_index + activeDofCounter, 0) = bodiesState.goalAngularPos[j];
-                X_desired(Q_index + activeDofCounter + dof, 0) = 0.0f;
+//                X_desired(Q_index + activeDofCounter, 0) = bodiesState.goalAngularPos[j];
+//                X_desired(Q_index + activeDofCounter + dof, 0) = 0.0f;
 
                 X_start(Q_index + activeDofCounter, 0) = bodiesState.startAngularPos[j];
                 X_start(Q_index + activeDofCounter + dof, 0) = 0.0f;
@@ -225,7 +225,7 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
     Q_terminal.diagonal().resize(dof * 2);
 
     // Resize X_desired and X_start
-    X_desired.resize(dof * 2, 1);
+//    X_desired.resize(dof * 2, 1);
     X_start.resize(dof * 2, 1);
 
     // TODO (DMackRus) - think there is a better way to do this if i rewrite how my state vector is stored
@@ -281,8 +281,8 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
             Q.diagonal()[Q_index + j + dof] = robot.jointVelCosts[j];
             Q_terminal.diagonal()[Q_index + j + dof] = robot.terminalJointVelCosts[j];
 
-            X_desired(Q_index + j, 0) = robot.goalPos[j];
-            X_desired(Q_index + j + dof, 0) = 0.0f;
+//            X_desired(Q_index + j, 0) = robot.goalPos[j];
+//            X_desired(Q_index + j + dof, 0) = 0.0f;
 
             X_start(Q_index + j, 0) = robot.startPos[j];
             X_start(Q_index + j + dof, 0) = 0.0f;
@@ -313,8 +313,8 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
                 Q.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.linearVelCost[j];
                 Q_terminal.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.terminalLinearVelCost[j];
 
-                X_desired(Q_index + j, 0) = bodiesState.goalLinearPos[j];
-                X_desired(Q_index + j + dof, 0) = 0.0f;
+//                X_desired(Q_index + j, 0) = bodiesState.goalLinearPos[j];
+//                X_desired(Q_index + j + dof, 0) = 0.0f;
 
                 X_start(Q_index + j, 0) = bodiesState.startLinearPos[j];
                 X_start(Q_index + j + dof, 0) = 0.0f;
@@ -332,8 +332,8 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
                 Q.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.angularVelCost[j];
                 Q_terminal.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.terminalAngularVelCost[j];
 
-                X_desired(Q_index + j, 0) = bodiesState.goalAngularPos[j];
-                X_desired(Q_index + j + dof, 0) = 0.0f;
+//                X_desired(Q_index + j, 0) = bodiesState.goalAngularPos[j];
+//                X_desired(Q_index + j + dof, 0) = 0.0f;
 
                 X_start(Q_index + j, 0) = bodiesState.startAngularPos[j];
                 X_start(Q_index + j + dof, 0) = 0.0f;
@@ -386,44 +386,99 @@ std::vector<std::string> ModelTranslator::GetStateVectorNames(){
 
 double ModelTranslator::CostFunction(mjData* d, bool terminal){
     double cost = 0.0f;
-    MatrixXd Xt = ReturnStateVector(d);
-    MatrixXd Ut = ReturnControlVector(d);
-
-    MatrixXd X_diff = Xt - X_desired;
-    MatrixXd temp;
-
-    if(terminal){
-        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
-    }
-    else{
-        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
-    }
-
-    cost = temp(0);
+//    MatrixXd Xt = ReturnStateVector(d);
+//    MatrixXd Ut = ReturnControlVector(d);
+//
+//    MatrixXd X_diff = Xt - X_desired;
+//    MatrixXd temp;
+//
+//    if(terminal){
+//        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
+//    }
+//    else{
+//        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
+//    }
+//    cost = temp(0);
 
     // Loop through position part of vector
-//    for(auto & robot : active_state_vector.robots){
-//        int robot_num_joints = static_cast<int>(robot.jointNames.size());
-//
-//        // Loop through the robot joints
-//        for(int j = 0; j < robot_num_joints; j++) {
-//            // Cost += joint pos cost * (current pos - desired pos)
-////            cost += robot.jointPosCosts[j] * ()
-//
-//            robot.terminalJointPosCosts[j];
-//        }
-//    }
+    for(auto & robot : active_state_vector.robots){
+        int robot_num_joints = static_cast<int>(robot.jointNames.size());
 
-    // Loop through velocity part of vector
+        std::vector<double> joint_positions;
+        std::vector<double> joint_velocities;
+        MuJoCo_helper->getRobotJointsPositions(robot.name, joint_positions, d);
+        MuJoCo_helper->getRobotJointsVelocities(robot.name, joint_velocities, d);
+
+        // Loop through the robot joints
+        for(int j = 0; j < robot_num_joints; j++) {
+
+            double cost_pos, cost_vel;
+
+            if(terminal){
+                cost_pos = robot.terminalJointPosCosts[j];
+                cost_vel = robot.terminalJointVelCosts[j];
+            }
+            else{
+                cost_pos = robot.jointPosCosts[j];
+                cost_vel = robot.jointVelCosts[j];
+            }
+
+            // Cost += joint pos cost * (current pos - desired pos)^2
+            cost += cost_pos * pow((joint_positions[j] - robot.goalPos[j]), 2);
+
+            // Cost += joint vel cost * (current vel - desired vel)^2
+            // TODO - this assumes we want zero velocity, will break walker model
+            cost += cost_vel * pow(joint_velocities[j], 2);
+        }
+    }
+
+    // Loop through the bodies in simulation
+    for(auto body : active_state_vector.bodiesStates){
+
+        pose_6 body_pose;
+        pose_6 body_vel;
+        MuJoCo_helper->getBodyPose_angle(body.name, body_pose, d);
+        MuJoCo_helper->getBodyVelocity(body.name, body_vel, d);
+
+        // Linear costs
+        for(int j = 0; j < 3; j++){
+            if(body.activeLinearDOF[j]){
+
+                if(terminal){
+                    // Position cost
+                    cost += body.terminalLinearPosCost[j] * pow((body_pose.position[j] - body.goalLinearPos[j]), 2);
+
+                    // Velocity cost
+                    cost += body.terminalLinearVelCost[j] * pow(body_vel.position[j], 2);
+
+                }
+                else{
+                    // Position cost
+                    cost += body.linearPosCost[j] * pow((body_pose.position[j] - body.goalLinearPos[j]), 2);
+
+                    // Velocity cost
+                    cost += body.linearVelCost[j] * pow(body_vel.position[j], 2);
+                }
+            }
+        }
+
+        // Angular costs
+        // Convert pose.orientation to quaternion
+        // compute dot prodict between desired orientation and current orientation
+        for(int j = 0; j < 3; j++){
+
+        }
+
+    }
 
     return cost;
 }
 
 void ModelTranslator::CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-    MatrixXd Xt = ReturnStateVector(d);
-    MatrixXd Ut = ReturnControlVector(d);
-
-    MatrixXd X_diff = Xt - X_desired;
+//    MatrixXd Xt = ReturnStateVector(d);
+//    MatrixXd Ut = ReturnControlVector(d);
+//
+//    MatrixXd X_diff = Xt - X_desired;
 
     // Size cost derivatives appropriately
     l_x.resize(state_vector_size, 1);
@@ -432,17 +487,109 @@ void ModelTranslator::CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, 
     l_u.resize(num_ctrl, 1);
     l_uu.resize(num_ctrl, num_ctrl);
 
-    if(terminal){
-        l_x = 2 * Q_terminal * X_diff;
-        l_xx = 2 * Q_terminal;
-    }
-    else{
-        l_x = 2 * Q * X_diff;
-        l_xx = 2 * Q;
-    }    
+    // TODO - remove as this is temporary
+    l_u.setZero();
+    l_uu.setZero();
 
-    l_u = 2 * R * Ut;
-    l_uu = 2 * R;
+    int Q_index = 0;
+    for(auto & robot : active_state_vector.robots){
+        int robot_num_joints = static_cast<int>(robot.jointNames.size());
+
+        std::vector<double> joint_positions;
+        std::vector<double> joint_velocities;
+        MuJoCo_helper->getRobotJointsPositions(robot.name, joint_positions, d);
+        MuJoCo_helper->getRobotJointsVelocities(robot.name, joint_velocities, d);
+
+        // Loop through the robot joints
+        for(int j = 0; j < robot_num_joints; j++) {
+
+            double cost_pos, cost_vel;
+
+            if(terminal){
+                cost_pos = robot.terminalJointPosCosts[j];
+                cost_vel = robot.terminalJointVelCosts[j];
+            }
+            else{
+                cost_pos = robot.jointPosCosts[j];
+                cost_vel = robot.jointVelCosts[j];
+            }
+
+            // l_x = 2 * cost * diff
+            // position and velocity
+            l_x(Q_index + j) = 2 * cost_pos * (joint_positions[j] - robot.goalPos[j]);
+            // TODO - assumes we alsways want velocity = 0
+            l_x(Q_index + j + dof) = 2 * cost_vel * (joint_velocities[j]);
+
+            // l_u = 2 * cost * diff
+            // TODO - implement
+
+            // l_xx = 2 * cost
+            l_xx(Q_index + j, Q_index + j) = 2 * cost_pos;
+            l_xx(Q_index + j + dof, Q_index + j + dof) = 2 * cost_vel;
+
+            // l_uu = 2 * cost
+            // TODO - implement
+
+        }
+
+        Q_index += robot_num_joints;
+    }
+
+    for(auto body : active_state_vector.bodiesStates){
+        pose_6 body_pose;
+        pose_6 body_vel;
+        MuJoCo_helper->getBodyPose_angle(body.name, body_pose, d);
+        MuJoCo_helper->getBodyVelocity(body.name, body_vel, d);
+
+        // Linear cost derivatives
+        for(int j = 0; j < 3; j++) {
+            if (body.activeLinearDOF[j]) {
+
+                if (terminal) {
+                    // Position cost derivatives
+                    l_x(Q_index) = 2 * body.terminalLinearPosCost[j] * (body_pose.position[j] - body.goalLinearPos[j]);
+                    l_xx(Q_index, Q_index) = 2 * body.terminalLinearPosCost[j];
+
+                    // Velocity cost derivatives
+                    l_x(Q_index + dof) = 2 * body.terminalLinearVelCost[j] * (body_vel.position[j]);
+                    l_xx(Q_index + dof, Q_index + dof) = 2 * body.terminalLinearVelCost[j];
+                } else {
+                    // Position cost derivatives
+                    l_x(Q_index) = 2 * body.linearPosCost[j] * (body_pose.position[j] - body.goalLinearPos[j]);
+                    l_xx(Q_index, Q_index) = 2 * body.linearPosCost[j];
+
+                    // Velocity cost derivatives
+                    l_x(Q_index + dof) = 2 * body.linearVelCost[j] * (body_vel.position[j]);
+                    l_xx(Q_index + dof, Q_index + dof) = 2 * body.linearVelCost[j];
+                }
+
+                Q_index++;
+            }
+        }
+
+        // Angular cost derivatives
+        for(int j = 0; j < 3; j++) {
+            if(body.activeAngularDOF[j]){
+
+            }
+        }
+    }
+//    std::cout << l_xx << std::endl;
+//    std::cout << "l_x \n" << l_x << "\n";
+
+//    if(terminal){
+//        l_x = 2 * Q_terminal * X_diff;
+//        l_xx = 2 * Q_terminal;
+//    }
+//    else{
+//        l_x = 2 * Q * X_diff;
+//        l_xx = 2 * Q;
+//    }
+//
+////    std::cout << "old l_x: " << l_x << "\n";
+//
+//    l_u = 2 * R * Ut;
+//    l_uu = 2 * R;
 
 }
 
@@ -638,48 +785,48 @@ MatrixXd ModelTranslator::returnVelocityVector(mjData* d){
     return velocity_vector;
 }
 
-MatrixXd ModelTranslator::returnAccelerationVector(mjData* d){
-    MatrixXd accel_vector(dof, 1);
-
-    int currentStateIndex = 0;
-
-    // Loop through all robots in the state vector
-    for(auto & robot : active_state_vector.robots){
-        vector<double> jointAccelerations;
-        MuJoCo_helper->getRobotJointsAccelerations(robot.name, jointAccelerations, d);
-
-        for(int j = 0; j < robot.jointNames.size(); j++){
-            accel_vector(j, 0) = jointAccelerations[j];
-        }
-
-        // Increment the current state index by the number of joints in the robot
-        currentStateIndex += static_cast<int>(robot.jointNames.size());
-    }
-
-    // Loop through all bodies in the state vector
-    for(auto & bodiesState : active_state_vector.bodiesStates){
-        // Get the body's position and orientation
-        pose_6 bodyAccelerations;
-        MuJoCo_helper->getBodyAcceleration(bodiesState.name, bodyAccelerations, d);
-
-        for(int j = 0; j < 3; j++) {
-            // Linear positions
-            if (bodiesState.activeLinearDOF[j]) {
-                accel_vector(currentStateIndex, 0) = bodyAccelerations.position[j];
-                currentStateIndex++;
-            }
-        }
-        for(int j = 0; j < 3; j++) {
-            // angular positions
-            if(bodiesState.activeAngularDOF[j]){
-                accel_vector(currentStateIndex, 0) = bodyAccelerations.orientation[j];
-                currentStateIndex++;
-            }
-        }
-    }
-
-    return accel_vector;
-}
+//MatrixXd ModelTranslator::returnAccelerationVector(mjData* d){
+//    MatrixXd accel_vector(dof, 1);
+//
+//    int currentStateIndex = 0;
+//
+//    // Loop through all robots in the state vector
+//    for(auto & robot : active_state_vector.robots){
+//        vector<double> jointAccelerations;
+//        MuJoCo_helper->getRobotJointsAccelerations(robot.name, jointAccelerations, d);
+//
+//        for(int j = 0; j < robot.jointNames.size(); j++){
+//            accel_vector(j, 0) = jointAccelerations[j];
+//        }
+//
+//        // Increment the current state index by the number of joints in the robot
+//        currentStateIndex += static_cast<int>(robot.jointNames.size());
+//    }
+//
+//    // Loop through all bodies in the state vector
+//    for(auto & bodiesState : active_state_vector.bodiesStates){
+//        // Get the body's position and orientation
+//        pose_6 bodyAccelerations;
+//        MuJoCo_helper->getBodyAcceleration(bodiesState.name, bodyAccelerations, d);
+//
+//        for(int j = 0; j < 3; j++) {
+//            // Linear positions
+//            if (bodiesState.activeLinearDOF[j]) {
+//                accel_vector(currentStateIndex, 0) = bodyAccelerations.position[j];
+//                currentStateIndex++;
+//            }
+//        }
+//        for(int j = 0; j < 3; j++) {
+//            // angular positions
+//            if(bodiesState.activeAngularDOF[j]){
+//                accel_vector(currentStateIndex, 0) = bodyAccelerations.orientation[j];
+//                currentStateIndex++;
+//            }
+//        }
+//    }
+//
+//    return accel_vector;
+//}
 
 bool ModelTranslator::setPositionVector(MatrixXd position_vector, mjData* d){
     if(position_vector.rows() != (state_vector_size / 2)){
@@ -809,6 +956,40 @@ int ModelTranslator::StateIndexToQposIndex(int state_index){
     }
 
     return joint_index + body_index_offset;
+}
+
+MatrixXd ModelTranslator::StartStateVector() {
+    MatrixXd start_state(state_vector_size, 1);
+
+    int state_counter = 0;
+    for(auto & robot : active_state_vector.robots){
+
+        for(int j = 0; j < robot.jointNames.size(); j++){
+            start_state(state_counter, 0) = robot.startPos[j];
+            state_counter++;
+        }
+    }
+
+    // Loop through all bodies in the state vector
+    for(auto & bodiesState : active_state_vector.bodiesStates){
+
+        for(int j = 0; j < 3; j++) {
+            // Linear positions
+            if (bodiesState.activeLinearDOF[j]) {
+                start_state(state_counter, 0) = bodiesState.startLinearPos[j];
+                state_counter++;
+            }
+        }
+        for(int j = 0; j < 3; j++) {
+            // angular positions
+            if(bodiesState.activeAngularDOF[j]){
+                start_state(state_counter, 0) = bodiesState.startAngularPos[j];
+                state_counter++;
+            }
+        }
+    }
+
+    return start_state;
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {

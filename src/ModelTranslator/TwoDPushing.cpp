@@ -32,7 +32,7 @@ TwoDPushing::TwoDPushing(int _clutterLevel): PushBaseClass("franka_gripper", "bl
 
 void TwoDPushing::GenerateRandomGoalAndStartState() {
     X_start = ReturnRandomStartState();
-    X_desired = ReturnRandomGoalState(X_start);
+//    X_desired = ReturnRandomGoalState(X_start);
 }
 
 MatrixXd TwoDPushing::ReturnRandomStartState(){
@@ -266,8 +266,8 @@ std::vector<MatrixXd> TwoDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = X_desired(7);
-    goalPos(1) = X_desired(8);
+    goalPos(0) = active_state_vector.bodiesStates[0].goalLinearPos[0];
+    goalPos(1) = active_state_vector.bodiesStates[0].goalLinearPos[1];
     EEWayPointsSetup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
 //    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
@@ -288,8 +288,8 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     std::string goalMarkerName = "display_goal";
     pose_6 displayBodyPose;
     MuJoCo_helper->getBodyPose_angle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
-    displayBodyPose.position[0] = X_desired(7);
-    displayBodyPose.position[1] = X_desired(8);
+    displayBodyPose.position[0] = active_state_vector.bodiesStates[0].goalLinearPos[0];
+    displayBodyPose.position[1] = active_state_vector.bodiesStates[0].goalLinearPos[1];
     displayBodyPose.position[2] = 0.0f;
     MuJoCo_helper->setBodyPose_angle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
 
@@ -299,8 +299,8 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = X_desired(7);
-    goalPos(1) = X_desired(8);
+    goalPos(0) = active_state_vector.bodiesStates[0].goalLinearPos[0];
+    goalPos(1) = active_state_vector.bodiesStates[0].goalLinearPos[1];
     EEWayPointsPush(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << mainWayPoints.size() << " waypoints created" << endl;
 //    cout << "mainwaypoint 0: " << mainWayPoints[1] << endl;
@@ -316,93 +316,93 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
 }
 
 // New - testing it out
-double TwoDPushing::CostFunction(mjData *d, bool terminal){
-    double cost;
-    MatrixXd Xt = ReturnStateVector(d);
-    MatrixXd Ut = ReturnControlVector(d);
-
-    // General cost function for the difference between desired and actual state
-    MatrixXd X_diff = Xt - X_desired;
-    MatrixXd temp;
-
-    if(terminal){
-        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
-    }
-    else{
-        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
-    }
-
-    cost = temp(0);
-
-    // Reach cost function - difference between EE and goal object.
-//    pose_7 EE_pose;
-//    MuJoCo_helper->getBodyPose_quat_ViaXpos("franka_gripper", EE_pose, d);
+//double TwoDPushing::CostFunction(mjData *d, bool terminal){
+//    double cost;
+//    MatrixXd Xt = ReturnStateVector(d);
+//    MatrixXd Ut = ReturnControlVector(d);
 //
-//    cost += pow(EE_pose.position(0) - X_desired(7), 2) * 1;
-//    cost += pow(EE_pose.position(1) - X_desired(8), 2) * 1;
-
-    return cost;
-}
-
-void TwoDPushing::CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-    MatrixXd Xt = ReturnStateVector(d);
-    MatrixXd Ut = ReturnControlVector(d);
-
-    MatrixXd X_diff = Xt - X_desired;
-
-    // Size cost derivatives appropriately
-    l_x.resize(state_vector_size, 1);
-    l_xx.resize(state_vector_size, state_vector_size);
-
-    l_u.resize(num_ctrl, 1);
-    l_uu.resize(num_ctrl, num_ctrl);
-
-    if(terminal){
-        l_x = 2 * Q_terminal * X_diff;
-        l_xx = 2 * Q_terminal;
-    }
-    else{
-        l_x = 2 * Q * X_diff;
-        l_xx = 2 * Q;
-    }
-
-    l_u = 2 * R * Ut;
-    l_uu = 2 * R;
-
-//    // Reach gradients
-//    MatrixXd Jac;
-//    MatrixXd joints = Xt.block(0, 0, 7, 1);
+//    // General cost function for the difference between desired and actual state
+//    MatrixXd X_diff = Xt - X_desired;
+//    MatrixXd temp;
 //
-//    // Not ideal this being here, computationally expensive
-//    MuJoCo_helper->forwardSimulator(data_index);
+//    if(terminal){
+//        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
+//    }
+//    else{
+//        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
+//    }
 //
-//    Jac = MuJoCo_helper->calculateJacobian("franka_gripper", data_index);
+//    cost = temp(0);
 //
-//    std::cout << "Jac " << Jac << std::endl;
-//    std::cout << "joints transpose " << joints << std::endl;
+//    // Reach cost function - difference between EE and goal object.
+////    pose_7 EE_pose;
+////    MuJoCo_helper->getBodyPose_quat_ViaXpos("franka_gripper", EE_pose, d);
+////
+////    cost += pow(EE_pose.position(0) - X_desired(7), 2) * 1;
+////    cost += pow(EE_pose.position(1) - X_desired(8), 2) * 1;
 //
-//    MatrixXd joints_2_EE(6, 1);
-//    MatrixXd EE_x(7, 1);
-//    MatrixXd EE_xx(7, 7);
-//    joints_2_EE = Jac * joints;
-//    std::cout << "jointes_2_ee " << EE_x << std::endl;
+//    return cost;
+//}
+
+//void TwoDPushing::CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+//    MatrixXd Xt = ReturnStateVector(d);
+//    MatrixXd Ut = ReturnControlVector(d);
 //
-//    EE_x = 2 * joints_2_EE * cost_reach;
-//    std::cout << "EE_x " << EE_x << std::endl;
-//    EE_xx = 2 * cost_reach;
+//    MatrixXd X_diff = Xt - X_desired;
 //
-//    // Add the reach gradients to the cost derivatives
-//    l_x.block(7, 0, 7, 1) += EE_x;
-//    l_xx.block(7, 7, 7, 7) += EE_xx;
-}
+//    // Size cost derivatives appropriately
+//    l_x.resize(state_vector_size, 1);
+//    l_xx.resize(state_vector_size, state_vector_size);
+//
+//    l_u.resize(num_ctrl, 1);
+//    l_uu.resize(num_ctrl, num_ctrl);
+//
+//    if(terminal){
+//        l_x = 2 * Q_terminal * X_diff;
+//        l_xx = 2 * Q_terminal;
+//    }
+//    else{
+//        l_x = 2 * Q * X_diff;
+//        l_xx = 2 * Q;
+//    }
+//
+//    l_u = 2 * R * Ut;
+//    l_uu = 2 * R;
+//
+////    // Reach gradients
+////    MatrixXd Jac;
+////    MatrixXd joints = Xt.block(0, 0, 7, 1);
+////
+////    // Not ideal this being here, computationally expensive
+////    MuJoCo_helper->forwardSimulator(data_index);
+////
+////    Jac = MuJoCo_helper->calculateJacobian("franka_gripper", data_index);
+////
+////    std::cout << "Jac " << Jac << std::endl;
+////    std::cout << "joints transpose " << joints << std::endl;
+////
+////    MatrixXd joints_2_EE(6, 1);
+////    MatrixXd EE_x(7, 1);
+////    MatrixXd EE_xx(7, 7);
+////    joints_2_EE = Jac * joints;
+////    std::cout << "jointes_2_ee " << EE_x << std::endl;
+////
+////    EE_x = 2 * joints_2_EE * cost_reach;
+////    std::cout << "EE_x " << EE_x << std::endl;
+////    EE_xx = 2 * cost_reach;
+////
+////    // Add the reach gradients to the cost derivatives
+////    l_x.block(7, 0, 7, 1) += EE_x;
+////    l_xx.block(7, 7, 7, 7) += EE_xx;
+//}
 
 bool TwoDPushing::TaskComplete(mjData *d, double &dist){
     bool taskComplete = false;
 
     MatrixXd currentState = ReturnStateVector(d);
 
-    double x_diff = currentState(7) - X_desired(7);
-    double y_diff = currentState(8) - X_desired(8);
+    double x_diff = currentState(7) - active_state_vector.bodiesStates[0].goalLinearPos[0];
+    double y_diff = currentState(8) - active_state_vector.bodiesStates[0].goalLinearPos[1];
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 

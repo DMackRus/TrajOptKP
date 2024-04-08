@@ -218,7 +218,8 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         iLQROptimiser->keypoint_generator->ResetCache();
         // Load start and desired state from csv file
         MatrixXd X_start(activeModelTranslator->state_vector_size, 1);
-        yamlReader->loadTaskFromFile(task_prefix, i, X_start, activeModelTranslator->X_desired);
+        yamlReader->loadTaskFromFile(task_prefix, i, activeModelTranslator->active_state_vector);
+        // TODO - fix!!!
         activeModelTranslator->X_start = X_start;
 
         // Reset the time of simulation in all data?
