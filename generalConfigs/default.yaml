@@ -2,7 +2,7 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "pushing_moderate_clutter"  # Task to be performed
+task: "pushing_no_clutter"  # Task to be performed
 # Current implemented tasks are:
 # "double_pendulum", "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
 # "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
@@ -11,11 +11,10 @@ task: "pushing_moderate_clutter"  # Task to be performed
 
 optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
-runMode: "MPC_until_completion"
+runMode: "Optimise_once"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
-# "MPC_continuous"          - Perform MPC continuously until program terminated. Display current state of the system.
 # "MPC_until_completion"    - Perform MPC until the task is completed. Display current state of the system.
 
 # Extra testing modes for debugging/generating testing data

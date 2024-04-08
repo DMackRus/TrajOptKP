@@ -385,10 +385,9 @@ std::vector<std::string> ModelTranslator::GetStateVectorNames(){
 }
 
 double ModelTranslator::CostFunction(mjData* d, bool terminal){
-    double cost;
+    double cost = 0.0f;
     MatrixXd Xt = ReturnStateVector(d);
     MatrixXd Ut = ReturnControlVector(d);
-//    cout << "X_desired: " << X_desired << endl;
 
     MatrixXd X_diff = Xt - X_desired;
     MatrixXd temp;
@@ -401,6 +400,21 @@ double ModelTranslator::CostFunction(mjData* d, bool terminal){
     }
 
     cost = temp(0);
+
+    // Loop through position part of vector
+//    for(auto & robot : active_state_vector.robots){
+//        int robot_num_joints = static_cast<int>(robot.jointNames.size());
+//
+//        // Loop through the robot joints
+//        for(int j = 0; j < robot_num_joints; j++) {
+//            // Cost += joint pos cost * (current pos - desired pos)
+////            cost += robot.jointPosCosts[j] * ()
+//
+//            robot.terminalJointPosCosts[j];
+//        }
+//    }
+
+    // Loop through velocity part of vector
 
     return cost;
 }
@@ -443,53 +457,20 @@ std::vector<MatrixXd> ModelTranslator::CreateInitSetupControls(int horizonLength
 }
 
 MatrixXd ModelTranslator::ReturnStateVector(mjData* d){
-    MatrixXd stateVector(state_vector_size, 1);
+    MatrixXd position_vector(dof, 1);
+    MatrixXd velocity_vector(dof, 1);
+    MatrixXd state_vector(state_vector_size, 1);
 
-    int currentStateIndex = 0;
+    position_vector = returnPositionVector(d);
+    velocity_vector = returnVelocityVector(d);
 
-    // Loop through all robots in the state vector
-    for(auto & robot : active_state_vector.robots){
-        vector<double> jointPositions;
-        vector<double> jointVelocities;
-        MuJoCo_helper->getRobotJointsPositions(robot.name, jointPositions, d);
-        MuJoCo_helper->getRobotJointsVelocities(robot.name, jointVelocities, d);
+    state_vector.block(0, 0, dof, 1) =
+            position_vector.block(0, 0, dof, 1);
 
-        for(int j = 0; j < robot.jointNames.size(); j++){
-            stateVector(j, 0) = jointPositions[j];
-            stateVector(j + (state_vector_size / 2), 0) = jointVelocities[j];
-        }
+    state_vector.block(dof, 0, dof, 1) =
+            velocity_vector.block(0, 0, dof, 1);
 
-        // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
-        currentStateIndex += static_cast<int>(robot.jointNames.size());
-    }
-
-    // Loop through all bodies in the state vector
-    for(auto & bodiesState : active_state_vector.bodiesStates){
-        // Get the body's position and orientation
-        pose_6 bodyPose;
-        pose_6 bodyVelocity;
-        MuJoCo_helper->getBodyPose_angle(bodiesState.name, bodyPose, d);
-        MuJoCo_helper->getBodyVelocity(bodiesState.name, bodyVelocity, d);
-
-        for(int j = 0; j < 3; j++) {
-            // Linear positions
-            if (bodiesState.activeLinearDOF[j]) {
-                stateVector(currentStateIndex, 0) = bodyPose.position[j];
-                stateVector(currentStateIndex + (state_vector_size / 2), 0) = bodyVelocity.position[j];
-                currentStateIndex++;
-            }
-        }
-        for(int j = 0; j < 3; j++) {
-            // angular positions
-            if(bodiesState.activeAngularDOF[j]){
-                stateVector(currentStateIndex, 0) = bodyPose.orientation[j];
-                stateVector(currentStateIndex + (state_vector_size / 2), 0) = bodyVelocity.orientation[j];
-                currentStateIndex++;
-            }
-        }
-    }
-
-    return stateVector;
+    return state_vector;
 }
 
 bool ModelTranslator::SetStateVector(MatrixXd state_vector, mjData* d){

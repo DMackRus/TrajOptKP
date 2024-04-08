@@ -522,8 +522,6 @@ bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration, mj
     const int jointIndex = model->body_jntadr[bodyId];
     const int qvelIndex = model->jnt_dofadr[jointIndex];
 
-
-
     for(int i = 0; i < 3; i++){
         acceleration.position(i) = d->qacc[qvelIndex + i];
     }
@@ -539,8 +537,6 @@ bool MuJoCoHelper::getBodyAcceleration(string bodyName, pose_6 &acceleration, mj
 // - TODO create jacobian dynamically for the robot
 Eigen::MatrixXd MuJoCoHelper::calculateJacobian(std::string bodyName, mjData *d){
     Eigen::MatrixXd kinematicJacobian(6, 7);
-
-
 
     //mjtNum* J_COMi_temp = mj_stackAlloc(_data, 3*_model->nv);
     Matrix<double, Dynamic, Dynamic, RowMajor> J_p(3, model->nv);
