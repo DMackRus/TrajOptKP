@@ -239,17 +239,6 @@ protected:
     void ComputeCostDerivatives();
 
     /**
-     * Interpolate the dynamics derivatives (and cost derivatives if required). The derivatives will have been computed
-     * at specific keypoints. This function fills in the gaps between the keypoints via simple linear interpolation.
-     *
-     * @param keyPoints - The keypoints where the derivatives were computed at. A list of lists, where each sublist refers to a different
-     * degree of freedom. The elements in the list are the time indices to compute the derivatives at.
-     * @param costDerivs - Whether to interpolate the cost derivatives or not.
-     *
-     */
-    void InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, bool costDerivs);
-
-    /**
      * Applies a filter to the internal dynamics derivatives.
      */
     void FilterDynamicsMatrices();

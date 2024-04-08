@@ -94,6 +94,12 @@ public:
 
     void PrintKeypointMethod();
 
+    void InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, int T,
+                                   std::vector<MatrixXd> &A, std::vector<MatrixXd> &B,
+                                   std::vector<MatrixXd> &l_x, std::vector<MatrixXd> &l_u,
+                                   std::vector<MatrixXd> &l_xx, std::vector<MatrixXd> &l_uu,
+                                   bool cost_derivs, int num_ctrl);
+
     void ResetCache();
 
     double surprise_lower = 0.2;
