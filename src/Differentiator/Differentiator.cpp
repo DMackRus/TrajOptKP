@@ -411,6 +411,8 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         A.block(0, col + dof, dim_state, 1) =
                 dstatedqvel.block(0, col, dim_state, 1);
     }
+    // Intentioanl bug
+    A(0, 0) = 1000.0;
 
     // ------------- B -------------------
     //          dqposdctrl
