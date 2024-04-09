@@ -34,10 +34,10 @@ jobs:
         run:
           apptainer remote use SylabsCloud
 
-      - name: Download container
-        run:
-          singularity pull container.sif library://dmackrus/collections/trajoptkp:latest
+      # - name: Download container
+      #   run:
+      #     singularity pull container.sif library://dmackrus/collections/trajoptkp:latest
 
       - name: Run container and tests
         run:
-          singularity exec -B ${GITHUB_WORKSPACE}:$HOME/TrajOptKP container.sif scripts/run_script_static.sh
+          singularity exec -B ${GITHUB_WORKSPACE}:$HOME/TrajOptKP library://dmackrus/collections/trajoptkp:latest scripts/run_script_static.sh
