@@ -109,10 +109,8 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
 
     }
 
-    X_start << jointStartPositions[0], jointStartPositions[1], jointStartPositions[2], jointStartPositions[3], jointStartPositions[4], jointStartPositions[5], jointStartPositions[6],
-            0, 0, 0, 0, 0, 0, 0;
-
     for(int i = 0; i < dof; i++){
+        active_state_vector.robots[0].startPos[i] = jointStartPositions[i];
         active_state_vector.robots[0].goalPos[i] = jointGoalPositions[i];
     }
 }

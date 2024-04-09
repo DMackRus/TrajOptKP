@@ -296,7 +296,7 @@ public:
 //    MatrixXd X_desired;
 
     // Starting state of the system
-    MatrixXd X_start;
+//    MatrixXd X_start;
 
     // mujoco helper object
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;

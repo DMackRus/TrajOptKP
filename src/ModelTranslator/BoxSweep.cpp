@@ -8,7 +8,7 @@ BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "bigBox"){
 }
 
 void BoxSweep::GenerateRandomGoalAndStartState() {
-    X_start = ReturnRandomStartState();
+//    X_start = ReturnRandomStartState();
 //    X_desired = ReturnRandomGoalState(X_start);
 }
 

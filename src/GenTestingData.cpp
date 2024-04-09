@@ -220,7 +220,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         MatrixXd X_start(activeModelTranslator->state_vector_size, 1);
         yamlReader->loadTaskFromFile(task_prefix, i, activeModelTranslator->active_state_vector);
         // TODO - fix!!!
-        activeModelTranslator->X_start = X_start;
+//        activeModelTranslator->X_start = X_start;
 
         // Reset the time of simulation in all data?
         activeModelTranslator->MuJoCo_helper->master_reset_data->time = 0.0f;

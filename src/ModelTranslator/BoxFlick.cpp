@@ -22,7 +22,7 @@ BoxFlick::BoxFlick(int _clutterLevel) : PushBaseClass("franka_gripper", "goal"){
 }
 
 void BoxFlick::GenerateRandomGoalAndStartState() {
-    X_start = ReturnRandomStartState();
+//    X_start = ReturnRandomStartState();
 //    X_desired = ReturnRandomGoalState(X_start);
 }
 

@@ -8,7 +8,7 @@ ThreeDPushing::ThreeDPushing() : PushBaseClass("franka_gripper", "goal"){
 }
 
 void ThreeDPushing::GenerateRandomGoalAndStartState() {
-    X_start = ReturnRandomStartState();
+//    X_start = ReturnRandomStartState();
 //    X_desired = ReturnRandomGoalState(X_start);
 }
 

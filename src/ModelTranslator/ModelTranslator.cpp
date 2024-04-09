@@ -68,7 +68,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
 
     dof = state_vector_size / 2;
 //    X_desired.resize(state_vector_size, 1);
-    X_start.resize(state_vector_size, 1);
+//    X_start.resize(state_vector_size, 1);
 
     // --------- Set size of cost matrices correctly ------------
     num_ctrl = static_cast<int>(active_state_vector.robots[0].actuatorNames.size());
@@ -98,8 +98,8 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
 //            X_desired(Q_index + j, 0) = robot.goalPos[j];
 //            X_desired(Q_index + j + dof, 0) = 0.0f;
 
-            X_start(Q_index + j, 0) = robot.startPos[j];
-            X_start(Q_index + j + dof, 0) = 0.0f;
+//            X_start(Q_index + j, 0) = robot.startPos[j];
+//            X_start(Q_index + j + dof, 0) = 0.0f;
         }
         Q_index += robotNumJoints;
     }
@@ -120,8 +120,8 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
 //                X_desired(Q_index + activeDofCounter, 0) = bodiesState.goalLinearPos[j];
 //                X_desired(Q_index + activeDofCounter + dof, 0) = 0.0f;
 
-                X_start(Q_index + activeDofCounter, 0) = bodiesState.startLinearPos[j];
-                X_start(Q_index + activeDofCounter + dof, 0) = 0.0f;
+//                X_start(Q_index + activeDofCounter, 0) = bodiesState.startLinearPos[j];
+//                X_start(Q_index + activeDofCounter + dof, 0) = 0.0f;
 
                 activeDofCounter++;
             }
@@ -139,8 +139,8 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
 //                X_desired(Q_index + activeDofCounter, 0) = bodiesState.goalAngularPos[j];
 //                X_desired(Q_index + activeDofCounter + dof, 0) = 0.0f;
 
-                X_start(Q_index + activeDofCounter, 0) = bodiesState.startAngularPos[j];
-                X_start(Q_index + activeDofCounter + dof, 0) = 0.0f;
+//                X_start(Q_index + activeDofCounter, 0) = bodiesState.startAngularPos[j];
+//                X_start(Q_index + activeDofCounter + dof, 0) = 0.0f;
 
                 activeDofCounter++;
             }
@@ -226,7 +226,7 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
 
     // Resize X_desired and X_start
 //    X_desired.resize(dof * 2, 1);
-    X_start.resize(dof * 2, 1);
+//    X_start.resize(dof * 2, 1);
 
     // TODO (DMackRus) - think there is a better way to do this if i rewrite how my state vector is stored
     for(auto & robot : active_state_vector.robots){
@@ -284,8 +284,8 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
 //            X_desired(Q_index + j, 0) = robot.goalPos[j];
 //            X_desired(Q_index + j + dof, 0) = 0.0f;
 
-            X_start(Q_index + j, 0) = robot.startPos[j];
-            X_start(Q_index + j + dof, 0) = 0.0f;
+//            X_start(Q_index + j, 0) = robot.startPos[j];
+//            X_start(Q_index + j + dof, 0) = 0.0f;
         }
         Q_index += robotNumJoints;
     }
@@ -316,8 +316,8 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
 //                X_desired(Q_index + j, 0) = bodiesState.goalLinearPos[j];
 //                X_desired(Q_index + j + dof, 0) = 0.0f;
 
-                X_start(Q_index + j, 0) = bodiesState.startLinearPos[j];
-                X_start(Q_index + j + dof, 0) = 0.0f;
+//                X_start(Q_index + j, 0) = bodiesState.startLinearPos[j];
+//                X_start(Q_index + j + dof, 0) = 0.0f;
 
                 activeDofCounter++;
             }
@@ -335,8 +335,8 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
 //                X_desired(Q_index + j, 0) = bodiesState.goalAngularPos[j];
 //                X_desired(Q_index + j + dof, 0) = 0.0f;
 
-                X_start(Q_index + j, 0) = bodiesState.startAngularPos[j];
-                X_start(Q_index + j + dof, 0) = 0.0f;
+//                X_start(Q_index + j, 0) = bodiesState.startAngularPos[j];
+//                X_start(Q_index + j + dof, 0) = 0.0f;
 
                 activeDofCounter++;
             }
@@ -490,6 +490,8 @@ void ModelTranslator::CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, 
     // TODO - remove as this is temporary
     l_u.setZero();
     l_uu.setZero();
+    l_x.setZero();
+    l_xx.setZero();
 
     int Q_index = 0;
     for(auto & robot : active_state_vector.robots){
@@ -961,11 +963,14 @@ int ModelTranslator::StateIndexToQposIndex(int state_index){
 MatrixXd ModelTranslator::StartStateVector() {
     MatrixXd start_state(state_vector_size, 1);
 
+    MatrixXd position_vector(dof, 1);
+    MatrixXd velocity_vector(dof, 1);
+
     int state_counter = 0;
     for(auto & robot : active_state_vector.robots){
 
         for(int j = 0; j < robot.jointNames.size(); j++){
-            start_state(state_counter, 0) = robot.startPos[j];
+            position_vector(state_counter, 0) = robot.startPos[j];
             state_counter++;
         }
     }
@@ -976,18 +981,23 @@ MatrixXd ModelTranslator::StartStateVector() {
         for(int j = 0; j < 3; j++) {
             // Linear positions
             if (bodiesState.activeLinearDOF[j]) {
-                start_state(state_counter, 0) = bodiesState.startLinearPos[j];
+                position_vector(state_counter, 0) = bodiesState.startLinearPos[j];
                 state_counter++;
             }
         }
         for(int j = 0; j < 3; j++) {
             // angular positions
             if(bodiesState.activeAngularDOF[j]){
-                start_state(state_counter, 0) = bodiesState.startAngularPos[j];
+                position_vector(state_counter, 0) = bodiesState.startAngularPos[j];
                 state_counter++;
             }
         }
     }
+
+    velocity_vector.setZero();
+
+    start_state.block(0, 0, dof, 1) = position_vector;
+    start_state.block(dof, 0, dof, 1) = velocity_vector;
 
     return start_state;
 }

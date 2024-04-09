@@ -31,7 +31,7 @@ TwoDPushing::TwoDPushing(int _clutterLevel): PushBaseClass("franka_gripper", "bl
 }
 
 void TwoDPushing::GenerateRandomGoalAndStartState() {
-    X_start = ReturnRandomStartState();
+//    X_start = ReturnRandomStartState();
 //    X_desired = ReturnRandomGoalState(X_start);
 }
 

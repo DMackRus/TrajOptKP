@@ -130,8 +130,8 @@ int main(int argc, char **argv) {
     }
 
     startStateVector.resize(activeModelTranslator->state_vector_size, 1);
-    std::cout << "X start: " << activeModelTranslator->X_start << "\n";
-    startStateVector = activeModelTranslator->X_start;
+//    std::cout << "X start: " << activeModelTranslator->X_start << "\n";
+//    startStateVector = activeModelTranslator->X_start;
 
     // random start and goal state
     std::string taskPrefix = activeModelTranslator->model_name;
@@ -208,7 +208,8 @@ int main(int argc, char **argv) {
 void generateTestScenes(){
     for(int i = 0; i < 200; i++){
         activeModelTranslator->GenerateRandomGoalAndStartState();
-        activeModelTranslator->SetStateVector(activeModelTranslator->X_start, activeModelTranslator->MuJoCo_helper->main_data);
+        MatrixXd start_state = activeModelTranslator->StartStateVector();
+        activeModelTranslator->SetStateVector(start_state, activeModelTranslator->MuJoCo_helper->main_data);
         activeVisualiser->render("init state");
         yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->active_state_vector);
     }
