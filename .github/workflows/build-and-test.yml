@@ -13,7 +13,7 @@ env:
   BUILD_TYPE: Debug
 
 jobs:
-  build:
+  test:
     # The CMake configure and build commands are platform agnostic and should work equally well on Windows or Mac.
     # You can convert this to a matrix build if you need cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
@@ -21,6 +21,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - uses: eWaterCycle/setup-apptainer@v2
+        with:
+          apptainer-version: 1.1.2
+
+      - name: Run container and tests
+        run:
+          apptainer exec -B ${GITHUB_WORKSPACE}:$HOME/TrajOptKP https://cloud.sylabs.io/library/dmackrus/collections/trajoptkp/ bin/bash /scripts/run_script_static.sh
+
+
+        
 #
 #      - name: Print GitHub event action
 #        run: |
