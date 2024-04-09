@@ -28,6 +28,8 @@ jobs:
 
       - name: Download container
         run:
+          apptainer remote add --no-login SylabsCloud cloud.sylabs.io
+          apptainer remote use SylabsCloud
           singularity pull container.sif library://dmackrus/collections/trajoptkp:latest
 
       - name: Run container and tests
