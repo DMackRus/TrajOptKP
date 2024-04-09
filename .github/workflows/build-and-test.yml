@@ -28,4 +28,4 @@ jobs:
 
       - name: Run container and tests
         run:
-          apptainer exec -B ${GITHUB_WORKSPACE}:$HOME/TrajOptKP library://dmackrus/collections/trajoptkp:latest bin/bash scripts/run_script_static.sh
+          apptainer exec -B ${GITHUB_WORKSPACE}:$HOME/TrajOptKP library://dmackrus/collections/trajoptkp:latest scripts/run_script_static.sh
