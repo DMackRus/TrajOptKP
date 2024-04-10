@@ -462,13 +462,90 @@ double ModelTranslator::CostFunction(mjData* d, bool terminal){
             }
         }
 
-        // Angular costs
-        // Convert pose.orientation to quaternion
-        // compute dot prodict between desired orientation and current orientation
-        for(int j = 0; j < 3; j++){
+        // Angular cost
+        // Compute rotation matrix of body in world frame
+        Eigen::Matrix3d current_rot_mat = eul2RotMat(body_pose.orientation);
+        std::cout << "rot mat: \n" << current_rot_mat << "\n";
 
+        // Convert desired orientation to rotation matrix
+        m_point desired;
+        desired(0) = body.goalAngularPos[0];
+        desired(1) = body.goalAngularPos[1];
+        desired(2) = body.goalAngularPos[2];
+        Eigen::Matrix3d desired_rot_mat = eul2RotMat(desired);
+
+        double dot_x, dot_y, dot_z = 0.0f;
+
+        // Axis X
+        if(body.activeAngularDOF[0]){
+            dot_x = current_rot_mat(0, 0) * desired_rot_mat(0, 0) +
+                    current_rot_mat(1, 0) * desired_rot_mat(1, 0) +
+                    current_rot_mat(2, 0) * desired_rot_mat(2, 0);
+
+            if(terminal) {
+                cost += body.terminalAngularPosCost[0] * acos(dot_x);
+            }
+            else{
+                cost += body.angularPosCost[0] * acos(dot_x);
+            }
         }
 
+        // Axis Y
+        if(body.activeAngularDOF[1]){
+            dot_y = current_rot_mat(0, 1) * desired_rot_mat(0, 1) +
+                    current_rot_mat(1, 1) * desired_rot_mat(1, 1) +
+                    current_rot_mat(2, 1) * desired_rot_mat(2, 1);
+
+            if(terminal) {
+                cost += body.terminalAngularPosCost[1] * acos(dot_y);
+            }
+            else{
+                cost += body.angularPosCost[1] * acos(dot_y);
+            }
+        }
+
+        // Axis Z
+        if(body.activeAngularDOF[2]){
+            dot_z = current_rot_mat(0, 2) * desired_rot_mat(0, 2) +
+                    current_rot_mat(1, 2) * desired_rot_mat(1, 2) +
+                    current_rot_mat(2, 2) * desired_rot_mat(2, 2);
+
+            if(terminal) {
+                cost += body.terminalAngularPosCost[2] * acos(dot_z);
+            }
+            else{
+                cost += body.angularPosCost[2] * acos(dot_z);
+            }
+        }
+
+        std::cout << "dot x: " << dot_x << " dot y: " << dot_y << " dot z: " << dot_z << std::endl;
+
+        // TODO - add check about active dofs?
+        if(terminal){
+            cost += body.terminalAngularPosCost[0] * acos(dot_x);
+            cost += body.terminalAngularPosCost[1] * acos(dot_y);
+            cost += body.terminalAngularPosCost[2] * acos(dot_z);
+        }
+        else{
+            cost += body.angularPosCost[0] * acos(dot_x);
+            cost += body.angularPosCost[1] * acos(dot_y);
+            cost += body.angularPosCost[2] * acos(dot_z);
+        }
+
+        for(int j = 0; j < 3; j++){
+            if(body.activeAngularDOF[j]){
+
+                if(terminal){
+                    // Velocity cost
+                    cost += body.terminalLinearVelCost[j] * pow(body_vel.orientation[j], 2);
+
+                }
+                else{
+                    // Velocity cost
+                    cost += body.linearVelCost[j] * pow(body_vel.orientation[j], 2);
+                }
+            }
+        }
     }
 
     return cost;

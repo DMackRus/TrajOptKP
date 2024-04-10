@@ -809,6 +809,8 @@ void MuJoCoHelper::updateScene(GLFWwindow *window, const char* label){
     // update scene and render
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
+//    opt.flags[mjVIS_JOINT] = true;
+    opt.frame = mjFRAME_BODY;
     mjv_updateScene(model, vis_data, &opt, NULL, &cam, mjCAT_ALL, &scn);
 
     mjr_render(viewport, &scn, &con);

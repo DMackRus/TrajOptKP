@@ -85,6 +85,34 @@ m_point quat2Axis(m_quat quaternion){
     return axisAngles;
 }
 
+Eigen::Matrix3d eul2RotMat(m_point euler){
+    Eigen::Matrix3d rot_mat;
+
+    double cos_roll = cos(euler(0));
+    double sin_roll = sin(euler(0));
+    double cos_pitch = cos(euler(1));
+    double sin_pitch = sin(euler(1));
+    double cos_yaw = cos(euler(2));
+    double sin_yaw = sin(euler(2));
+
+    // Top row
+    rot_mat(0, 0) = cos_yaw * cos_pitch;
+    rot_mat(0, 1) = cos_yaw * sin_pitch * sin_roll - sin_yaw * cos_roll;
+    rot_mat(0, 2) = cos_yaw * sin_pitch * cos_roll + sin_yaw * sin_roll;
+
+    // Middle row
+    rot_mat(1, 0) = sin_yaw * cos_pitch;
+    rot_mat(1, 1) = sin_yaw * sin_pitch * sin_roll + cos_yaw * cos_roll;
+    rot_mat(1, 2) = sin_yaw * sin_pitch * cos_roll - cos_yaw * sin_roll;
+
+    // Bottom row
+    rot_mat(2, 0) = -sin_pitch;
+    rot_mat(2, 1) = cos_pitch * sin_roll;
+    rot_mat(2, 2) = cos_pitch * cos_roll;
+
+    return rot_mat;
+}
+
 m_quat rotMat2Quat(Eigen::Matrix3d rotMat){
     m_quat quat;
 

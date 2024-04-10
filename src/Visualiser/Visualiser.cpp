@@ -36,6 +36,8 @@ void Visualiser::keyboardCallbackWrapper(GLFWwindow* window, int key, int scanco
 
 void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, int mods){
     // backspace: reset simulation
+    pose_6 body;
+    MuJoCo_helper->getBodyPose_angle("goal", body, MuJoCo_helper->vis_data);
 
 
     if (act == GLFW_PRESS && key == GLFW_KEY_BACKSPACE)
@@ -49,15 +51,26 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
+        body.orientation(0) += 0.1;
         
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
+        body.orientation(1) += 0.1;
+
+    }
+    else if(act == GLFW_PRESS && key == GLFW_KEY_E){
+        body.orientation(2) += 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_A){
+        body.orientation(0) -= 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_S){
+        body.orientation(1) -= 0.1;
+    }
+    else if(act == GLFW_PRESS && key == GLFW_KEY_D){
+        body.orientation(2) -= 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Z){
@@ -81,6 +94,12 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     else if(act == GLFW_PRESS && key == GLFW_KEY_RIGHT){
 
     }
+
+    MuJoCo_helper->setBodyPose_angle("goal", body, MuJoCo_helper->vis_data);
+
+    std::cout << "body orientation " << body.orientation(0) << " " << body.orientation(1) << " " << body.orientation(2) << "\n";
+    double cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
+    std::cout << "cost: " << cost << std::endl;
 
 }
 // -----------------------------------------------------------------------------------------------------
