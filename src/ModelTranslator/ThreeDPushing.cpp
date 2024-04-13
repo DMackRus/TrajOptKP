@@ -146,6 +146,6 @@ bool ThreeDPushing::TaskComplete(mjData *d, double &dist){
         taskComplete = true;
     }
 
-
-    return taskComplete;
+    return false;
+//    return taskComplete;
 }

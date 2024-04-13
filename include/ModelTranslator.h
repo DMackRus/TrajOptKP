@@ -101,6 +101,8 @@ public:
      */
     virtual double CostFunction(mjData* d, bool terminal);
 
+    double CostFunctionBody(const bodyStateVec body, mjData *d, bool terminal);
+
     /**
      * Returns the current cost derivatives (1st and 2nd order) of the system with respect to the
      * state and control vectors at the given data index.

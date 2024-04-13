@@ -1,7 +1,7 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/box_pushing_toppling.xml"
 modelName: "/3D_push"
 timeStep: 0.004
-keypointMethod: "setInterval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+keypointMethod: "set_interval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 auto_adjust: false
 minN: 1
 maxN: 20
@@ -29,13 +29,13 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, 0, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [0, 0, 0]
+    linearPosCost: [1, 1, 0]
     # When iLQR once
     terminalLinearPosCost: [0, 0, 0]
-    linearVelCost: [0.01, 0.01, 0]
+    linearVelCost: [0.1, 0.1, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 1]
-    terminalAngularPosCost: [0, 1000, 0]
+    terminalAngularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.0005, 0.0005, 0.0005 ]

@@ -262,7 +262,7 @@ void showInitControls(){
 }
 
 void optimiseOnceandShow(){
-    int optHorizon = 3000;
+    int optHorizon = 1500;
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
