@@ -34,7 +34,7 @@ public:
     void GetRobotJointsVelocities(const string& robot_name, vector<double> &joint_velocities, mjData *d);
     void GetRobotJointsAccelerations(const string& robot_name, vector<double> &joint_accelerations, mjData *d);
     void GetRobotJointsControls(const string& robot_name, vector<double> &joint_controls, mjData *d);
-    void GetRobotJointsGravityCompensaionControls(const string& robot_name, vector<double> &joint_controls, mjData *d);
+    void GetRobotJointsGravityCompensationControls(const string& robot_name, vector<double> &joint_controls, mjData *d);
     void GetRobotControlLimits(const string& robot_name, vector<double> &control_limits);
     void GetRobotJointLimits(const string& robot_name, vector<double> &joint_limits, mjData *d);
 
@@ -76,12 +76,12 @@ public:
 
     void InitSimulator(double timestep, const char* file_name);
     bool ForwardSimulator(mjData *d) const;
-    bool ForwardSimulatorWithSkip(mjData *d, int skip_stage, int skip_sensor);
+    bool ForwardSimulatorWithSkip(mjData *d, int skip_stage, int skip_sensor) const;
 
 //    void setupMuJoCoWorld(double timestep, const char* fileName);
 
     void InitModelForFiniteDifferencing();
-    void ResetModelAfterFiniteDifferencing();
+    void ResetModelAfterFiniteDifferencing() const;
 
     double ReturnModelTimeStep() const;
 

@@ -82,7 +82,7 @@ void compare_derivs(){
         }
     }
 
-    std::cout << "A \n";
+    std::cout << "A diff \n";
     std::cout << A_diff << "\n";
 
     for(int i = 0; i < dim_state_derivative; i++){

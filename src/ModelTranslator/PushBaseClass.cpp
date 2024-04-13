@@ -232,7 +232,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
 
             std::vector<double> gravCompensation;
             MatrixXd gravCompControl(num_ctrl, 1);
-            MuJoCo_helper->GetRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
+            MuJoCo_helper->GetRobotJointsGravityCompensationControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
             for(int j = 0; j < num_ctrl; j++){
                 gravCompControl(j) = gravCompensation[j];
             }

@@ -107,54 +107,59 @@ void MuJoCoHelper::SetRobotJointsControls(const string& robot_name, vector<doubl
 }
 
 void MuJoCoHelper::GetRobotJointsPositions(const string& robot_name, vector<double> &joint_positions, mjData *d){
-
-    // Check if the robot exists in the simulation
     int robot_index;
     string robot_base_joint_name;
+
     if(!IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
         std::cerr << "That robot doesnt exist in the simulation\n";
         exit(1);
     }
 
-    for(const auto &joint_name : robots[robot_index].jointNames){
-        int joint_id = mj_name2id(model, mjOBJ_JOINT, joint_name.c_str());
+    joint_positions.resize(robots[robot_index].jointNames.size());
+
+    for(int i = 0; i < robots[robot_index].jointNames.size(); i++){
+        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].jointNames[i].c_str());
         if(joint_id == -1){
-            std::cerr << "Invalid bodyId for robot: " << joint_name.c_str() << "\n";
+            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].jointNames[i].c_str() << "\n";
             exit(1);
         }
         int qpos_index = model->jnt_qposadr[joint_id];
-        joint_positions.push_back(d->qpos[qpos_index]);
+        joint_positions[i] = d->qpos[qpos_index];
     }
 }
 
 void MuJoCoHelper::GetRobotJointsVelocities(const string& robot_name, vector<double> &joint_velocities, mjData *d) {
-
-    // Check if the robot exists in the simulation
     int robot_index;
     string robot_base_joint_name;
+
     if(!IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
         std::cerr << "That robot doesnt exist in the simulation\n";
         exit(1);
     }
 
-    for(const auto & joint_name : robots[robot_index].jointNames){
-        int joint_id = mj_name2id(model, mjOBJ_JOINT, joint_name.c_str());
+    joint_velocities.resize(robots[robot_index].jointNames.size());
+
+    for(int i = 0; i < robots[robot_index].jointNames.size(); i++){
+        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].jointNames[i].c_str());
         if(joint_id == -1){
-            std::cerr << "Invalid bodyId for robot: " << joint_name.c_str() << "\n";
+            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].jointNames[i].c_str() << "\n";
             exit(1);
         }
         int qpos_index = model->jnt_qposadr[joint_id];
-        joint_velocities.push_back(d->qvel[qpos_index]);
+        joint_velocities[i] = d->qvel[qpos_index];
     }
 }
 
 void MuJoCoHelper::GetRobotJointsAccelerations(const string& robot_name, vector<double> &joint_accelerations, mjData *d){
     int robot_index;
     string robot_base_joint_name;
+
     if(!IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
         std::cerr << "That robot doesnt exist in the simulation\n";
         exit(1);
     }
+
+    joint_accelerations.resize(robots[robot_index].jointNames.size());
 
     // Get the body id of the base link of the robot
     int jointId = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
@@ -171,7 +176,7 @@ void MuJoCoHelper::GetRobotJointsAccelerations(const string& robot_name, vector<
     }
 
     for(int i = 0; i < robots[robot_index].jointNames.size(); i++){
-        joint_accelerations.push_back(d->qacc[startIndex + i]);
+        joint_accelerations[i] = d->qacc[startIndex + i];
     }
 }
 
@@ -179,20 +184,20 @@ void MuJoCoHelper::GetRobotJointsControls(const string& robot_name, vector<doubl
 
     // Check if the robot exists in the simulation
     int robot_index = 0;
-//    string robot_base_joint_name;
 
-    for(const auto & actuator_name : robots[robot_index].actuatorNames){
-        int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, actuator_name.c_str());
+    joint_controls.resize(robots[robot_index].actuatorNames.size());
+
+    for(int i = 0; i < robots[robot_index].actuatorNames.size(); i++){
+        int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, robots[robot_index].actuatorNames[i].c_str());
         int ctrl_index = model->jnt_dofadr[actuator_id];
-        joint_controls.push_back(d->ctrl[ctrl_index]);
+        joint_controls[i] = (d->ctrl[ctrl_index]);
     }
 }
 
-void MuJoCoHelper::GetRobotJointsGravityCompensaionControls(const string& robot_name, vector<double> &joint_controls, mjData *d){
-
-    // Check if the robot exists in the simulation
+void MuJoCoHelper::GetRobotJointsGravityCompensationControls(const string& robot_name, vector<double> &joint_controls, mjData *d){
     int robot_index;
     string robot_base_joint_name;
+
     if(!IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
         std::cerr << "That robot doesnt exist in the simulation\n";
         exit(1);
@@ -200,6 +205,8 @@ void MuJoCoHelper::GetRobotJointsGravityCompensaionControls(const string& robot_
 
     // Get the body id of the base link of the robot
     int joint_id = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
+
+    joint_controls.resize(robots[robot_index].jointNames.size());
 
     if(joint_id == -1){
         std::cerr << "Base link of robot not found\n";
@@ -217,7 +224,7 @@ void MuJoCoHelper::GetRobotJointsGravityCompensaionControls(const string& robot_
     mj_forward(model, d);
 
     for(int i = 0; i < robots[robot_index].jointNames.size(); i++){
-        joint_controls.push_back(d->qfrc_bias[start_index + i]);
+        joint_controls[i] = d->qfrc_bias[start_index + i];
     }
 }
 
@@ -234,6 +241,8 @@ void MuJoCoHelper::GetRobotControlLimits(const string& robot_name, vector<double
     // Get the body id of the base link of the robot
     int joint_id = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
 
+    control_limits.resize(2 * robots[robot_index].actuatorNames.size());
+
     if(joint_id == -1){
         std::cerr << "Base link of robot not found\n";
         exit(1);
@@ -246,8 +255,8 @@ void MuJoCoHelper::GetRobotControlLimits(const string& robot_name, vector<double
         exit(1);
     }
 
-    for(int i = 0; i < 2 * robots[robot_index].jointNames.size(); i++){
-        control_limits.push_back(model->actuator_ctrlrange[i]);
+    for(int i = 0; i < 2 * robots[robot_index].actuatorNames.size(); i++){
+        control_limits[i] = model->actuator_ctrlrange[i];
     }
 }
 
@@ -557,7 +566,7 @@ bool MuJoCoHelper::ForwardSimulator(mjData *d) const{
     return true;
 }
 
-bool MuJoCoHelper::ForwardSimulatorWithSkip(mjData *d, int skip_stage, int skip_sensor){
+bool MuJoCoHelper::ForwardSimulatorWithSkip(mjData *d, int skip_stage, int skip_sensor) const{
 
     mj_forwardSkip(model, d, skip_stage, skip_sensor);
 
@@ -641,7 +650,7 @@ void MuJoCoHelper::UpdateScene(GLFWwindow *window, const char* label){
     mjrRect rect{0, 0, 100, 100};
     mjr_rectangle(rect, 0, 0, 0, 0);
 
-    mjr_overlay(0, mjGRID_TOPLEFT, rect, label, 0, &con);
+    mjr_overlay(0, mjGRID_TOPLEFT, rect, label, nullptr, &con);
 }
 
 void MuJoCoHelper::MouseMove(double dx, double dy, bool button_left, bool button_right, GLFWwindow *window){
@@ -729,7 +738,7 @@ void MuJoCoHelper::InitModelForFiniteDifferencing(){
     model->opt.tolerance = 0;
 }
 
-void MuJoCoHelper::ResetModelAfterFiniteDifferencing(){
+void MuJoCoHelper::ResetModelAfterFiniteDifferencing() const{
     model->opt.iterations = save_iterations;
     model->opt.tolerance = save_tolerance;
 

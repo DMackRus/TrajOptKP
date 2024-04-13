@@ -208,7 +208,7 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
-            MuJoCo_helper->GetRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
+            MuJoCo_helper->GetRobotJointsGravityCompensationControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
 
             Xt = ReturnStateVector(MuJoCo_helper->main_data);
 
