@@ -48,10 +48,10 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
                 jointStartPositions[i] = randomJoint;
             }
 
-            MuJoCo_helper->setRobotJointsPositions(robotName, jointStartPositions, MuJoCo_helper->main_data);
+            MuJoCo_helper->SetRobotJointPositions(robotName, jointStartPositions, MuJoCo_helper->main_data);
 
             // Check if current configuration is valid
-            if(MuJoCo_helper->checkSystemForCollisions(MuJoCo_helper->main_data)){
+            if(MuJoCo_helper->CheckSystemForCollisions(MuJoCo_helper->main_data)){
                 cout << "invalid robot position \n";
             }
             else{
@@ -86,10 +86,10 @@ void pandaReaching::GenerateRandomGoalAndStartState() {
                 jointGoalPositions[i] = randomJoint;
             }
 
-            MuJoCo_helper->setRobotJointsPositions(robotName, jointGoalPositions, MuJoCo_helper->main_data);
+            MuJoCo_helper->SetRobotJointPositions(robotName, jointGoalPositions, MuJoCo_helper->main_data);
 
             // Check if current configuration is valid
-            if(MuJoCo_helper->checkSystemForCollisions(MuJoCo_helper->main_data)){
+            if(MuJoCo_helper->CheckSystemForCollisions(MuJoCo_helper->main_data)){
                 cout << "invalid robot position \n";
                 resetCounter++;
             }
@@ -133,10 +133,10 @@ MatrixXd pandaReaching::ReturnRandomStartState(){
             jointPositions[i] = randomJoint;
         }
 
-        MuJoCo_helper->setRobotJointsPositions(robotName, jointPositions, MuJoCo_helper->main_data);
+        MuJoCo_helper->SetRobotJointPositions(robotName, jointPositions, MuJoCo_helper->main_data);
 
         // Check if current configuration is valid
-        if(MuJoCo_helper->checkSystemForCollisions(MuJoCo_helper->main_data)){
+        if(MuJoCo_helper->CheckSystemForCollisions(MuJoCo_helper->main_data)){
             cout << "invalid robot position \n";
         }
         else{
@@ -179,10 +179,10 @@ MatrixXd pandaReaching::ReturnRandomGoalState(MatrixXd X0){
             jointPositions[i] = randomJoint;
         }
 
-        MuJoCo_helper->setRobotJointsPositions(robotName, jointPositions, MuJoCo_helper->main_data);
+        MuJoCo_helper->SetRobotJointPositions(robotName, jointPositions, MuJoCo_helper->main_data);
 
         // Check if current configuration is valid
-        if(MuJoCo_helper->checkSystemForCollisions(MuJoCo_helper->main_data)){
+        if(MuJoCo_helper->CheckSystemForCollisions(MuJoCo_helper->main_data)){
             cout << "invalid robot position \n";
         }
         else{
@@ -208,7 +208,7 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
-            MuJoCo_helper->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
+            MuJoCo_helper->GetRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
 
             Xt = ReturnStateVector(MuJoCo_helper->main_data);
 

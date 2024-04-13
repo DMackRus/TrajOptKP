@@ -25,93 +25,85 @@ public:
     MuJoCoHelper(vector<robot> robots, vector<string> _bodies);
 
     // Utility functions -- robots
-    bool isValidRobotName(string robotName, int &robotIndex, string &robotBaseJointName);
-    bool setRobotJointsPositions(string robotName, vector<double> jointPositions, mjData *d);
-    bool setRobotJointsVelocities(string robotName, vector<double> jointVelocities, mjData *d);
-    bool setRobotJointsControls(string robotName, vector<double> jointControls, mjData *d);
+    bool IsValidRobotName(const string& robot_name, int &robotIndex, string &robotBaseJointName);
+    void SetRobotJointPositions(const string& robot_name, vector<double> joint_positions, mjData *d);
+    void SetRobotJointsVelocities(const string& robot_name, vector<double> joint_velocities, mjData *d);
+    void SetRobotJointsControls(const string& robot_name, vector<double> joint_controls, mjData *d);
 
-    bool getRobotJointsPositions(string robotName, vector<double> &jointPositions, mjData *d);
-    bool getRobotJointsVelocities(string robotName, vector<double> &jointVelocities, mjData *d);
-    bool getRobotJointsAccelerations(string robotName, vector<double> &jointsAccelerations, mjData *d);
-    bool getRobotJointsControls(string robotName, vector<double> &jointsControls, mjData *d);
-    bool getRobotJointsGravityCompensaionControls(string robotName, vector<double> &jointsControls, mjData *d);
-    bool getRobotControlLimits(string robotName, vector<double> &controlLimits);
-    bool getRobotJointLimits(string robotName, vector<double> &jointLimits, mjData *d);
+    void GetRobotJointsPositions(const string& robot_name, vector<double> &joint_positions, mjData *d);
+    void GetRobotJointsVelocities(const string& robot_name, vector<double> &joint_velocities, mjData *d);
+    void GetRobotJointsAccelerations(const string& robot_name, vector<double> &joint_accelerations, mjData *d);
+    void GetRobotJointsControls(const string& robot_name, vector<double> &joint_controls, mjData *d);
+    void GetRobotJointsGravityCompensaionControls(const string& robot_name, vector<double> &joint_controls, mjData *d);
+    void GetRobotControlLimits(const string& robot_name, vector<double> &control_limits);
+    void GetRobotJointLimits(const string& robot_name, vector<double> &joint_limits, mjData *d);
 
     // Utility functions -- bodies
-    bool isValidBodyName(string bodyName, int &bodyIndex);
-    bool setBodyPose_quat(string bodyName, pose_7 pose, mjData *d);
-    bool setBodyPose_angle(string bodyName, pose_6 pose, mjData *d);
-    bool setBodyVelocity(string bodyName, pose_6 velocity, mjData *d);
+//    bool isValidBodyName(const string& bodyName, int &bodyIndex);
+    void SetBodyPoseQuat(const string& body_name, pose_7 pose, mjData *d) const;
+    void SetBodyPoseAngle(const string& body_name, pose_6 pose, mjData *d) const;
+    void SetBodyVelocity(const string& body_name, pose_6 velocity, mjData *d) const;
 
-    bool getBodyPose_quat(string bodyName, pose_7 &pose, mjData *d);
-    bool getBodyPose_angle(string bodyName, pose_6 &pose, mjData *d);
-    bool getBodyVelocity(string bodyName, pose_6 &velocity, mjData *d);
-    bool getBodyAcceleration(string bodyName, pose_6 &acceleration, mjData *d);
+    void GetBodyPoseQuat(const string& body_name, pose_7 &pose, mjData *d) const;
+    void GetBodyPoseAngle(const string& body_name, pose_6 &pose, mjData *d) const;
+    void GetBodyVelocity(const string& body_name, pose_6 &velocity, mjData *d) const;
+    void GetBodyAcceleration(const string& body_name, pose_6 &acceleration, mjData *d) const;
 
-    bool getBodyPose_quat_ViaXpos(string bodyName, pose_7 &pose, mjData *d);
-    bool getBodyPose_angle_ViaXpos(string bodyName, pose_6 &pose, mjData *d);
+    void GetBodyPoseQuatViaXpos(const string& body_name, pose_7 &pose, mjData *d) const;
+    void GetBodyPoseAngleViaXpos(const string& body_name, pose_6 &pose, mjData *d) const;
 
     // Extras
-    Eigen::MatrixXd calculateJacobian(std::string bodyName, mjData *d);
-    int checkSystemForCollisions(mjData *d);
-    bool checkBodyForCollisions(string bodyName, mjData *d);
+    Eigen::MatrixXd GetJacobian(const std::string& body_name, mjData *d) const;
+    int CheckSystemForCollisions(mjData *d) const;
+    bool CheckBodyForCollisions(const string& body_name, mjData *d) const;
 
     // ----- Loading and saving system states -----
-    bool appendSystemStateToEnd(mjData *d);
-    bool checkIfDataIndexExists(int list_index);
-    bool copySystemState(mjData *d_dest, mjData *d_src);
-    bool deleteSystemStateFromIndex(int listIndex);
-    bool clearSystemStateList();
-    void saveDataToRolloutBuffer(mjData *d, int rolloutIndex);
-    void copyRolloutBufferToSavedSystemStatesList();
+    bool AppendSystemStateToEnd(mjData *d);
+    bool CheckIfDataIndexExists(int list_index) const;
+    bool CopySystemState(mjData *d_dest, mjData *d_src) const;
+    bool DeleteSystemStateFromIndex(int list_index);
+    bool ClearSystemStateList();
+    void SaveDataToRolloutBuffer(mjData *d, int rollout_index);
+    void CopyRolloutBufferToSavedSystemStatesList();
 
-    void cpMjData(const mjModel* m, mjData* d_dest, mjData* d_src);
-    std::shared_ptr<mjData> returnDesiredDataState(mjData *d);
-
-    void _mjdTransitionFD();
-
+    static void CpMjData(const mjModel* m, mjData* d_dest, mjData* d_src);
 
     // ------------------------------- Visualisation -----------------------------------------
-    void initVisualisation();
-    void updateScene(GLFWwindow *window, const char* label);
-    void mouseMove(double dx, double dy, bool button_left, bool button_right,  GLFWwindow *window);
-    void scroll(double yoffset);
+    void InitVisualisation();
+    void UpdateScene(GLFWwindow *window, const char* label);
+    void MouseMove(double dx, double dy, bool button_left, bool button_right, GLFWwindow *window);
+    void Scroll(double yoffset);
 
-    void initSimulator(double timestep, const char* fileName);
-//    bool stepSimulator(int steps, mjData *d);
-    bool forwardSimulator(mjData *d);
-    bool forwardSimulatorWithSkip(mjData *d, int skipStage, int skipSensor);
+    void InitSimulator(double timestep, const char* file_name);
+    bool ForwardSimulator(mjData *d) const;
+    bool ForwardSimulatorWithSkip(mjData *d, int skip_stage, int skip_sensor);
 
-    void setupMuJoCoWorld(double timestep, const char* fileName);
+//    void setupMuJoCoWorld(double timestep, const char* fileName);
 
-    bool setBodyPosition(string bodyName, m_point position);
+    void InitModelForFiniteDifferencing();
+    void ResetModelAfterFiniteDifferencing();
 
-    void initModelForFiniteDifferencing();
-    void resetModelAfterFiniteDifferencing();
+    double ReturnModelTimeStep() const;
 
-    double returnModelTimeStep();
+    double* SensorState(mjData *d, const std::string& sensor_name);
 
-    double* sensorState(mjData *d, std::string sensorName);
+    vector<mjData*> saved_systems_state_list;       // List of saved system states
+    vector<mjData*> fp_rollout_data;                // forwards pass rollout data
+    mjData* master_reset_data{};                    // Master reset mujoco data
+    mjData* main_data{};                            // main MuJoCo data
+    mjData* vis_data{};                             // Visualisation MuJoCo data
+    mjModel* model{};                               // MuJoCo model
+    std::vector<mjData*> fd_data;                   // Finite differencing MuJoCo data - instantiated with the number of cores on the pc
 
-    vector<mjData*> savedSystemStatesList;      // List of saved system states
-    vector<mjData*> fp_rollout_data;            // forwards pass rollout data
-    mjData* master_reset_data;                  // Master reset mujoco data
-    mjData* main_data;                          // main MuJoCo data
-    mjData* vis_data;                           // Visualisation MuJoCo data
-    mjModel* model;                             // MuJoCo model
-    std::vector<mjData*> fd_data;               // Finite differencing MuJoCo data - instantiated with the number of cores on the pc
-
-    mjvCamera cam;                   // abstract camera
-    mjvScene scn;                    // abstract scene
-    mjvOption opt;			        // visualization options
-    mjrContext con;				    // custom GPU context
+    mjvCamera cam{};                                // abstract camera
+    mjvScene scn{};                                 // abstract scene
+    mjvOption opt{};			                    // visualization options
+    mjrContext con{};				                // custom GPU context
 
 private:
-    int save_iterations;
-    mjtNum save_tolerance;
+    int save_iterations{};
+    mjtNum save_tolerance{};
 
     vector<robot> robots;
     vector<string> bodies;
-
 };

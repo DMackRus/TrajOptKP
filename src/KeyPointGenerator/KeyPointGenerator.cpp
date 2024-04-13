@@ -99,9 +99,9 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
     }
     else if(current_keypoint_method.name == "iterative_error"){
         computed_keypoints.clear();
-        physics_simulator->initModelForFiniteDifferencing();
+        physics_simulator->InitModelForFiniteDifferencing();
         keypoints = GenerateKeyPointsIteratively(horizon, trajectory_states, A, B);
-        physics_simulator->resetModelAfterFiniteDifferencing();
+        physics_simulator->ResetModelAfterFiniteDifferencing();
 
     }
     else if(current_keypoint_method.name == "velocity_change"){

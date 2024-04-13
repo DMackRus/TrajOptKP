@@ -12,7 +12,7 @@ bool Pentabot::TaskComplete(mjData *d, double &dist){
     MatrixXd Xt = ReturnStateVector(d);
 
     std::vector<double> robot_joints;
-    MuJoCo_helper->getRobotJointsPositions("pentabot", robot_joints, d);
+    MuJoCo_helper->GetRobotJointsPositions("pentabot", robot_joints, d);
 
     for(int i = 0; i < dof; i++){
         std::cout << "robot joint: " << robot_joints[i] << std::endl;

@@ -152,7 +152,7 @@ int main(int argc, char **argv) {
     for(int j = 0; j < 5; j++){
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
     }
-    activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     //Instantiate my visualiser
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
@@ -201,9 +201,9 @@ int main(int argc, char **argv) {
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
 
         //
-        activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
         while(activeVisualiser->windowOpen()){
-            activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             activeVisualiser->render("Test");
         }
 
@@ -232,9 +232,9 @@ void showInitControls(){
     std::vector<MatrixXd> initControls;
 
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(setupHorizon);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(optHorizon);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     //Stitch setup and optimisation controls together
     initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
@@ -250,13 +250,13 @@ void showInitControls(){
 
         if(controlCounter >= initControls.size()){
             controlCounter = 0;
-            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
         }
 
         if(visualCounter > 5){
             visualCounter = 0;
-            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
-            activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
+            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             activeVisualiser->render("show init controls");
         }
     }
@@ -273,15 +273,15 @@ void optimiseOnceandShow(){
     std::vector<MatrixXd> finalControls;
 
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
 
     std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(optHorizon);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
 
@@ -289,7 +289,7 @@ void optimiseOnceandShow(){
     initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
     finalControls.insert(finalControls.end(), optimisedControls.begin(), optimisedControls.end());
 
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     while(activeVisualiser->windowOpen()){
 
@@ -307,7 +307,7 @@ void optimiseOnceandShow(){
 
         if(controlCounter >= finalControls.size()){
             controlCounter = 0;
-            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
             showFinalControls = !showFinalControls;
             if(showFinalControls){
                 label = "Final trajectory after optimisation";
@@ -319,8 +319,8 @@ void optimiseOnceandShow(){
 
         if(visualCounter >= 5){
             visualCounter = 0;
-            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
-            activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
+            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             activeVisualiser->render(label);
         }
     }
@@ -334,7 +334,7 @@ void worker(){
 void async_MPC_testing(){
 
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
 
     // Whether Optimiser will output useful information
     activeOptimiser->verbose_output = true;
@@ -398,7 +398,7 @@ void async_MPC_testing(){
             auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
             // compare how long we took versus the timestep of the model
-            int difference_ms = (activeModelTranslator->MuJoCo_helper->returnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
+            int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
             if(difference_ms > 0) {
 //                difference_ms = 20;
@@ -413,12 +413,12 @@ void async_MPC_testing(){
         MPC_controls_thread.join();
 
         double cost = 0.0f;
-        activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
         for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
             activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data);
             activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data);
-            activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-            cost += (activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false) * activeModelTranslator->MuJoCo_helper->returnModelTimeStep());
+            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+            cost += (activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false) * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep());
 
 //            activeVisualiser->render("live-MPC");
 
@@ -464,11 +464,11 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     int horizon = OPT_HORIZON;
 
     initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(horizon);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-    optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], initOptimisationControls, 1, 1, OPT_HORIZON);
+    optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, 1, 1, OPT_HORIZON);
 
     MatrixXd currState;
     activeOptimiser->verbose_output = true;
@@ -499,8 +499,8 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
         // Re-Optimise evert REPLAN_TIME steps
         if(reInitialiseCounter >= REPLAN_TIME){
-            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->vis_data);
-            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->main_data);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->vis_data);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->main_data);
 
             if(ASYNC_MPC){
                 int current_control_index = activeVisualiser->current_control_index;
@@ -511,7 +511,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
                     optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
                 }
             }
-            optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], optimisedControls, 1, 1, OPT_HORIZON);
+            optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], optimisedControls, 1, 1, OPT_HORIZON);
             reInitialiseCounter = 0;
 
             timeGettingDerivs.push_back(activeOptimiser->avg_time_get_derivs_ms);
@@ -537,7 +537,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             std::mutex mtx;
             mtx.lock();
 
-            int optTimeToTimeSteps = activeOptimiser->opt_time_ms / (activeModelTranslator->MuJoCo_helper->returnModelTimeStep() * 1000);
+            int optTimeToTimeSteps = activeOptimiser->opt_time_ms / (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000);
 
             int low_bound = optTimeToTimeSteps - 3;
             if (low_bound < 0) low_bound = 0;
@@ -589,13 +589,13 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
     if(!ASYNC_MPC){
         trajecCost = 0.0f;
-        activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
         for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
             MatrixXd startState = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data);
             MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
             double stateCost = activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false);
-            trajecCost += stateCost  * activeModelTranslator->MuJoCo_helper->returnModelTimeStep();
+            trajecCost += stateCost  * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep();
 
             activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
             mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
@@ -633,7 +633,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             if(activeVisualiser->replayTriggered){
                 activeVisualiser->replayTriggered = false;
 
-                activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+                activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
                 int controlCounter = 0;
                 while(controlCounter < activeVisualiser->replayControls.size()){
                     MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);

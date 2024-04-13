@@ -15,7 +15,7 @@ Visualiser::Visualiser(std::shared_ptr<ModelTranslator> _modelTranslator){
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
-    MuJoCo_helper->initVisualisation();
+    MuJoCo_helper->InitVisualisation();
 
     // Set window pointer to this class
     glfwSetWindowUserPointer(window, this);
@@ -38,8 +38,8 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     // backspace: reset simulation
     pose_6 body;
     pose_6 goal;
-    MuJoCo_helper->getBodyPose_angle("goal", body, MuJoCo_helper->vis_data);
-    MuJoCo_helper->getBodyPose_angle("display_goal", goal, MuJoCo_helper->vis_data);
+    MuJoCo_helper->GetBodyPoseAngle("goal", body, MuJoCo_helper->vis_data);
+    MuJoCo_helper->GetBodyPoseAngle("display_goal", goal, MuJoCo_helper->vis_data);
 
 
     if (act == GLFW_PRESS && key == GLFW_KEY_BACKSPACE)
@@ -125,8 +125,8 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
     }
 
-    MuJoCo_helper->setBodyPose_angle("goal", body, MuJoCo_helper->vis_data);
-    MuJoCo_helper->setBodyPose_angle("display_goal", goal, MuJoCo_helper->vis_data);
+    MuJoCo_helper->SetBodyPoseAngle("goal", body, MuJoCo_helper->vis_data);
+    MuJoCo_helper->SetBodyPoseAngle("display_goal", goal, MuJoCo_helper->vis_data);
 
     std::cout << "body orientation " << body.orientation(0) << " " << body.orientation(1) << " " << body.orientation(2) << "\n";
     double cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
@@ -145,7 +145,7 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
 
         body.orientation[i] += eps;
-        MuJoCo_helper->setBodyPose_angle("goal", body, MuJoCo_helper->vis_data);
+        MuJoCo_helper->SetBodyPoseAngle("goal", body, MuJoCo_helper->vis_data);
 
         double cost_inc = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
 
@@ -154,7 +154,7 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         body.orientation[i] -= eps;
     }
 
-    MuJoCo_helper->setBodyPose_angle("goal", body, MuJoCo_helper->vis_data);
+    MuJoCo_helper->SetBodyPoseAngle("goal", body, MuJoCo_helper->vis_data);
 
     std::cout << "l_x from cost derivs: \n" << l_x.block(rot_index, 0, 3, 1).transpose() << std::endl;
     std::cout << "l_x from finite diff: \n" << l_x_fd.block(rot_index, 0, 3, 1).transpose() << std::endl;
@@ -199,7 +199,7 @@ void Visualiser::mouse_move(GLFWwindow* window, double xpos, double ypos){
     lastx = xpos;
     lasty = ypos;
 
-    MuJoCo_helper->mouseMove(dx, dy, button_left, button_right, window);
+    MuJoCo_helper->MouseMove(dx, dy, button_left, button_right, window);
 }
 // -----------------------------------------------------------------------------------------------------
 
@@ -211,7 +211,7 @@ void Visualiser::scrollCallbackWrapper(GLFWwindow* window, double xoffset, doubl
 // scroll callback
 void Visualiser::scroll(GLFWwindow* window, double xoffset, double yoffset){
     // emulate vertical mouse motion = 5% of window height
-    MuJoCo_helper->scroll(yoffset);
+    MuJoCo_helper->Scroll(yoffset);
 }
 // -----------------------------------------------------------------------------------------------------
 
@@ -242,7 +242,7 @@ bool Visualiser::windowOpen(){
 
 void Visualiser::render(const char* label) {
 
-    MuJoCo_helper->updateScene(window, label);
+    MuJoCo_helper->UpdateScene(window, label);
     glfwSwapBuffers(window);
     glfwPollEvents();
 }

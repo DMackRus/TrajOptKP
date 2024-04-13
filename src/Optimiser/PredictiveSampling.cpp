@@ -31,7 +31,7 @@ PredictiveSampling::PredictiveSampling(std::shared_ptr<ModelTranslator> _modelTr
     }
 
     for(int i = 0; i < rolloutsPerIter; i++){
-        MuJoCo_helper->appendSystemStateToEnd(MuJoCo_helper->main_data);
+        MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
     }
 }
 
@@ -41,7 +41,7 @@ double PredictiveSampling::RolloutTrajectory(mjData *d, bool saveStates, std::ve
 //    if(initialDataIndex != MAIN_DATA_STATE){
 //        active_physics_simulator->copySystemState(initialDataIndex, 0);
 //    }
-    MuJoCo_helper->copySystemState(d, MuJoCo_helper->main_data);
+    MuJoCo_helper->CopySystemState(d, MuJoCo_helper->main_data);
 
 //    MatrixXd testStart = activeModelTranslator->ReturnStateVector(initialDataIndex);
 //    cout << "init state: " << testStart << endl;
@@ -73,7 +73,7 @@ double PredictiveSampling::RolloutTrajectory(mjData *d, bool saveStates, std::ve
             stateCost = activeModelTranslator->CostFunction(d, false);
         }
 
-        cost += (stateCost * MuJoCo_helper->returnModelTimeStep());
+        cost += (stateCost * MuJoCo_helper->ReturnModelTimeStep());
 
     }
 
@@ -89,9 +89,9 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
     for(int i = 0; i < initControls.size(); i++){
         U_best[i] = initControls[i];
     }
-    MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, 0);
+    MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, 0);
     MatrixXd testStart = activeModelTranslator->ReturnStateVector(0);
-    bestCost = RolloutTrajectory(MuJoCo_helper->savedSystemStatesList[0], true, initControls);
+    bestCost = RolloutTrajectory(MuJoCo_helper->saved_systems_state_list[0], true, initControls);
 //    active_physics_simulator->copySystemState(0, MAIN_DATA_STATE);
     cout << "cost of initial trajectory: " << bestCost << endl;
     cout << "min iter: " << minIter << endl;
@@ -102,7 +102,7 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
         #pragma omp parallel for
         for (int j = 0; j < rolloutsPerIter; j++) {
             U_noisy[j] = createNoisyTrajec(U_best);
-            costs[j] = RolloutTrajectory(MuJoCo_helper->savedSystemStatesList[j], false, U_noisy[j]);
+            costs[j] = RolloutTrajectory(MuJoCo_helper->saved_systems_state_list[j], false, U_noisy[j]);
         }
 
         double bestCostThisIter = costs[0];

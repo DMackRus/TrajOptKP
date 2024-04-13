@@ -58,7 +58,7 @@ void Optimiser::ResizeStateVector(int new_num_dofs){
         A[t].resize(state_vector_size, state_vector_size);
         A[t].block(0, 0, dof, dof).setIdentity();
         A[t].block(0, dof, dof, dof).setIdentity();
-        A[t].block(0, dof, dof, dof) *= MuJoCo_helper->returnModelTimeStep();
+        A[t].block(0, dof, dof, dof) *= MuJoCo_helper->ReturnModelTimeStep();
         B[t].resize(state_vector_size, num_ctrl);
 
     }
@@ -130,16 +130,16 @@ void Optimiser::GenerateDerivatives(){
 void Optimiser::ComputeCostDerivatives(){
     #pragma omp parallel for
     for(int i = 0; i < horizonLength; i++){
-        activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+        activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
     }
 
-    activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[horizonLength - 1],
+    activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizonLength - 1],
                                            l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
 }
 
 void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
 
-    MuJoCo_helper->initModelForFiniteDifferencing();
+    MuJoCo_helper->InitModelForFiniteDifferencing();
 
     std::vector<int> timeIndices;
     for(int i = 0; i < keyPoints.size(); i++){
@@ -186,22 +186,22 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
 //        }
 //    }
       
-    MuJoCo_helper->resetModelAfterFiniteDifferencing();
+    MuJoCo_helper->ResetModelAfterFiniteDifferencing();
 
     auto time_cost_start = std::chrono::high_resolution_clock::now();
 
     if(!activeYamlReader->costDerivsFD){
         for(int i = 0; i < horizonLength; i++){
             if(i == 0){
-                activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[i],
+                activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
                                                        l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
             else{
-                activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[i],
+                activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
                                                        l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
         }
-        activeModelTranslator->CostDerivatives(MuJoCo_helper->savedSystemStatesList[horizonLength - 1],
+        activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizonLength - 1],
                                                l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
     }
 

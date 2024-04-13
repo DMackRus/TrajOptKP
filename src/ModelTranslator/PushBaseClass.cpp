@@ -10,8 +10,8 @@ void PushBaseClass::EEWayPointsSetup(m_point desiredObjectEnd,
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    MuJoCo_helper->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MuJoCo_helper->main_data);
-    MuJoCo_helper->getBodyPose_angle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->GetBodyPoseAngleViaXpos(EE_name, EE_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->GetBodyPoseAngle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -47,8 +47,8 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    MuJoCo_helper->getBodyPose_angle_ViaXpos(EE_name, EE_startPose, MuJoCo_helper->main_data);
-    MuJoCo_helper->getBodyPose_angle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->GetBodyPoseAngleViaXpos(EE_name, EE_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->GetBodyPoseAngle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
@@ -83,7 +83,7 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
     double intermediatePointX = goalobj_startPose.position(0);
 
     // Max speed could be a parameter
-    double maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * MuJoCo_helper->returnModelTimeStep());
+    double maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * MuJoCo_helper->ReturnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     double desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
@@ -137,8 +137,8 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
 
     pose_7 EE_start_pose;
     pose_6 goalobj_startPose;
-    MuJoCo_helper->getBodyPose_quat_ViaXpos(EE_name, EE_start_pose, MuJoCo_helper->main_data);
-    MuJoCo_helper->getBodyPose_angle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->GetBodyPoseQuatViaXpos(EE_name, EE_start_pose, MuJoCo_helper->main_data);
+    MuJoCo_helper->GetBodyPoseAngle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
 
     // TODO - this shouldnt be here, this function should take a fixed axis rotation of the end-effector
     // as an input.
@@ -179,7 +179,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
 
     for(const auto & i : EE_path){
         pose_7 currentEEPose;
-        MuJoCo_helper->getBodyPose_quat_ViaXpos(EE_name, currentEEPose, MuJoCo_helper->main_data);
+        MuJoCo_helper->GetBodyPoseQuatViaXpos(EE_name, currentEEPose, MuJoCo_helper->main_data);
         m_quat currentEEQuat, invertedQuat, quatDiff;
         currentEEQuat(0) = currentEEPose.quat(0);
         currentEEQuat(1) = currentEEPose.quat(1);
@@ -218,7 +218,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
 
         MatrixXd Jac, JacInv;
 
-        Jac = MuJoCo_helper->calculateJacobian(EE_name, MuJoCo_helper->main_data);
+        Jac = MuJoCo_helper->GetJacobian(EE_name, MuJoCo_helper->main_data);
         JacInv = Jac.completeOrthogonalDecomposition().pseudoInverse();
 
         MatrixXd desiredEEForce(6, 1);
@@ -232,7 +232,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
 
             std::vector<double> gravCompensation;
             MatrixXd gravCompControl(num_ctrl, 1);
-            MuJoCo_helper->getRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
+            MuJoCo_helper->GetRobotJointsGravityCompensaionControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
             for(int j = 0; j < num_ctrl; j++){
                 gravCompControl(j) = gravCompensation[j];
             }

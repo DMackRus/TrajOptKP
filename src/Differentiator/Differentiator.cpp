@@ -70,7 +70,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     mju_zero(next_full_state_minus, nq + nv + na);
 
     // Copy data we wish to finite-difference into finite differencing data (for multi threading)
-    MuJoCo_helper->cpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+    MuJoCo_helper->CpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
 
     // TODO (DMackRus) We could in theory use the information from the rollout here instead, except for t = T - 1
     // Compute next state with no perturbations
@@ -80,7 +80,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     cost = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], terminal);
 
     // Reset the simulator to the initial state
-    MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+    MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
 
     unperturbed_controls = model_translator->ReturnControlVector(MuJoCo_helper->fd_data[tid]);
     unperturbed_velocities = model_translator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
@@ -131,7 +131,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
             // Undo the perturbation
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
         }
 
         int nudge_back;
@@ -167,7 +167,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
             // Undo perturbation
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
         }
 
         // Compute finite differences, depending on what perturbations were made
@@ -239,7 +239,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
         if(central_diff){
             // reset the data state back to initial data state
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
 
             // perturb velocity vector negatively
             perturbed_velocities = unperturbed_velocities.replicate(1, 1);
@@ -296,7 +296,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         }
 
         // Undo perturbation
-        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+        MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
     }
 
     // ----------------------------------------------- FD for positions ---------------------------------------------
@@ -338,7 +338,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
         if(central_diff){
             // reset the data state back to initial data statedataIndex
-            MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
 
             // perturb position vector negatively
             mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, -eps);
@@ -392,7 +392,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         }
 
         // Undo perturbation
-        MuJoCo_helper->copySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->savedSystemStatesList[data_index]);
+        MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
 
     }
 

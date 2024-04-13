@@ -45,8 +45,8 @@ MatrixXd BoxSweep::ReturnRandomGoalState(MatrixXd X0){
 std::vector<MatrixXd> BoxSweep::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
 
-    MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, MuJoCo_helper->master_reset_data);
-    MuJoCo_helper->forwardSimulator(MuJoCo_helper->main_data);
+    MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
 
     return initSetupControls;
 }
@@ -60,7 +60,7 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     display_goal_pose.position[0] = active_state_vector.bodiesStates[0].goalLinearPos[0];
     display_goal_pose.position[1] = active_state_vector.bodiesStates[0].goalLinearPos[1];
     display_goal_pose.position[2] = 0.0f;
-    MuJoCo_helper->setBodyPose_angle(goalMarkerName, display_goal_pose, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, display_goal_pose, MuJoCo_helper->master_reset_data);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through

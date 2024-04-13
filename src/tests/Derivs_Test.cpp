@@ -111,7 +111,7 @@ TEST(Derivatives, acrobot)
         mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data);
     }
     // Append data to save systems state list
-    model_translator->MuJoCo_helper->appendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
+    model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
 
     compare_derivs();
 
@@ -137,7 +137,7 @@ TEST(Derivatives, pushing_3D)
         mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data);
     }
     // Append data to save systems state list
-    model_translator->MuJoCo_helper->appendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
+    model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
 
     compare_derivs();
 }

@@ -31,14 +31,14 @@ MatrixXd ThreeDPushing::ReturnRandomStartState(){
 
     // Set start position of pushed object
     pose_6 pushedObjectStartPose;
-    MuJoCo_helper->getBodyPose_angle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->GetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
     pushedObjectStartPose.position(0) = startX;
     pushedObjectStartPose.position(1) = startY;
     pushedObjectStartPose.position(2) = 0.032;
-    MuJoCo_helper->setBodyPose_angle("goal", pushedObjectStartPose, MuJoCo_helper->main_data);
-    MuJoCo_helper->setBodyPose_angle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
-    MuJoCo_helper->forwardSimulator(MuJoCo_helper->main_data);
-    MuJoCo_helper->forwardSimulator(MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
+    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
 
 
     randomGoalX = goalX;
@@ -75,8 +75,8 @@ MatrixXd ThreeDPushing::ReturnRandomGoalState(MatrixXd X0){
 std::vector<MatrixXd> ThreeDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
 
-    MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, MuJoCo_helper->master_reset_data);
-    MuJoCo_helper->forwardSimulator(MuJoCo_helper->main_data);
+    MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
 
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
@@ -108,7 +108,7 @@ std::vector<MatrixXd> ThreeDPushing::CreateInitOptimisationControls(int horizonL
     displayBodyPose.position[0] = active_state_vector.bodiesStates[0].goalLinearPos[0];
     displayBodyPose.position[1] = active_state_vector.bodiesStates[0].goalLinearPos[1];
     displayBodyPose.position[2] = 0.0f;
-    MuJoCo_helper->setBodyPose_angle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through

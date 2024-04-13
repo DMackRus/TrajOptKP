@@ -42,8 +42,8 @@ void CreateTrajectory(std::vector<MatrixXd> &trajectory_states, int T, bool save
         mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data);
 
         if(save_mj_data){
-            if(!model_translator->MuJoCo_helper->checkIfDataIndexExists(t)){
-                model_translator->MuJoCo_helper->appendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
+            if(!model_translator->MuJoCo_helper->CheckIfDataIndexExists(t)){
+                model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
             }
         }
     }
