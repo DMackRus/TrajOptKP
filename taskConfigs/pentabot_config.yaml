@@ -1,0 +1,23 @@
+modelFile: "/mujoco_models/Acrobot/pentabot.xml"  # Path to the model xml file
+modelName: "/acrobot"                             # Name of the model, used for saving data
+timeStep: 0.004                                   # Time step for simulation
+keypointMethod: "set_interval"                    # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+minN: 1                                           # Minimum interval between key-points
+maxN: 10                                          # Maximum interval between key-points
+iterativeErrorThreshold: 0.0000001                # Threshold for iterative error method
+
+robots:
+  pentabot:
+    jointNames: [arm_1_joint, arm_2_joint, arm_3_joint, arm_4_joint, arm_5_joint]
+    actuatorNames: [arm_1_motor, arm_3_motor, arm_5_motor]
+    torqueControl: true
+    torqueLimits: [1, 1, 1]
+    startPos: [3.1415, 0, 0, 0, 0]
+    goalPos: [0, 0, 0, 0, 0]
+    jointPosCosts: [0, 0, 0, 0, 0]
+    jointVelCosts: [0.001, 0.001, 0.001, 0.001, 0.001]
+    terminalJointPosCosts: [100, 100, 100, 100, 100]
+    terminalJointVelCosts: [1, 1, 1, 1, 1]
+    jointControlCosts: [0.5, 0.5, 0.5]
+    jointJerkThresholds: [0.001, 0.001, 0.001, 0.001, 0.001]
+    magVelThresholds: [0.2, 0.2, 0.2, 0.2, 0.2]

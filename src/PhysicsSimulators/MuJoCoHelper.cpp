@@ -47,7 +47,7 @@ bool MuJoCoHelper::setRobotJointsPositions(string robotName, vector<double> join
     for(int i = 0; i < jointPositions.size(); i++){
         int jointId = mj_name2id(model, mjOBJ_JOINT, robots[robotIndex].jointNames[i].c_str());
         if(jointId == -1){
-            cout << "Invalid bodyId for robot\n";
+            cout << "Invalid bodyId for robot: " << robots[robotIndex].jointNames[i].c_str() << "\n";
             return false;
         }
         int qposIndex = model->jnt_qposadr[jointId];
@@ -78,7 +78,7 @@ bool MuJoCoHelper::setRobotJointsVelocities(string robotName, vector<double> joi
     for(int i = 0; i < jointVelocities.size(); i++){
         int jointId = mj_name2id(model, mjOBJ_JOINT, robots[robotIndex].jointNames[i].c_str());
         if(jointId == -1){
-            cout << "Invalid bodyId for robot\n";
+            cout << "Invalid bodyId for robot: " << robots[robotIndex].jointNames[i].c_str() << "\n";
             return false;
         }
         int qposIndex = model->jnt_qposadr[jointId];
@@ -125,10 +125,10 @@ bool MuJoCoHelper::getRobotJointsPositions(string robotName, vector<double> &joi
     }
 
 
-    for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
-        int jointId = mj_name2id(model, mjOBJ_JOINT, robots[robotIndex].jointNames[i].c_str());
+    for(const auto & jointName : robots[robotIndex].jointNames){
+        int jointId = mj_name2id(model, mjOBJ_JOINT, jointName.c_str());
         if(jointId == -1){
-            cout << "Invalid bodyId for robot\n";
+            cout << "Invalid bodyId for robot: " << jointName.c_str() << "\n";
             return false;
         }
         int qposIndex = model->jnt_qposadr[jointId];
@@ -152,7 +152,7 @@ bool MuJoCoHelper::getRobotJointsVelocities(string robotName, vector<double> &jo
     for(int i = 0; i < robots[robotIndex].jointNames.size(); i++){
         int jointId = mj_name2id(model, mjOBJ_JOINT, robots[robotIndex].jointNames[i].c_str());
         if(jointId == -1){
-            cout << "Invalid bodyId for robot\n";
+            cout << "Invalid bodyId for robot: " << robots[robotIndex].jointNames[i].c_str() << "\n";
             return false;
         }
         int qposIndex = model->jnt_qposadr[jointId];

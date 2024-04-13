@@ -19,6 +19,6 @@ robots:
     jointVelCosts: [0.001, 0.001]
     terminalJointPosCosts: [100, 100]
     terminalJointVelCosts: [1, 1]
-    jointControlCosts: [0.1]
+    jointControlCosts: [1]
     jointJerkThresholds: [0.001, 0.001]
     magVelThresholds: [0.2, 0.2]

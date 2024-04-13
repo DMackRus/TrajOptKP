@@ -4,6 +4,7 @@
 // --------------------- different scenes -----------------------
 #include "DoublePendulum.h"
 #include "Acrobot.h"
+#include "Pentabot.h"
 #include "Reaching.h"
 #include "TwoDPushing.h"
 #include "ThreeDPushing.h"
@@ -262,7 +263,7 @@ void showInitControls(){
 }
 
 void optimiseOnceandShow(){
-    int optHorizon = 1500;
+    int optHorizon = 3000;
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
@@ -672,6 +673,10 @@ int assign_task(){
         std::shared_ptr<Acrobot> myAcrobot = std::make_shared<Acrobot>();
         activeModelTranslator = myAcrobot;
 
+    }
+    else if(task == "pentabot"){
+        std::shared_ptr<Pentabot> my_pentabot = std::make_shared<Pentabot>();
+        activeModelTranslator = my_pentabot;
     }
     else if(task == "reaching"){
         std::shared_ptr<pandaReaching> myReaching = std::make_shared<pandaReaching>();
