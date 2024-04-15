@@ -435,8 +435,7 @@ double ModelTranslator::CostFunction(mjData* d, bool terminal){
             cost += cost_pos * pow((joint_positions[j] - robot.goalPos[j]), 2);
 
             // Velocity costs
-            // TODO - this assumes we want zero velocity, will break walker model
-            cost += cost_vel * pow(joint_velocities[j], 2);
+            cost += cost_vel * pow(joint_velocities[j] - robot.goalVel[j], 2);
 
             // Control costs
             cost += robot.jointControlCosts[j] * pow(joint_controls[j], 2);
@@ -625,8 +624,7 @@ void ModelTranslator::CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, 
             // l_x = 2 * cost * diff
             // position and velocity
             l_x(Q_index + i) = 2 * cost_pos * (joint_positions[i] - robot.goalPos[i]);
-            // TODO - assumes we always want velocity = 0, this is not always true
-            l_x(Q_index + i + dof) = 2 * cost_vel * (joint_velocities[i]);
+            l_x(Q_index + i + dof) = 2 * cost_vel * (joint_velocities[i] - robot.goalVel[i]);
 
             // l_xx = 2 * cost
             l_xx(Q_index + i, Q_index + i) = 2 * cost_pos;

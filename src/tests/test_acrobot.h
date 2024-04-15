@@ -11,15 +11,4 @@ public:
         InitModelTranslator(yamlFilePath);
     }
 
-    MatrixXd ReturnRandomStartState() override{
-        return MatrixXd(1,1);
-    }
-
-    MatrixXd ReturnRandomGoalState(MatrixXd X0) override{
-        return MatrixXd(1,1);
-    }
-
-    void GenerateRandomGoalAndStartState() override{
-
-    }
 };

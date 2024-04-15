@@ -8,7 +8,7 @@ walker::walker(int terrain, int locomotion_type): ModelTranslator(){
 
     if(locomotion_type == WALK){
         low_bound_velocity = 0.1;
-        high_bound_velocity = 0.8;
+        high_bound_velocity = 0.6;
         if(terrain == PLANE)
             yaml_file_path = "/taskConfigs/walk_plane_config.yaml";
         else if(terrain == UNEVEN)
@@ -16,8 +16,8 @@ walker::walker(int terrain, int locomotion_type): ModelTranslator(){
 
     }
     else if(locomotion_type == RUN){
-        low_bound_velocity = 1.5;
-        high_bound_velocity = 2.5;
+        low_bound_velocity = 0.9;
+        high_bound_velocity = 1.3;
         yaml_file_path = "/taskConfigs/run_plane_config.yaml";
     }
 
@@ -46,7 +46,7 @@ void walker::ReturnRandomGoalState(){
 
     // Random body velocity between low_bound_vel and hig_bound_vel
     float rand_body_vel = randFloat(low_bound_velocity, high_bound_velocity);
-    active_state_vector.robots[0].goalVel[7] = rand_body_vel;
+    active_state_vector.robots[0].goalVel[1] = rand_body_vel;
 }
 
 std::vector<MatrixXd> walker::CreateInitOptimisationControls(int horizonLength){
