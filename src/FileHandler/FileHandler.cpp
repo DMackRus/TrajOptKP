@@ -28,6 +28,21 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
     _taskConfig.modelName = node["modelName"].as<std::string>();
     _taskConfig.modelTimeStep = node["timeStep"].as<double>();
 
+    // Open loop horizon
+    if(node["openloop_horizon"]){
+        _taskConfig.openloop_horizon = node["openloop_horizon"].as<int>();
+    }
+    else{
+        _taskConfig.openloop_horizon = 3000;
+    }
+
+    // MPC horizon
+    if(node["MPC_horizon"]){
+        _taskConfig.mpc_horizon = node["MPC_horizon"].as<int>();
+    }
+    else{
+        _taskConfig.mpc_horizon = 100;
+    }
 
     _taskConfig.keypointMethod = node["keypointMethod"].as<std::string>();
     if(node["auto_adjust"]){
@@ -36,9 +51,29 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
     else{
         _taskConfig.auto_adjust = false;
     }
-    _taskConfig.minN = node["minN"].as<int>();
-    _taskConfig.maxN = node["maxN"].as<int>();
-    _taskConfig.iterativeErrorThreshold = node["iterativeErrorThreshold"].as<double>();
+
+    // Min N
+    if(node["minN"]){
+        _taskConfig.minN = node["minN"].as<int>();
+    }
+    else{
+        _taskConfig.minN = 1;
+    }
+
+    // Max error
+    if(node["maxN"]){
+        _taskConfig.maxN = node["maxN"].as<int>();
+    }
+    else{
+        _taskConfig.maxN = 10;
+    }
+
+    if(node["iterativeErrorThreshold"]){
+        _taskConfig.iterativeErrorThreshold = node["iterativeErrorThreshold"].as<double>();
+    }
+    else{
+        _taskConfig.iterativeErrorThreshold = 10;
+    }
 
     // Loop through robots
     for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){

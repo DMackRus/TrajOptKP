@@ -48,7 +48,7 @@ bool playback = true;
 int assign_task();
 
 void showInitControls();
-void optimiseOnceandShow();
+void optimiseOnceandShow(int opt_horizon);
 void MPCUntilComplete(double &trajecCost, double &avgHz, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON);
 
@@ -183,7 +183,7 @@ int main(int argc, char **argv) {
     else if(runMode == "Optimise_once"){
         cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
         activeOptimiser->verbose_output = true;
-        optimiseOnceandShow();
+        optimiseOnceandShow(activeModelTranslator->openloop_horizon);
     }
     else if(runMode == "MPC_until_completion"){
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
@@ -262,12 +262,13 @@ void showInitControls(){
     }
 }
 
-void optimiseOnceandShow(){
-    int optHorizon = 3000;
+void optimiseOnceandShow(int opt_horizon){
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
     const char* label = "Final trajectory after optimisation";
+
+    std::cout << "opt horizon is" << opt_horizon << std::endl;
 
     std::vector<MatrixXd> initControls;
     std::vector<MatrixXd> finalControls;
@@ -275,13 +276,13 @@ void optimiseOnceandShow(){
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
 
-    std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(optHorizon);
+    std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, optHorizon);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, opt_horizon);
     auto stop = high_resolution_clock::now();
     auto linDuration = duration_cast<microseconds>(stop - start);
 

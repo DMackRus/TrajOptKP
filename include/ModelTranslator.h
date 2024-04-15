@@ -319,6 +319,12 @@ public:
     double iterative_error_threshold;
     std::vector<double> velocity_change_thresholds;
 
+    // openloop_horizon
+    int openloop_horizon;
+
+    // MPC horizon
+    int MPC_horizon;
+
     // Cost function matrices, Q is the state cost, R is the control cost, J is the terminal cost
     DiagonalMatrix<double, Eigen::Dynamic> Q;
     DiagonalMatrix<double, Eigen::Dynamic> Q_terminal;

@@ -54,6 +54,8 @@ struct task{
     std::vector<robot> robots;
     std::vector<bodyStateVec> bodiesStates;
     double modelTimeStep;
+    int openloop_horizon;
+    int mpc_horizon;
     std::string modelName;
     std::string modelFilePath;
     std::string keypointMethod;

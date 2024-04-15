@@ -15,6 +15,9 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     iterative_error_threshold = taskConfig.iterativeErrorThreshold;
     const char* _modelPath = model_file_path.c_str();
 
+    openloop_horizon = taskConfig.openloop_horizon;
+    MPC_horizon = taskConfig.mpc_horizon;
+
     // Initialise physics simulator
     vector<string> bodyNames;
     for(auto & robot : taskConfig.robots){
