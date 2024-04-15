@@ -42,7 +42,6 @@ public:
 
     int minIter;
     int maxIter;
-    int maxHorizon;
 
     int min_interval;
 

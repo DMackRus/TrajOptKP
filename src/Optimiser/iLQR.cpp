@@ -1,13 +1,18 @@
 #include <iomanip>
 #include "iLQR.h"
 
-iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, int _maxHorizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
+iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, int horizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
         Optimiser(_modelTranslator, MuJoCo_helper, _yamlReader, _differentiator){
 
-    maxHorizon = _maxHorizon;
+    maxHorizon = horizon;
     active_visualiser = _visualizer;
 
-    std::cout << "num ctrl is: " << num_ctrl << "\n";
+    if(MuJoCo_helper->CheckIfDataIndexExists(0)){
+        MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
+    }
+    else{
+        MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
+    }
 
     // initialise all vectors of matrices
     for(int i = 0; i < maxHorizon; i++){
@@ -41,6 +46,13 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
         }
 
         U_alpha.push_back(U_temp);
+
+        if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
+        }
+        else{
+            MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
+        }
     }
 
     // One more state than control
@@ -136,9 +148,11 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     auto optStart = high_resolution_clock::now();
     
     // - Initialise variables
-    std::vector<MatrixXd> optimisedControls;
+    std::vector<MatrixXd> optimisedControls(horizon_length);
     horizonLength = horizon_length;
     numberOfTotalDerivs = horizon_length * dof;
+
+    // TODO - code to adjust max horizon if opt horizon > max_horizon
 
     if(keypoint_generator->horizon != horizonLength){
         std::cout << "horizon length changed" << std::endl;
@@ -340,32 +354,32 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     }
 
     // Time get derivs
-    for(int i = 0; i < time_get_derivs_ms.size(); i++){
-        avg_time_get_derivs_ms += time_get_derivs_ms[i];
+    for(double time_get_derivs_m : time_get_derivs_ms){
+        avg_time_get_derivs_ms += time_get_derivs_m;
     }
 
     // Percent derivs
-    for(int i = 0; i < percentage_derivs_per_iteration.size(); i++){
-        avg_percent_derivs += percentage_derivs_per_iteration[i];
+    for(double i : percentage_derivs_per_iteration){
+        avg_percent_derivs += i;
     }
 
-    avg_time_get_derivs_ms /= time_get_derivs_ms.size();
-    avg_percent_derivs /= percentage_derivs_per_iteration.size();
+    avg_time_get_derivs_ms /= static_cast<int>(time_get_derivs_ms.size());
+    avg_percent_derivs /= static_cast<int>(percentage_derivs_per_iteration.size());
 
     // Time backwards pass
-    for(int i = 0; i < time_backwards_pass_ms.size(); i++){
-        avg_time_backwards_pass_ms += time_backwards_pass_ms[i];
+    for(double time_backwards_pass_m : time_backwards_pass_ms){
+        avg_time_backwards_pass_ms += time_backwards_pass_m;
     }
 
-    avg_time_backwards_pass_ms /= time_backwards_pass_ms.size();
+    avg_time_backwards_pass_ms /= static_cast<int>(time_backwards_pass_ms.size());
 
     // Time forwards pass
-    for(int i = 0; i < time_forwardsPass_ms.size(); i++){
-        avg_time_forwards_pass_ms += time_forwardsPass_ms[i];
+    for(double time_forwardsPass_m : time_forwardsPass_ms){
+        avg_time_forwards_pass_ms += time_forwardsPass_m;
     }
 
-    if(time_forwardsPass_ms.size() != 0){
-        avg_time_forwards_pass_ms /= time_forwardsPass_ms.size();
+    if(!time_forwardsPass_ms.empty()){
+        avg_time_forwards_pass_ms /= static_cast<int>(time_forwardsPass_ms.size());
     }
 
     // Surprise and expected
@@ -374,16 +388,16 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         avg_expected += expecteds[i];
     }
 
-    if(surprises.size() != 0){
-        avg_surprise /= surprises.size();
-        avg_expected /= expecteds.size();
+    if(!surprises.empty()){
+        avg_surprise /= static_cast<int>(surprises.size());
+        avg_expected /= static_cast<int>(expecteds.size());
     }
 
     // Load the initial data back into main data
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
     for(int i = 0; i < horizonLength; i++){
-        optimisedControls.push_back(U_old[i]);
+        optimisedControls[i] = U_old[i];
     }
 
     if(save_trajec_information){

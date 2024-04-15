@@ -43,7 +43,7 @@ public:
     iLQR(std::shared_ptr<ModelTranslator> _modelTranslator,
          std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
          std::shared_ptr<Differentiator> _differentiator,
-         int _maxHorizon,
+         int horizon,
          std::shared_ptr<Visualiser> _visualizer,
          std::shared_ptr<FileHandler> _yamlReader);
 

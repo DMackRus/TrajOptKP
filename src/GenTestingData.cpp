@@ -16,7 +16,7 @@ GenTestingData::GenTestingData(std::shared_ptr<iLQR> iLQROptimiser_,
 
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
     iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper,
-                                           activeDifferentiator, yamlReader_->maxHorizon, activeVisualiser,
+                                           activeDifferentiator, activeModelTranslator->openloop_horizon, activeVisualiser,
                                            yamlReader);
 }
 

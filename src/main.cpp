@@ -152,26 +152,28 @@ int main(int argc, char **argv) {
     for(int j = 0; j < 5; j++){
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
     }
+    std::cout << "time: " << activeModelTranslator->MuJoCo_helper->master_reset_data->time << std::endl;
     activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     //Instantiate my visualiser
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
 
     // Choose an Optimiser
+    int openloop_horizon = activeModelTranslator->openloop_horizon;
     if(optimiser == "interpolated_iLQR"){
-        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, yamlReader->maxHorizon, activeVisualiser, yamlReader);
+        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
     }
     else if(optimiser == "PredictiveSampling"){
-        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, yamlReader->maxHorizon, 8);
+        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, openloop_horizon, 8);
         activeOptimiser = stompOptimiser;
     }
     else if(optimiser == "GradDescent"){
-        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, activeVisualiser, yamlReader->maxHorizon, yamlReader);
+        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, activeVisualiser, openloop_horizon, yamlReader);
         activeOptimiser = gradDescentOptimiser;
     }
     else{
-        cout << "invalid Optimiser selected, exiting" << endl;
+        std::cerr << "invalid Optimiser selected, exiting" << endl;
         return -1;
     }
 

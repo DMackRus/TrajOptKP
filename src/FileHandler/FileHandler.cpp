@@ -26,7 +26,14 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
     // General task settings
     _taskConfig.modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
     _taskConfig.modelName = node["modelName"].as<std::string>();
-    _taskConfig.modelTimeStep = node["timeStep"].as<double>();
+
+    // model timestep
+    if(node["timeStep"]){
+        _taskConfig.modelTimeStep = node["timeStep"].as<double>();
+    }
+    else{
+        _taskConfig.modelTimeStep = 0.004;
+    }
 
     // Open loop horizon
     if(node["openloop_horizon"]){
@@ -300,7 +307,6 @@ void FileHandler::readSettingsFile(std::string settingsFilePath){
 
     minIter = node["minIter"].as<int>();
     maxIter = node["maxIter"].as<int>();
-    maxHorizon = node["maxHorizon"].as<int>();
 }
 
 void FileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength){

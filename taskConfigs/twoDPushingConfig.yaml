@@ -1,6 +1,8 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml"
 modelName: "/push_nCl"
-timeStep: 0.004
+timeStep: 0.01
+openloop_horizon: 1000
+mpc_horizon: 100
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
@@ -28,14 +30,14 @@ bodies:
     activeAngularDOF: [false, false, false]
     startLinearPos: [ 0.5, 0.1, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.7, 0.0, 0.0 ]
+    goalLinearPos: [ 0.7, -0.1, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [1, 1, 0]
+    linearPosCost: [0, 0, 0]
     # When iLQR once
-    terminalLinearPosCost: [0, 0, 0]
+    terminalLinearPosCost: [1000, 1000, 0]
     linearVelCost: [0.2, 0.2, 0]
     terminalLinearVelCost: [0, 0, 0]
-    angularPosCost: [1, 0, 0]
+    angularPosCost: [0, 0, 0]
     terminalAngularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]
