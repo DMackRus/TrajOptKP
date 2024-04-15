@@ -1,5 +1,20 @@
 #include "ModelTranslator.h"
 
+void ModelTranslator::GenerateRandomGoalAndStartState() {
+    ReturnRandomStartState();
+    ReturnRandomGoalState();
+}
+
+void ModelTranslator::ReturnRandomGoalState() {
+    std::cerr << "Generate random goal state not overrided for " << model_name << "model, exiting \n";
+    exit(1);
+}
+
+void ModelTranslator::ReturnRandomStartState() {
+    std::cerr << "Generate random start state not overrided for " << model_name << "model, exiting \n";
+    exit(1);
+}
+
 void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     task taskConfig;
 
@@ -807,6 +822,7 @@ void ModelTranslator::CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, 
 }
 
 bool ModelTranslator::TaskComplete(mjData* d, double &dist){
+    dist = 0.0;
     return false;
 }
 

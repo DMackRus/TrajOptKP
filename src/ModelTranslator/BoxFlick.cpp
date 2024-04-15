@@ -21,176 +21,171 @@ BoxFlick::BoxFlick(int _clutterLevel) : PushBaseClass("franka_gripper", "goal"){
     InitModelTranslator(yamlFilePath);
 }
 
-void BoxFlick::GenerateRandomGoalAndStartState() {
-//    X_start = ReturnRandomStartState();
-//    X_desired = ReturnRandomGoalState(X_start);
-}
-
-MatrixXd BoxFlick::ReturnRandomStartState(){
-    MatrixXd randomStartState(state_vector_size, 1);
-
-    float startX = randFloat(0.4, 0.55);
-    float startY = randFloat(-0.2, 0.2);
-
-    pose_6 stackedObjectPose;
-    stackedObjectPose.position(0) = startX;
-    stackedObjectPose.position(1) = startY;
-    stackedObjectPose.position(2) = 0.2;
-
-    std::vector<double> objectXPos;
-    std::vector<double> objectYPos;
-
-    pose_6 objectCurrentPose;
-    MuJoCo_helper->GetBodyPoseAngle("goal", objectCurrentPose, MuJoCo_helper->master_reset_data);
-    objectCurrentPose.position(0) = startX;
-    objectCurrentPose.position(1) = startY;
-    MuJoCo_helper->SetBodyPoseAngle("goal", objectCurrentPose, MuJoCo_helper->main_data);
-    MuJoCo_helper->SetBodyPoseAngle("goal", objectCurrentPose, MuJoCo_helper->master_reset_data);
-
-    MuJoCo_helper->GetBodyPoseAngle("mainObstacle", objectCurrentPose, MuJoCo_helper->master_reset_data);
-    objectCurrentPose.position(0) = startX;
-    objectCurrentPose.position(1) = startY;
-    objectCurrentPose.position(2) = 0.2;
-    MuJoCo_helper->SetBodyPoseAngle("mainObstacle", objectCurrentPose, MuJoCo_helper->main_data);
-    MuJoCo_helper->SetBodyPoseAngle("mainObstacle", objectCurrentPose, MuJoCo_helper->master_reset_data);
-
-
-    if(clutterLevel == noClutter){
-        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                startX, startY, stackedObjectPose.position(0), stackedObjectPose.position(1), stackedObjectPose.position(2),
-                0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0;
-    }
-    else if(clutterLevel == lowClutter){
-
-        std::string objectNames[2] = {"obstacle1", "obstacle2"};
-        int validObjectCounter = 0;
-
-        for(const auto & objectName : objectNames){
-            bool validPlacement = false;
-            float sizeX = 0.08;
-            float sizeY = 0.04;
-            while(!validPlacement){
-                sizeX += 0.005;
-                sizeY += 0.005;
-
-                float randX = randFloat(startX, startX + sizeX);
-                float randY = randFloat(startY - sizeY, startY + sizeY);
-
-                pose_6 newObjectPose;
-
-                MuJoCo_helper->GetBodyPoseAngle(objectName, objectCurrentPose, MuJoCo_helper->master_reset_data);
-                newObjectPose = objectCurrentPose;
-                newObjectPose.position(0) = randX;
-                newObjectPose.position(1) = randY;
-                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->main_data);
-
-                if(MuJoCo_helper->CheckBodyForCollisions(objectName, MuJoCo_helper->main_data)){
-                    cout << "invalid placement at : " << randX << ", " << randY << endl;
-                }
-                else{
-                    validPlacement = true;
-                    objectXPos.push_back(randX);
-                    objectYPos.push_back(randY);
-                }
-            }
-            validObjectCounter++;
-        }
-
-        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                startX, startY, stackedObjectPose.position(0), stackedObjectPose.position(1), stackedObjectPose.position(2),
-                objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
-                0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0,
-                0, 0, 0, 0;
-
-    }
-    else if(clutterLevel == heavyClutter){
-
-        std::string objectNames[6] = {"obstacle1", "obstacle2", "obstacle3", "obstacle4", "obstacle5", "obstacle6"};
-        int validObjectCounter = 0;
-
-        for(const auto & objectName : objectNames){
-            bool validPlacement = false;
-            float sizeX = 0.08;
-            float sizeY = 0.05;
-            while(!validPlacement){
-                sizeX += 0.002;
-                sizeY += 0.001;
-
-                float randX = randFloat(startX + 0.04f, startX+ 0.04f + sizeX);
-                float randY = randFloat(startY - sizeY, startY + sizeY);
-
-                pose_6 newObjectPose;
-
-                MuJoCo_helper->GetBodyPoseAngle(objectName, objectCurrentPose, MuJoCo_helper->master_reset_data);
-                newObjectPose = objectCurrentPose;
-                newObjectPose.position(0) = randX;
-                newObjectPose.position(1) = randY;
-                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->main_data);
-
-                if(MuJoCo_helper->CheckBodyForCollisions(objectName, MuJoCo_helper->main_data)){
-                    cout << "invalid placement at : " << randX << ", " << randY << endl;
-                }
-                else{
-                    validPlacement = true;
-                    objectXPos.push_back(randX);
-                    objectYPos.push_back(randY);
-                }
-            }
-            validObjectCounter++;
-        }
-
-        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                startX, startY, stackedObjectPose.position(0), stackedObjectPose.position(1), stackedObjectPose.position(2),
-                objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
-                objectXPos[2], objectYPos[2], objectXPos[3], objectYPos[3], objectXPos[4], objectYPos[4], objectXPos[5], objectYPos[5],
-                0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0,
-                0, 0, 0, 0,
-                0 ,0, 0, 0, 0, 0, 0, 0;
-
-    }
-    else{
-        cout << "ERROR: Invalid clutter level" << endl;
-    }
-
-    return randomStartState;
-}
-
-MatrixXd BoxFlick::ReturnRandomGoalState(MatrixXd X0){
-    MatrixXd randomGoalState(state_vector_size, 1);
-
-    if(clutterLevel == noClutter){
-        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                X0(7), X0(8), X0(9), X0(10), X0(11),
-                0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0;
-    }
-    else if(clutterLevel == lowClutter){
-        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                X0(7), X0(8), X0(9), X0(10), X0(11),
-                X0(12), X0(13), X0(14), X0(15),
-                0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0,
-                0, 0, 0, 0;
-    }
-    else if(clutterLevel == heavyClutter){
-        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                X0(7), X0(8), X0(9), X0(10), X0(11),
-                X0(12), X0(13), X0(14), X0(15),
-                X0(16), X0(17), X0(18), X0(19), X0(20), X0(21), X0(22), X0(23),
-                0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0,
-                0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0, 0;
-    }
-    else{
-        cout << "ERROR: Invalid clutter level" << endl;
-    }
-
-    return randomGoalState;
-}
+//MatrixXd BoxFlick::ReturnRandomStartState(){
+//    MatrixXd randomStartState(state_vector_size, 1);
+//
+//    float startX = randFloat(0.4, 0.55);
+//    float startY = randFloat(-0.2, 0.2);
+//
+//    pose_6 stackedObjectPose;
+//    stackedObjectPose.position(0) = startX;
+//    stackedObjectPose.position(1) = startY;
+//    stackedObjectPose.position(2) = 0.2;
+//
+//    std::vector<double> objectXPos;
+//    std::vector<double> objectYPos;
+//
+//    pose_6 objectCurrentPose;
+//    MuJoCo_helper->GetBodyPoseAngle("goal", objectCurrentPose, MuJoCo_helper->master_reset_data);
+//    objectCurrentPose.position(0) = startX;
+//    objectCurrentPose.position(1) = startY;
+//    MuJoCo_helper->SetBodyPoseAngle("goal", objectCurrentPose, MuJoCo_helper->main_data);
+//    MuJoCo_helper->SetBodyPoseAngle("goal", objectCurrentPose, MuJoCo_helper->master_reset_data);
+//
+//    MuJoCo_helper->GetBodyPoseAngle("mainObstacle", objectCurrentPose, MuJoCo_helper->master_reset_data);
+//    objectCurrentPose.position(0) = startX;
+//    objectCurrentPose.position(1) = startY;
+//    objectCurrentPose.position(2) = 0.2;
+//    MuJoCo_helper->SetBodyPoseAngle("mainObstacle", objectCurrentPose, MuJoCo_helper->main_data);
+//    MuJoCo_helper->SetBodyPoseAngle("mainObstacle", objectCurrentPose, MuJoCo_helper->master_reset_data);
+//
+//
+//    if(clutterLevel == noClutter){
+//        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+//                startX, startY, stackedObjectPose.position(0), stackedObjectPose.position(1), stackedObjectPose.position(2),
+//                0, 0, 0, 0, 0, 0, 0,
+//                0, 0, 0, 0, 0;
+//    }
+//    else if(clutterLevel == lowClutter){
+//
+//        std::string objectNames[2] = {"obstacle1", "obstacle2"};
+//        int validObjectCounter = 0;
+//
+//        for(const auto & objectName : objectNames){
+//            bool validPlacement = false;
+//            float sizeX = 0.08;
+//            float sizeY = 0.04;
+//            while(!validPlacement){
+//                sizeX += 0.005;
+//                sizeY += 0.005;
+//
+//                float randX = randFloat(startX, startX + sizeX);
+//                float randY = randFloat(startY - sizeY, startY + sizeY);
+//
+//                pose_6 newObjectPose;
+//
+//                MuJoCo_helper->GetBodyPoseAngle(objectName, objectCurrentPose, MuJoCo_helper->master_reset_data);
+//                newObjectPose = objectCurrentPose;
+//                newObjectPose.position(0) = randX;
+//                newObjectPose.position(1) = randY;
+//                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->main_data);
+//
+//                if(MuJoCo_helper->CheckBodyForCollisions(objectName, MuJoCo_helper->main_data)){
+//                    cout << "invalid placement at : " << randX << ", " << randY << endl;
+//                }
+//                else{
+//                    validPlacement = true;
+//                    objectXPos.push_back(randX);
+//                    objectYPos.push_back(randY);
+//                }
+//            }
+//            validObjectCounter++;
+//        }
+//
+//        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+//                startX, startY, stackedObjectPose.position(0), stackedObjectPose.position(1), stackedObjectPose.position(2),
+//                objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
+//                0, 0, 0, 0, 0, 0, 0,
+//                0, 0, 0, 0, 0,
+//                0, 0, 0, 0;
+//
+//    }
+//    else if(clutterLevel == heavyClutter){
+//
+//        std::string objectNames[6] = {"obstacle1", "obstacle2", "obstacle3", "obstacle4", "obstacle5", "obstacle6"};
+//        int validObjectCounter = 0;
+//
+//        for(const auto & objectName : objectNames){
+//            bool validPlacement = false;
+//            float sizeX = 0.08;
+//            float sizeY = 0.05;
+//            while(!validPlacement){
+//                sizeX += 0.002;
+//                sizeY += 0.001;
+//
+//                float randX = randFloat(startX + 0.04f, startX+ 0.04f + sizeX);
+//                float randY = randFloat(startY - sizeY, startY + sizeY);
+//
+//                pose_6 newObjectPose;
+//
+//                MuJoCo_helper->GetBodyPoseAngle(objectName, objectCurrentPose, MuJoCo_helper->master_reset_data);
+//                newObjectPose = objectCurrentPose;
+//                newObjectPose.position(0) = randX;
+//                newObjectPose.position(1) = randY;
+//                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->main_data);
+//
+//                if(MuJoCo_helper->CheckBodyForCollisions(objectName, MuJoCo_helper->main_data)){
+//                    cout << "invalid placement at : " << randX << ", " << randY << endl;
+//                }
+//                else{
+//                    validPlacement = true;
+//                    objectXPos.push_back(randX);
+//                    objectYPos.push_back(randY);
+//                }
+//            }
+//            validObjectCounter++;
+//        }
+//
+//        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+//                startX, startY, stackedObjectPose.position(0), stackedObjectPose.position(1), stackedObjectPose.position(2),
+//                objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
+//                objectXPos[2], objectYPos[2], objectXPos[3], objectYPos[3], objectXPos[4], objectYPos[4], objectXPos[5], objectYPos[5],
+//                0, 0, 0, 0, 0, 0, 0,
+//                0, 0, 0, 0, 0,
+//                0, 0, 0, 0,
+//                0 ,0, 0, 0, 0, 0, 0, 0;
+//
+//    }
+//    else{
+//        cout << "ERROR: Invalid clutter level" << endl;
+//    }
+//
+//    return randomStartState;
+//}
+//
+//MatrixXd BoxFlick::ReturnRandomGoalState(MatrixXd X0){
+//    MatrixXd randomGoalState(state_vector_size, 1);
+//
+//    if(clutterLevel == noClutter){
+//        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+//                X0(7), X0(8), X0(9), X0(10), X0(11),
+//                0, 0, 0, 0, 0, 0, 0,
+//                0, 0, 0, 0, 0;
+//    }
+//    else if(clutterLevel == lowClutter){
+//        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+//                X0(7), X0(8), X0(9), X0(10), X0(11),
+//                X0(12), X0(13), X0(14), X0(15),
+//                0, 0, 0, 0, 0, 0, 0,
+//                0, 0, 0, 0, 0,
+//                0, 0, 0, 0;
+//    }
+//    else if(clutterLevel == heavyClutter){
+//        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+//                X0(7), X0(8), X0(9), X0(10), X0(11),
+//                X0(12), X0(13), X0(14), X0(15),
+//                X0(16), X0(17), X0(18), X0(19), X0(20), X0(21), X0(22), X0(23),
+//                0, 0, 0, 0, 0, 0, 0,
+//                0, 0, 0, 0, 0,
+//                0, 0, 0, 0,
+//                0, 0, 0, 0, 0, 0, 0, 0;
+//    }
+//    else{
+//        cout << "ERROR: Invalid clutter level" << endl;
+//    }
+//
+//    return randomGoalState;
+//}
 
 double BoxFlick::CostFunction(mjData *d, bool terminal){
     double cost;

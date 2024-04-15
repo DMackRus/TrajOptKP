@@ -8,10 +8,10 @@ public:
 
     std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
 
-    void GenerateRandomGoalAndStartState() override;
-    MatrixXd ReturnRandomStartState() override;
-    MatrixXd ReturnRandomGoalState(MatrixXd X0) override;
+//    void GenerateRandomGoalAndStartState() override;
+//    void ReturnRandomStartState() override;
+//    void ReturnRandomGoalState() override;
 
-    bool TaskComplete(mjData *d, double &dist) override;
+//    bool TaskComplete(mjData *d, double &dist) override;
 
 };

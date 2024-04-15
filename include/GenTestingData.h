@@ -78,6 +78,8 @@ public:
      */
     void asynchronus_optimiser_worker(std::string method_directory, int task_number, int task_horizon);
 
+    void GenerateDynamicsDerivsData(int num_trajecs);
+
 
     std::shared_ptr<iLQR> iLQROptimiser;
     std::shared_ptr<ModelTranslator> activeModelTranslator;

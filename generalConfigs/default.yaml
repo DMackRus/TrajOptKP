@@ -2,7 +2,7 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "piston_block"  # Task to be performed
+task: "walker_run"  # Task to be performed
 # Current implemented tasks are:
 # "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
 # "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
@@ -11,7 +11,7 @@ task: "piston_block"  # Task to be performed
 
 optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
-runMode: "Optimise_once"
+runMode: "Generate_test_scenes"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -22,7 +22,7 @@ runMode: "Optimise_once"
 # "Generate_testing_data"   - Loop through all test scenes and evaluate the Optimiser and key-point performance.
 # "Generate_filtering_data" - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 
-taskInitMode: "fromYAML"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
+taskInitMode: "fromCSV"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.

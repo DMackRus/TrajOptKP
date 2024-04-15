@@ -19,6 +19,7 @@ struct robot{
     std::vector<double> torqueLimits;
     std::vector<double> startPos;
     std::vector<double> goalPos;
+    std::vector<double> goalVel;
     std::vector<double> jointPosCosts;
     std::vector<double> jointVelCosts;
     std::vector<double> terminalJointPosCosts;

@@ -49,7 +49,6 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/PhysicsSimulators/MuJoCoHelper.cpp
             src/ModelTranslator/ModelTranslator.cpp
             src/Visualiser/Visualiser.cpp
-            src/ModelTranslator/DoublePendulum.cpp
             src/ModelTranslator/Reaching.cpp
             src/ModelTranslator/TwoDPushing.cpp
             src/Differentiator/Differentiator.cpp

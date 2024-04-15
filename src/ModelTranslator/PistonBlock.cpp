@@ -26,22 +26,3 @@ std::vector<MatrixXd> PistonBlock::CreateInitOptimisationControls(int horizonLen
 
     return init_controls;
 }
-
-void PistonBlock::GenerateRandomGoalAndStartState(){
-    std::cerr << "No random goal code for Piston block specified, exiting \n";
-    exit(1);
-}
-
-MatrixXd PistonBlock::ReturnRandomStartState(){
-    std::cerr << "No random goal code for Piston block specified, exiting \n";
-    exit(1);
-}
-
-MatrixXd PistonBlock::ReturnRandomGoalState(MatrixXd X0){
-    std::cerr << "No random goal code for Piston block specified, exiting \n";
-    exit(1);
-}
-
-bool PistonBlock::TaskComplete(mjData *d, double &dist){
-    return false;
-}

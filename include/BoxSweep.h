@@ -7,9 +7,9 @@ class BoxSweep: virtual public ModelTranslator, public PushBaseClass{
 public:
     BoxSweep();
 
-    void GenerateRandomGoalAndStartState() override;
-    MatrixXd ReturnRandomStartState() override;
-    MatrixXd ReturnRandomGoalState(MatrixXd X0) override;
+//    void ReturnRandomStartState() override;
+//    void ReturnRandomGoalState() override;
+
     std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
     std::vector<MatrixXd> CreateInitSetupControls(int horizonLength) override;
 

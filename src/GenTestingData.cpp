@@ -20,20 +20,6 @@ GenTestingData::GenTestingData(std::shared_ptr<iLQR> iLQROptimiser_,
                                            yamlReader);
 }
 
-int GenTestingData::testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size){
-
-    for(int i = lowest_minN; i <= higherst_minN; i += step_size){
-        keypoint_method keypoint_method;
-        keypoint_method.name = "set_interval";
-        keypoint_method.min_N = i;
-        keypoint_method.max_N = i;
-
-        testing_asynchronus_mpc(keypoint_method, 100, 100, 2000);
-    }
-
-    return EXIT_SUCCESS;
-}
-
 int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
 
     std::cout << "beginning testing asynchronus MPC for " << activeModelTranslator->model_name << std::endl;
@@ -554,4 +540,20 @@ void GenTestingData::asynchronus_optimiser_worker(std::string method_directory, 
     average_percent_derivs /= percentagesDerivsCalculated.size();
     average_surprise /= surprise.size();
 
+}
+
+void GenTestingData::GenerateDynamicsDerivsData(int num_trajecs){
+
+    int count = 0;
+    while(count < num_trajecs){
+        // Load a task from csv
+
+        // Initialise system
+
+        // Loop n times
+
+        // Perform iLQR iteration
+
+        // Save data (A, B, X, U)
+    }
 }

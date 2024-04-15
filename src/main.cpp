@@ -1,22 +1,23 @@
 #include "StdInclude.h"
 #include "FileHandler.h"
+#include "Visualiser.h"
+#include "MuJoCoHelper.h"
 
 // --------------------- different scenes -----------------------
-#include "DoublePendulum.h"
 #include "Acrobot.h"
 #include "Pentabot.h"
+#include "PistonBlock.h"
+
 #include "Reaching.h"
+
 #include "TwoDPushing.h"
 #include "ThreeDPushing.h"
 #include "BoxFlick.h"
+#include "BoxSweep.h"
+
 #include "Walker.h"
 //#include "Hopper.h"
 //#include "humanoid.h"
-#include "BoxSweep.h"
-#include "PistonBlock.h"
-
-#include "Visualiser.h"
-#include "MuJoCoHelper.h"
 
 // --------------------- different optimisers -----------------------
 #include "iLQR.h"
@@ -669,11 +670,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 }
 
 int assign_task(){
-    if(task == "double_pendulum"){
-        std::shared_ptr<DoublePendulum> myDoublePendulum = std::make_shared<DoublePendulum>();
-        activeModelTranslator = myDoublePendulum;
-    }
-    else if(task == "acrobot"){
+    if(task == "acrobot"){
         std::shared_ptr<Acrobot> myAcrobot = std::make_shared<Acrobot>();
         activeModelTranslator = myAcrobot;
 

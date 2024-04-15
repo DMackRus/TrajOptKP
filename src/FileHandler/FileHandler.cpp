@@ -92,6 +92,7 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
         vector<double> torqueLimits;
         vector<double> startPos;
         vector<double> goalPos;
+        vector<double> goalVel;
         vector<double> jointPosCosts;
         vector<double> jointVelCosts;
         vector<double> terminalJointPosCosts;
@@ -122,7 +123,16 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
 
         for(int i = 0; i < robot_it->second["goalPos"].size(); i++){
             goalPos.push_back(robot_it->second["goalPos"][i].as<double>());
+            // Always make this the same size as goal pos
+            goalVel.push_back(0.0);
         }
+
+        if(robot_it->second["goalVel"]){
+            for(int i = 0; i < robot_it->second["goalVel"].size(); i++){
+                goalVel[i] = robot_it->second["goalVel"][i].as<double>();
+            }
+        }
+
 
         for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
             jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
@@ -159,6 +169,7 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
         tempRobot.torqueLimits = torqueLimits;
         tempRobot.startPos = startPos;
         tempRobot.goalPos = goalPos;
+        tempRobot.goalVel = goalVel;
         tempRobot.jointPosCosts = jointPosCosts;
         tempRobot.jointVelCosts = jointVelCosts;
         tempRobot.terminalJointPosCosts = terminalJointPosCosts;
@@ -378,14 +389,81 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
     std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
     fileOutput.open(filename);
 
-    // TODO - Add this
-//    for(int i = 0; i < startState.rows(); i++){
-//        fileOutput << startState(i) << ",";
-//    }
-//
-//    for(int i = 0; i < goalState.rows(); i++){
-//        fileOutput << goalState(i) << ",";
-//    }
+    // file save data should be start state and then desired state
+    // State should be robot pos, body pose, robot vel, body vel
+
+    // -------------------- Start values --------------------------------
+    // Robot positions
+    for(auto & robot : state_vector.robots){
+        for(int i = 0; i < robot.jointNames.size(); i++){
+            fileOutput << robot.startPos[i] << ",";
+        }
+    }
+
+    // Body poses
+    for( auto body : state_vector.bodiesStates){
+        for(int i = 0; i < 3; i++){
+            fileOutput << body.startLinearPos[i] << ",";
+        }
+
+        for(int i = 0; i < 3; i++){
+            fileOutput << body.startAngularPos[i] << ",";
+        }
+    }
+
+    // Robot velocities
+    for(auto & robot : state_vector.robots){
+        for(int i = 0; i < robot.jointNames.size(); i++){
+            fileOutput << 0 << ",";
+        }
+    }
+
+    // Body velocities
+    for( auto body : state_vector.bodiesStates){
+        for(int i = 0; i < 3; i++){
+            fileOutput << 0 << ",";
+        }
+
+        for(int i = 0; i < 3; i++){
+            fileOutput << 0 << ",";
+        }
+    }
+
+    // ----------------- Goal values ---------------------------
+    for(auto & robot : state_vector.robots){
+        for(int i = 0; i < robot.jointNames.size(); i++){
+            fileOutput << robot.goalPos[i] << ",";
+        }
+    }
+
+    // Body poses
+    for( auto body : state_vector.bodiesStates){
+        for(int i = 0; i < 3; i++){
+            fileOutput << body.goalLinearPos[i] << ",";
+        }
+
+        for(int i = 0; i < 3; i++){
+            fileOutput << body.goalAngularPos[i] << ",";
+        }
+    }
+
+    // Robot velocities
+    for(auto & robot : state_vector.robots){
+        for(int i = 0; i < robot.jointNames.size(); i++){
+            fileOutput << robot.goalVel[i] << ",";
+        }
+    }
+
+    // Body velocities
+    for( auto body : state_vector.bodiesStates){
+        for(int i = 0; i < 3; i++){
+            fileOutput << 0 << ",";
+        }
+
+        for(int i = 0; i < 3; i++){
+            fileOutput << 0 << ",";
+        }
+    }
 
     fileOutput << std::endl;
 
@@ -409,25 +487,13 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
     // Loop through robots
     int state_vector_size = 0;
     for(auto & robot : state_vector.robots){
-        state_vector_size += static_cast<int>(robot.jointNames.size());
+        state_vector_size += 2 * static_cast<int>(robot.jointNames.size());
     }
 
     // Loop through bodies
     for( auto body : state_vector.bodiesStates){
-        // Check default linear and angular
-        for(int i = 0; i < 3; i++){
-
-            if(body.activeLinearDOF[i]){
-                state_vector_size++;
-            }
-
-            if(body.activeAngularDOF[i]){
-                state_vector_size++;
-            }
-        }
+        state_vector_size += 4;
     }
-    // position and velocity
-    state_vector_size *= 2;
 
     // Only one row in this file so this while loop should only perform one iteration
     while(fin >> temp){
@@ -448,11 +514,11 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
         }
 
         int counter = 0;
-        // TODO - add desired velocities
         for(auto & robot : state_vector.robots){
             for(int i = 0; i < robot.jointNames.size(); i++){
                 robot.startPos[i] = stod(row[counter]);
                 robot.goalPos[i] = stod(row[counter + state_vector_size]);
+                robot.goalVel[i] = stod(row[counter + state_vector_size + (state_vector_size / 2)]);
                 counter++;
             }
         }
@@ -460,28 +526,18 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
         for(auto & body : state_vector.bodiesStates){
             // Linear (x, y, z)
             for(int i = 0; i < 3; i++){
-                if(body.activeLinearDOF[i]){
-                    body.startLinearPos[i] = stod(row[counter]);
-                    body.goalLinearPos[i] = stod(row[counter + state_vector_size]);
-                    counter++;
-                }
+                body.startLinearPos[i] = stod(row[counter]);
+                body.goalLinearPos[i] = stod(row[counter + state_vector_size]);
+                counter++;
             }
 
+            // Angular roll pitch yaw
             for(int i = 0; i < 3; i++){
-                if(body.activeLinearDOF[i]){
-                    body.startAngularPos[i] = stod(row[counter]);
-                    body.goalAngularPos[i] = stod(row[counter + state_vector_size]);
-                    counter++;
-                }
+                body.startAngularPos[i] = stod(row[counter]);
+                body.goalAngularPos[i] = stod(row[counter + state_vector_size]);
+                counter++;
             }
         }
-
-//        int stateVecSize = startState.size();
-//        for(int i = 0; i < stateVecSize; i++){
-//            startState(i) = stod(row[i]);
-//            goalState(i) = stod(row[i + stateVecSize]);
-//        }
-
     }
 }
 

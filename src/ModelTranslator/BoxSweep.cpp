@@ -7,40 +7,35 @@ BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "bigBox"){
     InitModelTranslator(yamlFilePath);
 }
 
-void BoxSweep::GenerateRandomGoalAndStartState() {
-//    X_start = ReturnRandomStartState();
-//    X_desired = ReturnRandomGoalState(X_start);
-}
-
-MatrixXd BoxSweep::ReturnRandomStartState(){
-    MatrixXd randomStartState(state_vector_size, 1);
-
-    randomStartState << -0.178, 0.7, -0.0593, -1.73, 0, 0.722, -1.6,
-                        0.65, 0,
-                        0, 0, 0, 0, 0, 0, 0,
-                        0, 0;
-
-    return randomStartState;
-}
-
-MatrixXd BoxSweep::ReturnRandomGoalState(MatrixXd X0){
-    MatrixXd randomGoalState(state_vector_size, 1);
-
-    float upperBoundX = 0.7;
-    float lowerBoundX = 0.6;
-    float upperBoundY = 0.5;
-    float lowerBoundY = 0.3;
-
-    float randX = randFloat(lowerBoundX, upperBoundX);
-    float randY = randFloat(lowerBoundY, upperBoundY);
-
-    randomGoalState << 0, 0, 0, 0, 0, 0, 0,
-                        randX, randY,
-                        0, 0, 0, 0, 0, 0, 0,
-                        0, 0;
-
-    return randomGoalState;
-}
+//MatrixXd BoxSweep::ReturnRandomStartState(){
+//    MatrixXd randomStartState(state_vector_size, 1);
+//
+//    randomStartState << -0.178, 0.7, -0.0593, -1.73, 0, 0.722, -1.6,
+//                        0.65, 0,
+//                        0, 0, 0, 0, 0, 0, 0,
+//                        0, 0;
+//
+//    return randomStartState;
+//}
+//
+//MatrixXd BoxSweep::ReturnRandomGoalState(MatrixXd X0){
+//    MatrixXd randomGoalState(state_vector_size, 1);
+//
+//    float upperBoundX = 0.7;
+//    float lowerBoundX = 0.6;
+//    float upperBoundY = 0.5;
+//    float lowerBoundY = 0.3;
+//
+//    float randX = randFloat(lowerBoundX, upperBoundX);
+//    float randY = randFloat(lowerBoundY, upperBoundY);
+//
+//    randomGoalState << 0, 0, 0, 0, 0, 0, 0,
+//                        randX, randY,
+//                        0, 0, 0, 0, 0, 0, 0,
+//                        0, 0;
+//
+//    return randomGoalState;
+//}
 
 std::vector<MatrixXd> BoxSweep::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;

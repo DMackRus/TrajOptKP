@@ -60,17 +60,13 @@ public:
      */
     std::vector<std::string> GetStateVectorNames();
 
-    //--------------------------------------------------------------------------------
-    // Pure virtual functions that HAVE to be implemented by the child class
-    //--------------------------------------------------------------------------------
-
     /**
      * Returns a random start state for the system. This is used mainly for generating
      * mass testing data.
      *
      * @return MatrixXd A random start state for the system.
      */
-    virtual MatrixXd ReturnRandomStartState() = 0;
+    virtual void ReturnRandomStartState();
 
     /**
      * Returns a random goal state for the system. This is used mainly for generating
@@ -78,14 +74,14 @@ public:
      *
      * @return MatrixXd A random goal state for the system.
      */
-    virtual MatrixXd ReturnRandomGoalState(MatrixXd X0) = 0;
+    virtual void ReturnRandomGoalState();
 
     /**
      * Generates a random goal and start state for the system. This is used mainly for
      * generating mass testing data.
      *
      */
-    virtual void GenerateRandomGoalAndStartState() = 0;
+    virtual void GenerateRandomGoalAndStartState();
 
     //--------------------------------------------------------------------------------
     // Virtual functions that can be overwritten by the child class
@@ -307,7 +303,7 @@ public:
     std::string model_file_path;
 
     // model name
-    std::string model_name;
+    std::string model_name = "undefined";
 
     // Keypoint hyper parameters
     std::string keypoint_method;

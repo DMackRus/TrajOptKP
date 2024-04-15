@@ -7,70 +7,65 @@ ThreeDPushing::ThreeDPushing() : PushBaseClass("franka_gripper", "goal"){
     InitModelTranslator(yamlFilePath);
 }
 
-void ThreeDPushing::GenerateRandomGoalAndStartState() {
-//    X_start = ReturnRandomStartState();
-//    X_desired = ReturnRandomGoalState(X_start);
-}
-
-MatrixXd ThreeDPushing::ReturnRandomStartState(){
-    MatrixXd randomStartState(state_vector_size, 1);
-
-    float startX;
-    float startY;
-    float goalX;
-    float goalY;
-
-    startX = 0.4;
-    startY = randFloat(-0.1, 0.1);
-
-    float randAngle = randFloat(-PI/4, PI/4);
-    float randDist = randFloat(0.28, 0.3);
-
-    goalX = startX + randDist * cos(randAngle);
-    goalY = startY + randDist * sin(randAngle);
-
-    // Set start position of pushed object
-    pose_6 pushedObjectStartPose;
-    MuJoCo_helper->GetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
-    pushedObjectStartPose.position(0) = startX;
-    pushedObjectStartPose.position(1) = startY;
-    pushedObjectStartPose.position(2) = 0.032;
-    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->main_data);
-    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
-    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
-    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
-
-
-    randomGoalX = goalX;
-    randomGoalY = goalY;
-
-    std::vector<double> objectXPos;
-    std::vector<double> objectYPos;
-
-    // TODO - this has correct number of elements but all zeros for rotaiton
-    // might not be desired.
-    randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-            startX, startY, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0;
-
-
-    return randomStartState;
-}
-
-MatrixXd ThreeDPushing::ReturnRandomGoalState(MatrixXd X0){
-    MatrixXd randomGoalState(state_vector_size, 1);
-
-    // TODO - Right number of elements, but all zeros rotation might not be desired.
-    randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-                randomGoalX, randomGoalY, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0, 0;
-
-
-
-    return randomGoalState;
-}
+//MatrixXd ThreeDPushing::ReturnRandomStartState(){
+//    MatrixXd randomStartState(state_vector_size, 1);
+//
+//    float startX;
+//    float startY;
+//    float goalX;
+//    float goalY;
+//
+//    startX = 0.4;
+//    startY = randFloat(-0.1, 0.1);
+//
+//    float randAngle = randFloat(-PI/4, PI/4);
+//    float randDist = randFloat(0.28, 0.3);
+//
+//    goalX = startX + randDist * cos(randAngle);
+//    goalY = startY + randDist * sin(randAngle);
+//
+//    // Set start position of pushed object
+//    pose_6 pushedObjectStartPose;
+//    MuJoCo_helper->GetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+//    pushedObjectStartPose.position(0) = startX;
+//    pushedObjectStartPose.position(1) = startY;
+//    pushedObjectStartPose.position(2) = 0.032;
+//    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->main_data);
+//    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+//    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
+//    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
+//
+//
+//    randomGoalX = goalX;
+//    randomGoalY = goalY;
+//
+//    std::vector<double> objectXPos;
+//    std::vector<double> objectYPos;
+//
+//    // TODO - this has correct number of elements but all zeros for rotaiton
+//    // might not be desired.
+//    randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+//            startX, startY, 0, 0, 0, 0,
+//            0, 0, 0, 0, 0, 0, 0,
+//            0, 0, 0, 0, 0, 0;
+//
+//
+//    return randomStartState;
+//}
+//
+//MatrixXd ThreeDPushing::ReturnRandomGoalState(MatrixXd X0){
+//    MatrixXd randomGoalState(state_vector_size, 1);
+//
+//    // TODO - Right number of elements, but all zeros rotation might not be desired.
+//    randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
+//                randomGoalX, randomGoalY, 0, 0, 0, 0,
+//                0, 0, 0, 0, 0, 0, 0,
+//                0, 0, 0, 0, 0, 0;
+//
+//
+//
+//    return randomGoalState;
+//}
 
 std::vector<MatrixXd> ThreeDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;

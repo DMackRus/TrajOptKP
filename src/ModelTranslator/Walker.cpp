@@ -29,32 +29,24 @@ bool walker::TaskComplete(mjData *d, double &dist){
     return false;
 }
 
-void walker::GenerateRandomGoalAndStartState(){
-//    X_start.resize(state_vector_size, 1);
-//    X_desired.resize(state_vector_size, 1);
+void walker::ReturnRandomStartState(){
 
-//    X_start = ReturnRandomStartState();
-//    X_desired = ReturnRandomGoalState(X_start);
+    double start_config[9] = {0, 0, 0, 1, -1, 0.2, 0, 0, 0};
+
+    for(int i = 0; i < 9; i++){
+        active_state_vector.robots[0].startPos[i] = start_config[i];
+    }
 }
 
-MatrixXd walker::ReturnRandomStartState(){
-    MatrixXd startState(state_vector_size, 1);
+void walker::ReturnRandomGoalState(){
+    for(int i = 0; i < 9; i++){
+        active_state_vector.robots[0].goalPos[i] = 0.0;
+        active_state_vector.robots[0].goalVel[i] = 0.0;
+    }
 
-    startState << 0, 0, 0, 1, -1, 0.2, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0, 0;
-
-    return startState;
-}
-
-MatrixXd walker::ReturnRandomGoalState(MatrixXd X0){
-    MatrixXd goalState(state_vector_size, 1);
-
-    float rand_body_velocity = randFloat(low_bound_velocity, high_bound_velocity);
-
-    goalState << 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, rand_body_velocity, 0, 0, 0, 0, 0, 0, 0;
-
-    return goalState;
+    // Random body velocity between low_bound_vel and hig_bound_vel
+    float rand_body_vel = randFloat(low_bound_velocity, high_bound_velocity);
+    active_state_vector.robots[0].goalVel[7] = rand_body_vel;
 }
 
 std::vector<MatrixXd> walker::CreateInitOptimisationControls(int horizonLength){
