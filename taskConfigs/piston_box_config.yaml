@@ -1,0 +1,45 @@
+modelFile: "/mujoco_models/Piston_block/piston_block.xml"
+modelName: "piston_block"
+timeStep: 0.01
+openloop_horizon: 1000
+mpc_horizon: 100
+keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+auto_adjust: false
+minN: 1
+maxN: 20
+iterativeErrorThreshold: 0.00001
+robots:
+  panda:
+    jointNames: ["rod"]
+    actuatorNames: ["rod"]
+    torqueControl: true
+    torqueLimits: [1]
+    startPos: [0.1]
+    goalPos: [ 0 ]
+    jointPosCosts: [0]
+    jointVelCosts: [0.01]
+    terminalJointPosCosts: [0]
+    terminalJointVelCosts: [0]
+    jointControlCosts: [0.01]
+    jointJerkThresholds: [0.002]
+    magVelThresholds: [0.1]
+bodies:
+  goal:
+    activeLinearDOF: [false, true, false]
+    activeAngularDOF: [false, false, false]
+    startLinearPos: [ 0, 0.9, 0.0 ]
+    startAngularPos: [ 0, 0, 0 ]
+    goalLinearPos: [ 0, 1.2, 0.0 ]
+    goalAngularPos: [ 0, 0, 0 ]
+    linearPosCost: [0, 0, 0]
+    terminalLinearPosCost: [0, 1000, 0]
+    linearVelCost: [0, 0.2, 0]
+    terminalLinearVelCost: [0, 0, 0]
+    angularPosCost: [0, 0, 0]
+    terminalAngularPosCost: [0, 0, 0]
+    angularVelCost: [0, 0, 0]
+    terminalAngularVelCost: [0, 0, 0]
+    linearJerkThreshold: [ 0, 0.005, 0 ]
+    angularJerkThreshold: [ 0, 0, 0 ]
+    linearMagVelThreshold: [ 0, 0.1, 0 ]
+    angularMagVelThreshold: [ 0, 0, 0 ]

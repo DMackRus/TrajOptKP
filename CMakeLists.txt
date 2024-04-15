@@ -66,7 +66,9 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/GenTestingData.cpp
             src/KeyPointGenerator/KeyPointGenerator.cpp
             src/ModelTranslator/ThreeDPushing.cpp
-            src/ModelTranslator/PushBaseClass.cpp src/ModelTranslator/Pentabot.cpp include/Pentabot.h)
+            src/ModelTranslator/PushBaseClass.cpp
+            src/ModelTranslator/Pentabot.cpp
+            src/ModelTranslator/PistonBlock.cpp)
 
 include_directories(
         include

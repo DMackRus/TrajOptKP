@@ -13,6 +13,7 @@
 //#include "Hopper.h"
 //#include "humanoid.h"
 #include "BoxSweep.h"
+#include "PistonBlock.h"
 
 #include "Visualiser.h"
 #include "MuJoCoHelper.h"
@@ -743,6 +744,10 @@ int assign_task(){
     else if(task == "box_sweep"){
         std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
         activeModelTranslator = myBoxSweep;
+    }
+    else if(task == "piston_block"){
+        std::shared_ptr<PistonBlock> my_piston_block = std::make_shared<PistonBlock>();
+        activeModelTranslator = my_piston_block;
     }
     else{
         std::cout << "invalid scene selected, exiting" << std::endl;
