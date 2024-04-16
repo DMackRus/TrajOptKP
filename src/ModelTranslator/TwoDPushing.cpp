@@ -30,224 +30,200 @@ TwoDPushing::TwoDPushing(int _clutterLevel): PushBaseClass("franka_gripper", "bl
     InitModelTranslator(yamlFilePath);
 }
 
-//MatrixXd TwoDPushing::ReturnRandomStartState(){
-//    MatrixXd randomStartState(state_vector_size, 1);
-//
-//    float startX;
-//    float startY;
-//    float goalX;
-//    float goalY;
-//
-//    if(clutterLevel == constrainedClutter){
-//        startX = randFloat(0.45, 0.46);
-//        startY = randFloat(-0.05, 0.05);
-//
-//        goalX = randFloat(0.6, 0.65);
-//        goalY = randFloat(-0.2, 0.2);
-//
-//    }
-//    else{
-//
-//        startX = 0.4;
-//        startY = randFloat(-0.1, 0.1);
-//
-//        float randAngle = randFloat(-PI/4, PI/4);
-//        float randDist = randFloat(0.28, 0.3);
-//
-//        goalX = startX + randDist * cos(randAngle);
-//        goalY = startY + randDist * sin(randAngle);
-//    }
-//
-//    // Set start position of pushed object
-//    pose_6 pushedObjectStartPose;
-//    MuJoCo_helper->GetBodyPoseAngle("blueTin", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
-//    pushedObjectStartPose.position(0) = startX;
-//    pushedObjectStartPose.position(1) = startY;
-//    pushedObjectStartPose.position(2) = 0.032;
-//    MuJoCo_helper->SetBodyPoseAngle("blueTin", pushedObjectStartPose, MuJoCo_helper->main_data);
-//    MuJoCo_helper->SetBodyPoseAngle("blueTin", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
-//    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
-//    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
-//
-//
-//    randomGoalX = goalX;
-//    randomGoalY = goalY;
-//
-//    std::vector<double> objectXPos;
-//    std::vector<double> objectYPos;
-//
-//    if(clutterLevel == noClutter){
-//        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-//                startX, startY,
-//                0, 0, 0, 0, 0, 0, 0,
-//                0, 0;
-//    }
-//    else if(clutterLevel == lowClutter  || clutterLevel == constrainedClutter){
-//
-//        std::string objectNames[3] = {"bigBox", "smallBox","tallCylinder"};
-//        int validObjectCounter = 0;
-//
-//        for(const auto & objectName : objectNames){
-//            bool validPlacement = false;
-//            float sizeX = 0.01;
-//            float sizeY = 0.05;
-//            while(!validPlacement){
-//                sizeX += 0.0005;
-//                sizeY += 0.0001;
-//
-//                float randX, randY;
-//
-//                if(clutterLevel == constrainedClutter){
-//                    randX = randFloat(startX, goalX + 0.1f);
-//                    randY = randFloat(goalY - sizeY, goalY + sizeY);
-//                }
-//                else{
-//                    randX = randFloat(goalX - sizeX, goalX);
-//                    randY = randFloat(goalY - sizeY, goalY + sizeY);
-//                }
-//
-//                pose_6 objectCurrentPose;
-//                pose_6 newObjectPose;
-//
-//                MuJoCo_helper->GetBodyPoseAngle(objectName, objectCurrentPose, MuJoCo_helper->main_data);
-//                newObjectPose = objectCurrentPose;
-//                newObjectPose.position(0) = randX;
-//                newObjectPose.position(1) = randY;
-//                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->main_data);
-//                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->master_reset_data);
-//
-//                if(MuJoCo_helper->CheckBodyForCollisions(objectName, MuJoCo_helper->main_data)){
-//                    cout << "invalid placement at : " << randX << ", " << randY << endl;
-//                }
-//                else{
-//                    validPlacement = true;
-//                    objectXPos.push_back(randX);
-//                    objectYPos.push_back(randY);
-//                }
-//            }
-//            validObjectCounter++;
-//        }
-//
-//        //1, -0.07, 0, -3, 0.232, 1.34, 3, 0.232,
-//        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-//                startX, startY, objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1], objectXPos[2], objectYPos[2],
-//                0, 0, 0, 0, 0, 0, 0,
-//                0, 0, 0, 0, 0, 0, 0, 0;
-//
-//    }
-//    else if(clutterLevel == heavyClutter){
-//
-//        bool validPlacement = false;
-//        float sizeX = 0.08;
-//        float sizeY = 0.04;
-//        cout << "goal position: " << goalX << ", " << goalY << endl;
-//        while(!validPlacement){
-//            sizeX += 0.001;
-//            sizeY += 0.0005;
-//
-//            float randX = randFloat(goalX + 0.1f, goalX +  + 0.1f + sizeX);
-//            float randY = randFloat(goalY - sizeY, goalY + sizeY);
-//
-//            pose_6 objectCurrentPose;
-//            pose_6 newObjectPose;
-//
-//            MuJoCo_helper->GetBodyPoseAngle("obstacle5", objectCurrentPose, MuJoCo_helper->master_reset_data);
-//            newObjectPose = objectCurrentPose;
-//            newObjectPose.position(0) = randX;
-//            newObjectPose.position(1) = randY;
-//            newObjectPose.position(2) = objectCurrentPose.position(2);
-//            MuJoCo_helper->SetBodyPoseAngle("obstacle5", newObjectPose, MuJoCo_helper->main_data);
-//            MuJoCo_helper->SetBodyPoseAngle("obstacle5", newObjectPose, MuJoCo_helper->master_reset_data);
-//
-//            if(MuJoCo_helper->CheckBodyForCollisions("obstacle5", MuJoCo_helper->main_data)){
-//                cout << "first object invalid placement : " << randX << ", " << randY << endl;
-//            }
-//            else{
-//                MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
-//                MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
-//                validPlacement = true;
-//                objectXPos.push_back(randX);
-//                objectYPos.push_back(randY);
-//            }
-//        }
-//
-//        std::string objectNames[6] = {"mediumCylinder", "bigBox", "obstacle1","obstacle2", "obstacle3", "obstacle4"};
-//
-//        for(const auto & objectName : objectNames){
-//            while(!validPlacement){
-//                sizeX += 0.001;
-//                sizeY += 0.0005;
-//
-//                float randX = randFloat(goalX - sizeX, goalX + (0.5f * sizeX));
-//                float randY = randFloat(goalY - sizeY, goalY + sizeY);
-//
-//                pose_6 objectCurrentPose;
-//                pose_6 newObjectPose;
-//
-//                MuJoCo_helper->GetBodyPoseAngle(objectName, objectCurrentPose, MuJoCo_helper->master_reset_data);
-//                newObjectPose = objectCurrentPose;
-//                newObjectPose.position(0) = randX;
-//                newObjectPose.position(1) = randY;
-//                newObjectPose.position(2) = objectCurrentPose.position(2);
-//                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->main_data);
-//                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->master_reset_data);
-//
-//                if(MuJoCo_helper->CheckBodyForCollisions(objectName, MuJoCo_helper->main_data)){
-//                    cout << "invalid placement at : " << randX << ", " << randY << endl;
-//                }
-//                else{
-//                    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
-//                    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
-//                    validPlacement = true;
-//                    objectXPos.push_back(randX);
-//                    objectYPos.push_back(randY);
-//                }
-//            }
-//        }
-//
-//        randomStartState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-//                startX, startY, objectXPos[0], objectYPos[0], objectXPos[1], objectYPos[1],
-//                objectXPos[2], objectYPos[2], objectXPos[3], objectYPos[3],
-//                objectXPos[4], objectYPos[4], objectXPos[5], objectYPos[5], objectXPos[6], objectYPos[6],
-//                0, 0, 0, 0, 0, 0, 0,
-//                0, 0, 0, 0, 0, 0,
-//                0, 0, 0, 0,
-//                0, 0, 0, 0, 0, 0;
-//    }
-//
-//    return randomStartState;
-//}
-//
-//MatrixXd TwoDPushing::ReturnRandomGoalState(MatrixXd X0){
-//    MatrixXd randomGoalState(state_vector_size, 1);
-//
-//    if(clutterLevel == noClutter){
-//        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-//                randomGoalX, randomGoalY,
-//                0, 0, 0, 0, 0, 0, 0,
-//                0, 0;
-//    }
-//    else if(clutterLevel == lowClutter || clutterLevel == constrainedClutter){
-//        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-//                randomGoalX, randomGoalY, X0(9), X0(10), X0(11), X0(12), X0(13), X0(14),
-//                0, 0, 0, 0, 0, 0, 0,
-//                0, 0, 0, 0, 0, 0, 0, 0;
-//    }
-//    else if(clutterLevel == heavyClutter){
-//        randomGoalState << 0, -0.183, 0, -3.1, 0, 1.34, 0,
-//                randomGoalX, randomGoalY, X0(9), X0(10), X0(11), X0(12),
-//                X0(13), X0(14), X0(15), X0(16),
-//                X0(17), X0(18), X0(19), X0(20), X0(21), X0(22),
-//                0, 0, 0, 0, 0, 0, 0,
-//                0, 0, 0, 0, 0, 0,
-//                0, 0, 0, 0,
-//                0, 0, 0, 0, 0, 0;
-//
-//    }
-//
-//
-//    return randomGoalState;
-//}
+void TwoDPushing::ReturnRandomStartState(){
+
+    float startX;
+    float startY;
+    float goalX;
+    float goalY;
+
+    if(clutterLevel == constrainedClutter){
+        startX = randFloat(0.45, 0.46);
+        startY = randFloat(-0.05, 0.05);
+
+        goalX = randFloat(0.6, 0.65);
+        goalY = randFloat(-0.2, 0.2);
+
+    }
+    else{
+        startX = 0.4;
+        startY = randFloat(-0.1, 0.1);
+
+        float randAngle = randFloat(-PI/4, PI/4);
+        float randDist = randFloat(0.28, 0.3);
+
+        goalX = startX + randDist * cos(randAngle);
+        goalY = startY + randDist * sin(randAngle);
+    }
+
+    // Set start position of pushed object
+    pose_6 pushedObjectStartPose;
+    MuJoCo_helper->GetBodyPoseAngle("blueTin", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+    pushedObjectStartPose.position(0) = startX;
+    pushedObjectStartPose.position(1) = startY;
+    pushedObjectStartPose.position(2) = 0.032;
+    MuJoCo_helper->SetBodyPoseAngle("blueTin", pushedObjectStartPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->SetBodyPoseAngle("blueTin", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
+    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
+
+    randomGoalX = goalX;
+    randomGoalY = goalY;
+
+    std::vector<std::string> object_names;
+
+    if(clutterLevel == lowClutter  || clutterLevel == constrainedClutter){
+        object_names.emplace_back("bigBox");
+        object_names.emplace_back("tallCylinder");
+        object_names.emplace_back("smallBox");
+
+        int validObjectCounter = 0;
+
+        for(const auto & objectName : object_names){
+            bool validPlacement = false;
+            float sizeX = 0.01;
+            float sizeY = 0.05;
+            while(!validPlacement){
+                sizeX += 0.0005;
+                sizeY += 0.0001;
+
+                float randX, randY;
+
+                if(clutterLevel == constrainedClutter){
+                    randX = randFloat(startX, goalX + 0.1f);
+                    randY = randFloat(goalY - sizeY, goalY + sizeY);
+                }
+                else{
+                    randX = randFloat(goalX - sizeX, goalX);
+                    randY = randFloat(goalY - sizeY, goalY + sizeY);
+                }
+
+                pose_6 objectCurrentPose;
+                pose_6 newObjectPose;
+
+                MuJoCo_helper->GetBodyPoseAngle(objectName, objectCurrentPose, MuJoCo_helper->main_data);
+                newObjectPose = objectCurrentPose;
+                newObjectPose.position(0) = randX;
+                newObjectPose.position(1) = randY;
+                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->main_data);
+                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->master_reset_data);
+
+                if(MuJoCo_helper->CheckBodyForCollisions(objectName, MuJoCo_helper->main_data)){
+//                    cout << "invalid placement of " << objectName << " at : " << randX << ", " << randY << endl;
+                }
+                else{
+                    validPlacement = true;
+                }
+            }
+            validObjectCounter++;
+        }
+    }
+    else if(clutterLevel == heavyClutter){
+        object_names.emplace_back("mediumCylinder");
+        object_names.emplace_back("bigBox");
+        object_names.emplace_back("obstacle1");
+        object_names.emplace_back("obstacle2");
+        object_names.emplace_back("obstacle3");
+        object_names.emplace_back("obstacle4");
+        object_names.emplace_back("obstacle5");
+
+
+        cout << "goal position: " << goalX << ", " << goalY << endl;
+
+        for(const auto & objectName : object_names){
+            bool validPlacement = false;
+            float sizeX = 0.08;
+            float sizeY = 0.04;
+            while(!validPlacement){
+                sizeX += 0.001;
+                sizeY += 0.0005;
+
+                float randX = randFloat(goalX - sizeX, goalX + (0.5f * sizeX));
+                float randY = randFloat(goalY - sizeY, goalY + sizeY);
+
+                pose_6 objectCurrentPose;
+                pose_6 newObjectPose;
+
+                MuJoCo_helper->GetBodyPoseAngle(objectName, objectCurrentPose, MuJoCo_helper->master_reset_data);
+                newObjectPose = objectCurrentPose;
+                newObjectPose.position(0) = randX;
+                newObjectPose.position(1) = randY;
+                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->main_data);
+                MuJoCo_helper->SetBodyPoseAngle(objectName, newObjectPose, MuJoCo_helper->master_reset_data);
+
+                if(MuJoCo_helper->CheckBodyForCollisions(objectName, MuJoCo_helper->main_data)){
+                    cout << "invalid placement at : " << randX << ", " << randY << endl;
+                }
+                else{
+                    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
+                    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
+                    validPlacement = true;
+                }
+            }
+        }
+    }
+
+    // Robot start configuration
+    double robot_start_config[7] = {0, -0.183, 0, -3.1, 0, 1.34, 0};
+
+    for(int i = 0; i < active_state_vector.robots[0].jointNames.size(); i++){
+        active_state_vector.robots[0].startPos[i] = robot_start_config[i];
+    }
+
+    active_state_vector.bodiesStates[0].startLinearPos[0] = startX;
+    active_state_vector.bodiesStates[0].startLinearPos[1] = startY;
+    active_state_vector.bodiesStates[0].startLinearPos[2] = 0.032;
+
+    active_state_vector.bodiesStates[0].startAngularPos[0] = 0.0;
+    active_state_vector.bodiesStates[0].startAngularPos[1] = 0.0;
+    active_state_vector.bodiesStates[0].startAngularPos[2] = 0.0;
+
+    // Distractor body poses
+    for(int i = 0; i < object_names.size(); i++){
+        std::cout << "object name: " << object_names[i] << "\n";
+        pose_6 obstacle_pose;
+        MuJoCo_helper->GetBodyPoseAngle(object_names[i], obstacle_pose, MuJoCo_helper->master_reset_data);
+
+        for(int j = 0; j < 3; j++){
+            active_state_vector.bodiesStates[i + 1].startLinearPos[j] = obstacle_pose.position[j];
+            active_state_vector.bodiesStates[i + 1].startAngularPos[j] = obstacle_pose.orientation[j];
+        }
+    }
+    std::cout << "in generation \n";
+    std::cout << "body " << active_state_vector.bodiesStates[2].name << " x: " << active_state_vector.bodiesStates[2].startLinearPos[0] << " y: " << active_state_vector.bodiesStates[2].startLinearPos[1] << std::endl;
+}
+
+void TwoDPushing::ReturnRandomGoalState(){
+    MatrixXd randomGoalState(state_vector_size, 1);
+
+    // Robot configuration doesnt matter for this task
+    for(int i = 0; i < active_state_vector.robots[0].jointNames.size(); i++){
+        active_state_vector.robots[0].goalPos[i] = 0.0;
+        active_state_vector.robots[0].goalVel[i] = 0.0;
+    }
+
+    // Goal object body
+    std::cout << "goal x" << randomGoalX << "goal y: " << randomGoalY << std::endl;
+    active_state_vector.bodiesStates[0].goalLinearPos[0] = randomGoalX;
+    active_state_vector.bodiesStates[0].goalLinearPos[1] = randomGoalY;
+    active_state_vector.bodiesStates[0].goalLinearPos[2] = 0.0;
+
+    active_state_vector.bodiesStates[0].goalAngularPos[0] = 0.0;
+    active_state_vector.bodiesStates[0].goalAngularPos[1] = 0.0;
+    active_state_vector.bodiesStates[0].goalAngularPos[2] = 0.0;
+
+    // Distractor objects
+    for(int i = 1; i < active_state_vector.bodiesStates.size(); i++){
+
+        active_state_vector.bodiesStates[i].goalLinearPos[0] = 0.0;
+        active_state_vector.bodiesStates[i].goalLinearPos[1] = 0.0;
+        active_state_vector.bodiesStates[i].goalLinearPos[2] = 0.0;
+
+        active_state_vector.bodiesStates[i].goalAngularPos[0] = 0.0;
+        active_state_vector.bodiesStates[i].goalAngularPos[1] = 0.0;
+        active_state_vector.bodiesStates[i].goalAngularPos[2] = 0.0;
+    }
+}
 
 std::vector<MatrixXd> TwoDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;

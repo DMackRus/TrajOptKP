@@ -273,7 +273,7 @@ public:
      */
     int StateIndexToQposIndex(int state_index);
 
-    MatrixXd StartStateVector();
+    void InitialiseSystemToStartState(mjData* d);
 
 
     // Number of degrees of freedom of the system (Note, this is set by used via yaml file, it doesnt necessary
@@ -289,12 +289,6 @@ public:
     // State vector object, considers robots and bodies
     struct stateVectorList active_state_vector;
     std::vector<std::string> state_vector_names;
-
-    // Desired state, used for cost function
-//    MatrixXd X_desired;
-
-    // Starting state of the system
-//    MatrixXd X_start;
 
     // mujoco helper object
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;

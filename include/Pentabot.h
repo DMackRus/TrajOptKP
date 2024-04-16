@@ -9,6 +9,6 @@ public:
 
     bool TaskComplete(mjData *d, double &dist) override;
 
-//    void ReturnRandomStartState() override;
-//    void ReturnRandomGoalState() override;
+    void ReturnRandomStartState() override;
+    void ReturnRandomGoalState() override;
 };

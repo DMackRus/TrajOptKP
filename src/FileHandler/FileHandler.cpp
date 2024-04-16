@@ -492,7 +492,8 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
 
     // Loop through bodies
     for( auto body : state_vector.bodiesStates){
-        state_vector_size += 4;
+        // x, y, z, r, p, y and *2 for velocities
+        state_vector_size += 12;
     }
 
     // Only one row in this file so this while loop should only perform one iteration

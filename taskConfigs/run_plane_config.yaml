@@ -15,6 +15,7 @@ robots:
     torqueLimits: [1, 1, 1, 1, 1, 1]
     startPos: [0, 0, 0, 1, -1, 0.2, 0, 0, 0]
     goalPos: [0.2, 0, 0, 0, 0, 0, 0, 0, 0]
+    goalVel: [0, 0.8, 0, 0, 0, 0, 0, 0, 0]
     jointPosCosts: [1, 0, 0.01, 0, 0, 0, 0, 0, 0]
     jointVelCosts: [0, 0.01, 0, 0, 0, 0, 0, 0, 0]
     terminalJointPosCosts: [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ]

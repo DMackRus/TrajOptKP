@@ -8,9 +8,8 @@ public:
 
     std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
 
-//    void GenerateRandomGoalAndStartState() override;
-//    void ReturnRandomStartState() override;
-//    void ReturnRandomGoalState() override;
+    void ReturnRandomStartState();
+    void ReturnRandomGoalState();
 
 //    bool TaskComplete(mjData *d, double &dist) override;
 

@@ -1185,46 +1185,33 @@ int ModelTranslator::StateIndexToQposIndex(int state_index){
     return joint_index + body_index_offset;
 }
 
-MatrixXd ModelTranslator::StartStateVector() {
-    MatrixXd start_state(state_vector_size, 1);
+void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 
-    MatrixXd position_vector(dof, 1);
-    MatrixXd velocity_vector(dof, 1);
-
-    int state_counter = 0;
     for(auto & robot : active_state_vector.robots){
-
-        for(int j = 0; j < robot.jointNames.size(); j++){
-            position_vector(state_counter, 0) = robot.startPos[j];
-            state_counter++;
-        }
+        std::vector<double> zero_robot_velocities(robot.jointNames.size(), 0.0);
+        MuJoCo_helper->SetRobotJointPositions(robot.name, robot.startPos, d);
+        MuJoCo_helper->SetRobotJointsVelocities(robot.name, zero_robot_velocities, d);
     }
 
     // Loop through all bodies in the state vector
     for(auto & bodiesState : active_state_vector.bodiesStates){
 
-        for(int j = 0; j < 3; j++) {
-            // Linear positions
-            if (bodiesState.activeLinearDOF[j]) {
-                position_vector(state_counter, 0) = bodiesState.startLinearPos[j];
-                state_counter++;
-            }
+        pose_6 body_pose;
+        pose_6 body_vel;
+
+        for(int i = 0; i < 3; i++){
+            body_pose.position[i] = bodiesState.startLinearPos[i];
+            body_pose.orientation[i] = bodiesState.startAngularPos[i];
+
+            body_vel.position[i] = 0.0;
+            body_vel.orientation[i] = 0.0;
         }
-        for(int j = 0; j < 3; j++) {
-            // angular positions
-            if(bodiesState.activeAngularDOF[j]){
-                position_vector(state_counter, 0) = bodiesState.startAngularPos[j];
-                state_counter++;
-            }
-        }
+
+        MuJoCo_helper->SetBodyPoseAngle(bodiesState.name, body_pose, d);
+        MuJoCo_helper->SetBodyVelocity(bodiesState.name, body_vel, d);
     }
 
-    velocity_vector.setZero();
-
-    start_state.block(0, 0, dof, 1) = position_vector;
-    start_state.block(dof, 0, dof, 1) = velocity_vector;
-
-    return start_state;
+    std::cout << "body " << active_state_vector.bodiesStates[2].name << " x: " << active_state_vector.bodiesStates[2].startLinearPos[0] << " y: " << active_state_vector.bodiesStates[2].startLinearPos[2] << std::endl;
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {

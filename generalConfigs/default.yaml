@@ -2,16 +2,30 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "walker_run"  # Task to be performed
-# Current implemented tasks are:
-# "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
-# "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
-# "box_push_toppling", "box_flick_no_clutter", "box_flick_low_clutter", "box_flick_moderate_clutter",
-# "walker_walk", "walker_run", "walker_uneven", "hopper", "box_sweep", "3D_pushing", "pentabot" "piston_block"
+task: "pushing_moderate_clutter"  # Task to be performed
+# --------------------  Task list --------------------------------------------
+#
+# ----- Toy tasks -----
+# "acrobot", "piston_block", "pentabot"
+#
+# -- Free robot arm motion ---
+# "reaching"
+#
+# -- Non-prehensile manipulation --
+# "pushing_no_clutter", "pushing_low_clutter", "pushing_moderate_clutter",
+# "pushing_moderate_clutter_constrained",
+# "box_flick_no_clutter", "box_flick_low_clutter", "box_flick_moderate_clutter",
+# "box_sweep", "3D_pushing"
+#
+# ---- Locomotion ----
+# "walker_walk", "walker_run", "walker_uneven"
+#
+# ------------------------------------------------------------------------------
 
+# Optimiser
 optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
-runMode: "MPC_until_completion"
+runMode: "Init_controls"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -22,7 +36,7 @@ runMode: "MPC_until_completion"
 # "Generate_testing_data"   - Loop through all test scenes and evaluate the Optimiser and key-point performance.
 # "Generate_filtering_data" - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 
-taskInitMode: "fromCSV"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
+taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
@@ -30,4 +44,3 @@ costDerivsFD: false       # True or false, for FD computation of cost derivative
 
 minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
-maxHorizon: 4000          # Maximum number of times-steps for optimisation horizon

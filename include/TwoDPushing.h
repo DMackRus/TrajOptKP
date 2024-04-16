@@ -7,8 +7,8 @@ class TwoDPushing: virtual public ModelTranslator, public PushBaseClass{
 public:
     TwoDPushing(int clutterLevel);
 
-//    void ReturnRandomStartState() override;
-//    void ReturnRandomGoalState() override;
+    void ReturnRandomStartState() override;
+    void ReturnRandomGoalState() override;
     std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
     std::vector<MatrixXd> CreateInitSetupControls(int horizonLength) override;
 

@@ -114,88 +114,85 @@ bool pandaReaching::TaskComplete(mjData *d, double &dist){
 //        active_state_vector.robots[0].goalPos[i] = jointGoalPositions[i];
 //    }
 //}
-//
-//MatrixXd pandaReaching::ReturnRandomStartState(){
-//    MatrixXd randomStartState(state_vector_size, 1);
-//
-//    bool validStartState = false;
-//    vector<double> jointPositions;
-//
-//    for(int i = 0; i < 7; i++){
-//        jointPositions.push_back(0.0f);
-//    }
-//
-//    while(!validStartState){
-//        // Generate a random robot configuration
-//        std::string robotName = "panda";
-//        for(int i = 0; i < 7; i++){
-//            double randomJoint = randFloat(jointLimsMin[i], jointLimsMax[i]);
-//            jointPositions[i] = randomJoint;
-//        }
-//
-//        MuJoCo_helper->SetRobotJointPositions(robotName, jointPositions, MuJoCo_helper->main_data);
-//
-//        // Check if current configuration is valid
-//        if(MuJoCo_helper->CheckSystemForCollisions(MuJoCo_helper->main_data)){
-//            cout << "invalid robot position \n";
-//        }
-//        else{
-//            validStartState = true;
-//        }
-//    }
-//
-//    randomStartState << jointPositions[0], jointPositions[1], jointPositions[2], jointPositions[3], jointPositions[4], jointPositions[5], jointPositions[6],
-//                        0, 0, 0, 0, 0, 0, 0;
-//
-//    return randomStartState;
-//}
-//
-//MatrixXd pandaReaching::ReturnRandomGoalState(MatrixXd X0){
-//    MatrixXd randomGoalState(state_vector_size, 1);
-//
-//    double jointOffsets[7] = {0.5, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8};
-//    double jointOffsetNoise[7] = {0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2};
-//
-//    bool validStartState = false;
-//    vector<double> jointPositions;
-//
-//    for(int i = 0; i < 7; i++){
-//        jointPositions.push_back(0.0f);
-//    }
-//
-//    while(!validStartState){
-//        // Generate a random robot configuration
-//        std::string robotName = "panda";
-//        for(int i = 0; i < 7; i++){
-//            double targetJointVal;
-//            if(X0(i) - jointOffsets[i] > jointLimsMin[i]){
-//                targetJointVal = X0(i) - jointOffsets[i];
-//            }
-//            else{
-//                targetJointVal = X0(i) + jointOffsets[i];
-//            }
-//
-//            double randomJoint = randFloat(targetJointVal - jointOffsetNoise[i], targetJointVal + jointOffsetNoise[i]);
-//            jointPositions[i] = randomJoint;
-//        }
-//
-//        MuJoCo_helper->SetRobotJointPositions(robotName, jointPositions, MuJoCo_helper->main_data);
-//
-//        // Check if current configuration is valid
-//        if(MuJoCo_helper->CheckSystemForCollisions(MuJoCo_helper->main_data)){
-//            cout << "invalid robot position \n";
-//        }
-//        else{
-//            validStartState = true;
-//        }
-//
-//    }
-//
-//    randomGoalState << jointPositions[0], jointPositions[1], jointPositions[2], jointPositions[3], jointPositions[4], jointPositions[5], jointPositions[6],
-//            0, 0, 0, 0, 0, 0, 0;
-//
-//    return randomGoalState;
-//}
+
+void pandaReaching::ReturnRandomStartState(){
+    bool valid_start_state = false;
+    vector<double> joint_positions;
+
+    for(int i = 0; i < 7; i++){
+        joint_positions.push_back(0.0f);
+    }
+
+    while(!valid_start_state){
+        // Generate a random robot configuration
+        std::string robotName = "panda";
+        for(int i = 0; i < 7; i++){
+            double random_joint_pos = randFloat(jointLimsMin[i], jointLimsMax[i]);
+            joint_positions[i] = random_joint_pos;
+        }
+
+        MuJoCo_helper->SetRobotJointPositions(robotName, joint_positions, MuJoCo_helper->main_data);
+
+        // Check if current configuration is valid
+        if(MuJoCo_helper->CheckSystemForCollisions(MuJoCo_helper->main_data)){
+            cout << "invalid robot position \n";
+        }
+        else{
+            valid_start_state = true;
+        }
+    }
+
+    for(int i = 0; i < dof; i++){
+        active_state_vector.robots[0].startPos[i] = joint_positions[i];
+    }
+
+}
+
+void pandaReaching::ReturnRandomGoalState(){
+
+    double jointOffsets[7] = {0.5, 0.5, 0.5, 0.5, 0.8, 0.8, 0.8};
+    double jointOffsetNoise[7] = {0.1, 0.1, 0.1, 0.1, 0.2, 0.2, 0.2};
+
+    bool valid_start_state = false;
+    vector<double> joints_positions;
+
+    for(int i = 0; i < 7; i++){
+        joints_positions.push_back(0.0f);
+    }
+
+    while(!valid_start_state){
+        // Generate a random robot configuration
+        std::string robotName = "panda";
+        for(int i = 0; i < 7; i++){
+            double target_joint_val;
+            if(active_state_vector.robots[0].startPos[i] - jointOffsets[i] > jointLimsMin[i]){
+                target_joint_val = active_state_vector.robots[0].startPos[i] - jointOffsets[i];
+            }
+            else{
+                target_joint_val = active_state_vector.robots[0].startPos[i] + jointOffsets[i];
+            }
+
+            double randomJoint = randFloat(target_joint_val - jointOffsetNoise[i], target_joint_val + jointOffsetNoise[i]);
+            joints_positions[i] = randomJoint;
+        }
+
+        MuJoCo_helper->SetRobotJointPositions(robotName, joints_positions, MuJoCo_helper->main_data);
+
+        // Check if current configuration is valid
+        if(MuJoCo_helper->CheckSystemForCollisions(MuJoCo_helper->main_data)){
+            cout << "invalid robot position \n";
+        }
+        else{
+            valid_start_state = true;
+        }
+
+    }
+
+    for(int i = 0; i < dof; i++){
+        active_state_vector.robots[0].goalPos[i] = joints_positions[i];
+        active_state_vector.robots[0].goalVel[i] = 0.0;
+    }
+}
 
 std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;

@@ -7,35 +7,56 @@ BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "bigBox"){
     InitModelTranslator(yamlFilePath);
 }
 
-//MatrixXd BoxSweep::ReturnRandomStartState(){
-//    MatrixXd randomStartState(state_vector_size, 1);
-//
-//    randomStartState << -0.178, 0.7, -0.0593, -1.73, 0, 0.722, -1.6,
-//                        0.65, 0,
-//                        0, 0, 0, 0, 0, 0, 0,
-//                        0, 0;
-//
-//    return randomStartState;
-//}
-//
-//MatrixXd BoxSweep::ReturnRandomGoalState(MatrixXd X0){
-//    MatrixXd randomGoalState(state_vector_size, 1);
-//
-//    float upperBoundX = 0.7;
-//    float lowerBoundX = 0.6;
-//    float upperBoundY = 0.5;
-//    float lowerBoundY = 0.3;
-//
-//    float randX = randFloat(lowerBoundX, upperBoundX);
-//    float randY = randFloat(lowerBoundY, upperBoundY);
-//
-//    randomGoalState << 0, 0, 0, 0, 0, 0, 0,
-//                        randX, randY,
-//                        0, 0, 0, 0, 0, 0, 0,
-//                        0, 0;
-//
-//    return randomGoalState;
-//}
+void BoxSweep::ReturnRandomStartState(){
+    MatrixXd randomStartState(state_vector_size, 1);
+
+    double robot_config[7] = {-0.178, 0.7, -0.0593, -1.73, 0, 0.722, -1.6};
+
+    // Franka Panda starting cofniguration
+    for(int i = 0; i < 7; i++){
+        active_state_vector.robots[0].startPos[i] = robot_config[i];
+    }
+
+    // Large box configuration
+    for(int i = 0; i < 3; i++){
+        active_state_vector.bodiesStates[0].startLinearPos[i] = 0.0;
+        active_state_vector.bodiesStates[0].startAngularPos[i] = 0.0;
+    }
+
+    // Set X position for big box
+    active_state_vector.bodiesStates[0].startLinearPos[0] = 0.65;
+
+    // Set Z position for big box
+    active_state_vector.bodiesStates[0].startLinearPos[2] = 0.16;
+
+}
+
+void BoxSweep::ReturnRandomGoalState(){
+    float upperBoundX = 0.7;
+    float lowerBoundX = 0.6;
+    float upperBoundY = 0.5;
+    float lowerBoundY = 0.3;
+
+    float randX = randFloat(lowerBoundX, upperBoundX);
+    float randY = randFloat(lowerBoundY, upperBoundY);
+
+    // Franka Panda goal configuration is unimportant
+    for(int i = 0; i < 7; i++){
+        active_state_vector.robots[0].goalPos[i] = 0.0;
+        active_state_vector.robots[0].goalVel[i] = 0.0;
+    }
+
+    // Large box configuration
+    for(int i = 0; i < 3; i++){
+        active_state_vector.bodiesStates[0].goalLinearPos[i] = 0.0;
+        active_state_vector.bodiesStates[0].goalAngularPos[i] = 0.0;
+    }
+
+    // Set goal location for big box
+    active_state_vector.bodiesStates[0].goalLinearPos[0] = randX;
+    active_state_vector.bodiesStates[0].goalLinearPos[1] = randY;
+
+}
 
 std::vector<MatrixXd> BoxSweep::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;

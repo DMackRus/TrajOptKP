@@ -5,7 +5,23 @@ Pentabot::Pentabot(): ModelTranslator(){
     InitModelTranslator(yamlFilePath);
 }
 
-// TODO fix
+void Pentabot::ReturnRandomStartState(){
+    active_state_vector.robots[0].startPos[0] = 3.1415;
+    active_state_vector.robots[0].startPos[1] = randFloat(-0.1, 0.1);
+    active_state_vector.robots[0].startPos[2] = randFloat(-0.2, 0.2);
+    active_state_vector.robots[0].startPos[3] = randFloat(-0.1, 0.1);
+    active_state_vector.robots[0].startPos[4] = randFloat(-0.4, 0.4);
+}
+
+void Pentabot::ReturnRandomGoalState(){
+
+    for(int i = 0; i < dof; i++){
+        active_state_vector.robots[0].goalPos[i] = 0.0;
+        active_state_vector.robots[0].goalVel[i] = 0.0;
+    }
+}
+
+// TODO - fix
 bool Pentabot::TaskComplete(mjData *d, double &dist){
     dist = 0.0;
 

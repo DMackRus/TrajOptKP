@@ -133,8 +133,6 @@ int main(int argc, char **argv) {
     }
 
     startStateVector.resize(activeModelTranslator->state_vector_size, 1);
-//    std::cout << "X start: " << activeModelTranslator->X_start << "\n";
-//    startStateVector = activeModelTranslator->X_start;
 
     // random start and goal state
     std::string taskPrefix = activeModelTranslator->model_name;
@@ -145,16 +143,14 @@ int main(int argc, char **argv) {
         yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->active_state_vector);
     }
 
-    startStateVector = activeModelTranslator->StartStateVector();
-
-    cout << "start state " << startStateVector << endl;
+    // Initialise the system state from desired mechanism
+    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
-    activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
     for(int j = 0; j < 5; j++){
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
     }
-    std::cout << "time: " << activeModelTranslator->MuJoCo_helper->master_reset_data->time << std::endl;
     activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     //Instantiate my visualiser
@@ -220,9 +216,9 @@ int main(int argc, char **argv) {
 void generateTestScenes(){
     for(int i = 0; i < 200; i++){
         activeModelTranslator->GenerateRandomGoalAndStartState();
-        MatrixXd start_state = activeModelTranslator->StartStateVector();
-        activeModelTranslator->SetStateVector(start_state, activeModelTranslator->MuJoCo_helper->main_data);
-        activeVisualiser->render("init state");
+        activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->vis_data);
+        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+        activeVisualiser->render("Generating random test scenes");
         yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->active_state_vector);
     }
 }
