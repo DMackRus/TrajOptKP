@@ -40,8 +40,8 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
     }
 
     // MPC horizon
-    if(node["MPC_horizon"]){
-        _taskConfig.mpc_horizon = node["MPC_horizon"].as<int>();
+    if(node["mpc_horizon"]){
+        _taskConfig.mpc_horizon = node["mpc_horizon"].as<int>();
     }
     else{
         _taskConfig.mpc_horizon = 100;

@@ -7,19 +7,20 @@ Acrobot::Acrobot(): ModelTranslator(){
 
 // TODO fix
 bool Acrobot::TaskComplete(mjData *d, double &dist){
-    double diff = 0.0f;
 
-    MatrixXd Xt = ReturnStateVector(d);
+    dist = 0.0;
+    std::vector<double> acrobot_joints;
+    MuJoCo_helper->GetRobotJointsPositions("acrobot", acrobot_joints, d);
 
     for(int i = 0; i < dof; i++){
-//        diff += abs(X_desired(i) - Xt(i));
+        std::cout << "joint pos " << acrobot_joints[i] << "\n";
+        dist += abs(active_state_vector.robots[0].goalPos[i] - acrobot_joints[i]);
     }
 
-    dist = diff;
-
-    if(diff < 0.01){
+    if(dist < 0.01){
         return true;
     }
+
     return false;
 }
 

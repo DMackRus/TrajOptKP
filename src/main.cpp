@@ -54,18 +54,10 @@ void optimiseOnceandShow(int opt_horizon);
 void MPCUntilComplete(double &trajecCost, double &avgHz, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON);
 
-void generateTestScenes();
-
-void generateTestingData_MPC();
-int generateTestingData_MPCHorizons();
-int generateTestingData_MPC_asynchronous();
-void generateTestingData();
-void generateFilteringData();
-
-void genericTesting();
-
 void async_MPC_testing();
 void worker();
+
+void generateTestScenes();
 
 double avg_opt_time, avg_percent_derivs, avg_time_derivs, avg_time_bp, avg_time_fp;
 
@@ -343,6 +335,7 @@ void async_MPC_testing(){
 
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     // Whether Optimiser will output useful information
     activeOptimiser->verbose_output = true;
@@ -451,7 +444,7 @@ void async_MPC_testing(){
 // Optimiser settings. This function can then return necessary testing data for us to store
 void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
-    bool taskComplete = false;
+
     int visualCounter = 0;
     int overallTaskCounter = 0;
     int reInitialiseCounter = 0;
@@ -469,24 +462,16 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     // Instantiate init controls
     std::vector<MatrixXd> initOptimisationControls;
 
-    int horizon = OPT_HORIZON;
-
-    initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(horizon);
+    initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(OPT_HORIZON);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, 1, 1, OPT_HORIZON);
 
     MatrixXd currState;
     activeOptimiser->verbose_output = true;
 
-    while(!taskComplete){
-
-        if(stopMPC){
-            taskComplete = true;
-            break;
-        }
+    while(!stopMPC){
 
         if(!ASYNC_MPC){
 //            currState = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->main_data);
@@ -590,7 +575,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
             if(overallTaskCounter >= MAX_TASK_TIME){
                 cout << "task time out" << endl;
-                taskComplete = true;
+                stopMPC = true;
             }
         }
     }

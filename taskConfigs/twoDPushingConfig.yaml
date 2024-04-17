@@ -2,7 +2,7 @@ modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml"
 modelName: "/push_nCl"
 timeStep: 0.01
 openloop_horizon: 1000
-mpc_horizon: 100
+mpc_horizon: 50
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1

@@ -2,7 +2,7 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "piston_block"  # Task to be performed
+task: "pushing_no_clutter"  # Task to be performed
 # --------------------  Task list --------------------------------------------
 #
 # ----- Toy tasks -----
@@ -25,7 +25,7 @@ task: "piston_block"  # Task to be performed
 # Optimiser
 optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
-runMode: "Generate_dynamics_data"
+runMode: "MPC_until_completion"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
