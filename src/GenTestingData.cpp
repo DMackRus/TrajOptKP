@@ -160,9 +160,6 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         }
     }
 
-    // start timer here
-    auto startTime = std::chrono::high_resolution_clock::now();
-
     // ------------------------- data storage -------------------------------------
 //    std::vector<std::vector<double>> finalCosts;
     std::vector<double> finalCostsRow;
@@ -203,23 +200,13 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
     for (int i = 0; i < num_trials; i++) {
         iLQROptimiser->keypoint_generator->ResetCache();
         // Load start and desired state from csv file
-        MatrixXd X_start(activeModelTranslator->state_vector_size, 1);
+
         yamlReader->loadTaskFromFile(task_prefix, i, activeModelTranslator->active_state_vector);
-        // TODO - fix!!!
-//        activeModelTranslator->X_start = X_start;
+        activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
         // Reset the time of simulation in all data?
         activeModelTranslator->MuJoCo_helper->master_reset_data->time = 0.0f;
-        activeModelTranslator->MuJoCo_helper->vis_data->time = 0.0f;
-        activeModelTranslator->MuJoCo_helper->main_data->time = 0.0f;
-        for(auto & j : activeModelTranslator->MuJoCo_helper->fd_data){
-            j->time = 0.0f;
-        }
-        for(auto & j : activeModelTranslator->MuJoCo_helper->saved_systems_state_list) {
-            j->time = 0.0f;
-        }
 
-        activeModelTranslator->SetStateVector(X_start, activeModelTranslator->MuJoCo_helper->master_reset_data);
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
@@ -415,14 +402,12 @@ void GenTestingData::asynchronus_optimiser_worker(std::string method_directory, 
     // Instantiate init controls
     std::vector<MatrixXd> initOptimisationControls;
 
-    int horizon = 150;
-
-    initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(horizon);
+    initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(task_horizon);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-    optimisedControls = iLQROptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, 1, 1, horizon);
+    optimisedControls = iLQROptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, 1, 1, task_horizon);
 
     MatrixXd currState;
 
@@ -445,7 +430,8 @@ void GenTestingData::asynchronus_optimiser_worker(std::string method_directory, 
             optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
         }
 
-        optimisedControls = iLQROptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], optimisedControls, 1, 1, horizon);
+        optimisedControls = iLQROptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                    optimisedControls, 1, 1, task_horizon);
 
         // Saved statistical measures
         timeOpt.push_back(iLQROptimiser->opt_time_ms);
@@ -542,18 +528,64 @@ void GenTestingData::asynchronus_optimiser_worker(std::string method_directory, 
 
 }
 
-void GenTestingData::GenerateDynamicsDerivsData(int num_trajecs){
+int GenTestingData::GenerateDynamicsDerivsData(int num_trajecs, int num_iters_per_task){
+    std::cout << "generate dynamics derivs in loop \n";
 
     int count = 0;
-    while(count < num_trajecs){
-        // Load a task from csv
+    int file_num = 0;
+    std::string task_name = activeModelTranslator->model_name;
 
-        // Initialise system
+    int optimisation_horizon = activeModelTranslator->openloop_horizon;
+
+    while(count < num_trajecs){
+
+        // Initialise system for task
+        yamlReader->loadTaskFromFile(task_name, file_num, activeModelTranslator->active_state_vector);
+        activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+        if(!activeModelTranslator->MuJoCo_helper->CheckIfDataIndexExists(0)){
+            activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
+        }
+
+        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+        // Create initial optimisation controls
+        std::vector<MatrixXd> initOptimisationControls;
+        std::vector<MatrixXd> optimised_controls;
+
+        initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(optimisation_horizon);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+        optimised_controls = iLQROptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, 1, 1, optimisation_horizon);
 
         // Loop n times
+        for(int i = 0; i < num_iters_per_task; i++){
 
-        // Perform iLQR iteration
+            // Save Data (A, B, X, U)
+            yamlReader->saveTrajecInfomation(iLQROptimiser->A, iLQROptimiser->B,
+                                             iLQROptimiser->X_old, iLQROptimiser->U_old,
+                                             task_name, count, optimisation_horizon);
 
-        // Save data (A, B, X, U)
+            count++;
+
+            optimised_controls = iLQROptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                         optimised_controls, 1, 1, optimisation_horizon);
+
+            std::cout << "optim iteration done " << count << " done \n";
+
+        }
+
+        file_num++;
     }
+
+    return 1;
 }

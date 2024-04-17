@@ -1,5 +1,5 @@
 modelFile: "/mujoco_models/Piston_block/piston_block.xml"
-modelName: "piston_block"
+modelName: "/piston_block"
 timeStep: 0.005
 openloop_horizon: 2000
 mpc_horizon: 100

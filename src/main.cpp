@@ -132,6 +132,13 @@ int main(int argc, char **argv) {
 
     }
 
+    if(runMode == "Generate_dynamics_data"){
+        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        return myTestingObject.GenerateDynamicsDerivsData(100, 4);
+    }
+
     startStateVector.resize(activeModelTranslator->state_vector_size, 1);
 
     // random start and goal state
@@ -329,7 +336,7 @@ void optimiseOnceandShow(int opt_horizon){
 
 void worker(){
     double trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
-    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, 150);
+    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, activeModelTranslator->MPC_horizon);
 }
 
 void async_MPC_testing(){

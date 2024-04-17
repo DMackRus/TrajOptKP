@@ -208,11 +208,6 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         time_get_derivs_ms.push_back(linDuration.count() / 1000.0f);
         timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 
-        if(save_trajec_information){
-            activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old,
-                                                   activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
-        }
-
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
         bool validBackwardsPass = false;
         bool lambdaExit = false;
@@ -398,11 +393,6 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     for(int i = 0; i < horizonLength; i++){
         optimisedControls[i] = U_old[i];
-    }
-
-    if(save_trajec_information){
-        activeYamlReader->saveTrajecInfomation(A, B, X_old, U_old,
-                                               activeModelTranslator->model_name, activeYamlReader->csvRow, horizonLength);
     }
 
     return optimisedControls;

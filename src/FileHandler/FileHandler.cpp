@@ -1,7 +1,3 @@
-//
-// Created by dave on 3/30/23.
-//
-
 #include "FileHandler.h"
 
 FileHandler::FileHandler(){
@@ -322,9 +318,16 @@ void FileHandler::readSettingsFile(std::string settingsFilePath){
 
 void FileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength){
     std::string rootPath = projectParentPath + "/savedTrajecInfo" + filePrefix + "/" + std::to_string(trajecNumber);
-    mkdir(rootPath.c_str(), 0777);
+
+    if (!filesystem::exists(rootPath)) {
+        if (!filesystem::create_directories(rootPath)) {
+            std::cerr << "Failed to create directory: " << rootPath << std::endl;
+            exit(1);
+        }
+    }
+
     std::string filename = rootPath + "/A_matrices.csv";
-    cout << "filename: " << filename << endl;
+
     fileOutput.open(filename);
     int dof = A_matrices[0].rows() / 2;
     int num_ctrl = B_matrices[0].cols();
@@ -332,10 +335,10 @@ void FileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     // trajectory length
     for(int i = 0; i < horizonLength - 1; i++){
         // Row
-        for(int j = 0; j < (dof); j++){
+        for(int j = 0; j < (2 * dof); j++){
             // Column
             for(int k = 0; k < (2 * dof); k++){
-                fileOutput << A_matrices[i](j + dof, k) << ",";
+                fileOutput << A_matrices[i](j, k) << ",";
             }
 
         }
@@ -347,9 +350,9 @@ void FileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
     fileOutput.open(filename);
 
     for(int i = 0; i < horizonLength - 1; i++){
-        for(int j = 0; j < (dof); j++){
+        for(int j = 0; j < (2 * dof); j++){
             for(int k = 0; k < num_ctrl; k++){
-                fileOutput << B_matrices[i](j + dof, k) << ",";
+                fileOutput << B_matrices[i](j, k) << ",";
             }
         }
         fileOutput << endl;
@@ -386,6 +389,7 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
 
     std::string rootPath = projectParentPath + "/testTasks/" + taskPrefix;
     mkdir(rootPath.c_str(), 0777);
+
     std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
     fileOutput.open(filename);
 

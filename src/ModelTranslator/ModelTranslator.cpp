@@ -1211,7 +1211,6 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
         MuJoCo_helper->SetBodyVelocity(bodiesState.name, body_vel, d);
     }
 
-    std::cout << "body " << active_state_vector.bodiesStates[2].name << " x: " << active_state_vector.bodiesStates[2].startLinearPos[0] << " y: " << active_state_vector.bodiesStates[2].startLinearPos[2] << std::endl;
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {
