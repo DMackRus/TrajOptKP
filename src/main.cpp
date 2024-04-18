@@ -44,24 +44,22 @@ std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
 
 std::string task;
-bool mpcVisualise = true;
+bool mpc_visualise = true;
 bool playback = true;
 
 int assign_task();
 
-void showInitControls();
-void optimiseOnceandShow(int opt_horizon);
+void InitControls();
+void OpenLoopOptimisation(int opt_horizon);
 void MPCUntilComplete(double &trajecCost, double &avgHz, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
                       int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON);
 
-void async_MPC_testing();
+void AsyncMPC();
 void worker();
-
-void generateTestScenes();
 
 double avg_opt_time, avg_percent_derivs, avg_time_derivs, avg_time_bp, avg_time_fp;
 
-bool stopMPC = false;
+bool stop_mpc = false;
 
 int main(int argc, char **argv) {
 
@@ -105,6 +103,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
+    // ---------- General Testing data run modes ---------
     if(runMode == "Generate_testing_data"){
         GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
@@ -129,6 +128,21 @@ int main(int argc, char **argv) {
                                        activeDifferentiator, activeVisualiser, yamlReader);
 
         return myTestingObject.GenerateDynamicsDerivsData(100, 4);
+    }
+
+    if(runMode == "Generate_test_scenes"){
+        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        return myTestingObject.GenerateTestScenes(100);
+    }
+
+    if(runMode == "Generate_openloop_data"){
+
+    }
+
+    if(runMode == "Generate_asynchronus_mpc_data"){
+
     }
 
     startStateVector.resize(activeModelTranslator->state_vector_size, 1);
@@ -177,30 +191,33 @@ int main(int argc, char **argv) {
     // Methods of control / visualisation
     if(runMode == "Init_controls"){
         cout << "SHOWING INIT CONTROLS MODE \n";
-        showInitControls();
+        InitControls();
     }
     else if(runMode == "Optimise_once"){
         cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
         activeOptimiser->verbose_output = true;
-        optimiseOnceandShow(activeModelTranslator->openloop_horizon);
+        OpenLoopOptimisation(activeModelTranslator->openloop_horizon);
     }
     else if(runMode == "MPC_until_completion"){
         cout << "MPC UNTIL TASK COMPLETE MODE \n";
-        async_MPC_testing();
+        AsyncMPC();
     }
-    else if(runMode == "Generate_test_scenes"){
-        cout << "TASK INIT MODE \n";
-        generateTestScenes();
-    }
-//    else if(runMode == "GENERATE_FILTERING_DATA"){
-//        cout << "GENERATE FILTERING DATA MODE \n";
-//        generateFilteringData();
-//    }
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
 
-        //
+        // Set a pose of the object in mid air for clarity
+        pose_6 object;
+        object.position[0] = 0.8;
+        object.position[1] = 0.0;
+        object.position[2] = 0.5;
+
+        object.orientation[0] = 0.0;
+        object.orientation[1] = 0.0;
+        object.orientation[2] = 0.0;
+
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->SetBodyPoseAngle("goal", object, activeModelTranslator->MuJoCo_helper->vis_data);
+
         while(activeVisualiser->windowOpen()){
             activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             activeVisualiser->render("Test");
@@ -212,17 +229,7 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void generateTestScenes(){
-    for(int i = 0; i < 200; i++){
-        activeModelTranslator->GenerateRandomGoalAndStartState();
-        activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->vis_data);
-        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
-        activeVisualiser->render("Generating random test scenes");
-        yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->active_state_vector);
-    }
-}
-
-void showInitControls(){
+void InitControls(){
     int setupHorizon = 1000;
     int optHorizon = 2500;
     int controlCounter = 0;
@@ -261,7 +268,7 @@ void showInitControls(){
     }
 }
 
-void optimiseOnceandShow(int opt_horizon){
+void OpenLoopOptimisation(int opt_horizon){
     int controlCounter = 0;
     int visualCounter = 0;
     bool showFinalControls = true;
@@ -331,7 +338,7 @@ void worker(){
     MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, activeModelTranslator->MPC_horizon);
 }
 
-void async_MPC_testing(){
+void AsyncMPC(){
 
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
@@ -340,7 +347,7 @@ void async_MPC_testing(){
     // Whether Optimiser will output useful information
     activeOptimiser->verbose_output = true;
     // Visualise MPC trajectory live
-    mpcVisualise = true;
+    mpc_visualise = true;
 
     if(ASYNC_MPC){
         std::thread MPC_controls_thread;
@@ -409,7 +416,7 @@ void async_MPC_testing(){
 
         std::mutex mtx;
         mtx.lock();
-        stopMPC = true;
+        stop_mpc = true;
         mtx.unlock();
         MPC_controls_thread.join();
 
@@ -471,7 +478,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
     MatrixXd currState;
     activeOptimiser->verbose_output = true;
 
-    while(!stopMPC){
+    while(!stop_mpc){
 
         if(!ASYNC_MPC){
 //            currState = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->main_data);
@@ -515,7 +522,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
         }
 
         if(!ASYNC_MPC){
-            if(mpcVisualise){
+            if(mpc_visualise){
                 if(visualCounter > 10){
 //                    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
 //                    activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
@@ -575,7 +582,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
             if(overallTaskCounter >= MAX_TASK_TIME){
                 cout << "task time out" << endl;
-                stopMPC = true;
+                stop_mpc = true;
             }
         }
     }

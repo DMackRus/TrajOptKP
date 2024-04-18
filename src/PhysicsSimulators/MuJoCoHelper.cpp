@@ -286,7 +286,8 @@ void MuJoCoHelper::SetBodyPoseAngle(const string& body_name, pose_6 pose, mjData
     const int joint_index = model->body_jntadr[body_id];
     const int qpos_index = model->jnt_qposadr[joint_index];
 
-    m_quat q = eul2Quat(pose.orientation);
+//    m_quat q = eul2Quat(pose.orientation);
+    m_quat q = axis2Quat(pose.orientation);
 
     for(int i = 0; i < 3; i++){
         d->qpos[qpos_index + i] = pose.position(i);
@@ -340,10 +341,12 @@ void MuJoCoHelper::GetBodyPoseAngle(const string& body_name, pose_6 &pose, mjDat
         quat(i) = d->qpos[qpos_index + 3 + i];
     }
 
-    m_point euler = quat2Eul(quat);
+//    m_point euler = quat2Eul(quat);
+    m_point axis_angle = quat2Axis(quat);
 
     for(int i = 0; i < 3; i++){
-        pose.orientation(i) = euler(i);
+//        pose.orientation(i) = euler(i);
+        pose.orientation(i) = axis_angle(i);
     }
 }
 

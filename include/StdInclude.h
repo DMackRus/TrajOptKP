@@ -87,6 +87,7 @@ float randFloat(float floor, float ceiling);
 m_quat eul2Quat(m_point eulerAngles);
 m_point quat2Eul(m_quat quaternion);
 m_point quat2Axis(m_quat quaternion);
+m_quat axis2Quat(m_point axisAngles);
 Eigen::Matrix3d eul2RotMat(m_point euler);
 m_quat rotMat2Quat(Eigen::Matrix3d rotMat);
 m_quat invQuat(m_quat quat);

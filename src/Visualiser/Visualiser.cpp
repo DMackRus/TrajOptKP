@@ -125,39 +125,22 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
 
     }
 
-    MuJoCo_helper->SetBodyPoseAngle("goal", body, MuJoCo_helper->vis_data);
-    MuJoCo_helper->SetBodyPoseAngle("display_goal", goal, MuJoCo_helper->vis_data);
-
-    std::cout << "body orientation " << body.orientation(0) << " " << body.orientation(1) << " " << body.orientation(2) << "\n";
-    double cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
-    std::cout << "cost: " << cost << std::endl;
-
-    MatrixXd l_x, l_u, l_xx, l_uu;
-    activeModelTranslator->CostDerivatives(MuJoCo_helper->vis_data, l_x, l_xx, l_u, l_uu, false);
-
-    MatrixXd l_x_fd(activeModelTranslator->state_vector_size, 1);
-    l_x_fd.setZero();
-
-    //test rotations difference with f.d
-    int rot_index = 10;
-    double eps = 1e-5;
-    for(int i = 0; i < 3; i++){
-        cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
-
-        body.orientation[i] += eps;
+    if(act == GLFW_PRESS){
         MuJoCo_helper->SetBodyPoseAngle("goal", body, MuJoCo_helper->vis_data);
+        MuJoCo_helper->SetBodyPoseAngle("display_goal", goal, MuJoCo_helper->vis_data);
 
-        double cost_inc = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
+        std::cout << "body orientation " << body.orientation(0) << " " << body.orientation(1) << " " << body.orientation(2) << "\n";
+        double cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
+        std::cout << "cost: " << cost << std::endl;
 
-        l_x_fd(rot_index + i) = (cost_inc - cost) / eps;
+        MatrixXd l_x, l_u, l_xx, l_uu;
+//    activeModelTranslator->CostDerivatives(MuJoCo_helper->vis_data, l_x, l_xx, l_u, l_uu, false);
 
-        body.orientation[i] -= eps;
+        //test rotations difference with f.d
+        int rot_index = 10;
+
+//        std::cout << "l_x from cost derivs: \n" << l_x.block(rot_index, 0, 3, 1).transpose() << std::endl;
     }
-
-    MuJoCo_helper->SetBodyPoseAngle("goal", body, MuJoCo_helper->vis_data);
-
-    std::cout << "l_x from cost derivs: \n" << l_x.block(rot_index, 0, 3, 1).transpose() << std::endl;
-    std::cout << "l_x from finite diff: \n" << l_x_fd.block(rot_index, 0, 3, 1).transpose() << std::endl;
 
 }
 // -----------------------------------------------------------------------------------------------------

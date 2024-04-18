@@ -85,6 +85,26 @@ m_point quat2Axis(m_quat quaternion){
     return axisAngles;
 }
 
+m_quat axis2Quat(m_point axisAngles){
+    m_quat quat;
+
+    // Quat order is w, x, y, z
+
+    double angle = sqrt(axisAngles(0) * axisAngles(0) +
+                        axisAngles(1) * axisAngles(1) +
+                        axisAngles(2) * axisAngles(2));
+
+    double halfAngle = angle * 0.5;
+
+    double sinHalfAngle = sin(halfAngle);
+    quat(0) = cos(halfAngle);
+    quat(1) = axisAngles(0) * sinHalfAngle;
+    quat(2) = axisAngles(1) * sinHalfAngle;
+    quat(3) = axisAngles(2) * sinHalfAngle;
+
+    return quat;
+}
+
 Eigen::Matrix3d eul2RotMat(m_point euler){
     Eigen::Matrix3d rot_mat;
 

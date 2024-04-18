@@ -2,8 +2,9 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "pushing_no_clutter"  # Task to be performed
-# --------------------  Task list --------------------------------------------
+# Task to be performed
+task: "pushing_no_clutter"
+# -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
 # "acrobot", "piston_block", "pentabot"
@@ -23,19 +24,22 @@ task: "pushing_no_clutter"  # Task to be performed
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
+optimiser: "-"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
 
-runMode: "MPC_until_completion"
+# Run mode for the program
+runMode: "Optimise_once"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
 # "MPC_until_completion"    - Perform MPC until the task is completed. Display current state of the system.
 
 # Extra testing modes for debugging/generating testing data
-# "Generate_test_scenes"    - Generate a set of randomly generated test scenes for the task.
-# "Generate_testing_data"   - Loop through all test scenes and evaluate the Optimiser and key-point performance.
-# "Generate_filtering_data" - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
-# "Generate_dynamics_data"  - Loop thorugh 100 CSV files and generate A, B, X, U data over a horizon and save to file.
+# "Generate_test_scenes"          - Generate a set of randomly generated test scenes for the task.
+# "Generate_testing_data"         - Loop through all test scenes and evaluate the Optimiser and key-point performance.
+# "Generate_openloop_data"        -
+# "Generate_asynchronus_mpc_data" -
+# "Generate_filtering_data"       - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
+# "Generate_dynamics_data"        - Loop thorugh 100 CSV files and generate A, B, X, U data over a horizon and save to file.
 
 taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)

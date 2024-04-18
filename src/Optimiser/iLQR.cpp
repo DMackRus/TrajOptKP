@@ -202,7 +202,9 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         auto derivsstart = high_resolution_clock::now();
         if(costReducedLastIter){
             GenerateDerivatives();
-//            std::cout << "A[1]" << A[1] << "\n";
+//            std::cout << "A[1] \n" << A[1] << "\n";
+//            std::cout << "l_x[1] \n" << l_x[1] << "\n";
+//            std::cout << "l_xx[1] \n" << l_xx[1] << "\n";
         }
         auto derivsstop = high_resolution_clock::now();
         auto linDuration = duration_cast<microseconds>(derivsstop - derivsstart);
@@ -216,6 +218,14 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         auto bp_start = high_resolution_clock::now();
         while(!validBackwardsPass){
             validBackwardsPass = BackwardsPassQuuRegularisation();
+
+            // TODO - temporary code
+//            for(int p = 0; p < horizon_length; p++){
+//                K[p].block(0, 10, num_ctrl, 3).setZero();
+//                K[p].block(0, 10 + dof, num_ctrl, 3).setZero();
+//            }
+
+//            std::cout << "K[1] \n" << K[1] << std::endl;
 
             if(!validBackwardsPass){
                 if(lambda < max_lambda){
@@ -469,22 +479,22 @@ bool iLQR::BackwardsPassQuuRegularisation(){
         delta_J += (k[t].transpose() * Q_u)(0);
         delta_J += (k[t].transpose() * Q_uu * k[t])(0);
 
-        // if(t > horizonLength - 5){
-        //     cout << "------------------ iteration " << t << " ------------------" << endl;
-        //     cout << "l_x " << l_x[t] << endl;
-        //     cout << "l_xx " << l_xx[t] << endl;
-        //     cout << "l_u " << l_u[t] << endl;
-        //     cout << "l_uu " << l_uu[t] << endl;
-        //     cout << "Q_ux " << Q_ux << endl;
-        //     cout << "f_u[t] " << f_u[t] << endl;
-        //     cout << "Q_uu " << Q_uu << endl;
-        //     cout << "Q_uu_inv " << Q_uu_inv << endl;
-        //     cout << "Q_x " << Q_x << endl;
-        //     cout << "Q_xx " << Q_xx << endl;
-        //     cout << "V_xx " << V_xx << endl;
-        //     cout << "V_x " << V_x << endl;
-        //     cout << "K[t] " << K[t] << endl;
-        // }
+//         cout << "------------------ iteration " << t << " ------------------" << endl;
+//         cout << "l_x " << l_x[t] << endl;
+//         cout << "l_xx " << l_xx[t] << endl;
+//         cout << "l_u " << l_u[t] << endl;
+//         cout << "l_uu " << l_uu[t] << endl;
+//         cout << "Q_ux " << Q_ux << endl;
+//         cout << "f_u[t] " << f_u[t] << endl;
+//         cout << "Q_uu " << Q_uu << endl;
+//         cout << "Q_uu_inv " << Q_uu_inv << endl;
+//         cout << "Q_x " << Q_x << endl;
+//         cout << "Q_xx " << Q_xx << endl;
+//         cout << "V_xx " << V_xx << endl;
+//         cout << "V_x " << V_x << endl;
+//         cout << "K[t] " << K[t] << endl;
+
+//        cout << "----- K[t] ----- \n " << K[t] << endl;
     }
     return true;
 }

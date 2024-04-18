@@ -80,6 +80,8 @@ public:
 
     int GenerateDynamicsDerivsData(int num_trajecs, int num_iters_per_task);
 
+    int GenerateTestScenes(int num_scenes);
+
 
     std::shared_ptr<iLQR> iLQROptimiser;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
