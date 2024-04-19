@@ -31,10 +31,10 @@ bodies:
     goalAngularPos: [ 0, 0, 0 ]
     linearPosCost: [0, 0, 0]
     # When iLQR once
-    terminalLinearPosCost: [1000, 1000, 0]
+    terminalLinearPosCost: [100, 100, 0]
     linearVelCost: [0.1, 0.1, 0]
     terminalLinearVelCost: [0, 0, 0]
-    angularPosCost: [0, 0, 0]
+    angularPosCost: [1, 1, 0]
     terminalAngularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]

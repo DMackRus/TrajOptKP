@@ -1,6 +1,6 @@
 #include "BoxSweep.h"
 
-BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "bigBox"){
+BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "goal"){
 
     std::string yamlFilePath = "/taskConfigs/boxSweep.yaml";
 
@@ -72,11 +72,20 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
 
     // Set the goal position so that we can see where we are pushing to
     std::string goalMarkerName = "display_goal";
-    pose_6 display_goal_pose;
+    pose_7 display_goal_pose;
     display_goal_pose.position[0] = active_state_vector.bodiesStates[0].goalLinearPos[0];
     display_goal_pose.position[1] = active_state_vector.bodiesStates[0].goalLinearPos[1];
     display_goal_pose.position[2] = 0.0f;
-    MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, display_goal_pose, MuJoCo_helper->master_reset_data);
+
+    m_point desired_eul = {active_state_vector.bodiesStates[0].goalAngularPos[0],
+                           active_state_vector.bodiesStates[0].goalAngularPos[1],
+                           active_state_vector.bodiesStates[0].goalAngularPos[2]};
+
+    std::cout << "deisred eul " << desired_eul << "\n";
+
+    display_goal_pose.quat = eul2Quat(desired_eul);
+
+    MuJoCo_helper->SetBodyPoseQuat(goalMarkerName, display_goal_pose, MuJoCo_helper->master_reset_data);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through

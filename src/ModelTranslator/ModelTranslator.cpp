@@ -154,12 +154,6 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
                 Q.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.angularVelCost[j];
                 Q_terminal.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.terminalAngularVelCost[j];
 
-//                X_desired(Q_index + activeDofCounter, 0) = bodiesState.goalAngularPos[j];
-//                X_desired(Q_index + activeDofCounter + dof, 0) = 0.0f;
-
-//                X_start(Q_index + activeDofCounter, 0) = bodiesState.startAngularPos[j];
-//                X_start(Q_index + activeDofCounter + dof, 0) = 0.0f;
-
                 activeDofCounter++;
             }
         }
@@ -350,12 +344,6 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
                 Q.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.angularVelCost[j];
                 Q_terminal.diagonal()[Q_index + activeDofCounter + dof] = bodiesState.terminalAngularVelCost[j];
 
-//                X_desired(Q_index + j, 0) = bodiesState.goalAngularPos[j];
-//                X_desired(Q_index + j + dof, 0) = 0.0f;
-
-//                X_start(Q_index + j, 0) = bodiesState.startAngularPos[j];
-//                X_start(Q_index + j + dof, 0) = 0.0f;
-
                 activeDofCounter++;
             }
         }
@@ -486,16 +474,16 @@ double ModelTranslator::CostFunctionBody(const bodyStateVec body, mjData *d, boo
 ////        std::cout << "rot mat: \n" << current_rot_mat << "\n";
 //
 //    // Convert desired orientation to rotation matrix
-    m_point desired_eul;
-    desired_eul(0) = body.goalAngularPos[0];
-    desired_eul(1) = body.goalAngularPos[1];
-    desired_eul(2) = body.goalAngularPos[2];
+    m_point desired_axis;
+    desired_axis(0) = body.goalAngularPos[0];
+    desired_axis(1) = body.goalAngularPos[1];
+    desired_axis(2) = body.goalAngularPos[2];
 //    Eigen::Matrix3d desired_rot_mat = eul2RotMat(desired_eul);
 //    std::cout << "desired eul: " << desired_eul << "\n";
 
     m_quat current, desired, inv_current, diff;
-    current = eul2Quat(body_pose.orientation);
-    desired = eul2Quat(desired_eul);
+    current = axis2Quat(body_pose.orientation);
+    desired = axis2Quat(desired_axis);
 //    std::cout << "current: " << current << "\n";
 //    std::cout << "desired: " << desired << "\n";
     inv_current = invQuat(current);
@@ -503,7 +491,7 @@ double ModelTranslator::CostFunctionBody(const bodyStateVec body, mjData *d, boo
 
     // temp mujoco quat2vel methodology?
     double axis[3] = {diff[1], diff[2], diff[3]};
-    double sin_a_2 = sqrt(pow(axis[0], 2) + pow(axis[1], 2) + pow(axis[2], 2));
+    double sin_a_2 = sin(sqrt(pow(axis[0], 2) + pow(axis[1], 2) + pow(axis[2], 2)));
     double speed = 2 * atan2(sin_a_2, diff[0]);
 
     // When axis angle > pi rot is in other direction
@@ -690,31 +678,6 @@ void ModelTranslator::CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, 
                 Q_index++;
             }
         }
-
-//        for(int j = 0; j < 3; j++) {
-//            if (body.activeAngularDOF[j]) {
-//
-//                if (terminal) {
-//                    // Position cost derivatives
-//                    l_x(Q_index) = 2 * body.terminalAngularPosCost[j] * (body_pose.orientation[j] - body.goalAngularPos[j]);
-//                    l_xx(Q_index, Q_index) = 2 * body.terminalAngularPosCost[j];
-//
-//                    // Velocity cost derivatives
-//                    l_x(Q_index + dof) = 2 * body.terminalAngularVelCost[j] * (body_vel.orientation[j]);
-//                    l_xx(Q_index + dof, Q_index + dof) = 2 * body.terminalAngularVelCost[j];
-//                } else {
-//                    // Position cost derivatives
-//                    l_x(Q_index) = 2 * body.angularPosCost[j] * (body_pose.orientation[j] - body.goalAngularPos[j]);
-//                    l_xx(Q_index, Q_index) = 2 * body.angularPosCost[j];
-//
-//                    // Velocity cost derivatives
-//                    l_x(Q_index + dof) = 2 * body.angularVelCost[j] * (body_vel.orientation[j]);
-//                    l_xx(Q_index + dof, Q_index + dof) = 2 * body.angularVelCost[j];
-//                }
-//
-//                Q_index++;
-//            }
-//        }
 
         // TODO - if cost is 0,  we should also probbaly skip computation
         // If no angular dofs active for this body, skip!

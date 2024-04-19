@@ -36,11 +36,17 @@ void Visualiser::keyboardCallbackWrapper(GLFWwindow* window, int key, int scanco
 
 void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, int mods){
     // backspace: reset simulation
-    pose_6 body;
-    pose_6 goal;
-    MuJoCo_helper->GetBodyPoseAngle("goal", body, MuJoCo_helper->vis_data);
-    MuJoCo_helper->GetBodyPoseAngle("display_goal", goal, MuJoCo_helper->vis_data);
+    pose_7 body_quat;
+    pose_7 goal_quat;
+    MuJoCo_helper->GetBodyPoseQuat("goal", body_quat, MuJoCo_helper->vis_data);
+    MuJoCo_helper->GetBodyPoseQuat("display_goal", goal_quat, MuJoCo_helper->vis_data);
 
+    pose_6 body_eul;
+    pose_6 goal_eul;
+    body_eul.position = body_quat.position;
+    body_eul.orientation = quat2Eul(body_quat.quat);
+    goal_eul.position = goal_quat.position;
+    goal_eul.orientation = quat2Eul(goal_quat.quat);
 
     if (act == GLFW_PRESS && key == GLFW_KEY_BACKSPACE)
     {
@@ -54,57 +60,55 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     }
     // Manipulandum rotation
     else if(act == GLFW_PRESS && key == GLFW_KEY_Q){
-        body.orientation(0) += 0.1;
+        body_eul.orientation(0) += 0.1;
         
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_W){
-        body.orientation(1) += 0.1;
+        body_eul.orientation(1) += 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_E){
-        body.orientation(2) += 0.1;
+        body_eul.orientation(2) += 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_A){
-        body.orientation(0) -= 0.1;
+        body_eul.orientation(0) -= 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_S){
-        body.orientation(1) -= 0.1;
+        body_eul.orientation(1) -= 0.1;
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_D){
-        body.orientation(2) -= 0.1;
+        body_eul.orientation(2) -= 0.1;
 
     }
     // Goal pose
     else if(act == GLFW_PRESS && key == GLFW_KEY_R){
-        goal.orientation(0) += 0.1;
+        goal_eul.orientation(0) += 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_T){
-        goal.orientation(1) += 0.1;
+        goal_eul.orientation(1) += 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_Y){
-        goal.orientation(2) += 0.1;
+        goal_eul.orientation(2) += 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_F){
-        goal.orientation(0) -= 0.1;
+        goal_eul.orientation(0) -= 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_G){
-        goal.orientation(1) -= 0.1;
+        goal_eul.orientation(1) -= 0.1;
 
     }
     else if(act == GLFW_PRESS && key == GLFW_KEY_H){
-        goal.orientation(2) -= 0.1;
+        goal_eul.orientation(2) -= 0.1;
 
     }
 
-
     else if(act == GLFW_PRESS && key == GLFW_KEY_Z){
-        // Print screen view settings
 
 
     }
@@ -126,10 +130,13 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
     }
 
     if(act == GLFW_PRESS){
-        MuJoCo_helper->SetBodyPoseAngle("goal", body, MuJoCo_helper->vis_data);
-        MuJoCo_helper->SetBodyPoseAngle("display_goal", goal, MuJoCo_helper->vis_data);
+        // Convert euler to quaternion
+        body_quat.quat = eul2Quat(body_eul.orientation);
+        goal_quat.quat = eul2Quat(goal_eul.orientation);
+        MuJoCo_helper->SetBodyPoseQuat("goal", body_quat, MuJoCo_helper->vis_data);
+        MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_quat, MuJoCo_helper->vis_data);
 
-        std::cout << "body orientation " << body.orientation(0) << " " << body.orientation(1) << " " << body.orientation(2) << "\n";
+        std::cout << "body orientation " << body_eul.orientation(0) << " " << body_eul.orientation(1) << " " << body_eul.orientation(2) << "\n";
         double cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
         std::cout << "cost: " << cost << std::endl;
 

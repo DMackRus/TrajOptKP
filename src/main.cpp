@@ -215,6 +215,12 @@ int main(int argc, char **argv) {
         object.orientation[1] = 0.0;
         object.orientation[2] = 0.0;
 
+        m_point axis_test = {0, 0.5, 0.1};
+        m_quat test = axis2Quat(axis_test);
+        axis_test = quat2Axis(test);
+        std::cout << "quat: " << test << std::endl;
+        std::cout << "axis test: " << axis_test << "\n";
+
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
         activeModelTranslator->MuJoCo_helper->SetBodyPoseAngle("goal", object, activeModelTranslator->MuJoCo_helper->vis_data);
 

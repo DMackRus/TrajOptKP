@@ -6,7 +6,7 @@ mpc_horizon: 50
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
-maxN: 20
+maxN: 10
 iterativeErrorThreshold: 0.00001
 robots:
   panda:
@@ -35,10 +35,10 @@ bodies:
     linearPosCost: [0, 0, 0]
     # When iLQR once
     terminalLinearPosCost: [1000, 1000, 0]
-    linearVelCost: [0, 0, 0]
+    linearVelCost: [0.1, 0.1, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
-    terminalAngularPosCost: [100, 0, 0]
+    terminalAngularPosCost: [1000, 1000, 1000]
     angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.0005, 0.0005, 0.0005 ]

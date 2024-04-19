@@ -96,6 +96,7 @@ void compare_derivs(){
 
 TEST(Derivatives, acrobot)
 {
+    std::cout << "Begin test - Compare derivatives acrobot \n";
     std::shared_ptr<Acrobot> acrobot = std::make_shared<Acrobot>();
     model_translator = acrobot;
 
@@ -119,6 +120,7 @@ TEST(Derivatives, acrobot)
 
 TEST(Derivatives, pushing_3D)
 {
+    std::cout << "Begin test - Compare derivatives 3D - not rotated \n";
     std::shared_ptr<threeDTestClass> pushing_3D = std::make_shared<threeDTestClass>();
     model_translator = pushing_3D;
 
@@ -132,10 +134,28 @@ TEST(Derivatives, pushing_3D)
                     0, 0, 0, 0, 0, 0;
     model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
 
-    // Step the similar to stabilise things
-    for(int j = 0; j < 5; j++){
-        mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data);
-    }
+    // Append data to save systems state list
+    model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
+
+    compare_derivs();
+}
+
+TEST(Derivatives, pushing_3D_rotated)
+{
+    std::cout << "Begin test - Compare derivatives 3D - rotated \n";
+    std::shared_ptr<threeDTestClass> pushing_3D = std::make_shared<threeDTestClass>();
+    model_translator = pushing_3D;
+
+    differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
+
+    // Initialise a state for the simulator
+    MatrixXd start_state(model_translator->state_vector_size, 1);
+    start_state << 0, -0.183, 0, -3.1, 0, 1.34, 0, 0, 0,
+            0.5, 0.2, 0.1, 0.5, 0.2, 0.1,
+            0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0;
+    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
+
     // Append data to save systems state list
     model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
 

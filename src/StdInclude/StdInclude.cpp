@@ -68,8 +68,8 @@ m_point quat2Axis(m_quat quaternion){
 
     // angles to rotate about
     double angle = 2 * acos(w);
-
     double s = sqrt(1-(w * w));
+
     if(s < 0.001){  // test to see if divide by zero???
         axisAngles(0) = x;
         axisAngles(1) = y;
@@ -80,6 +80,7 @@ m_point quat2Axis(m_quat quaternion){
         axisAngles(1) = y / s;
         axisAngles(2) = z / s;
     }
+
     axisAngles *= angle;
 
     return axisAngles;
@@ -94,7 +95,12 @@ m_quat axis2Quat(m_point axisAngles){
                         axisAngles(1) * axisAngles(1) +
                         axisAngles(2) * axisAngles(2));
 
-    double halfAngle = angle * 0.5;
+    // Make it unit axis angle?
+//    axisAngles /= angle;
+
+//    std::cout << "angle: " << angle << std::endl;
+
+    double halfAngle = angle / 2.0;
 
     double sinHalfAngle = sin(halfAngle);
     quat(0) = cos(halfAngle);
@@ -153,6 +159,7 @@ m_quat invQuat(m_quat quat){
     invQuat(1) = -quat(1);
     invQuat(2) = -quat(2);
     invQuat(3) = -quat(3);
+
     return invQuat;
 }
 

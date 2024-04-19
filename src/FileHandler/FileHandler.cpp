@@ -225,6 +225,7 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
 
         for(int i = 0; i < body_it->second["goalAngularPos"].size(); i++){
             goalAngularPos[i] = body_it->second["goalAngularPos"][i].as<double>();
+            std::cout << "goal angular pos: " << goalAngularPos[i] << std::endl;
         }
 
         for(int i = 0; i < body_it->second["linearPosCost"].size(); i++){
