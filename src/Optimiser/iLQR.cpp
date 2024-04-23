@@ -202,6 +202,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         auto derivsstart = high_resolution_clock::now();
         if(costReducedLastIter){
             GenerateDerivatives();
+//            std::cout << "A[0] \n" << A[0] << "\n";
 //            std::cout << "A[1] \n" << A[1] << "\n";
 //            std::cout << "l_x[1] \n" << l_x[1] << "\n";
 //            std::cout << "l_xx[1] \n" << l_xx[1] << "\n";
@@ -600,14 +601,14 @@ double iLQR::ForwardsPass(double old_cost){
     expected = -(last_alpha * delta_J + (pow(last_alpha, 2) / 2) * delta_J);
     expecteds.push_back(expected);
 
+//    std::cout << "expected :" << expected << " actual: " << old_cost - newCost << std::endl;
+
     // If the cost was reduced
     if(newCost < old_cost){
         // Compute surprise
 
         surprise = (old_cost - newCost) / expected;
         surprises.push_back(surprise);
-
-//        std::cout << "expected :" << expected << " actual: " << old_cost - newCost << std::endl;
 
         // Reset the system state to the initial state
         MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);

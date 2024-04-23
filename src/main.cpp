@@ -157,6 +157,7 @@ int main(int argc, char **argv) {
     }
 
     // Initialise the system state from desired mechanism
+    // Set goal pose here maybe???
     activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);

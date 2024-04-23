@@ -26,8 +26,8 @@ robots:
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   blueTin:
-    activeLinearDOF: [true, true, true]
-    activeAngularDOF: [true, true, true]
+    activeLinearDOF: [true, true, false]
+    activeAngularDOF: [false, false, false]
     startLinearPos: [ 0.5, 0.1, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, -0.1, 0.0 ]
@@ -38,7 +38,7 @@ bodies:
     linearVelCost: [0.1, 0.1, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
-    terminalAngularPosCost: [1000, 1000, 1000]
+    terminalAngularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.0005, 0.0005, 0.0005 ]

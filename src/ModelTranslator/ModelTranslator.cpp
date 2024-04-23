@@ -509,7 +509,7 @@ double ModelTranslator::CostFunctionBody(const bodyStateVec body, mjData *d, boo
 
     for(int i = 0; i < 3; i++){
         if(terminal) {
-            cost += body.terminalAngularPosCost[i] * pow(axis[i], 2);
+            cost += body.terminalAngularPosCost[i] * pow(axis_diff(i), 2);
         }
         else{
             cost += body.angularPosCost[i] * pow(axis_diff(i), 2);
@@ -781,7 +781,7 @@ void ModelTranslator::CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, 
 
         // use internal F.D of costfunction body to compute derivatives????
         double cost_dec, cost_inc;
-        double eps = 1e-2;
+        double eps = 1e-4;
         // Perturb 3 orientations
 
         for(int j = 0; j < 3; j++){
@@ -1186,13 +1186,14 @@ int ModelTranslator::StateIndexToQposIndex(int state_index){
 
 void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 
+    // Initialise robot positions to start configuration
     for(auto & robot : active_state_vector.robots){
         std::vector<double> zero_robot_velocities(robot.jointNames.size(), 0.0);
         MuJoCo_helper->SetRobotJointPositions(robot.name, robot.startPos, d);
         MuJoCo_helper->SetRobotJointsVelocities(robot.name, zero_robot_velocities, d);
     }
 
-    // Loop through all bodies in the state vector
+    // Initialise body poses to start configuration
     for(auto & bodiesState : active_state_vector.bodiesStates){
 
         pose_6 body_pose;
@@ -1209,6 +1210,20 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
         MuJoCo_helper->SetBodyPoseAngle(bodiesState.name, body_pose, d);
         MuJoCo_helper->SetBodyVelocity(bodiesState.name, body_vel, d);
     }
+
+    // Optional - Set a body pose if relevant for task
+    pose_7 goal_body;
+    goal_body.position[0] = active_state_vector.bodiesStates[0].goalLinearPos[0];
+    goal_body.position[1] = active_state_vector.bodiesStates[0].goalLinearPos[1];
+    goal_body.position[2] = active_state_vector.bodiesStates[0].goalLinearPos[2];
+
+    m_point desired_eul = {active_state_vector.bodiesStates[0].goalAngularPos[0],
+                        active_state_vector.bodiesStates[0].goalAngularPos[1],
+                        active_state_vector.bodiesStates[0].goalAngularPos[2]};
+
+    goal_body.quat = eul2Quat(desired_eul);
+
+    MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
 
 }
 
