@@ -166,17 +166,17 @@ void TwoDPushing::ReturnRandomStartState(){
     // Robot start configuration
     double robot_start_config[7] = {0, -0.183, 0, -3.1, 0, 1.34, 0};
 
-    for(int i = 0; i < active_state_vector.robots[0].jointNames.size(); i++){
-        active_state_vector.robots[0].startPos[i] = robot_start_config[i];
+    for(int i = 0; i < current_state_vector.robots[0].jointNames.size(); i++){
+        current_state_vector.robots[0].startPos[i] = robot_start_config[i];
     }
 
-    active_state_vector.bodiesStates[0].startLinearPos[0] = startX;
-    active_state_vector.bodiesStates[0].startLinearPos[1] = startY;
-    active_state_vector.bodiesStates[0].startLinearPos[2] = 0.032;
+    current_state_vector.bodiesStates[0].startLinearPos[0] = startX;
+    current_state_vector.bodiesStates[0].startLinearPos[1] = startY;
+    current_state_vector.bodiesStates[0].startLinearPos[2] = 0.032;
 
-    active_state_vector.bodiesStates[0].startAngularPos[0] = 0.0;
-    active_state_vector.bodiesStates[0].startAngularPos[1] = 0.0;
-    active_state_vector.bodiesStates[0].startAngularPos[2] = 0.0;
+    current_state_vector.bodiesStates[0].startAngularPos[0] = 0.0;
+    current_state_vector.bodiesStates[0].startAngularPos[1] = 0.0;
+    current_state_vector.bodiesStates[0].startAngularPos[2] = 0.0;
 
     // Distractor body poses
     for(int i = 0; i < object_names.size(); i++){
@@ -185,43 +185,43 @@ void TwoDPushing::ReturnRandomStartState(){
         MuJoCo_helper->GetBodyPoseAngle(object_names[i], obstacle_pose, MuJoCo_helper->master_reset_data);
 
         for(int j = 0; j < 3; j++){
-            active_state_vector.bodiesStates[i + 1].startLinearPos[j] = obstacle_pose.position[j];
-            active_state_vector.bodiesStates[i + 1].startAngularPos[j] = obstacle_pose.orientation[j];
+            current_state_vector.bodiesStates[i + 1].startLinearPos[j] = obstacle_pose.position[j];
+            current_state_vector.bodiesStates[i + 1].startAngularPos[j] = obstacle_pose.orientation[j];
         }
     }
     std::cout << "in generation \n";
-    std::cout << "body " << active_state_vector.bodiesStates[2].name << " x: " << active_state_vector.bodiesStates[2].startLinearPos[0] << " y: " << active_state_vector.bodiesStates[2].startLinearPos[1] << std::endl;
+    std::cout << "body " << current_state_vector.bodiesStates[2].name << " x: " << current_state_vector.bodiesStates[2].startLinearPos[0] << " y: " << current_state_vector.bodiesStates[2].startLinearPos[1] << std::endl;
 }
 
 void TwoDPushing::ReturnRandomGoalState(){
     MatrixXd randomGoalState(state_vector_size, 1);
 
     // Robot configuration doesnt matter for this task
-    for(int i = 0; i < active_state_vector.robots[0].jointNames.size(); i++){
-        active_state_vector.robots[0].goalPos[i] = 0.0;
-        active_state_vector.robots[0].goalVel[i] = 0.0;
+    for(int i = 0; i < current_state_vector.robots[0].jointNames.size(); i++){
+        current_state_vector.robots[0].goalPos[i] = 0.0;
+        current_state_vector.robots[0].goalVel[i] = 0.0;
     }
 
     // Goal object body
     std::cout << "goal x" << randomGoalX << "goal y: " << randomGoalY << std::endl;
-    active_state_vector.bodiesStates[0].goalLinearPos[0] = randomGoalX;
-    active_state_vector.bodiesStates[0].goalLinearPos[1] = randomGoalY;
-    active_state_vector.bodiesStates[0].goalLinearPos[2] = 0.0;
+    current_state_vector.bodiesStates[0].goalLinearPos[0] = randomGoalX;
+    current_state_vector.bodiesStates[0].goalLinearPos[1] = randomGoalY;
+    current_state_vector.bodiesStates[0].goalLinearPos[2] = 0.0;
 
-    active_state_vector.bodiesStates[0].goalAngularPos[0] = 0.0;
-    active_state_vector.bodiesStates[0].goalAngularPos[1] = 0.0;
-    active_state_vector.bodiesStates[0].goalAngularPos[2] = 0.0;
+    current_state_vector.bodiesStates[0].goalAngularPos[0] = 0.0;
+    current_state_vector.bodiesStates[0].goalAngularPos[1] = 0.0;
+    current_state_vector.bodiesStates[0].goalAngularPos[2] = 0.0;
 
     // Distractor objects
-    for(int i = 1; i < active_state_vector.bodiesStates.size(); i++){
+    for(int i = 1; i < current_state_vector.bodiesStates.size(); i++){
 
-        active_state_vector.bodiesStates[i].goalLinearPos[0] = 0.0;
-        active_state_vector.bodiesStates[i].goalLinearPos[1] = 0.0;
-        active_state_vector.bodiesStates[i].goalLinearPos[2] = 0.0;
+        current_state_vector.bodiesStates[i].goalLinearPos[0] = 0.0;
+        current_state_vector.bodiesStates[i].goalLinearPos[1] = 0.0;
+        current_state_vector.bodiesStates[i].goalLinearPos[2] = 0.0;
 
-        active_state_vector.bodiesStates[i].goalAngularPos[0] = 0.0;
-        active_state_vector.bodiesStates[i].goalAngularPos[1] = 0.0;
-        active_state_vector.bodiesStates[i].goalAngularPos[2] = 0.0;
+        current_state_vector.bodiesStates[i].goalAngularPos[0] = 0.0;
+        current_state_vector.bodiesStates[i].goalAngularPos[1] = 0.0;
+        current_state_vector.bodiesStates[i].goalAngularPos[2] = 0.0;
     }
 }
 
@@ -237,8 +237,8 @@ std::vector<MatrixXd> TwoDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = active_state_vector.bodiesStates[0].goalLinearPos[0];
-    goalPos(1) = active_state_vector.bodiesStates[0].goalLinearPos[1];
+    goalPos(0) = current_state_vector.bodiesStates[0].goalLinearPos[0];
+    goalPos(1) = current_state_vector.bodiesStates[0].goalLinearPos[1];
     EEWayPointsSetup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
 //    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
@@ -259,8 +259,8 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     std::string goalMarkerName = "display_goal";
     pose_6 displayBodyPose;
     MuJoCo_helper->GetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
-    displayBodyPose.position[0] = active_state_vector.bodiesStates[0].goalLinearPos[0];
-    displayBodyPose.position[1] = active_state_vector.bodiesStates[0].goalLinearPos[1];
+    displayBodyPose.position[0] = current_state_vector.bodiesStates[0].goalLinearPos[0];
+    displayBodyPose.position[1] = current_state_vector.bodiesStates[0].goalLinearPos[1];
     displayBodyPose.position[2] = 0.0f;
     MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
 
@@ -270,8 +270,8 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = active_state_vector.bodiesStates[0].goalLinearPos[0];
-    goalPos(1) = active_state_vector.bodiesStates[0].goalLinearPos[1];
+    goalPos(0) = current_state_vector.bodiesStates[0].goalLinearPos[0];
+    goalPos(1) = current_state_vector.bodiesStates[0].goalLinearPos[1];
     EEWayPointsPush(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << mainWayPoints.size() << " waypoints created" << endl;
 //    cout << "mainwaypoint 0: " << mainWayPoints[1] << endl;
@@ -372,8 +372,8 @@ bool TwoDPushing::TaskComplete(mjData *d, double &dist){
 
     MatrixXd currentState = ReturnStateVector(d);
 
-    double x_diff = currentState(7) - active_state_vector.bodiesStates[0].goalLinearPos[0];
-    double y_diff = currentState(8) - active_state_vector.bodiesStates[0].goalLinearPos[1];
+    double x_diff = currentState(7) - current_state_vector.bodiesStates[0].goalLinearPos[0];
+    double y_diff = currentState(8) - current_state_vector.bodiesStates[0].goalLinearPos[1];
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 

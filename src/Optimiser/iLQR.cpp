@@ -550,10 +550,10 @@ double iLQR::ForwardsPass(double old_cost){
             U_new[t] = _U + (alphas[alphaCount] * k[t]) + feedBackGain;
 
             // Clamp torque within limits
-            if(activeModelTranslator->active_state_vector.robots[0].torqueControlled){
+            if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
                 for(int i = 0; i < num_ctrl; i++){
-                    if (U_new[t](i) > activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
-                    if (U_new[t](i) < -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) < -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
                 }
             }
 
@@ -676,10 +676,10 @@ double iLQR::ForwardsPassParallel(double old_cost){
             U_alpha[t][i] = U_old[t] + (alphas[i] * k[t]) + feedBackGain;
 
             // Clamp torque within limits
-            if(activeModelTranslator->active_state_vector.robots[0].torqueControlled){
+            if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
                 for(int k = 0; k < num_ctrl; k++){
-                    if (U_alpha[t][i](k) > activeModelTranslator->active_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = activeModelTranslator->active_state_vector.robots[0].torqueLimits[k];
-                    if (U_alpha[t][i](k) < -activeModelTranslator->active_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = -activeModelTranslator->active_state_vector.robots[0].torqueLimits[k];
+                    if (U_alpha[t][i](k) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[k];
+                    if (U_alpha[t][i](k) < -activeModelTranslator->current_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = -activeModelTranslator->current_state_vector.robots[0].torqueLimits[k];
                 }
             }
 
@@ -780,10 +780,10 @@ bool iLQR::RolloutWithKMatricesReduction(std::vector<int> dof_indices, double ol
         U_new[t] = _U + (alpha * k[t]) + feedBackGain;
 
         // Clamp torque within limits
-        if(activeModelTranslator->active_state_vector.robots[0].torqueControlled){
+        if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
             for(int i = 0; i < num_ctrl; i++){
-                if (U_new[t](i) > activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
-                if (U_new[t](i) < -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
+                if (U_new[t](i) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
+                if (U_new[t](i) < -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
             }
         }
 

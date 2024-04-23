@@ -14,7 +14,7 @@ bool Acrobot::TaskComplete(mjData *d, double &dist){
 
     for(int i = 0; i < dof; i++){
         std::cout << "joint pos " << acrobot_joints[i] << "\n";
-        dist += abs(active_state_vector.robots[0].goalPos[i] - acrobot_joints[i]);
+        dist += abs(current_state_vector.robots[0].goalPos[i] - acrobot_joints[i]);
     }
 
     if(dist < 0.01){
