@@ -116,7 +116,12 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     l_x.push_back(MatrixXd(2*dof, 1));
     l_xx.push_back(MatrixXd(2*dof, 2*dof));
 
+    // Resize Keypoint generator class
+    keypoint_generator->Resize(dof, num_ctrl, horizon_length);
+
     std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
+
+    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
 
 }
 
@@ -210,7 +215,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     if(keypoint_generator->horizon != horizon_length){
         std::cout << "horizon length changed" << std::endl;
-        keypoint_generator->ResizeStateVector(dof, horizon_length);
+        keypoint_generator->Resize(dof, num_ctrl, horizon_length);
     }
 
     bool costReducedLastIter = true;

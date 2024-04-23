@@ -191,18 +191,14 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
                     bodiesState.activeAngularDOF[0] = add_extra_states;
                 }
                 else if(state_vector_name == "_pitch"){
-                    bodiesState.activeAngularDOF[1] = true;
+                    bodiesState.activeAngularDOF[1] = add_extra_states;
                 }
                 else if(state_vector_name == "_yaw"){
-                    bodiesState.activeAngularDOF[2] = true;
+                    bodiesState.activeAngularDOF[2] = add_extra_states;
                 }
             }
         }
     }
-
-    // dof in model translator is updated by here,
-    // We need to update keypoint generator, iLQR and differentiator.
-    // Differentiator is fine and queries model translator dof size automatically.
 }
 
 std::vector<std::string> ModelTranslator::GetStateVectorNames(){
@@ -437,6 +433,7 @@ double ModelTranslator::CostFunctionBody(const bodyStateVec body, mjData *d, boo
 void ModelTranslator::CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
 
     // Size cost derivatives appropriately
+    // Todo, we shouldnt need to resize here?
     l_x.resize(state_vector_size, 1);
     l_xx.resize(state_vector_size, state_vector_size);
 

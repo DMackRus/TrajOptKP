@@ -687,7 +687,6 @@ void MuJoCoHelper::Scroll(double yoffset){
 
 void MuJoCoHelper::InitSimulator(double timestep, const char* file_name){
     char error[1000];
-     cout << "fileName in init: " << file_name << endl;
     auto load_start = std::chrono::high_resolution_clock::now();
     model = mj_loadXML(file_name, nullptr, error, 1000);
 
@@ -699,26 +698,18 @@ void MuJoCoHelper::InitSimulator(double timestep, const char* file_name){
     model->opt.timestep = timestep;
 //    model->opt.iterations = 30;
 //    model->opt.tolerance = 1e-1;
-    cout << "model iterations: " << model->opt.iterations << endl;
-    cout << "model tolerance : " << model->opt.tolerance << endl;
-
-    cout << "model nq: " << model->nq << endl;
-    cout << "model nv: " << model->nv << endl;
-    cout << "model nu: " << model->nu << endl;
-    cout << "model nbody: " << model->nbody << endl;
+//    cout << "model iterations: " << model->opt.iterations << endl;
+//    cout << "model tolerance : " << model->opt.tolerance << endl;
+//
+//    cout << "model nq: " << model->nq << endl;
+//    cout << "model nv: " << model->nv << endl;
+//    cout << "model nu: " << model->nu << endl;
+//    cout << "model nbody: " << model->nbody << endl;
 //    cout << "model memory: " << model->memory
 
 //    for(int i = 0; i < model->nu; i++){
 //        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i] << endl;
 //        cout << "model ctrlrange: " << model->actuator_ctrlrange[2*i+1] << endl;
-//    }
-//
-//    std::string names[6] = {"right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"};
-//
-////    int id = mj_name2id(model, mjOBJ_BODY, "right_hip");
-//    for(int i = 0; i < 6; i++){
-//        int id = mj_name2id(model, mjOBJ_ACTUATOR, names[i].c_str());
-//        cout << "actuator id: " << id << endl;
 //    }
 
     // make data corresponding to model

@@ -81,8 +81,6 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
                            current_state_vector.bodiesStates[0].goalAngularPos[1],
                            current_state_vector.bodiesStates[0].goalAngularPos[2]};
 
-    std::cout << "deisred eul " << desired_eul << "\n";
-
     display_goal_pose.quat = eul2Quat(desired_eul);
 
     MuJoCo_helper->SetBodyPoseQuat(goalMarkerName, display_goal_pose, MuJoCo_helper->master_reset_data);

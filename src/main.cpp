@@ -172,22 +172,22 @@ int main(int argc, char **argv) {
 
     // Choose an Optimiser
     int openloop_horizon = activeModelTranslator->openloop_horizon;
-    if(optimiser == "interpolated_iLQR"){
-        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
-        activeOptimiser = iLQROptimiser;
-    }
-    else if(optimiser == "PredictiveSampling"){
-        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, openloop_horizon, 8);
-        activeOptimiser = stompOptimiser;
-    }
-    else if(optimiser == "GradDescent"){
-        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, activeVisualiser, openloop_horizon, yamlReader);
-        activeOptimiser = gradDescentOptimiser;
-    }
-    else{
-        std::cerr << "invalid Optimiser selected, exiting" << endl;
-        return -1;
-    }
+//    if(optimiser == "interpolated_iLQR"){
+//        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
+//        activeOptimiser = iLQROptimiser;
+//    }
+//    else if(optimiser == "PredictiveSampling"){
+//        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, openloop_horizon, 8);
+//        activeOptimiser = stompOptimiser;
+//    }
+//    else if(optimiser == "GradDescent"){
+//        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, activeVisualiser, openloop_horizon, yamlReader);
+//        activeOptimiser = gradDescentOptimiser;
+//    }
+//    else{
+//        std::cerr << "invalid Optimiser selected, exiting" << endl;
+//        return -1;
+//    }
 
     // Methods of control / visualisation
     if(runMode == "Init_controls"){
@@ -231,18 +231,97 @@ int main(int argc, char **argv) {
 //        }
         // --------------------------------------------------------------------------------------------------------------
 
-        // Testing code for hyposthesis about removing dofs from the state vector
+        std::vector<double> time_derivs_full;
+        std::vector<double> time_bp_full;
+        std::vector<double> time_derivs_reduced;
+        std::vector<double> time_bp_reduced;
 
-//        activeOptimiser
+        int dofs_full, dofs_reduced;
+        int N = 10;
+
+        dofs_full = activeModelTranslator->dof;
+
+        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
+
+        // Can we do some timing tests???
+        // Rollout a trajectory
+        std::vector<MatrixXd> U_init;
+        U_init = activeModelTranslator->CreateInitOptimisationControls(openloop_horizon);
+        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
+        std::cout << "rollout done \n";
+
+        // Compute derivatives
+        auto timer_start = std::chrono::high_resolution_clock::now();
+
+        for(int i = 0; i < N; i++){
+            timer_start = std::chrono::high_resolution_clock::now();
+            iLQROptimiser->GenerateDerivatives();
+            time_derivs_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::high_resolution_clock::now() - timer_start).count());
+        }
+
+        for(int i = 0; i < N; i++){
+            timer_start = std::chrono::high_resolution_clock::now();
+            iLQROptimiser->BackwardsPassQuuRegularisation();
+            time_bp_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::high_resolution_clock::now() - timer_start).count());
+        }
+
+
         // Remove elements from task
         std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw"};
         activeModelTranslator->UpdateStateVector(remove_elements, false);
+        dofs_reduced = activeModelTranslator->dof;
 
         // resize optimiser state
-        activeOptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, activeOptimiser->horizon_length);
+        iLQROptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, iLQROptimiser->horizon_length);
 
-        // check
+        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
 
+        // Compute derivatives
+        for(int i = 0; i < N; i++){
+            timer_start = std::chrono::high_resolution_clock::now();
+            iLQROptimiser->GenerateDerivatives();
+            time_derivs_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::high_resolution_clock::now() - timer_start).count());
+        }
+
+        // Compute backwards pass
+        for(int i = 0; i < N; i++){
+            timer_start = std::chrono::high_resolution_clock::now();
+            iLQROptimiser->BackwardsPassQuuRegularisation();
+            time_bp_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::high_resolution_clock::now() - timer_start).count());
+        }
+
+        double avg_time_derivs_full, avg_time_derivs_reduced, avg_time_bp_full, avg_time_bp_reduced;
+
+        for(int i = 0; i < N; i++){
+            avg_time_derivs_full += time_derivs_full[i];
+            avg_time_derivs_reduced += time_derivs_reduced[i];
+            avg_time_bp_full += time_bp_full[i];
+            avg_time_bp_reduced += time_bp_reduced[i];
+        }
+
+        avg_time_derivs_full /= N;
+        avg_time_derivs_reduced /= N;
+        avg_time_bp_full /= N;
+        avg_time_bp_reduced /= N;
+
+        std::cout << "-------- Results of state vector dimensionality reduction ----------- \n";
+        std::cout << "num dofs in full state vector: " << dofs_full << "\n";
+        std::cout << "time of derivs for full state vector: " << avg_time_derivs_full << " ms \n";
+        std::cout << "time of bp for full state vector: " << avg_time_bp_full << " ms \n";
+        std::cout << "num dofs in reduced state vector: " << dofs_reduced << "\n";
+        std::cout << "time of derivs for reduced state vector: " << avg_time_derivs_reduced << " ms\n";
+        std::cout << "time of bp for reduced state vector: " << avg_time_bp_reduced << " ms\n";
+
+        double percentage_decrease_derivs = 1 - (avg_time_derivs_reduced / avg_time_derivs_full);
+        double percentage_decrease_bp = 1 - (avg_time_bp_reduced / avg_time_bp_full);
+        double dof_percentage_decrease = 1 - ((double)dofs_reduced / (double)dofs_full);
+        std::cout << "percent decrease of derivatives: " << percentage_decrease_derivs << "\n";
+        std::cout << "percent decrease of backwards pass: " << percentage_decrease_bp << "\n";
+        std::cout << "expected percentage decrease: " << dof_percentage_decrease << "\n";
 
         return EXIT_FAILURE;
     }

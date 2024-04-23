@@ -82,6 +82,13 @@ public:
 
     void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
 
+    /**
+     * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
+     *
+     * @return bool - true if successful (all matrices were P.D), false otherwise.
+     */
+    bool BackwardsPassQuuRegularisation();
+
     double avg_surprise = 0.0f;
     double avg_expected = 0.0f;
     double new_cost = 0.0f;
@@ -120,12 +127,7 @@ private:
     std::vector<double> surprises;
     std::vector<double> expecteds;
 
-    /**
-     * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
-     *
-     * @return bool - true if successful (all matrices were P.D), false otherwise.
-     */
-    bool BackwardsPassQuuRegularisation();
+
 
     /**
      * Checks whether the supplied matrix is positive defeinite.
