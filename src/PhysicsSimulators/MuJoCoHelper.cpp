@@ -363,6 +363,7 @@ void MuJoCoHelper::GetBodyPoseAngleViaXpos(const string& body_name, pose_6 &pose
         quat(i) = d->xpos[(4 * body_id) + i];
     }
 
+    // TODO - hmmm not sure about this whether it should be euler or axis
     m_point euler = quat2Eul(quat);
 
     for(int i = 0; i < 3; i++){

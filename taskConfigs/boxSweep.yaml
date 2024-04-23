@@ -23,8 +23,8 @@ robots:
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   goal:
-    activeLinearDOF: [true, true, false]
-    activeAngularDOF: [false, false, false]
+    activeLinearDOF: [true, true, true]
+    activeAngularDOF: [true, true, true]
     startLinearPos: [ 0.65, 0, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.65, 0.4, 0.0 ]

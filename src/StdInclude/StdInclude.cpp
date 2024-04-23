@@ -22,35 +22,70 @@ float randFloat(float floor, float ceiling){
 m_quat eul2Quat(m_point eulerAngles){
     m_quat quat;
 
-    Quaternionf q;
-    q = AngleAxisf(eulerAngles(0), Vector3f::UnitX())
-        * AngleAxisf(eulerAngles(1), Vector3f::UnitY())
-        * AngleAxisf(eulerAngles(2), Vector3f::UnitZ());
+//    Quaterniond q;
+//    q = AngleAxisf(eulerAngles(0), Vector3f::UnitX())
+//        * AngleAxisf(eulerAngles(1), Vector3f::UnitY())
+//        * AngleAxisf(eulerAngles(2), Vector3f::UnitZ());
+    double cy = cos(eulerAngles(2) * 0.5);
+    double sy = sin(eulerAngles(2) * 0.5);
+    double cp = cos(eulerAngles(1) * 0.5);
+    double sp = sin(eulerAngles(1) * 0.5);
+    double cr = cos(eulerAngles(0) * 0.5);
+    double sr = sin(eulerAngles(0) * 0.5);
 
-    quat(0) = q.w();
-    quat(1) = q.x();
-    quat(2) = q.y();
-    quat(3) = q.z();
+//    q.w = cr * cp * cy + sr * sp * sy;
+//    q.x = sr * cp * cy - cr * sp * sy;
+//    q.y = cr * sp * cy + sr * cp * sy;
+//    q.z = cr * cp * sy - sr * sp * cy;
+
+    quat(0) = cr * cp * cy + sr * sp * sy;
+    quat(1) = sr * cp * cy - cr * sp * sy;
+    quat(2) = cr * sp * cy + sr * cp * sy;
+    quat(3) = cr * cp * sy - sr * sp * cy;
 
     return quat;
 }
 
 m_point quat2Eul(m_quat quaternion){
-    m_point eulAngles;
+    m_point euler_angles;
 
-    Quaternionf q;
-    q.x() = quaternion(1);
-    q.y() = quaternion(2);
-    q.z() = quaternion(3);
-    q.w() = quaternion(0);
+//    Quaterniond q;
+//    q.x() = quaternion(1);
+//    q.y() = quaternion(2);
+//    q.z() = quaternion(3);
+//    q.w() = quaternion(0);
+//
+//    auto euler = q.toRotationMatrix().eulerAngles(0, 1, 2);
+//
+//    eulAngles(0) = euler(0);
+//    eulAngles(1) = euler(1);
+//    eulAngles(2) = euler(2);
 
-    auto euler = q.toRotationMatrix().eulerAngles(0, 1, 2);
+// roll (x-axis rotation)
 
-    eulAngles(0) = euler(0);
-    eulAngles(1) = euler(1);
-    eulAngles(2) = euler(2);
+    double w = quaternion(0);
+    double x = quaternion(1);
+    double y = quaternion(2);
+    double z = quaternion(3);
 
-    return eulAngles;
+
+    double sinr_cosp = 2 * (w * x + y * z);
+    double cosr_cosp = 1 - 2 * (x * x + y * y);
+    euler_angles(0) = std::atan2(sinr_cosp, cosr_cosp);
+
+    // pitch (y-axis rotation)
+    double sinp = 2 * (w * y - z * x);
+    if (std::abs(sinp) >= 1)
+        euler_angles(1) = std::copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+    else
+        euler_angles(1) = std::asin(sinp);
+
+    // yaw (z-axis rotation)
+    double siny_cosp = 2 * (w * z + x * y);
+    double cosy_cosp = 1 - 2 * (y * y + z * z);
+    euler_angles(2) = std::atan2(siny_cosp, cosy_cosp);
+
+    return euler_angles;
 }
 
 m_point quat2Axis(m_quat quaternion){
