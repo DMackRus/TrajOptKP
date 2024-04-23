@@ -54,7 +54,7 @@ double PredictiveSampling::RolloutTrajectory(mjData *d, bool saveStates, std::ve
     Xt = activeModelTranslator->ReturnStateVector(d);
 //    cout << "X_start:" << Xt << endl;
 
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizon_length; i++){
         // set controls
         activeModelTranslator->SetControlVector(initControls[i], d);
 
@@ -84,7 +84,7 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
 
     std::vector<MatrixXd> optimisedControls;
     double bestCost;
-    horizonLength = _horizonLength;
+    horizon_length = _horizonLength;
 
     for(int i = 0; i < initControls.size(); i++){
         U_best[i] = initControls[i];
@@ -123,7 +123,7 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
         if(bestCostThisIter < bestCost){
             cout << "new trajectory cost: " << bestCostThisIter << " at iteration: " << i << endl;
             bestCost = bestCostThisIter;
-            for(int j = 0; j < horizonLength; j++) {
+            for(int j = 0; j < horizon_length; j++) {
                 U_best[j] = U_noisy[bestCostIndex][j];
             }
         }
@@ -134,7 +134,7 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
         }
     }
 
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizon_length; i++){
         optimisedControls.push_back(U_best[i]);
     }
     return optimisedControls;
@@ -164,7 +164,7 @@ MatrixXd PredictiveSampling::returnNoisyControl(MatrixXd Ut, MatrixXd noise){
 std::vector<MatrixXd> PredictiveSampling::createNoisyTrajec(std::vector<MatrixXd> nominalTrajectory){
     std::vector<MatrixXd> noisyTrajec;
 
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizon_length; i++){
         MatrixXd newControl = returnNoisyControl(nominalTrajectory[i], noiseProfile);
         noisyTrajec.push_back(newControl);
     }

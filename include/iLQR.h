@@ -22,8 +22,8 @@
             5. Forwards pass with line search to find new locally optimal trajectory
             6. Repeat steps 3-5 until convergence
 
-        This class uses approximation of dynamics derivatives via KeyPoint Generator
-        class to speed up dynamics derivative computation.
+        This class uses approximation of dynamics derivatives via the
+        Keypoint Generator class to speed up dynamics derivative computation.
 ================================================================================
 */
 #pragma once
@@ -80,9 +80,7 @@ public:
                               double lambda, double percent_derivatives, double time_derivs, double time_bp,
                               double time_fp, int num_linesearches);
 
-
-    // Whether to save trajectory information to file
-    bool save_trajec_information = false;
+    void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
 
     double avg_surprise = 0.0f;
     double avg_expected = 0.0f;

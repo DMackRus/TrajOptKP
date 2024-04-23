@@ -106,8 +106,10 @@ public:
      * Resize variables that are dependant on the size of the state vector.
      *
      * @param new_num_dofs - The new number of degrees of freedom in the state vector.
+     * @param new_num_ctrl - The new number of controls
+     * @param new_horizon - New horizon of the trajectory
      */
-    void ResizeStateVector(int new_num_dofs);
+    virtual void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon);
 
     /**
      * Returns the current active keypoint method, and its associating parameters.
@@ -203,7 +205,7 @@ public:
     vector<MatrixXd> X_new;
     vector<MatrixXd> X_old;
 
-    int horizonLength;
+    int horizon_length = 0;
 
     std::vector<double> costHistory;
     double lowPassACoefficient = 0.25;

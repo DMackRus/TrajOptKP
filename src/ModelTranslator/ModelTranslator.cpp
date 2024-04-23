@@ -152,10 +152,10 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
 
     // TODO (DMackRus) - This is an assumption but should be fine
     if(add_extra_states){
-        dof += state_vector_names.size();
+        dof += static_cast<int>(state_vector_names.size());
     }
     else{
-        dof -= state_vector_names.size();
+        dof -= static_cast<int>(state_vector_names.size());
     }
 
     state_vector_size = dof * 2;
@@ -170,6 +170,7 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
         }
     }
 
+    // Remove or add elements for bodies in the state vector
     for(auto & bodiesState : current_state_vector.bodiesStates){
         std::string body_name = bodiesState.name;
         for(auto & state_vector_name : state_vector_names){
@@ -186,19 +187,22 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
                 else if(state_vector_name == "_z"){
                     bodiesState.activeLinearDOF[2] = add_extra_states;
                 }
-                // TODO (DMackRus) - Need to add ability to activate / deactivate bodies rotation from state vector
-//                else if(state_vector_names[i] == "_roll"){
-//                    active_state_vector.bodiesStates[body].activeAngularDOF[0] = true;
-//                }
-//                else if(state_vector_names[i] == "_pitch"){
-//                    active_state_vector.bodiesStates[body].activeAngularDOF[1] = true;
-//                }
-//                else if(state_vector_names[i] == "_yaw"){
-//                    active_state_vector.bodiesStates[body].activeAngularDOF[2] = true;
-//                }
+                else if(state_vector_name == "_roll"){
+                    bodiesState.activeAngularDOF[0] = add_extra_states;
+                }
+                else if(state_vector_name == "_pitch"){
+                    bodiesState.activeAngularDOF[1] = true;
+                }
+                else if(state_vector_name == "_yaw"){
+                    bodiesState.activeAngularDOF[2] = true;
+                }
             }
         }
     }
+
+    // dof in model translator is updated by here,
+    // We need to update keypoint generator, iLQR and differentiator.
+    // Differentiator is fine and queries model translator dof size automatically.
 }
 
 std::vector<std::string> ModelTranslator::GetStateVectorNames(){

@@ -231,8 +231,17 @@ int main(int argc, char **argv) {
 //        }
         // --------------------------------------------------------------------------------------------------------------
 
-
         // Testing code for hyposthesis about removing dofs from the state vector
+
+//        activeOptimiser
+        // Remove elements from task
+        std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw"};
+        activeModelTranslator->UpdateStateVector(remove_elements, false);
+
+        // resize optimiser state
+        activeOptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, activeOptimiser->horizon_length);
+
+        // check
 
 
         return EXIT_FAILURE;

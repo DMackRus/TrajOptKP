@@ -39,29 +39,29 @@ bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
     return false;
 }
 
-void Optimiser::ResizeStateVector(int new_num_dofs){
+void Optimiser::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
-    dof = new_num_dofs;
-    int state_vector_size = new_num_dofs * 2;
-
-    for(int t = 0; t < horizonLength; t++){
-
-        // State vectors
-        X_new[t].resize(state_vector_size, 1);
-        X_old[t].resize(state_vector_size, 1);
-
-        // Cost derivatives
-        l_x[t].resize(state_vector_size, 1);
-        l_xx[t].resize(state_vector_size, state_vector_size);
-
-        // Dynamics derivatives
-        A[t].resize(state_vector_size, state_vector_size);
-        A[t].block(0, 0, dof, dof).setIdentity();
-        A[t].block(0, dof, dof, dof).setIdentity();
-        A[t].block(0, dof, dof, dof) *= MuJoCo_helper->ReturnModelTimeStep();
-        B[t].resize(state_vector_size, num_ctrl);
-
-    }
+//    dof = new_num_dofs;
+//    int state_vector_size = new_num_dofs * 2;
+//
+//    for(int t = 0; t < horizonLength; t++){
+//
+//        // State vectors
+//        X_new[t].resize(state_vector_size, 1);
+//        X_old[t].resize(state_vector_size, 1);
+//
+//        // Cost derivatives
+//        l_x[t].resize(state_vector_size, 1);
+//        l_xx[t].resize(state_vector_size, state_vector_size);
+//
+//        // Dynamics derivatives
+//        A[t].resize(state_vector_size, state_vector_size);
+//        A[t].block(0, 0, dof, dof).setIdentity();
+//        A[t].block(0, dof, dof, dof).setIdentity();
+//        A[t].block(0, dof, dof, dof) *= MuJoCo_helper->ReturnModelTimeStep();
+//        B[t].resize(state_vector_size, num_ctrl);
+//
+//    }
 }
 
 void Optimiser::SetTrajecNumber(int trajec_number) {
@@ -109,7 +109,7 @@ void Optimiser::GenerateDerivatives(){
 
     auto start_interp_time = high_resolution_clock::now();
 //    InterpolateDerivatives(keypoint_generator->keypoints, activeYamlReader->costDerivsFD);
-    keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints,  horizonLength,
+    keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, horizon_length,
                                                A, B, l_x, l_u, l_xx, l_uu, activeYamlReader->costDerivsFD,
                                                num_ctrl);
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
@@ -129,12 +129,12 @@ void Optimiser::GenerateDerivatives(){
 
 void Optimiser::ComputeCostDerivatives(){
     #pragma omp parallel for
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizon_length; i++){
         activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
     }
 
-    activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizonLength - 1],
-                                           l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
+    activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizon_length - 1],
+                                           l_x[horizon_length - 1], l_xx[horizon_length - 1], l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
 }
 
 void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
@@ -191,7 +191,7 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     auto time_cost_start = std::chrono::high_resolution_clock::now();
 
     if(!activeYamlReader->costDerivsFD){
-        for(int i = 0; i < horizonLength; i++){
+        for(int i = 0; i < horizon_length; i++){
             if(i == 0){
                 activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
                                                        l_x[i], l_xx[i], l_u[i], l_uu[i], false);
@@ -201,8 +201,8 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
                                                        l_x[i], l_xx[i], l_u[i], l_uu[i], false);
             }
         }
-        activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizonLength - 1],
-                                               l_x[horizonLength - 1], l_xx[horizonLength - 1], l_u[horizonLength - 1], l_uu[horizonLength - 1], true);
+        activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizon_length - 1],
+                                               l_x[horizon_length - 1], l_xx[horizon_length - 1], l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
     }
 
 //    std::cout << "time cost derivs: " << duration_cast<microseconds>(high_resolution_clock::now() - time_cost_start).count() / 1000.0f << " ms\n";
@@ -217,7 +217,7 @@ void Optimiser::WorkerComputeDerivatives(int threadId) {
 
         int timeIndex = timeIndicesGlobal[iteration];
         bool terminal = false;
-        if(timeIndex == horizonLength - 1){
+        if(timeIndex == horizon_length - 1){
             terminal = true;
         }
 
@@ -344,7 +344,7 @@ void Optimiser::FilterDynamicsMatrices() {
             std::vector<double> unfiltered;
             std::vector<double> filtered;
 
-            for(int k = 0; k < horizonLength; k++){
+            for(int k = 0; k < horizon_length; k++){
                 unfiltered.push_back(A[k](i, j));
             }
 
@@ -359,7 +359,7 @@ void Optimiser::FilterDynamicsMatrices() {
             }
 
 
-            for(int k = 0; k < horizonLength; k++){
+            for(int k = 0; k < horizon_length; k++){
                 A[k](i, j) = filtered[k];
             }
         }

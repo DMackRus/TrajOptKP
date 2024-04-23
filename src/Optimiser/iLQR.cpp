@@ -7,6 +7,7 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
     maxHorizon = horizon;
     active_visualiser = _visualizer;
 
+    // Initialise saved systems state list
     if(MuJoCo_helper->CheckIfDataIndexExists(0)){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
     }
@@ -16,6 +17,72 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
 
     // initialise all vectors of matrices
     for(int i = 0; i < maxHorizon; i++){
+
+        if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
+        }
+        else{
+            MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
+        }
+    }
+
+    // Whether to do some low pass filtering over A and B matrices
+    filteringMethod = activeYamlReader->filtering;
+
+    Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, maxHorizon);
+
+}
+
+void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
+
+    std::cout << "New horizon length: " << new_horizon << "\n";
+    auto start = std::chrono::high_resolution_clock::now();
+
+    bool update_ctrl, update_dof, update_horizon = false;
+    if(new_num_ctrl != this->num_ctrl){
+        this->num_ctrl = new_num_ctrl;
+        update_ctrl = true;
+    }
+
+    if(new_num_dofs != this->dof){
+        this->dof = new_num_dofs;
+        update_dof = true;
+    }
+
+    if(new_horizon != this->horizon_length){
+        this->horizon_length = new_horizon;
+        update_horizon = true;
+    }
+
+    // Clear old matrices
+    if(update_ctrl){
+        l_u.clear();
+        l_uu.clear();
+
+        U_old.clear();
+        U_new.clear();
+
+        U_alpha.clear();
+
+        k.clear();
+    }
+
+    if(update_dof){
+        l_x.clear();
+        l_xx.clear();
+
+        A.clear();
+
+        X_old.clear();
+        X_new.clear();
+
+    }
+
+    // dependant on both dofs and num_ctrl
+    B.clear();
+    K.clear();
+
+    for(int t = 0; t < this->horizon_length; t++){
         // Cost matrices
         l_x.emplace_back(MatrixXd(2*dof, 1));
         l_xx.emplace_back(MatrixXd(2*dof, 2*dof));
@@ -26,11 +93,6 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
         // TODO - Move this to Optimiser constructor
         A.emplace_back(MatrixXd(2*dof, 2*dof));
         B.emplace_back(MatrixXd(2*dof, num_ctrl));
-
-        A[i].block(0, 0, dof, dof).setIdentity();
-        A[i].block(0, dof, dof, dof).setIdentity();
-        A[i].block(0, dof, dof, dof) *= MuJoCo_helper->ReturnModelTimeStep();
-        B[i].setZero();
 
         K.emplace_back(MatrixXd(num_ctrl, 2*dof));
         k.emplace_back(MatrixXd(num_ctrl, 1));
@@ -46,13 +108,6 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
         }
 
         U_alpha.push_back(U_temp);
-
-        if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
-            MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
-        }
-        else{
-            MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
-        }
     }
 
     // One more state than control
@@ -61,9 +116,7 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
     l_x.push_back(MatrixXd(2*dof, 1));
     l_xx.push_back(MatrixXd(2*dof, 2*dof));
 
-
-    // Whether to do some low pass filtering over A and B matrices
-    filteringMethod = activeYamlReader->filtering;
+    std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
 
 }
 
@@ -90,7 +143,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
         MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
     }
 
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizon_length; i++){
         // set controls
         activeModelTranslator->SetControlVector(initial_controls[i], MuJoCo_helper->main_data);
 
@@ -102,7 +155,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
         Ut = activeModelTranslator->ReturnControlVector(MuJoCo_helper->main_data);
         double stateCost;
         
-        if(i == horizonLength - 1){
+        if(i == horizon_length - 1){
             stateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
         }
         else{
@@ -149,15 +202,15 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls(horizon_length);
-    horizonLength = horizon_length;
+    horizon_length = horizon_length;
     numberOfTotalDerivs = horizon_length * dof;
 
     // TODO - code to adjust max horizon if opt horizon > max_horizon
     std::cout << "horizon is " << horizon_length << "\n";
 
-    if(keypoint_generator->horizon != horizonLength){
+    if(keypoint_generator->horizon != horizon_length){
         std::cout << "horizon length changed" << std::endl;
-        keypoint_generator->ResizeStateVector(dof, horizonLength);
+        keypoint_generator->ResizeStateVector(dof, horizon_length);
     }
 
     bool costReducedLastIter = true;
@@ -297,7 +350,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
             // Update the X_old and U_old if cost was reduced
             if(new_cost < oldCost){
-                for(int j = 0 ; j < horizonLength; j++){
+                for(int j = 0 ; j < horizon_length; j++){
                     X_old.at(j + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[j + 1]);
                     U_old[j] = U_new[j].replicate(1, 1);
                 }
@@ -403,7 +456,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     // Load the initial data back into main data
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizon_length; i++){
         optimisedControls[i] = U_old[i];
     }
 
@@ -414,9 +467,9 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 // ------------------------------------------- STEP 2 FUNCTIONS (BACKWARDS PASS) ----------------------------------------------
 bool iLQR::BackwardsPassQuuRegularisation(){
     MatrixXd V_x(2*dof, 2*dof);
-    V_x = l_x[horizonLength - 1];
+    V_x = l_x[horizon_length - 1];
     MatrixXd V_xx(2*dof, 2*dof);
-    V_xx = l_xx[horizonLength - 1];
+    V_xx = l_xx[horizon_length - 1];
     int Quu_pd_check_counter = 0;
     int number_steps_between_pd_checks = 100;
 
@@ -430,7 +483,7 @@ bool iLQR::BackwardsPassQuuRegularisation(){
     delta_J = 0.0f;
 
     // TODO check if this should start at -2 or -1 and end at 0 or 1?
-    for(int t = horizonLength - 1; t >= 0; t--){
+    for(int t = horizon_length - 1; t >= 0; t--){
 
 //        cout << "f_x[t] " << A[t] << endl;
 //        cout << "f_u[t] " << B[t] << endl;
@@ -535,7 +588,7 @@ double iLQR::ForwardsPass(double old_cost){
         MatrixXd X_new(2*dof, 1);
         MatrixXd _U(num_ctrl, 1);
 
-        for(int t = 0; t < horizonLength; t++) {
+        for(int t = 0; t < horizon_length; t++) {
             // Step 1 - get old state and old control that were linearised around
             _X = X_old[t].replicate(1, 1);
             _U = U_old[t].replicate(1, 1);
@@ -561,7 +614,7 @@ double iLQR::ForwardsPass(double old_cost){
 
             double newStateCost;
             // Terminal state
-            if(t == horizonLength - 1){
+            if(t == horizon_length - 1){
                 newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
             }
             else{
@@ -657,7 +710,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
         MatrixXd _U(num_ctrl, 1);
         MatrixXd Xt(2 * dof, 1);
 
-        for(int t = 0; t < horizonLength; t++) {
+        for(int t = 0; t < horizon_length; t++) {
             // Step 1 - get old state and old control that were linearised around
 //            _X = X_old[t].replicate(1, 1);
             //_U = activeModelTranslator->ReturnControlVector(t);
@@ -690,7 +743,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
 //
             double newStateCost;
             // Terminal state
-            if(t == horizonLength - 1){
+            if(t == horizon_length - 1){
                 newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->saved_systems_state_list[i + 1], true);
             }
             else{
@@ -723,7 +776,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
 
     // If the cost was reduced - update all the data states
     if(newCost < old_cost){
-        for(int i = 0; i < horizonLength; i++){
+        for(int i = 0; i < horizon_length; i++){
 
             activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MuJoCo_helper->main_data);
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
@@ -737,7 +790,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
 
         }
 
-        MatrixXd testState = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[horizonLength - 1]);
+        MatrixXd testState = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[horizon_length - 1]);
 //        cout << "final state after FP: " << testState.transpose() << endl;
 
         return newCost;
@@ -757,14 +810,14 @@ bool iLQR::RolloutWithKMatricesReduction(std::vector<int> dof_indices, double ol
     MatrixXd X_new(2*dof, 1);
     MatrixXd _U(num_ctrl, 1);
 
-    for(int t = 0; t < horizonLength; t++) {
+    for(int t = 0; t < horizon_length; t++) {
         for( int dof_index : dof_indices) {
             K[t].block(0, dof_index, num_ctrl, 1) = MatrixXd::Zero(num_ctrl, 1);
             K[t].block(0, dof_index + dof, num_ctrl, 1) = MatrixXd::Zero(num_ctrl, 1);
         }
     }
 
-    for(int t = 0; t < horizonLength; t++) {
+    for(int t = 0; t < horizon_length; t++) {
         // Step 1 - get old state and old control that were linearised around
         _X = X_old[t].replicate(1, 1);
         _U = U_old[t].replicate(1, 1);
@@ -791,7 +844,7 @@ bool iLQR::RolloutWithKMatricesReduction(std::vector<int> dof_indices, double ol
 
         double newStateCost;
         // Terminal state
-        if(t == horizonLength - 1){
+        if(t == horizon_length - 1){
             newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
         }
         else{
@@ -840,7 +893,7 @@ std::vector<int> iLQR::checkKMatrices(){
 //    }
 //
 
-    for(int t = 0; t < horizonLength; t += sampling_k_interval){
+    for(int t = 0; t < horizon_length; t += sampling_k_interval){
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
         if (!svd.computeV()) {
             std::cerr << "SVD decomposition failed!" << std::endl;
