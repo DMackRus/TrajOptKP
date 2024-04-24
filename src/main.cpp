@@ -251,8 +251,15 @@ int main(int argc, char **argv) {
 
         // Can we do some timing tests???
         // Rollout a trajectory
+
+        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+
         std::vector<MatrixXd> U_init;
         U_init = activeModelTranslator->CreateInitOptimisationControls(openloop_horizon);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+
         iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
         std::cout << "rollout done \n";
 
@@ -283,6 +290,7 @@ int main(int argc, char **argv) {
         iLQROptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, iLQROptimiser->horizon_length);
 
         iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
+        std::cout << "2nd rollout done \n";
 
         // Compute derivatives
         for(int i = 0; i < N; i++){
@@ -322,9 +330,9 @@ int main(int argc, char **argv) {
         std::cout << "time of derivs for reduced state vector: " << avg_time_derivs_reduced << " ms\n";
         std::cout << "time of bp for reduced state vector: " << avg_time_bp_reduced << " ms\n";
 
-        double percentage_decrease_derivs = 1 - (avg_time_derivs_reduced / avg_time_derivs_full);
-        double percentage_decrease_bp = 1 - (avg_time_bp_reduced / avg_time_bp_full);
-        double dof_percentage_decrease = 1 - ((double)dofs_reduced / (double)dofs_full);
+        double percentage_decrease_derivs = (1 - (avg_time_derivs_reduced / avg_time_derivs_full)) * 100.0;
+        double percentage_decrease_bp = (1 - (avg_time_bp_reduced / avg_time_bp_full)) * 100.0;
+        double dof_percentage_decrease = (1 - ((double)dofs_reduced / (double)dofs_full)) * 100.0;
         std::cout << "percent decrease of derivatives: " << percentage_decrease_derivs << "\n";
         std::cout << "percent decrease of backwards pass: " << percentage_decrease_bp << "\n";
         std::cout << "expected percentage decrease: " << dof_percentage_decrease << "\n";

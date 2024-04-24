@@ -1,6 +1,6 @@
 #include "ModelTranslator/TwoDPushing.h"
 
-TwoDPushing::TwoDPushing(int _clutterLevel): PushBaseClass("franka_gripper", "blueTin"){
+TwoDPushing::TwoDPushing(int _clutterLevel): PushBaseClass("franka_gripper", "goal"){
 
     clutterLevel = _clutterLevel;
     std::string yamlFilePath = "/taskConfigs/twoDPushingConfig.yaml";
@@ -58,12 +58,12 @@ void TwoDPushing::ReturnRandomStartState(){
 
     // Set start position of pushed object
     pose_6 pushedObjectStartPose;
-    MuJoCo_helper->GetBodyPoseAngle("blueTin", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->GetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
     pushedObjectStartPose.position(0) = startX;
     pushedObjectStartPose.position(1) = startY;
     pushedObjectStartPose.position(2) = 0.032;
-    MuJoCo_helper->SetBodyPoseAngle("blueTin", pushedObjectStartPose, MuJoCo_helper->main_data);
-    MuJoCo_helper->SetBodyPoseAngle("blueTin", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->main_data);
+    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
     MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
     MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
 
