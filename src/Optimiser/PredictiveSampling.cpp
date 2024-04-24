@@ -1,4 +1,4 @@
-#include "PredictiveSampling.h"
+#include "Optimiser/PredictiveSampling.h"
 
 PredictiveSampling::PredictiveSampling(std::shared_ptr<ModelTranslator> _modelTranslator,
                                        std::shared_ptr<MuJoCoHelper> MuJoCo_helper,

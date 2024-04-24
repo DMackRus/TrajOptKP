@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ModelTranslator.h"
-#include "PushBaseClass.h"
+#include "ModelTranslator/ModelTranslator.h"
+#include "ModelTranslator/PushBaseClass.h"
 
 class TwoDPushing: virtual public ModelTranslator, public PushBaseClass{
 public:

@@ -2,7 +2,7 @@
 
 #include "StdInclude.h"
 #include "MuJoCoHelper.h"
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 
 class PushBaseClass: virtual public ModelTranslator{
 public:

@@ -1,4 +1,4 @@
-#include "Reaching.h"
+#include "ModelTranslator/Reaching.h"
 
 pandaReaching::pandaReaching(): ModelTranslator(){
     std::string yamlFilePath = "/taskConfigs/reachingConfig.yaml";

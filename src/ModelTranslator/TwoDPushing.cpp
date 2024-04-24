@@ -1,4 +1,4 @@
-#include "TwoDPushing.h"
+#include "ModelTranslator/TwoDPushing.h"
 
 TwoDPushing::TwoDPushing(int _clutterLevel): PushBaseClass("franka_gripper", "blueTin"){
 

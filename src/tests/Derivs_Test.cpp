@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "Differentiator.h"
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 #include "test_acrobot.h"
 
 #include "3D_test_class.h"

@@ -13,7 +13,7 @@
 #pragma once
 
 #include "StdInclude.h"
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 #include "Differentiator.h"
 #include "KeyPointGenerator.h"
 #include <atomic>
@@ -207,7 +207,7 @@ public:
 
     int horizon_length = 0;
 
-    std::vector<double> costHistory;
+    std::vector<double> cost_history;
     double lowPassACoefficient = 0.25;
     std::vector<double> FIRCoefficients = {0.1, 0.15, 0.5, 0.15, 0.1};
 

@@ -1,4 +1,4 @@
-#include "PistonBlock.h"
+#include "ModelTranslator/PistonBlock.h"
 
 PistonBlock::PistonBlock(){
     std::string task_config = "/taskConfigs/piston_box_config.yaml";

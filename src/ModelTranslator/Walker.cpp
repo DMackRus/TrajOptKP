@@ -1,7 +1,7 @@
 //
 // Created by dave on 26/06/23.
 //
-#include "Walker.h"
+#include "ModelTranslator/Walker.h"
 
 walker::walker(int terrain, int locomotion_type): ModelTranslator(){
     std::string yaml_file_path;

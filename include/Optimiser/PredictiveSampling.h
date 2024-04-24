@@ -1,7 +1,7 @@
 #ifndef STOMP_H
 #define STOMP_H
 
-#include "Optimiser.h"
+#include "Optimiser/Optimiser.h"
 
 
 class PredictiveSampling: public Optimiser{

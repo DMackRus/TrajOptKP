@@ -1,5 +1,5 @@
 
-#include "Optimiser.h"
+#include "Optimiser/Optimiser.h"
 
 Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _MuJoCo_helper, std::shared_ptr<FileHandler> _yamlReader, std::shared_ptr<Differentiator> _differentiator){
     activeModelTranslator = _modelTranslator;

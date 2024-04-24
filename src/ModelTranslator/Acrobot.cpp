@@ -1,4 +1,4 @@
-#include "Acrobot.h"
+#include "ModelTranslator/Acrobot.h"
 
 Acrobot::Acrobot(): ModelTranslator(){
     std::string yamlFilePath = "/taskConfigs/acrobotConfig.yaml";

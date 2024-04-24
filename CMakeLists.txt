@@ -44,6 +44,9 @@ endif (TARGET yaml-cpp::yaml-cpp)
 set(PROJECT_INCLUDE_DIR ${PARENT_DIR}/${PROJECT_NAME}/include)
 message(STATUS "project include directory: " ${PROJECT_INCLUDE_DIR})
 
+# Create libraries
+#add_library(MuJoCo_helper STATIC src/PhysicsSimulators/MuJoCoHelper.cpp )
+
 add_executable(${PROJECT_NAME} src/main.cpp
             src/StdInclude/StdInclude.cpp
             src/PhysicsSimulators/MuJoCoHelper.cpp
@@ -67,7 +70,7 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/ThreeDPushing.cpp
             src/ModelTranslator/PushBaseClass.cpp
             src/ModelTranslator/Pentabot.cpp
-            src/ModelTranslator/PistonBlock.cpp)
+            src/ModelTranslator/PistonBlock.cpp src/Optimiser/iLQR_SVR.cpp include/Optimiser/iLQR_SVR.h)
 
 include_directories(
         include

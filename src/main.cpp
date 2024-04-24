@@ -4,25 +4,26 @@
 #include "MuJoCoHelper.h"
 
 // --------------------- different scenes -----------------------
-#include "Acrobot.h"
-#include "Pentabot.h"
-#include "PistonBlock.h"
+#include "ModelTranslator/Acrobot.h"
+#include "ModelTranslator/Pentabot.h"
+#include "ModelTranslator/PistonBlock.h"
 
-#include "Reaching.h"
+#include "ModelTranslator/Reaching.h"
 
-#include "TwoDPushing.h"
-#include "ThreeDPushing.h"
-#include "BoxFlick.h"
-#include "BoxSweep.h"
+#include "ModelTranslator/TwoDPushing.h"
+#include "ModelTranslator/ThreeDPushing.h"
+#include "ModelTranslator/BoxFlick.h"
+#include "ModelTranslator/BoxSweep.h"
 
-#include "Walker.h"
+#include "ModelTranslator/Walker.h"
 //#include "Hopper.h"
 //#include "humanoid.h"
 
 // --------------------- different optimisers -----------------------
-#include "iLQR.h"
-#include "PredictiveSampling.h"
-#include "GradDescent.h"
+#include "Optimiser/iLQR.h"
+#include "Optimiser/iLQR_SVR.h"
+#include "Optimiser/PredictiveSampling.h"
+#include "Optimiser/GradDescent.h"
 
 //----------------------- Testing methods ---------------------------
 #include "GenTestingData.h"
@@ -38,6 +39,7 @@ std::shared_ptr<ModelTranslator> activeModelTranslator;
 std::shared_ptr<Differentiator> activeDifferentiator;
 std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<iLQR> iLQROptimiser;
+std::shared_ptr<iLQR_SVR> iLQR_SVR_Optimiser;
 std::shared_ptr<PredictiveSampling> stompOptimiser;
 std::shared_ptr<GradDescent> gradDescentOptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
@@ -172,22 +174,26 @@ int main(int argc, char **argv) {
 
     // Choose an Optimiser
     int openloop_horizon = activeModelTranslator->openloop_horizon;
-//    if(optimiser == "interpolated_iLQR"){
-//        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
-//        activeOptimiser = iLQROptimiser;
-//    }
-//    else if(optimiser == "PredictiveSampling"){
-//        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, openloop_horizon, 8);
-//        activeOptimiser = stompOptimiser;
-//    }
-//    else if(optimiser == "GradDescent"){
-//        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, activeVisualiser, openloop_horizon, yamlReader);
-//        activeOptimiser = gradDescentOptimiser;
-//    }
-//    else{
-//        std::cerr << "invalid Optimiser selected, exiting" << endl;
-//        return -1;
-//    }
+    if(optimiser == "iLQR"){
+        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
+        activeOptimiser = iLQROptimiser;
+    }
+    else if(optimiser == "iLQR_SVR"){
+        iLQR_SVR_Optimiser = std::make_shared<iLQR_SVR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
+        activeOptimiser = iLQR_SVR_Optimiser;
+    }
+    else if(optimiser == "PredictiveSampling"){
+        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, openloop_horizon, 8);
+        activeOptimiser = stompOptimiser;
+    }
+    else if(optimiser == "GradDescent"){
+        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, activeVisualiser, openloop_horizon, yamlReader);
+        activeOptimiser = gradDescentOptimiser;
+    }
+    else{
+        std::cerr << "invalid Optimiser selected, exiting" << endl;
+        return -1;
+    }
 
     // Methods of control / visualisation
     if(runMode == "Init_controls"){

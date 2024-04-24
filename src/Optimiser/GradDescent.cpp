@@ -2,7 +2,7 @@
 // Created by davidrussell on 4/4/23.
 //
 
-#include "GradDescent.h"
+#include "Optimiser/GradDescent.h"
 
 GradDescent::GradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, std::shared_ptr<Visualiser> _visualizer, int _maxHorizon, std::shared_ptr<FileHandler> _yamlReader) : Optimiser(_modelTranslator, MuJoCo_helper, _yamlReader, _differentiator){
 //    activeDifferentiator = _differentiator;

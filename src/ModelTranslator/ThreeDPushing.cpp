@@ -1,4 +1,4 @@
-#include "ThreeDPushing.h"
+#include "ModelTranslator/ThreeDPushing.h"
 
 ThreeDPushing::ThreeDPushing() : PushBaseClass("franka_gripper", "goal"){
 

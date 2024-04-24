@@ -1,4 +1,4 @@
-#include "BoxSweep.h"
+#include "ModelTranslator/BoxSweep.h"
 
 BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "goal"){
 
