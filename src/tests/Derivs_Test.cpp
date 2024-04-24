@@ -3,13 +3,12 @@
 #include "Differentiator.h"
 #include "ModelTranslator/ModelTranslator.h"
 #include "test_acrobot.h"
-
 #include "3D_test_class.h"
 
 std::shared_ptr<ModelTranslator> model_translator;
 std::shared_ptr<Differentiator> differentiator;
 
-void compare_derivs(){
+void compare_dynamics_derivatives(){
     // Compute the A, B, C and D matrices via mjd_transitionFD
     // - Allocate A, B, C and D matrices.
     int dim_state_derivative = model_translator->MuJoCo_helper->model->nv * 2;
@@ -84,6 +83,8 @@ void compare_derivs(){
 
     std::cout << "A diff \n";
     std::cout << A_diff << "\n";
+    std::cout << "A_mine \n";
+    std::cout << A_mine[0] << "\n";
 
     for(int i = 0; i < dim_state_derivative; i++){
         for(int j = 0; j < dim_action; j++){
@@ -114,7 +115,7 @@ TEST(Derivatives, acrobot)
     // Append data to save systems state list
     model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
 
-    compare_derivs();
+    compare_dynamics_derivatives();
 
 }
 
@@ -126,18 +127,19 @@ TEST(Derivatives, pushing_3D)
 
     differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
 
-    // Initialise a state for the simulator
-    MatrixXd start_state(model_translator->state_vector_size, 1);
-    start_state << 0, -0.183, 0, -3.1, 0, 1.34, 0, 0, 0,
-                    0.5, 0.2, 0.1, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0;
-    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
+//    // Initialise a state for the simulator
+//    MatrixXd start_state(model_translator->state_vector_size, 1);
+//    start_state << 0, -0.183, 0, -3.1, 0, 1.34, 0, 0, 0,
+//                    0.5, 0.2, 0.1, 0, 0, 0,
+//                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+//                    0, 0, 0, 0, 0, 0;
+//    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
+    model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
 
     // Append data to save systems state list
     model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
 
-    compare_derivs();
+    compare_dynamics_derivatives();
 }
 
 TEST(Derivatives, pushing_3D_rotated)
@@ -148,18 +150,65 @@ TEST(Derivatives, pushing_3D_rotated)
 
     differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
 
-    // Initialise a state for the simulator
-    MatrixXd start_state(model_translator->state_vector_size, 1);
-    start_state << 0, -0.183, 0, -3.1, 0, 1.34, 0, 0, 0,
-            0.5, 0.2, 0.1, 0.5, 0.2, 0.1,
-            0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0;
-    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
+//    // Initialise a state for the simulator
+//    MatrixXd start_state(model_translator->state_vector_size, 1);
+//    start_state << 0, -0.183, 0, -3.1, 0, 1.34, 0, 0, 0,
+//            0.5, 0.2, 0.1, 0.5, 0.2, 0.1,
+//            0, 0, 0, 0, 0, 0, 0, 0, 0,
+//            0, 0, 0, 0, 0, 0;
+//    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
+    model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
+    pose_6 body_goal;
+    model_translator->MuJoCo_helper->GetBodyPoseAngle("goal", body_goal, model_translator->MuJoCo_helper->master_reset_data);
+    body_goal.orientation(0) = 0.5;
+    body_goal.orientation(1) = 0.2;
+    body_goal.orientation(2) = 0.1;
+    model_translator->MuJoCo_helper->SetBodyPoseAngle("goal", body_goal, model_translator->MuJoCo_helper->master_reset_data);
 
     // Append data to save systems state list
     model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
 
-    compare_derivs();
+    compare_dynamics_derivatives();
+}
+
+TEST(Derivatives, cost_derivatives_no_angular){
+    std::cout << "Begin test - Cost derivatives - no angular cost\n";
+    std::shared_ptr<threeDTestClass> pushing_3D = std::make_shared<threeDTestClass>();
+    model_translator = pushing_3D;
+
+    model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
+    pose_6 body_goal_vel;
+    model_translator->MuJoCo_helper->GetBodyVelocity("goal", body_goal_vel, model_translator->MuJoCo_helper->master_reset_data);
+    body_goal_vel.position(0) = 0.5;
+    body_goal_vel.position(1) = 0.2;
+    body_goal_vel.position(2) = 0.1;
+    model_translator->MuJoCo_helper->SetBodyVelocity("goal", body_goal_vel, model_translator->MuJoCo_helper->master_reset_data);
+
+    // Append data to save systems state list
+    model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
+
+    MatrixXd l_x(model_translator->dof * 2, 1);
+    MatrixXd l_xx(model_translator->dof * 2, model_translator->dof * 2);
+    MatrixXd l_u(model_translator->num_ctrl, 1);
+    MatrixXd l_uu(model_translator->num_ctrl, model_translator->num_ctrl);
+
+    model_translator->CostDerivatives(model_translator->MuJoCo_helper->saved_systems_state_list[0],
+                                        l_x, l_xx, l_u, l_uu, false);
+
+    MatrixXd l_x_expected(model_translator->dof * 2, 1);
+    MatrixXd l_xx_expected(model_translator->dof * 2, model_translator->dof * 2);
+
+    l_x_expected.setZero();
+    l_xx_expected.setZero();
+
+    std::cout << l_x << "\n";
+    std::cout << l_xx << "\n";
+
+    // Expected indices are 9, 10, 36, 37
+    std::cout << "l_x[9]: " << l_x(9) << " l_x[10]: " << l_x(10) << "l_x[36]: " << l_x(36) << " l_x[37]: " << l_x(37) << std::endl;
+    std::cout << "l_xx[9, 9]: " << l_xx(9, 9) << " l_xx[10, 10]: " << l_xx(10, 10) << "l_xx[36, 36]: " << l_xx(36, 36) << " l_xx[37, 37]: " << l_xx(37, 37) << std::endl;
 }
 
 int main(int argc, char* argv[]){

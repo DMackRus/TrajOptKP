@@ -270,6 +270,52 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         time_get_derivs_ms.push_back(linDuration.count() / 1000.0f);
         timeDerivsPerIter.push_back(linDuration.count() / 1000000.0f);
 
+        // TODO - remove temporary code
+//        for(int t = 0; t < horizon_length; t++){
+//            // Block columns corresponding to angular dofs
+//            A[t].block(0, 10, 2*dof, 3).setZero();
+//            A[t].block(0, 10 + dof, 2*dof, 3).setZero();
+//
+//            A[t].block(0, 16, 2*dof, 3).setZero();
+//            A[t].block(0, 16 + dof, 2*dof, 3).setZero();
+//
+//            A[t].block(0, 22, 2*dof, 3).setZero();
+//            A[t].block(0, 22 + dof, 2*dof, 3).setZero();
+//
+//            A[t].block(0, 28, 2*dof, 3).setZero();
+//            A[t].block(0, 28 + dof, 2*dof, 3).setZero();
+//
+//            // Block rows corresponding to angular dofs
+//            A[t].block(10, 0, 3, 2*dof).setZero();
+//            A[t].block(10 + dof, 0, 3, 2*dof).setZero();
+//
+//            A[t].block(16, 0, 3, 2*dof).setZero();
+//            A[t].block(16 + dof, 0, 3, 2*dof).setZero();
+//
+//            A[t].block(22, 0, 3, 2*dof).setZero();
+//            A[t].block(22 + dof, 0, 3, 2*dof).setZero();
+//
+//            A[t].block(28, 0, 3, 2*dof).setZero();
+//            A[t].block(28 + dof, 0, 3, 2*dof).setZero();
+//
+//            // Block rows of the B matrix
+//            B[t].block(10, 0, 3, num_ctrl).setZero();
+//            B[t].block(10 + dof, 0, 3, num_ctrl).setZero();
+//
+//            B[t].block(16, 0, 3, num_ctrl).setZero();
+//            B[t].block(16 + dof, 0, 3, num_ctrl).setZero();
+//
+//            B[t].block(22, 0, 3, num_ctrl).setZero();
+//            B[t].block(22 + dof, 0, 3, num_ctrl).setZero();
+//
+//            B[t].block(28, 0, 3, num_ctrl).setZero();
+//            B[t].block(28 + dof, 0, 3, num_ctrl).setZero();
+//
+//        }
+
+//        std::cout << "A[0] \n" << A[0] << std::endl;
+//        std::cout << "B[0] \n" << B[0] << std::endl;
+
         // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law
         bool validBackwardsPass = false;
         bool lambdaExit = false;
@@ -297,6 +343,29 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         auto bpDuration = duration_cast<microseconds>(bp_stop - bp_start);
 
         time_backwards_pass_ms.push_back(bpDuration.count() / 1000.0f);
+
+        // TODO - remove temporary code
+        // Nullify columns of K matrix that correspond to angular dofs
+//        std::cout << "state vector size: " << dof*2 << "\n";
+//        std::cout << "K[1] \n" << K[1] << std::endl;
+//        for(int t = 0; t < horizon_length; t++){
+//            // Goal object
+//            K[t].block(0, 10, num_ctrl, 3).setZero();
+//            K[t].block(0, 10 + dof, num_ctrl, 3).setZero();
+//
+//            // Obstacle 1
+//            K[t].block(0, 16, num_ctrl, 3).setZero();
+//            K[t].block(0, 16 + dof, num_ctrl, 3).setZero();
+//
+//            // Obstacle 2
+//            K[t].block(0, 22, num_ctrl, 3).setZero();
+//            K[t].block(0, 22 + dof, num_ctrl, 3).setZero();
+//
+//            // Obstacle 3
+//            K[t].block(0, 28, num_ctrl, 3).setZero();
+//            K[t].block(0, 28 + dof, num_ctrl, 3).setZero();
+//        }
+//        std::cout << "K[1] \n" << K[1] << std::endl;
 
         if(!lambdaExit){
             // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
@@ -587,10 +656,14 @@ double iLQR::ForwardsPass(double old_cost){
 
 //             if(t % 5 == 0){
 //                 const char* fplabel = "fp";
+//                 MuJoCo_helper->CopySystemState(MuJoCo_helper->vis_data, MuJoCo_helper->main_data);
+//                 MuJoCo_helper->ForwardSimulator(MuJoCo_helper->vis_data);
 //                 active_visualiser->render(fplabel);
 //             }
 
         }
+
+//        std::cout << "cost from alpha: " << alphas[alphaCount] << " is " << newCost << std::endl;
 
         if(newCost < old_cost){
             costReduction = true;

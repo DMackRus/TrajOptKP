@@ -187,7 +187,7 @@ openloop_horizon: 1000
 mpc_horizon: 60
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
-minN: 1000
+minN: 1
 maxN: 50
 iterativeErrorThreshold: 0.0001
 robots:
