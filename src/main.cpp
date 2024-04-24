@@ -282,7 +282,14 @@ int main(int argc, char **argv) {
 
 
         // Remove elements from task
-        std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw"};
+        std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw",
+                                                    "mediumCylinder_y", "mediumCylinder_pitch", "mediumCylinder_roll", "mediumCylinder_yaw",
+                                                    "bigBox_y", "bigBox_pitch", "bigBox_roll", "bigBox_yaw",
+                                                    "obstacle1_y", "obstacle1_pitch", "obstacle1_roll", "obstacle1_yaw",
+                                                    "obstacle2_y", "obstacle2_pitch", "obstacle2_roll", "obstacle2_yaw",
+                                                    "obstacle3_y", "obstacle3_pitch", "obstacle3_roll", "obstacle3_yaw",
+                                                    "obstacle4_y", "obstacle4_pitch", "obstacle4_roll", "obstacle4_yaw",
+                                                    "obstacle5_y", "obstacle5_pitch", "obstacle5_roll", "obstacle5_yaw",};
         activeModelTranslator->UpdateStateVector(remove_elements, false);
         dofs_reduced = activeModelTranslator->dof;
 

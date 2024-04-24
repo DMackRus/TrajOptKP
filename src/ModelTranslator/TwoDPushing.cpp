@@ -73,9 +73,9 @@ void TwoDPushing::ReturnRandomStartState(){
     std::vector<std::string> object_names;
 
     if(clutterLevel == lowClutter  || clutterLevel == constrainedClutter){
-        object_names.emplace_back("bigBox");
-        object_names.emplace_back("tallCylinder");
-        object_names.emplace_back("smallBox");
+        object_names.emplace_back("obstacle_1");
+        object_names.emplace_back("obstacle_2");
+        object_names.emplace_back("obstacle_3");
 
         int validObjectCounter = 0;
 
@@ -119,13 +119,13 @@ void TwoDPushing::ReturnRandomStartState(){
         }
     }
     else if(clutterLevel == heavyClutter){
-        object_names.emplace_back("mediumCylinder");
-        object_names.emplace_back("bigBox");
-        object_names.emplace_back("obstacle1");
-        object_names.emplace_back("obstacle2");
-        object_names.emplace_back("obstacle3");
-        object_names.emplace_back("obstacle4");
-        object_names.emplace_back("obstacle5");
+        object_names.emplace_back("obstacle_1");
+        object_names.emplace_back("obstacle_2");
+        object_names.emplace_back("obstacle_3");
+        object_names.emplace_back("obstacle_4");
+        object_names.emplace_back("obstacle_5");
+        object_names.emplace_back("obstacle_6");
+        object_names.emplace_back("obstacle_7");
 
 
         cout << "goal position: " << goalX << ", " << goalY << endl;
