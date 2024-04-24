@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 #include "MuJoCoHelper.h"
 #include "mujoco.h"
 

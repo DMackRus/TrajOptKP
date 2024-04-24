@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 ================================================================================
     File: iLQR.h
@@ -22,25 +24,25 @@
             5. Forwards pass with line search to find new locally optimal trajectory
             6. Repeat steps 3-5 until convergence
 
-        This class uses approximation of dynamics derivatives via KeyPoint Generator
-        class to speed up dynamics derivative computation.
+        This class uses approximation of dynamics derivatives via the
+        Keypoint Generator class to speed up dynamics derivative computation.
 ================================================================================
 */
 #pragma once
 
-#include "Optimiser.h"
+#include "Optimiser/Optimiser.h"
 #include "Differentiator.h"
 #include "Visualiser.h"
 #include "FileHandler.h"
 #include <algorithm>
 
-class iLQR: public Optimiser{
+class iLQR_SVR: public Optimiser{
 public:
     /**
-     * Construct a new iLQR optimiser object.
+     * Construct a new iLQR with state vector reduction optimiser object.
      *
      */
-    iLQR(std::shared_ptr<ModelTranslator> _modelTranslator,
+    iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator,
          std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
          std::shared_ptr<Differentiator> _differentiator,
          int horizon,
@@ -74,19 +76,28 @@ public:
      */
     std::vector<MatrixXd> Optimise(mjData *d, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length) override;
 
+    void Iteration(int iteration_num, bool &converged, bool &lambda_exit);
+
     void PrintBanner(double time_rollout);
 
     void PrintBannerIteration(int iteration, double new_cost, double old_cost, double eps,
                               double lambda, double percent_derivatives, double time_derivs, double time_bp,
                               double time_fp, int num_linesearches);
 
+    void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
 
-    // Whether to save trajectory information to file
-    bool save_trajec_information = false;
+    /**
+     * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
+     *
+     * @return bool - true if successful (all matrices were P.D), false otherwise.
+     */
+    bool BackwardsPassQuuRegularisation();
 
-    double avg_surprise = 0.0f;
-    double avg_expected = 0.0f;
-    double new_cost = 0.0f;
+    double avg_surprise = 0.0;
+    double avg_expected = 0.0;
+    double new_cost = 0.0;
+    double old_cost = 0.0;
+    double cost_reduced_last_iter = true;
 
 
 private:
@@ -122,12 +133,7 @@ private:
     std::vector<double> surprises;
     std::vector<double> expecteds;
 
-    /**
-     * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
-     *
-     * @return bool - true if successful (all matrices were P.D), false otherwise.
-     */
-    bool BackwardsPassQuuRegularisation();
+
 
     /**
      * Checks whether the supplied matrix is positive defeinite.
@@ -171,6 +177,10 @@ private:
      * @return bool - true if the cost was similar, false otherwise.
      */
     bool RolloutWithKMatricesReduction(std::vector<int> dof_indices, double old_cost, double new_cost, double alpha);
+
+    bool UpdateLambda(bool valid_backwards_pass);
+
+    void UpdateNominal();
 
     // Visualiser object
     std::shared_ptr<Visualiser> active_visualiser;

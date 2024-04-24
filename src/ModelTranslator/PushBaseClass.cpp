@@ -1,4 +1,4 @@
-#include "PushBaseClass.h"
+#include "ModelTranslator/PushBaseClass.h"
 
 PushBaseClass::PushBaseClass(std::string EE_name, std::string body_name){
     this->EE_name = EE_name;
@@ -224,7 +224,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
         MatrixXd desiredEEForce(6, 1);
         MatrixXd desiredControls(num_ctrl, 1);
 
-        if(active_state_vector.robots[0].torqueControlled){
+        if(current_state_vector.robots[0].torqueControlled){
             for(int j = 0; j < 6; j++) {
                 desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
             }
@@ -232,7 +232,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
 
             std::vector<double> gravCompensation;
             MatrixXd gravCompControl(num_ctrl, 1);
-            MuJoCo_helper->GetRobotJointsGravityCompensationControls(active_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
+            MuJoCo_helper->GetRobotJointsGravityCompensationControls(current_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
             for(int j = 0; j < num_ctrl; j++){
                 gravCompControl(j) = gravCompensation[j];
             }

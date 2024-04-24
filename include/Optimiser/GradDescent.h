@@ -6,7 +6,7 @@
 #define AUTOTOTASK_GRADDESCENT_H
 
 #include "Optimiser.h"
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 #include "MuJoCoHelper.h"
 #include "Visualiser.h"
 #include "Differentiator.h"

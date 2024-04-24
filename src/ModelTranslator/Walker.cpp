@@ -1,7 +1,7 @@
 //
 // Created by dave on 26/06/23.
 //
-#include "Walker.h"
+#include "ModelTranslator/Walker.h"
 
 walker::walker(int terrain, int locomotion_type): ModelTranslator(){
     std::string yaml_file_path;
@@ -34,19 +34,19 @@ void walker::ReturnRandomStartState(){
     double start_config[9] = {0, 0, 0, 1, -1, 0.2, 0, 0, 0};
 
     for(int i = 0; i < 9; i++){
-        active_state_vector.robots[0].startPos[i] = start_config[i];
+        current_state_vector.robots[0].startPos[i] = start_config[i];
     }
 }
 
 void walker::ReturnRandomGoalState(){
     for(int i = 0; i < 9; i++){
-        active_state_vector.robots[0].goalPos[i] = 0.0;
-        active_state_vector.robots[0].goalVel[i] = 0.0;
+        current_state_vector.robots[0].goalPos[i] = 0.0;
+        current_state_vector.robots[0].goalVel[i] = 0.0;
     }
 
     // Random body velocity between low_bound_vel and hig_bound_vel
     float rand_body_vel = randFloat(low_bound_velocity, high_bound_velocity);
-    active_state_vector.robots[0].goalVel[1] = rand_body_vel;
+    current_state_vector.robots[0].goalVel[1] = rand_body_vel;
 }
 
 std::vector<MatrixXd> walker::CreateInitOptimisationControls(int horizonLength){

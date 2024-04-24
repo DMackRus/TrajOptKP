@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 
 enum terrains{
     PLANE,

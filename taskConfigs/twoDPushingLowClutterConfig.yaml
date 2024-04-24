@@ -23,7 +23,7 @@ robots:
     jointJerkThresholds: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
-  blueTin:
+  goal:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
     startLinearPos: [0.4, 0.2, 0.0]
@@ -42,7 +42,7 @@ bodies:
     angularJerkThreshold: [ 0.01, 0.01, 0.01 ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
-  bigBox:
+  obstacle_1:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
     startLinearPos: [0.48, 0.3, 0.0]
@@ -61,7 +61,7 @@ bodies:
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
-  tallCylinder:
+  obstacle_2:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.6, 0.4, 0.0 ]
@@ -80,7 +80,7 @@ bodies:
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
-  smallBox:
+  obstacle_3:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.7, 0.3, 0.0 ]

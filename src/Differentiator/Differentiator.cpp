@@ -4,15 +4,17 @@ Differentiator::Differentiator(std::shared_ptr<ModelTranslator> model_translator
     this->model_translator = model_translator;
     this->MuJoCo_helper = MuJoCo_helper;
 
-    dof = model_translator->dof;
-    num_ctrl = model_translator->num_ctrl;
-    dim_state = 2 * dof;
 }
 
 void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
                                         MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
                                         int data_index, int tid, bool terminal, bool cost_derivs,
                                         bool central_diff, double eps){
+
+    // TODO - check this still works
+    dof = model_translator->dof;
+    num_ctrl = model_translator->num_ctrl;
+    dim_state = 2 * dof;
 
     // Aliases
     int nq = MuJoCo_helper->model->nq, nv = MuJoCo_helper->model->nv,

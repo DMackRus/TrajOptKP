@@ -4,25 +4,26 @@
 #include "MuJoCoHelper.h"
 
 // --------------------- different scenes -----------------------
-#include "Acrobot.h"
-#include "Pentabot.h"
-#include "PistonBlock.h"
+#include "ModelTranslator/Acrobot.h"
+#include "ModelTranslator/Pentabot.h"
+#include "ModelTranslator/PistonBlock.h"
 
-#include "Reaching.h"
+#include "ModelTranslator/Reaching.h"
 
-#include "TwoDPushing.h"
-#include "ThreeDPushing.h"
-#include "BoxFlick.h"
-#include "BoxSweep.h"
+#include "ModelTranslator/TwoDPushing.h"
+#include "ModelTranslator/ThreeDPushing.h"
+#include "ModelTranslator/BoxFlick.h"
+#include "ModelTranslator/BoxSweep.h"
 
-#include "Walker.h"
+#include "ModelTranslator/Walker.h"
 //#include "Hopper.h"
 //#include "humanoid.h"
 
 // --------------------- different optimisers -----------------------
-#include "iLQR.h"
-#include "PredictiveSampling.h"
-#include "GradDescent.h"
+#include "Optimiser/iLQR.h"
+#include "Optimiser/iLQR_SVR.h"
+#include "Optimiser/PredictiveSampling.h"
+#include "Optimiser/GradDescent.h"
 
 //----------------------- Testing methods ---------------------------
 #include "GenTestingData.h"
@@ -38,6 +39,7 @@ std::shared_ptr<ModelTranslator> activeModelTranslator;
 std::shared_ptr<Differentiator> activeDifferentiator;
 std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<iLQR> iLQROptimiser;
+std::shared_ptr<iLQR_SVR> iLQR_SVR_Optimiser;
 std::shared_ptr<PredictiveSampling> stompOptimiser;
 std::shared_ptr<GradDescent> gradDescentOptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
@@ -153,7 +155,7 @@ int main(int argc, char **argv) {
         activeModelTranslator->GenerateRandomGoalAndStartState();
     }
     else if(taskInitMode == "fromCSV"){
-        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->active_state_vector);
+        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->current_state_vector);
     }
 
     // Initialise the system state from desired mechanism
@@ -172,9 +174,13 @@ int main(int argc, char **argv) {
 
     // Choose an Optimiser
     int openloop_horizon = activeModelTranslator->openloop_horizon;
-    if(optimiser == "interpolated_iLQR"){
+    if(optimiser == "iLQR"){
         iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
+    }
+    else if(optimiser == "iLQR_SVR"){
+        iLQR_SVR_Optimiser = std::make_shared<iLQR_SVR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
+        activeOptimiser = iLQR_SVR_Optimiser;
     }
     else if(optimiser == "PredictiveSampling"){
         stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, openloop_horizon, 8);
@@ -206,29 +212,137 @@ int main(int argc, char **argv) {
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
 
-        // Set a pose of the object in mid air for clarity
-        pose_6 object;
-        object.position[0] = 0.8;
-        object.position[1] = 0.0;
-        object.position[2] = 0.5;
+        // Testing code for rotating object around in mid air and testing ost function etc.
+//        pose_6 object;
+//        object.position[0] = 0.8;
+//        object.position[1] = 0.0;
+//        object.position[2] = 0.5;
+//
+//        object.orientation[0] = 0.0;
+//        object.orientation[1] = 0.0;
+//        object.orientation[2] = 0.0;
+//
+//        m_point axis_test = {0, 0.5, 0.1};
+//        m_quat test = axis2Quat(axis_test);
+//        axis_test = quat2Axis(test);
+//        std::cout << "quat: " << test << std::endl;
+//        std::cout << "axis test: " << axis_test << "\n";
+//
+//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+//        activeModelTranslator->MuJoCo_helper->SetBodyPoseAngle("goal", object, activeModelTranslator->MuJoCo_helper->vis_data);
+//
+//        while(activeVisualiser->windowOpen()){
+//            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+//            activeVisualiser->render("Test");
+//        }
+        // --------------------------------------------------------------------------------------------------------------
 
-        object.orientation[0] = 0.0;
-        object.orientation[1] = 0.0;
-        object.orientation[2] = 0.0;
+        std::vector<double> time_derivs_full;
+        std::vector<double> time_bp_full;
+        std::vector<double> time_derivs_reduced;
+        std::vector<double> time_bp_reduced;
 
-        m_point axis_test = {0, 0.5, 0.1};
-        m_quat test = axis2Quat(axis_test);
-        axis_test = quat2Axis(test);
-        std::cout << "quat: " << test << std::endl;
-        std::cout << "axis test: " << axis_test << "\n";
+        int dofs_full, dofs_reduced;
+        int N = 10;
 
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-        activeModelTranslator->MuJoCo_helper->SetBodyPoseAngle("goal", object, activeModelTranslator->MuJoCo_helper->vis_data);
+        dofs_full = activeModelTranslator->dof;
 
-        while(activeVisualiser->windowOpen()){
-            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-            activeVisualiser->render("Test");
+        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
+
+        // Can we do some timing tests???
+        // Rollout a trajectory
+
+        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+
+        std::vector<MatrixXd> U_init;
+        U_init = activeModelTranslator->CreateInitOptimisationControls(openloop_horizon);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+
+        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
+        std::cout << "rollout done \n";
+
+        // Compute derivatives
+        auto timer_start = std::chrono::high_resolution_clock::now();
+
+        for(int i = 0; i < N; i++){
+            timer_start = std::chrono::high_resolution_clock::now();
+            iLQROptimiser->GenerateDerivatives();
+            time_derivs_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::high_resolution_clock::now() - timer_start).count());
         }
+
+        for(int i = 0; i < N; i++){
+            timer_start = std::chrono::high_resolution_clock::now();
+            iLQROptimiser->BackwardsPassQuuRegularisation();
+            time_bp_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::high_resolution_clock::now() - timer_start).count());
+        }
+
+
+        // Remove elements from task
+        std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw",
+                                                    "mediumCylinder_y", "mediumCylinder_pitch", "mediumCylinder_roll", "mediumCylinder_yaw",
+                                                    "bigBox_y", "bigBox_pitch", "bigBox_roll", "bigBox_yaw",
+                                                    "obstacle1_y", "obstacle1_pitch", "obstacle1_roll", "obstacle1_yaw",
+                                                    "obstacle2_y", "obstacle2_pitch", "obstacle2_roll", "obstacle2_yaw",
+                                                    "obstacle3_y", "obstacle3_pitch", "obstacle3_roll", "obstacle3_yaw",
+                                                    "obstacle4_y", "obstacle4_pitch", "obstacle4_roll", "obstacle4_yaw",
+                                                    "obstacle5_y", "obstacle5_pitch", "obstacle5_roll", "obstacle5_yaw",};
+        activeModelTranslator->UpdateStateVector(remove_elements, false);
+        dofs_reduced = activeModelTranslator->dof;
+
+        // resize optimiser state
+        iLQROptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, iLQROptimiser->horizon_length);
+
+        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
+        std::cout << "2nd rollout done \n";
+
+        // Compute derivatives
+        for(int i = 0; i < N; i++){
+            timer_start = std::chrono::high_resolution_clock::now();
+            iLQROptimiser->GenerateDerivatives();
+            time_derivs_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::high_resolution_clock::now() - timer_start).count());
+        }
+
+        // Compute backwards pass
+        for(int i = 0; i < N; i++){
+            timer_start = std::chrono::high_resolution_clock::now();
+            iLQROptimiser->BackwardsPassQuuRegularisation();
+            time_bp_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+                    std::chrono::high_resolution_clock::now() - timer_start).count());
+        }
+
+        double avg_time_derivs_full, avg_time_derivs_reduced, avg_time_bp_full, avg_time_bp_reduced;
+
+        for(int i = 0; i < N; i++){
+            avg_time_derivs_full += time_derivs_full[i];
+            avg_time_derivs_reduced += time_derivs_reduced[i];
+            avg_time_bp_full += time_bp_full[i];
+            avg_time_bp_reduced += time_bp_reduced[i];
+        }
+
+        avg_time_derivs_full /= N;
+        avg_time_derivs_reduced /= N;
+        avg_time_bp_full /= N;
+        avg_time_bp_reduced /= N;
+
+        std::cout << "-------- Results of state vector dimensionality reduction ----------- \n";
+        std::cout << "num dofs in full state vector: " << dofs_full << "\n";
+        std::cout << "time of derivs for full state vector: " << avg_time_derivs_full << " ms \n";
+        std::cout << "time of bp for full state vector: " << avg_time_bp_full << " ms \n";
+        std::cout << "num dofs in reduced state vector: " << dofs_reduced << "\n";
+        std::cout << "time of derivs for reduced state vector: " << avg_time_derivs_reduced << " ms\n";
+        std::cout << "time of bp for reduced state vector: " << avg_time_bp_reduced << " ms\n";
+
+        double percentage_decrease_derivs = (1 - (avg_time_derivs_reduced / avg_time_derivs_full)) * 100.0;
+        double percentage_decrease_bp = (1 - (avg_time_bp_reduced / avg_time_bp_full)) * 100.0;
+        double dof_percentage_decrease = (1 - ((double)dofs_reduced / (double)dofs_full)) * 100.0;
+        std::cout << "percent decrease of derivatives: " << percentage_decrease_derivs << "\n";
+        std::cout << "percent decrease of backwards pass: " << percentage_decrease_bp << "\n";
+        std::cout << "expected percentage decrease: " << dof_percentage_decrease << "\n";
 
         return EXIT_FAILURE;
     }

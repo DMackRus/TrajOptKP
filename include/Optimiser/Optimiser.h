@@ -13,7 +13,7 @@
 #pragma once
 
 #include "StdInclude.h"
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 #include "Differentiator.h"
 #include "KeyPointGenerator.h"
 #include <atomic>
@@ -106,8 +106,10 @@ public:
      * Resize variables that are dependant on the size of the state vector.
      *
      * @param new_num_dofs - The new number of degrees of freedom in the state vector.
+     * @param new_num_ctrl - The new number of controls
+     * @param new_horizon - New horizon of the trajectory
      */
-    void ResizeStateVector(int new_num_dofs);
+    virtual void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon);
 
     /**
      * Returns the current active keypoint method, and its associating parameters.
@@ -203,9 +205,9 @@ public:
     vector<MatrixXd> X_new;
     vector<MatrixXd> X_old;
 
-    int horizonLength;
+    int horizon_length = 0;
 
-    std::vector<double> costHistory;
+    std::vector<double> cost_history;
     double lowPassACoefficient = 0.25;
     std::vector<double> FIRCoefficients = {0.1, 0.15, 0.5, 0.15, 0.1};
 

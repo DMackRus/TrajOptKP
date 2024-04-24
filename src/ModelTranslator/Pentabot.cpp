@@ -1,4 +1,4 @@
-#include "Pentabot.h"
+#include "ModelTranslator/Pentabot.h"
 
 Pentabot::Pentabot(): ModelTranslator(){
     std::string yamlFilePath = "/taskConfigs/pentabot_config.yaml";
@@ -6,18 +6,18 @@ Pentabot::Pentabot(): ModelTranslator(){
 }
 
 void Pentabot::ReturnRandomStartState(){
-    active_state_vector.robots[0].startPos[0] = 3.1415;
-    active_state_vector.robots[0].startPos[1] = randFloat(-0.1, 0.1);
-    active_state_vector.robots[0].startPos[2] = randFloat(-0.2, 0.2);
-    active_state_vector.robots[0].startPos[3] = randFloat(-0.1, 0.1);
-    active_state_vector.robots[0].startPos[4] = randFloat(-0.4, 0.4);
+    current_state_vector.robots[0].startPos[0] = 3.1415;
+    current_state_vector.robots[0].startPos[1] = randFloat(-0.1, 0.1);
+    current_state_vector.robots[0].startPos[2] = randFloat(-0.2, 0.2);
+    current_state_vector.robots[0].startPos[3] = randFloat(-0.1, 0.1);
+    current_state_vector.robots[0].startPos[4] = randFloat(-0.4, 0.4);
 }
 
 void Pentabot::ReturnRandomGoalState(){
 
     for(int i = 0; i < dof; i++){
-        active_state_vector.robots[0].goalPos[i] = 0.0;
-        active_state_vector.robots[0].goalVel[i] = 0.0;
+        current_state_vector.robots[0].goalPos[i] = 0.0;
+        current_state_vector.robots[0].goalVel[i] = 0.0;
     }
 }
 
@@ -32,7 +32,7 @@ bool Pentabot::TaskComplete(mjData *d, double &dist){
 
     for(int i = 0; i < dof; i++){
         std::cout << "robot joint: " << robot_joints[i] << std::endl;
-        dist += abs(active_state_vector.robots[0].goalPos[i] - robot_joints[i]);
+        dist += abs(current_state_vector.robots[0].goalPos[i] - robot_joints[i]);
     }
     std::cout << "dist" << dist << std::endl;
 

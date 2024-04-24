@@ -2,7 +2,7 @@
 // Created by davidrussell on 4/4/23.
 //
 
-#include "GradDescent.h"
+#include "Optimiser/GradDescent.h"
 
 GradDescent::GradDescent(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, std::shared_ptr<Visualiser> _visualizer, int _maxHorizon, std::shared_ptr<FileHandler> _yamlReader) : Optimiser(_modelTranslator, MuJoCo_helper, _yamlReader, _differentiator){
 //    activeDifferentiator = _differentiator;
@@ -117,7 +117,7 @@ std::vector<MatrixXd> GradDescent::Optimise(mjData *d, std::vector<MatrixXd> ini
 
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls;
-    horizonLength = _horizonLength;
+    horizon_length = _horizonLength;
     double oldCost = 0.0f;
     double newCost = 0.0f;
 
@@ -171,7 +171,7 @@ std::vector<MatrixXd> GradDescent::Optimise(mjData *d, std::vector<MatrixXd> ini
     // Load the initial data back into main data
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, 0);
 
-    for(int i = 0; i < horizonLength; i++){
+    for(int i = 0; i < horizon_length; i++){
         optimisedControls.push_back(U_old[i]);
     }
 
@@ -185,12 +185,12 @@ std::vector<MatrixXd> GradDescent::Optimise(mjData *d, std::vector<MatrixXd> ini
 
 void GradDescent::backwardsPass(){
     MatrixXd V_x(2*dof, 1);
-    V_x = l_x[horizonLength];
+    V_x = l_x[horizon_length];
 
     MatrixXd Q_x(2*dof, 1);
     MatrixXd Q_u(num_ctrl, 1);
 
-    for(int t = horizonLength - 1; t > -1; t--){
+    for(int t = horizon_length - 1; t > -1; t--){
 
 //        // Q_x = l_x + A*V_x
 //        Q_x = l_x[t] + (f_x[t].transpose() * V_x);
@@ -235,7 +235,7 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
         MatrixXd _U(num_ctrl, 1);
 
 //        #pragma omp parallel for
-        for(int t = 0; t < horizonLength; t++) {
+        for(int t = 0; t < horizon_length; t++) {
             // Step 1 - get old state and old control that were linearised around
             _X = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[t]);
             //_U = activeModelTranslator->ReturnControlVector(t);
@@ -247,10 +247,10 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
             U_new[t] = _U + (alpha * J_u[t]);
 
             // Clamp torque within limits
-            if(activeModelTranslator->active_state_vector.robots[0].torqueControlled){
+            if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
                 for(int i = 0; i < num_ctrl; i++){
-                    if (U_new[t](i) > activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
-                    if (U_new[t](i) < -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->active_state_vector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
+                    if (U_new[t](i) < -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
                 }
 
             }
@@ -266,7 +266,7 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
 
             double newStateCost;
             // Terminal state
-            if(t == horizonLength - 1){
+            if(t == horizon_length - 1){
                 newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
             }
             else{
@@ -306,7 +306,7 @@ double GradDescent::forwardsPass(double oldCost, bool &costReduced){
     if(newCost < oldCost){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, 0);
 
-        for(int i = 0; i < horizonLength; i++){
+        for(int i = 0; i < horizon_length; i++){
 
             activeModelTranslator->SetControlVector(U_new[i], MuJoCo_helper->main_data);
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
@@ -351,17 +351,17 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
         MatrixXd Ut(num_ctrl, 1);
         MatrixXd U_last(num_ctrl, 1);
 
-        for(int t = 0; t < horizonLength; t++) {
+        for(int t = 0; t < horizon_length; t++) {
             _U = U_old[t].replicate(1, 1);
 
             // Calculate new optimal controls
             U_alpha[t][i] = _U - (alphas[i] * J_u[t]);
 
             // Clamp torque within limits
-            if(activeModelTranslator->active_state_vector.robots[0].torqueControlled){
+            if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
                 for(int k = 0; k < num_ctrl; k++){
-                    if (U_alpha[t][i](k) > activeModelTranslator->active_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = activeModelTranslator->active_state_vector.robots[0].torqueLimits[k];
-                    if (U_alpha[t][i](k) < -activeModelTranslator->active_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = -activeModelTranslator->active_state_vector.robots[0].torqueLimits[k];
+                    if (U_alpha[t][i](k) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[k];
+                    if (U_alpha[t][i](k) < -activeModelTranslator->current_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = -activeModelTranslator->current_state_vector.robots[0].torqueLimits[k];
                 }
             }
 
@@ -375,7 +375,7 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
 //
             double newStateCost;
             // Terminal state
-            if(t == horizonLength - 1){
+            if(t == horizon_length - 1){
                 newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->saved_systems_state_list[i + 1], true);
             }
             else{
@@ -407,7 +407,7 @@ double GradDescent::forwardsPassParallel(double oldCost, bool &costReduced){
     // If the cost was reduced
     if(newCost < oldCost){
 
-        for(int i = 0; i < horizonLength; i++){
+        for(int i = 0; i < horizon_length; i++){
 
             activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MuJoCo_helper->main_data);
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);

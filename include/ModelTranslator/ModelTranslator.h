@@ -286,9 +286,14 @@ public:
     // Size of the state vector (typically 2 x dof)
     int state_vector_size = 0;
 
-    // State vector object, considers robots and bodies
-    struct stateVectorList active_state_vector;
-    std::vector<std::string> state_vector_names;
+    // State vector objects and names
+    struct stateVectorList current_state_vector;
+
+    std::vector<std::string> current_state_vector_elements;
+    std::vector<std::string> unused_state_vector_elements;
+    std::vector<std::string> full_state_vector_elements;
+
+    std::vector<std::string> iteration_readded_state_elements;
 
     // mujoco helper object
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
@@ -316,9 +321,9 @@ public:
     int MPC_horizon;
 
     // Cost function matrices, Q is the state cost, R is the control cost, J is the terminal cost
-    DiagonalMatrix<double, Eigen::Dynamic> Q;
-    DiagonalMatrix<double, Eigen::Dynamic> Q_terminal;
-    DiagonalMatrix<double, Eigen::Dynamic> R;
+//    DiagonalMatrix<double, Eigen::Dynamic> Q;
+//    DiagonalMatrix<double, Eigen::Dynamic> Q_terminal;
+//    DiagonalMatrix<double, Eigen::Dynamic> R;
 
 protected:
 

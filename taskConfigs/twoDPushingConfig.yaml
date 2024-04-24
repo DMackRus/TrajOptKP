@@ -25,7 +25,7 @@ robots:
     jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
-  blueTin:
+  goal:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
     startLinearPos: [ 0.5, 0.1, 0.0 ]

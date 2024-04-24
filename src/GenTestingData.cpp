@@ -201,7 +201,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         iLQROptimiser->keypoint_generator->ResetCache();
         // Load start and desired state from csv file
 
-        yamlReader->loadTaskFromFile(task_prefix, i, activeModelTranslator->active_state_vector);
+        yamlReader->loadTaskFromFile(task_prefix, i, activeModelTranslator->current_state_vector);
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
         // Reset the time of simulation in all data?
@@ -540,7 +540,7 @@ int GenTestingData::GenerateDynamicsDerivsData(int num_trajecs, int num_iters_pe
     while(count < num_trajecs){
 
         // Initialise system for task
-        yamlReader->loadTaskFromFile(task_name, file_num, activeModelTranslator->active_state_vector);
+        yamlReader->loadTaskFromFile(task_name, file_num, activeModelTranslator->current_state_vector);
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -596,7 +596,7 @@ int GenTestingData::GenerateTestScenes(int num_scenes){
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->vis_data);
         mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
         activeVisualiser->render("Generating random test scenes");
-        yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->active_state_vector);
+        yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->current_state_vector);
     }
 
     return 1;

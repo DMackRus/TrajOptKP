@@ -2,7 +2,7 @@
 
 #include "KeyPointGenerator.h"
 #include "Differentiator.h"
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 #include "test_acrobot.h"
 
 std::shared_ptr<ModelTranslator> model_translator;

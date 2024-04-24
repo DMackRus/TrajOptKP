@@ -14,7 +14,7 @@ robots:
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
     jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
 bodies:
-  blueTin:
+  goal:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
     startLinearPos: [0.4, 0.2, 0.0]
@@ -27,7 +27,7 @@ bodies:
     angularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.002, 0.002, 0.002 ]
     angularJerkThreshold: [ 0.002, 0.002, 0.002 ]
-  bigBox:
+  obstacle_1:
     activeLinearDOF: [true, true, false]
     activeAngularDOF: [false, false, false]
     startLinearPos: [0.48, 0.3, 0.0]
@@ -40,7 +40,7 @@ bodies:
     angularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 0.01, 0.01, 0.01 ]
     angularJerkThreshold: [ 0.01, 0.01, 0.01 ]
-  tallCylinder:
+  obstacle_2:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.6, 0.4, 0.0 ]
@@ -53,7 +53,7 @@ bodies:
     angularVelCost: [ 0, 0, 0 ]
     linearJerkThreshold: [ 0.01, 0.01, 0.01 ]
     angularJerkThreshold: [ 0.01, 0.01, 0.01 ]
-  smallBox:
+  obstacle_3:
     activeLinearDOF: [ true, true, false ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.7, 0.3, 0.0 ]

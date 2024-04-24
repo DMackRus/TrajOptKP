@@ -25,8 +25,8 @@ KeypointGenerator::KeypointGenerator(std::shared_ptr<Differentiator> _differenti
     }
 }
 
-void KeypointGenerator::ResizeStateVector(int new_num_dofs, int _horizon){
-    horizon = _horizon;
+void KeypointGenerator::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
+    horizon = new_horizon;
     dof = new_num_dofs;
 
     last_percentages.resize(dof);

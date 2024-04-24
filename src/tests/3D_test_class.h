@@ -1,4 +1,4 @@
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 
 class threeDTestClass : virtual public ModelTranslator{
 public:

@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "box_sweep"
+task: "pushing_moderate_clutter"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -24,7 +24,7 @@ task: "box_sweep"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "interpolated_iLQR"  # Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
+optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
 runMode: "Optimise_once"

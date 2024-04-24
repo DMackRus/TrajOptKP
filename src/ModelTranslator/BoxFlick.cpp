@@ -1,4 +1,4 @@
-#include "BoxFlick.h"
+#include "ModelTranslator/BoxFlick.h"
 
 BoxFlick::BoxFlick(int _clutterLevel) : PushBaseClass("franka_gripper", "goal"){
 

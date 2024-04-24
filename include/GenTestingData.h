@@ -5,7 +5,7 @@
 #pragma once
 
 #include "StdInclude.h"
-#include "iLQR.h"
+#include "Optimiser/iLQR.h"
 #include <thread>
 #include <mutex>
 #include <filesystem>

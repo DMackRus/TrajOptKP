@@ -8,9 +8,9 @@
 #include "MuJoCoHelper.h"
 #include <GLFW/glfw3.h>
 #include "StdInclude.h"
-#include "ModelTranslator.h"
+#include "ModelTranslator/ModelTranslator.h"
 #include "Differentiator.h"
-#include "Optimiser.h"
+#include "Optimiser/Optimiser.h"
 
 class Visualiser {
 public:
