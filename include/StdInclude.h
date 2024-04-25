@@ -67,12 +67,46 @@ struct task{
     std::vector<double> acellThresholds;
     double iterativeErrorThreshold;
     std::vector<double> magVelThresholds;
-
 };
 
 struct stateVectorList{
+    int dof = 0;
+    int dof_quat = 0;
     std::vector<robot> robots;
     std::vector<bodyStateVec> bodiesStates;
+
+    void ComputeNumDofs(){
+        dof = 0;
+        dof_quat = 0;
+
+        for(auto & robot : robots){
+            // Increment the number of dofs by the number of joints in the robots
+            dof += static_cast<int>(robot.jointNames.size());
+            dof_quat += static_cast<int>(robot.jointNames.size());
+        }
+
+        // Loop through all bodies in the state vector
+        for(auto & body : bodiesStates) {
+            for(int i = 0; i < 3; i++) {
+                if(body.activeLinearDOF[i]) {
+                    dof++;
+                    dof_quat++;
+                }
+            }
+
+            bool any_angular_dofs = false;
+            for(int i = 0; i < 3; i++){
+                if(body.activeAngularDOF[i]){
+                    any_angular_dofs = true;
+                    dof++;
+                }
+            }
+
+            if(any_angular_dofs){
+                dof_quat += 4;
+            }
+        }
+    }
 };
 
 using namespace std;

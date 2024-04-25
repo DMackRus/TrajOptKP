@@ -613,6 +613,9 @@ double iLQR::ForwardsPass(double old_cost){
         MatrixXd X_new(2*dof, 1);
         MatrixXd _U(num_ctrl, 1);
 
+        // Allocate some memory dof mj_differentiate pos
+
+
         for(int t = 0; t < horizon_length; t++) {
             // Step 1 - get old state and old control that were linearised around
             _X = X_old[t].replicate(1, 1);

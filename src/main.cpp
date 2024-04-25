@@ -249,8 +249,11 @@ int main(int argc, char **argv) {
 
         iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
 
-        // Can we do some timing tests???
-        // Rollout a trajectory
+        MatrixXd state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data);
+        std::cout << "size of state vector quaternion: " << state_vector.rows() << std::endl;
+        activeModelTranslator->current_state_vector.ComputeNumDofs();
+        std::cout << "num dofs: " << activeModelTranslator->current_state_vector.dof << " num dofs quat: " << activeModelTranslator->current_state_vector.dof_quat << std::endl;
+
 
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);

@@ -166,6 +166,17 @@ public:
     MatrixXd ReturnStateVector(mjData* d);
 
     /**
+     * Returns the current state vector of the system, where anglular dofs are represented as
+     * quaternion representation.
+     *
+     * @param  data_index The data index of the state vector to return.
+     *
+     * @return MatrixXd The current state vector of the system at the specified data index.
+     *
+     */
+    MatrixXd ReturnStateVectorQuaternions(mjData *d);
+
+    /**
      * Sets the current state vector of the system in the specified data index.
      *
      * @param  state_vector The state vector to set.
@@ -217,7 +228,19 @@ public:
      * @return MatrixXd The current position vector of the system at the specified data index.
      *
      */
-    MatrixXd returnPositionVector(mjData* d);
+    MatrixXd ReturnPositionVector(mjData* d);
+
+    /**
+     * Returns the current position vector of the system in the specified data index. But it
+     * returns angular dofs as quaternion representation (meaning that if any angular dof is
+     * active, 4 numbers are required at least.
+     *
+     * @param  data_index The data index of the position vector to return.
+     *
+     * @return MatrixXd The current position vector of the system at the specified data index.
+     *
+     */
+    MatrixXd ReturnPositionVectorQuat(mjData *d, int dof_pose_quat);
 
     /**
      * Returns the current velocity vector of the system in the specified data index.
@@ -227,7 +250,7 @@ public:
      * @return MatrixXd The current velocity vector of the system at the specified data index.
      *
      */
-    MatrixXd returnVelocityVector(mjData* d);
+    MatrixXd ReturnVelocityVector(mjData* d);
 
     /**
      * Returns the current acceleration vector of the system in the specified data index.
@@ -237,7 +260,7 @@ public:
      * @return MatrixXd The current acceleration vector of the system at the specified data index.
      *
      */
-    MatrixXd returnAccelerationVector(mjData* d);
+    MatrixXd ReturnAccelerationVector(mjData* d);
 
     /**
      * Sets the position vector of the system at the specified data index.
@@ -249,7 +272,7 @@ public:
      * position vector is correct.
      *
      */
-    bool setPositionVector(MatrixXd position_vector, mjData* d);
+    bool SetPositionVector(MatrixXd position_vector, mjData* d);
 
     /**
      * Sets the velocity vector of the system at the specified data index.
@@ -261,7 +284,7 @@ public:
      * velocity vector is correct.
      *
      */
-    bool setVelocityVector(MatrixXd velocity_vector, mjData* d);
+    bool SetVelocityVector(MatrixXd velocity_vector, mjData* d);
 
     /**
      * Converts a state vector index to a position vector index in MuJoCo
@@ -319,11 +342,6 @@ public:
 
     // MPC horizon
     int MPC_horizon;
-
-    // Cost function matrices, Q is the state cost, R is the control cost, J is the terminal cost
-//    DiagonalMatrix<double, Eigen::Dynamic> Q;
-//    DiagonalMatrix<double, Eigen::Dynamic> Q_terminal;
-//    DiagonalMatrix<double, Eigen::Dynamic> R;
 
 protected:
 

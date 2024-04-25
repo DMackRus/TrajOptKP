@@ -685,8 +685,8 @@ MatrixXd ModelTranslator::ReturnStateVector(mjData* d){
     MatrixXd velocity_vector(dof, 1);
     MatrixXd state_vector(state_vector_size, 1);
 
-    position_vector = returnPositionVector(d);
-    velocity_vector = returnVelocityVector(d);
+    position_vector = ReturnPositionVector(d);
+    velocity_vector = ReturnVelocityVector(d);
 
     state_vector.block(0, 0, dof, 1) =
             position_vector.block(0, 0, dof, 1);
@@ -695,6 +695,52 @@ MatrixXd ModelTranslator::ReturnStateVector(mjData* d){
             velocity_vector.block(0, 0, dof, 1);
 
     return state_vector;
+}
+
+// TODO - this needs some serious thought
+MatrixXd ModelTranslator::ReturnStateVectorQuaternions(mjData *d){
+
+    // Compute how many positional elements
+    // robot joints + active linear body position + 4 every time a body has
+    // at least one active angular dof
+
+//    // Count the robot joints
+//    for(const auto& robot : current_state_vector.robots){
+//        dof_pos_quat += static_cast<int>(robot.jointNames.size());
+//    }
+//
+//    for(const auto& body : current_state_vector.bodiesStates){
+//        for(int i = 0; i < 3; i ++){
+//            if(body.activeLinearDOF[i]){
+//                dof_pos_quat ++;
+//            }
+//        }
+//
+//        for(int i = 0; i < 3; i++){
+//            // If any active angular dof, we need full quaternion
+//            if(body.activeAngularDOF[i]){
+//                dof_pos_quat += 4;
+//                break;
+//            }
+//        }
+//    }
+    current_state_vector.ComputeNumDofs();
+    int dof_pos_quat = current_state_vector.dof_quat;
+
+    MatrixXd position_vector_quat(dof_pos_quat, 1);
+    MatrixXd velocity_vector(dof, 1);
+    MatrixXd state_vector_quat(dof_pos_quat + dof, 1);
+
+    position_vector_quat = ReturnPositionVectorQuat(d, dof_pos_quat);
+    velocity_vector = ReturnVelocityVector(d);
+
+    state_vector_quat.block(0, 0, dof_pos_quat, 1) = position_vector_quat;
+//            position_vector_quat.block(0, 0, dof, 1);
+
+    state_vector_quat.block(dof_pos_quat, 0, dof, 1) = velocity_vector;
+//            velocity_vector.block(0, 0, dof, 1);
+
+    return state_vector_quat;
 }
 
 bool ModelTranslator::SetStateVector(MatrixXd state_vector, mjData* d){
@@ -710,8 +756,8 @@ bool ModelTranslator::SetStateVector(MatrixXd state_vector, mjData* d){
     position_vector = state_vector.block(0, 0, state_vector_size / 2, 1);
     velocity_vector = state_vector.block(state_vector_size / 2, 0, state_vector_size / 2, 1);
 
-    setPositionVector(position_vector, d);
-    setVelocityVector(velocity_vector, d);
+    SetPositionVector(position_vector, d);
+    SetVelocityVector(velocity_vector, d);
 
     return true;
 }
@@ -777,7 +823,7 @@ bool ModelTranslator::SetControlVector(MatrixXd control_vector, mjData* d){
     return true;
 }
 
-MatrixXd ModelTranslator::returnPositionVector(mjData* d){
+MatrixXd ModelTranslator::ReturnPositionVector(mjData* d){
     MatrixXd position_vector(dof, 1);
 
     int currentStateIndex = 0;
@@ -820,7 +866,60 @@ MatrixXd ModelTranslator::returnPositionVector(mjData* d){
     return position_vector;
 }
 
-MatrixXd ModelTranslator::returnVelocityVector(mjData* d){
+// TODO - perhaps this could be compressed, very similar to ReturnPositionVector
+MatrixXd ModelTranslator::ReturnPositionVectorQuat(mjData *d, int dof_pose_quat) {
+    MatrixXd position_vector(dof_pose_quat, 1);
+
+    int currentStateIndex = 0;
+
+    // Loop through all robots in the state vector
+    for(auto & robot : current_state_vector.robots){
+        vector<double> jointPositions;
+        MuJoCo_helper->GetRobotJointsPositions(robot.name, jointPositions, d);
+
+        for(int j = 0; j < robot.jointNames.size(); j++){
+            position_vector(j, 0) = jointPositions[j];
+        }
+
+        // Increment the current state index by the number of joints in the robot
+        currentStateIndex += static_cast<int>(robot.jointNames.size());
+    }
+
+    // Loop through all bodies in the state vector
+    for(auto & bodiesState : current_state_vector.bodiesStates){
+        // Get the body's position and orientation
+        pose_7 body_pose;
+        MuJoCo_helper->GetBodyPoseQuat(bodiesState.name, body_pose, d);
+
+        for(int j = 0; j < 3; j++) {
+            // Linear positions
+            if (bodiesState.activeLinearDOF[j]) {
+                position_vector(currentStateIndex, 0) = body_pose.position[j];
+                currentStateIndex++;
+            }
+        }
+        bool angular_dof_considered = false;
+        for(int j = 0; j < 3; j++) {
+            // angular positions
+            if(bodiesState.activeAngularDOF[j]){
+                angular_dof_considered = true;
+
+            }
+        }
+
+        if(angular_dof_considered){
+            position_vector(currentStateIndex, 0)     = body_pose.quat[0];
+            position_vector(currentStateIndex + 1, 0) = body_pose.quat[1];
+            position_vector(currentStateIndex + 2, 0) = body_pose.quat[2];
+            position_vector(currentStateIndex + 3, 0) = body_pose.quat[3];
+            currentStateIndex += 4;
+        }
+    }
+
+    return position_vector;
+}
+
+MatrixXd ModelTranslator::ReturnVelocityVector(mjData* d){
     MatrixXd velocity_vector(dof, 1);
     int currentStateIndex = 0;
 
@@ -905,7 +1004,7 @@ MatrixXd ModelTranslator::returnVelocityVector(mjData* d){
 //    return accel_vector;
 //}
 
-bool ModelTranslator::setPositionVector(MatrixXd position_vector, mjData* d){
+bool ModelTranslator::SetPositionVector(MatrixXd position_vector, mjData* d){
     if(position_vector.rows() != (state_vector_size / 2)){
         cout << "ERROR: state vector size does not match the size of the state vector in the model translator" << endl;
         return false;
@@ -954,7 +1053,7 @@ bool ModelTranslator::setPositionVector(MatrixXd position_vector, mjData* d){
     return true;
 }
 
-bool ModelTranslator::setVelocityVector(MatrixXd velocity_vector, mjData* d){
+bool ModelTranslator::SetVelocityVector(MatrixXd velocity_vector, mjData* d){
     if(velocity_vector.rows() != (state_vector_size / 2)){
         cout << "ERROR: state vector size does not match the size of the state vector in the model translator" << endl;
         return false;

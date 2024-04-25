@@ -85,7 +85,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
 
     unperturbed_controls = model_translator->ReturnControlVector(MuJoCo_helper->fd_data[tid]);
-    unperturbed_velocities = model_translator->returnVelocityVector(MuJoCo_helper->fd_data[tid]);
+    unperturbed_velocities = model_translator->ReturnVelocityVector(MuJoCo_helper->fd_data[tid]);
 
     // --------------------------------------------- FD for controls ---------------------------------------------
     MatrixXd control_limits = model_translator->ReturnControlLimits();
@@ -223,7 +223,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         // Perturb velocity vector positively
         perturbed_velocities = unperturbed_velocities.replicate(1, 1);
         perturbed_velocities(i) += eps;
-        model_translator->setVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid]);
+        model_translator->SetVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid]);
 
         // Integrate the simulator
         start = std::chrono::high_resolution_clock::now();
@@ -246,7 +246,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             // perturb velocity vector negatively
             perturbed_velocities = unperturbed_velocities.replicate(1, 1);
             perturbed_velocities(i) -= eps;
-            model_translator->setVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid]);
+            model_translator->SetVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid]);
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
