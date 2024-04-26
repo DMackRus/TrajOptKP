@@ -357,14 +357,14 @@ double ModelTranslator::CostFunctionBody(const bodyStateVec body, mjData *d, boo
 //    std::cout << "axis " << axis[0] << " " << axis[1] << " " << axis[2] << "\n";
 
 
-    for(int i = 0; i < 3; i++){
-        if(terminal) {
-            cost += body.terminalAngularPosCost[i] * pow(axis_diff(i), 2);
-        }
-        else{
-            cost += body.angularPosCost[i] * pow(axis_diff(i), 2);
-        }
-    }
+//    for(int i = 0; i < 3; i++){
+//        if(terminal) {
+//            cost += body.terminalAngularPosCost[i] * pow(axis_diff(i), 2);
+//        }
+//        else{
+//            cost += body.angularPosCost[i] * pow(axis_diff(i), 2);
+//        }
+//    }
 
     double dot_x, dot_y, dot_z = 0.0f;
 
@@ -631,39 +631,39 @@ void ModelTranslator::CostDerivatives(mjData* d, MatrixXd &l_x, MatrixXd &l_xx, 
         // TODO - second order l_xx derivs, also add computation from x and y vectors.......
 
         // use internal F.D of costfunction body to compute derivatives????
-        double cost_dec, cost_inc;
-        double eps = 1e-4;
-        // Perturb 3 orientations
-
-        for(int j = 0; j < 3; j++){
-//            std::cout << "index: " << j << "\n";
-
-            body_pose.orientation[j] += eps;
-            // TODO - possible issue here with using the data object itself.
-            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
-
-            cost_inc = CostFunctionBody(body, d, terminal);
-//            std::cout << "cost inc: " << cost_inc << "\n";
-
-            // Undo perturbation and apply negative perturb
-            body_pose.orientation[j] -= (2 * eps);
-
-            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
-
-            cost_dec = CostFunctionBody(body, d, terminal);
-//            std::cout << "cost dec: " << cost_dec << "\n";
-
-            //Undo perturbation
-            body_pose.orientation[j] += eps;
-
-            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
-
-            l_x(Q_index) = (cost_inc - cost_dec) / (2 * eps);
-
-            l_xx(Q_index, Q_index) = l_x(Q_index) * l_x(Q_index);
-
-            Q_index ++;
-        }
+//        double cost_dec, cost_inc;
+//        double eps = 1e-5;
+//        // Perturb 3 orientations
+//
+//        for(int j = 0; j < 3; j++){
+////            std::cout << "index: " << j << "\n";
+//
+//            body_pose.orientation[j] += eps;
+//            // TODO - possible issue here with using the data object itself.
+//            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
+//
+//            cost_inc = CostFunctionBody(body, d, terminal);
+////            std::cout << "cost inc: " << cost_inc << "\n";
+//
+//            // Undo perturbation and apply negative perturb
+//            body_pose.orientation[j] -= (2 * eps);
+//
+//            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
+//
+//            cost_dec = CostFunctionBody(body, d, terminal);
+////            std::cout << "cost dec: " << cost_dec << "\n";
+//
+//            //Undo perturbation
+//            body_pose.orientation[j] += eps;
+//
+//            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
+//
+//            l_x(Q_index) = (cost_inc - cost_dec) / (2 * eps);
+//
+//            l_xx(Q_index, Q_index) = l_x(Q_index) * l_x(Q_index);
+//
+//            Q_index ++;
+//        }
     }
 
 //    std::cout << "l_x \n" << l_x << std::endl;

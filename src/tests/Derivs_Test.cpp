@@ -33,7 +33,7 @@ void compare_dynamics_derivatives(){
     auto start = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < T; i++){
         mjd_transitionFD(
-                model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data, 1e-6, flg_centred,
+                model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->saved_systems_state_list[0], 1e-6, flg_centred,
                 DataAt(A, 0 * (dim_state_derivative * dim_state_derivative)),
                 DataAt(B, 0 * (dim_state_derivative * dim_action)),
                 DataAt(C, 0 * (dim_sensor * dim_state_derivative)),
@@ -77,7 +77,7 @@ void compare_dynamics_derivatives(){
         for(int j = 0; j < dim_state_derivative; j++){
             EXPECT_NEAR(A_mine[0](i, j), A[i * dim_state_derivative + j], 1.0e-5);
             A_diff(i, j) = abs(A[i * dim_state_derivative + j] - A_mine[0](i, j));
-            if(A_diff(i, j) < 1e-6) A_diff(i, j) = 0;
+//            if(A_diff(i, j) < 1e-6) A_diff(i, j) = 0;
         }
     }
 
@@ -90,7 +90,7 @@ void compare_dynamics_derivatives(){
         for(int j = 0; j < dim_action; j++){
             EXPECT_NEAR(B_mine[0](i, j), B[i * dim_action + j], 1.0e-5);
             B_diff(i, j) = abs(B[i * dim_action + j] - B_mine[0](i, j));
-            if(B_diff(i, j) < 1e-6) B_diff(i, j) = 0;
+//            if(B_diff(i, j) < 1e-6) B_diff(i, j) = 0;
         }
     }
 }
@@ -159,15 +159,18 @@ TEST(Derivatives, pushing_3D_rotated)
 //    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
     model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
 
-    pose_6 body_goal;
-    model_translator->MuJoCo_helper->GetBodyPoseAngle("goal", body_goal, model_translator->MuJoCo_helper->master_reset_data);
-    body_goal.orientation(0) = 0.5;
-    body_goal.orientation(1) = 0.2;
-    body_goal.orientation(2) = 0.1;
-    model_translator->MuJoCo_helper->SetBodyPoseAngle("goal", body_goal, model_translator->MuJoCo_helper->master_reset_data);
+    pose_7 body_goal;
+    model_translator->MuJoCo_helper->GetBodyPoseQuat("goal", body_goal, model_translator->MuJoCo_helper->master_reset_data);
+    body_goal.quat(0) = 0.9689124;
+    body_goal.quat(1) = 0.174941;
+    body_goal.quat(2) = 0.174941;
+    body_goal.quat(3) = 0;
+//    model_translator->MuJoCo_helper->SetBodyPoseQuat("goal", body_goal, model_translator->MuJoCo_helper->master_reset_data);
 
     // Append data to save systems state list
     model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
+    model_translator->MuJoCo_helper->SetBodyPoseQuat("goal", body_goal, model_translator->MuJoCo_helper->saved_systems_state_list[0]);
+    mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->saved_systems_state_list[0]);
 
     compare_dynamics_derivatives();
 }

@@ -1,6 +1,6 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing_lowClutter.xml"
 modelName: "/push_mCl"
-timeStep: 0.01
+timeStep: 0.008
 openloop_horizon: 1000
 mpc_horizon: 100
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
@@ -31,7 +31,7 @@ bodies:
     goalLinearPos: [0.6, 0.4, 0.0]
     goalAngularPos: [0, 0, 0]
     linearPosCost: [ 0, 0, 0 ]
-    terminalLinearPosCost: [ 100, 100, 0 ]
+    terminalLinearPosCost: [ 1000, 1000, 0 ]
     linearVelCost: [ 1, 1, 0 ]
     terminalLinearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
@@ -44,7 +44,7 @@ bodies:
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_1:
     activeLinearDOF: [true, true, true]
-    activeAngularDOF: [false, false, false]
+    activeAngularDOF: [true, true, true]
     startLinearPos: [0.48, 0.3, 0.0]
     startAngularPos: [0, 0, 0]
     goalLinearPos: [0.48, 0.3, 0.0]
@@ -63,7 +63,7 @@ bodies:
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_2:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ false, false, false ]
+    activeAngularDOF: [ true, true, true ]
     startLinearPos: [ 0.6, 0.4, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.6, 0.4, 0.0 ]
@@ -82,7 +82,7 @@ bodies:
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_3:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ false, false, false ]
+    activeAngularDOF: [ true, true, true ]
     startLinearPos: [ 0.7, 0.3, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, 0.3, 0.0 ]
