@@ -63,7 +63,7 @@ void KeypointGenerator::PrintKeypointMethod(){
     for(int i = 0; i < dof; i++){
         std::cout << " " << current_keypoint_method.jerk_thresholds[i];
     }
-    std::cout << "\n ";
+    std::cout << "\n";
     std::cout << "velocity change thresholds: ";
     for(int i = 0; i < dof; i++){
         std::cout << " " << current_keypoint_method.velocity_change_thresholds[i];

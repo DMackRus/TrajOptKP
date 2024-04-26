@@ -357,14 +357,14 @@ double ModelTranslator::CostFunctionBody(const bodyStateVec body, mjData *d, boo
 //    std::cout << "axis " << axis[0] << " " << axis[1] << " " << axis[2] << "\n";
 
 
-//    for(int i = 0; i < 3; i++){
-//        if(terminal) {
-//            cost += body.terminalAngularPosCost[i] * pow(axis_diff(i), 2);
-//        }
-//        else{
-//            cost += body.angularPosCost[i] * pow(axis_diff(i), 2);
-//        }
-//    }
+    for(int i = 0; i < 3; i++){
+        if(terminal) {
+            cost += body.terminalAngularPosCost[i] * pow(axis_diff(i), 2);
+        }
+        else{
+            cost += body.angularPosCost[i] * pow(axis_diff(i), 2);
+        }
+    }
 
     double dot_x, dot_y, dot_z = 0.0f;
 

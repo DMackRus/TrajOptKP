@@ -205,7 +205,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     numberOfTotalDerivs = horizon_length * dof;
 
     // TODO - code to adjust max horizon if opt horizon > max_horizon
-    std::cout << "horizon is " << horizon_length << "\n";
+//    std::cout << "horizon is " << horizon_length << "\n";
 
     if(keypoint_generator->horizon != horizon_length){
         std::cout << "horizon length changed" << std::endl;
