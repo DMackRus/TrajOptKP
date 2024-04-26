@@ -43,7 +43,6 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
             accel_thresholds.push_back(robot.jointJerkThresholds[j]);
             velocity_change_thresholds.push_back(robot.magVelThresholds[j]);
         }
-
     }
 
     for(auto & bodiesState : taskConfig.bodiesStates){
@@ -64,8 +63,12 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     MuJoCo_helper = std::make_shared<MuJoCoHelper>(taskConfig.robots, bodyNames);
     MuJoCo_helper->InitSimulator(taskConfig.modelTimeStep, _modelPath);
 
-    current_state_vector.robots = taskConfig.robots;
-    current_state_vector.bodiesStates = taskConfig.bodiesStates;
+    full_state_vector.robots = taskConfig.robots;
+    full_state_vector.bodiesStates = taskConfig.bodiesStates;
+    full_state_vector.ComputeNumDofs();
+
+    // Set full state vector
+    current_state_vector = full_state_vector;
 
     // --------- Set size of state vector correctly ------------
     state_vector_size = 0;
@@ -160,7 +163,6 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
 
     state_vector_size = dof * 2;
 
-    // TODO (DMackRus) - think there is a better way to do this if i rewrite how my state vector is stored
     for(auto & robot : current_state_vector.robots){
         for(int joint = 0; joint < robot.jointNames.size(); joint++){
 
@@ -199,6 +201,8 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
             }
         }
     }
+
+    current_state_vector.ComputeNumDofs();
 }
 
 std::vector<std::string> ModelTranslator::GetStateVectorNames(){
@@ -240,11 +244,12 @@ std::vector<std::string> ModelTranslator::GetStateVectorNames(){
     return state_vector_names;
 }
 
+// TODO - perhaps make the state vector a parameter, for time being assume we always use the full state vector
 double ModelTranslator::CostFunction(mjData* d, bool terminal){
     double cost = 0.0f;
 
     // Loop through robots in simulator
-    for(auto & robot : current_state_vector.robots){
+    for(auto & robot : full_state_vector.robots){
         int robot_num_joints = static_cast<int>(robot.jointNames.size());
 
         std::vector<double> joint_positions;
@@ -281,7 +286,7 @@ double ModelTranslator::CostFunction(mjData* d, bool terminal){
     }
 
     // Loop through the bodies in simulation
-    for(const auto &body : current_state_vector.bodiesStates){
+    for(const auto &body : full_state_vector.bodiesStates){
         cost += CostFunctionBody(body, d, terminal);
     }
 
@@ -700,30 +705,7 @@ MatrixXd ModelTranslator::ReturnStateVector(mjData* d){
 // TODO - this needs some serious thought
 MatrixXd ModelTranslator::ReturnStateVectorQuaternions(mjData *d){
 
-    // Compute how many positional elements
-    // robot joints + active linear body position + 4 every time a body has
-    // at least one active angular dof
-
-//    // Count the robot joints
-//    for(const auto& robot : current_state_vector.robots){
-//        dof_pos_quat += static_cast<int>(robot.jointNames.size());
-//    }
-//
-//    for(const auto& body : current_state_vector.bodiesStates){
-//        for(int i = 0; i < 3; i ++){
-//            if(body.activeLinearDOF[i]){
-//                dof_pos_quat ++;
-//            }
-//        }
-//
-//        for(int i = 0; i < 3; i++){
-//            // If any active angular dof, we need full quaternion
-//            if(body.activeAngularDOF[i]){
-//                dof_pos_quat += 4;
-//                break;
-//            }
-//        }
-//    }
+    // TODO - this really shouldnt be called every time
     current_state_vector.ComputeNumDofs();
     int dof_pos_quat = current_state_vector.dof_quat;
 
@@ -735,10 +717,8 @@ MatrixXd ModelTranslator::ReturnStateVectorQuaternions(mjData *d){
     velocity_vector = ReturnVelocityVector(d);
 
     state_vector_quat.block(0, 0, dof_pos_quat, 1) = position_vector_quat;
-//            position_vector_quat.block(0, 0, dof, 1);
 
     state_vector_quat.block(dof_pos_quat, 0, dof, 1) = velocity_vector;
-//            velocity_vector.block(0, 0, dof, 1);
 
     return state_vector_quat;
 }

@@ -78,10 +78,10 @@ public:
 
     void Iteration(int iteration_num, bool &converged, bool &lambda_exit);
 
-    void PrintBanner(double time_rollout);
+    static void PrintBanner(double time_rollout);
 
-    void PrintBannerIteration(int iteration, double new_cost, double old_cost, double eps,
-                              double lambda, double percent_derivatives, double time_derivs, double time_bp,
+    void PrintBannerIteration(int iteration, double _new_cost, double _old_cost, double eps,
+                              double _lambda, double num_dofs, double percent_derivatives, double time_derivs, double time_bp,
                               double time_fp, int num_linesearches);
 
     void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
@@ -112,7 +112,7 @@ private:
     double last_alpha = 0.0f;
 
     // Max horizon of optimisation.
-    int maxHorizon = 0;
+    int max_horizon = 0;
 
     // Feedback gains matrices
     // open loop feedback gains
@@ -121,10 +121,11 @@ private:
     vector<MatrixXd> K;
 
     int sampling_k_interval = 1;
+    double threshold_k_eignenvectors = 1.0;
+    std::vector<std::string> candidates_for_removal;
+
 
     double eps_acceptable_diff = 0.02;
-//    double threshold_k_eignenvectors = 1.0;
-    double threshold_k_eignenvectors = 0.0;
 
     double delta_J = 0.0f;
 
@@ -132,6 +133,8 @@ private:
     double surprise = 0.0f;
     std::vector<double> surprises;
     std::vector<double> expecteds;
+
+
 
 
 
@@ -146,11 +149,11 @@ private:
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
      * sequentially over different alpha values to try find a new optimal sequence of controls.
      *
-     * @param old_cost - Previous cost of the old trajectory.
+     * @param _old_cost - Previous cost of the old trajectory.
      *
      * @return double - The cost of the new trajectory.
      */
-    double ForwardsPass(double old_cost);
+    double ForwardsPass(double _old_cost);
 
     /**
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
@@ -162,7 +165,7 @@ private:
      */
     double ForwardsPassParallel(double old_cost);
 
-    std::vector<int> checkKMatrices();
+    std::vector<std::string> LeastImportantDofs();
 
     /**
      * Perform a rollout with the previously computed k and K matrices but nullify feedback rows for the specified

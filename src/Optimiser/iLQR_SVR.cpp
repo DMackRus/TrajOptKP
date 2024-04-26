@@ -4,7 +4,7 @@
 iLQR_SVR::iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, int horizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
         Optimiser(_modelTranslator, MuJoCo_helper, _yamlReader, _differentiator){
 
-    maxHorizon = horizon;
+    max_horizon = horizon;
     active_visualiser = _visualizer;
 
     // Initialise saved systems state list
@@ -16,7 +16,7 @@ iLQR_SVR::iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator, std::share
     }
 
     // initialise all vectors of matrices
-    for(int i = 0; i < maxHorizon; i++){
+    for(int i = 0; i < max_horizon; i++){
 
         if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
             MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
@@ -29,16 +29,17 @@ iLQR_SVR::iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator, std::share
     // Whether to do some low pass filtering over A and B matrices
     filteringMethod = activeYamlReader->filtering;
 
-    Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, maxHorizon);
+    Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, max_horizon);
 
 }
 
 void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
-    std::cout << "New horizon length: " << new_horizon << "\n";
     auto start = std::chrono::high_resolution_clock::now();
 
-    bool update_ctrl, update_dof, update_horizon = false;
+    bool update_ctrl = false;
+    bool update_dof = false;
+    bool update_horizon = false;
     if(new_num_ctrl != this->num_ctrl){
         this->num_ctrl = new_num_ctrl;
         update_ctrl = true;
@@ -56,6 +57,7 @@ void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
     // Clear old matrices
     if(update_ctrl){
+        std::cout << "clearing contrl things \n";
         l_u.clear();
         l_uu.clear();
 
@@ -82,39 +84,54 @@ void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     B.clear();
     K.clear();
 
+    int num_dof = activeModelTranslator->current_state_vector.dof;
+    int num_dof_quat = activeModelTranslator->current_state_vector.dof_quat;
+
     for(int t = 0; t < this->horizon_length; t++){
         // Cost matrices
-        l_x.emplace_back(MatrixXd(2*dof, 1));
-        l_xx.emplace_back(MatrixXd(2*dof, 2*dof));
-        l_u.emplace_back(MatrixXd(num_ctrl, 1));
-        l_uu.emplace_back(MatrixXd(num_ctrl, num_ctrl));
 
-        // Dynamics derivatives matrices
-        // TODO - Move this to Optimiser constructor
-        A.emplace_back(MatrixXd(2*dof, 2*dof));
-        B.emplace_back(MatrixXd(2*dof, num_ctrl));
+        if(update_dof){
+            l_x.emplace_back(MatrixXd(2*dof, 1));
+            l_xx.emplace_back(MatrixXd(2*dof, 2*dof));
 
-        K.emplace_back(MatrixXd(num_ctrl, 2*dof));
-        k.emplace_back(MatrixXd(num_ctrl, 1));
+            A.emplace_back(MatrixXd(2*dof, 2*dof));
 
-        U_old.emplace_back(MatrixXd(num_ctrl, 1));
-        U_new.emplace_back(MatrixXd(num_ctrl, 1));
-        X_old.emplace_back(MatrixXd(2*dof, 1));
-        X_new.emplace_back(MatrixXd(2*dof, 1));
+            X_old.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
+            X_new.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
 
-        std::vector<MatrixXd> U_temp;
-        for(int j = 0; j < 8; j++){
-            U_temp.emplace_back(MatrixXd(num_ctrl, 1));
         }
 
-        U_alpha.push_back(U_temp);
+        if(update_ctrl){
+            l_u.emplace_back(MatrixXd(num_ctrl, 1));
+            l_uu.emplace_back(MatrixXd(num_ctrl, num_ctrl));
+
+            k.emplace_back(MatrixXd(num_ctrl, 1));
+
+            U_old.emplace_back(MatrixXd(num_ctrl, 1));
+            U_new.emplace_back(MatrixXd(num_ctrl, 1));
+
+
+            std::vector<MatrixXd> U_temp;
+            for(int j = 0; j < 8; j++){
+                U_temp.emplace_back(MatrixXd(num_ctrl, 1));
+            }
+
+            U_alpha.push_back(U_temp);
+
+        }
+
+        B.emplace_back(MatrixXd(2*dof, num_ctrl));
+        K.emplace_back(MatrixXd(num_ctrl, 2*dof));
     }
 
     // One more state than control
-    X_old.push_back(MatrixXd(2*dof, 1));
-    X_new.push_back(MatrixXd(2*dof, 1));
-    l_x.push_back(MatrixXd(2*dof, 1));
-    l_xx.push_back(MatrixXd(2*dof, 2*dof));
+    if(update_dof){
+        l_x.push_back(MatrixXd(2*dof, 1));
+        l_xx.push_back(MatrixXd(2*dof, 2*dof));
+
+        X_old.push_back(MatrixXd(num_dof_quat + num_dof, 1));
+        X_new.push_back(MatrixXd(num_dof_quat + num_dof, 1));
+    }
 
     // Resize Keypoint generator class
     keypoint_generator->Resize(dof, num_ctrl, horizon_length);
@@ -126,20 +143,14 @@ void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 }
 
 double iLQR_SVR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd> initial_controls){
-    double cost = 0.0f;
-//    std::cout << "rollout trajectory" << std::endl;
+    double cost = 0.0;
 
 //    if(d != MuJoCo_helper->main_data){
 //        MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, d);
 //    }
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, d);
 
-    MatrixXd Xt(activeModelTranslator->state_vector_size, 1);
-    MatrixXd X_last(activeModelTranslator->state_vector_size, 1);
-    MatrixXd Ut(activeModelTranslator->num_ctrl, 1);
-    MatrixXd U_last(activeModelTranslator->num_ctrl, 1);
-
-    X_old[0] = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
+    X_old[0] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data);
 
     if(MuJoCo_helper->CheckIfDataIndexExists(0)){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
@@ -156,21 +167,18 @@ double iLQR_SVR::RolloutTrajectory(mjData* d, bool save_states, std::vector<Matr
         mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
         // return cost for this state
-        Xt = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
-        Ut = activeModelTranslator->ReturnControlVector(MuJoCo_helper->main_data);
-        double stateCost;
-
+        double state_cost;
         if(i == horizon_length - 1){
-            stateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
+            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
         }
         else{
-            stateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, false);
+            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, false);
         }
 
         // If required to save states to trajectory tracking, then save state
         if(save_states){
-            X_old[i + 1] = Xt.replicate(1, 1);
-            U_old[i] = Ut.replicate(1, 1);
+            X_old[i + 1] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data);
+            U_old[i] = activeModelTranslator->ReturnControlVector(MuJoCo_helper->main_data);
             if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
                 MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
             }
@@ -180,7 +188,7 @@ double iLQR_SVR::RolloutTrajectory(mjData* d, bool save_states, std::vector<Matr
         }
 
 //        cost += (stateCost * active_physics_simulator->returnModelTimeStep());
-        cost += stateCost;
+        cost += state_cost;
     }
 
     initialCost = cost;
@@ -332,13 +340,25 @@ std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initia
 
 void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
-
     // Resample new dofs - subject to criteria
+    // Adjust state vector - remove candidates for removal
+    if(!candidates_for_removal.empty()){
+        activeModelTranslator->UpdateStateVector(candidates_for_removal, false);
+        Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, max_horizon);
+        std::cout << "removing dofs, new num dofs: " << activeModelTranslator->dof << "\n";
+        for(int t = 0 ; t < horizon_length; t++) {
+            X_old.at(t + 1) = activeModelTranslator->ReturnStateVectorQuaternions(
+                    MuJoCo_helper->saved_systems_state_list[t + 1]);
+        }
+    }
 
     // STEP 1 - Generate dynamics derivatives and cost derivatives
     auto timer_start = high_resolution_clock::now();
     if(cost_reduced_last_iter){
         GenerateDerivatives();
+//        std::cout << "A[0] \n" << A[0] << "\n";
+//        std::cout << "B[0] \n" << B[0] << "\n";
+//        std::cout << "l_x[0] \n" << l_x[0] << "\n";
     }
     time_get_derivs_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
@@ -348,10 +368,21 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     timer_start = high_resolution_clock::now();
     while(!valid_backwards_pass){
         valid_backwards_pass = BackwardsPassQuuRegularisation();
-
         lambda_exit = UpdateLambda(valid_backwards_pass);
 
     }
+
+    // Check importance of dofs
+    candidates_for_removal = LeastImportantDofs();
+
+    // TODO - remove temp code
+    std::cout << "dofs to remove: ";
+    for(const auto & removal_dof : candidates_for_removal){
+        std::cout << removal_dof << " ";
+    }
+    std::cout << std::endl;
+
+
     time_backwards_pass_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
     // If we were unable to compute a new valid control law, exit
@@ -367,6 +398,13 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     new_cost = ForwardsPass(old_cost);
     time_forwardsPass_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
+    if(verbose_output){
+        PrintBannerIteration(iteration_num, new_cost, old_cost,
+                             1 - (new_cost / old_cost), lambda, dof, percentage_derivs_per_iteration[iteration_num],
+                             time_get_derivs_ms[iteration_num], time_backwards_pass_ms[iteration_num], time_forwardsPass_ms[iteration_num],
+                             last_iter_num_linesearches);
+    }
+
     if(new_cost < old_cost){
         UpdateNominal();
         cost_reduced_last_iter = true;
@@ -378,14 +416,6 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
         lambda *= lambda_factor;
         lambda *= lambda_factor;
         if(lambda > max_lambda) lambda = max_lambda;
-    }
-
-
-    if(verbose_output){
-        PrintBannerIteration(iteration_num, new_cost, old_cost,
-                             1 - (new_cost / old_cost), lambda, percentage_derivs_per_iteration[iteration_num],
-                             time_get_derivs_ms[iteration_num], time_backwards_pass_ms[iteration_num], time_forwardsPass_ms[iteration_num],
-                             last_iter_num_linesearches);
     }
 
     cost_history.push_back(new_cost);
@@ -549,42 +579,71 @@ bool iLQR_SVR::CheckMatrixPD(Ref<MatrixXd> matrix){
 }
 
 // ------------------------------------------- STEP 3 FUNCTIONS (FORWARDS PASS) ----------------------------------------------
-double iLQR_SVR::ForwardsPass(double old_cost){
-    double newCost = 0;
-    bool costReduction = false;
+double iLQR_SVR::ForwardsPass(double _old_cost){
+    double _new_cost;
+    bool cost_reduction = false;
     int alphaCount = 0;
 
-    MatrixXd Xt(2 * dof, 1);
-    MatrixXd Ut(num_ctrl, 1);
+    // Aliases
+    int dof_quat = activeModelTranslator->current_state_vector.dof_quat;
+    int nq = MuJoCo_helper->model->nq, nv = MuJoCo_helper->model->nv,
+        na = MuJoCo_helper->model->na;
+
+    MatrixXd state_feedback(2 * dof, 1);
+    MatrixXd X_new(dof + dof_quat, 1);
+    MatrixXd feedback_gain(num_ctrl, 1);
+
+    auto *vel_diff  = new double[nv];
+    auto *state_old = new double[nq + nv + na];
+    auto *state_new = new double[nq + nv + na];
 
     std::vector<double> alphas = {1.0, 0.8, 0.5, 0.3, 0.1};
 
-    while(!costReduction){
+    while(!cost_reduction){
 
         // Copy initial data state into main data state for rollout
         MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
-        newCost = 0;
-        MatrixXd stateFeedback(2*dof, 1);
-        MatrixXd _X(2*dof, 1);
-        MatrixXd X_new(2*dof, 1);
-        MatrixXd _U(num_ctrl, 1);
+        _new_cost = 0;
 
         for(int t = 0; t < horizon_length; t++) {
-            // Step 1 - get old state and old control that were linearised around
-            _X = X_old[t].replicate(1, 1);
-            _U = U_old[t].replicate(1, 1);
 
-            X_new = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
+            // TODO - hmmmmmmm
+            X_new = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data);
+
             // Calculate difference from new state to old state
-            stateFeedback = X_new - _X;
+            // If there are no angular dofs, simply subtract the two
+            if(dof == dof_quat){
+                state_feedback = X_new - X_old[t];
+            }
+            else{
+                // TODO - this is slightly inefficient, i should make custom functions for this
+                mj_getState(MuJoCo_helper->model, MuJoCo_helper->saved_systems_state_list[t], state_old, mjSTATE_PHYSICS);
+                mj_getState(MuJoCo_helper->model, MuJoCo_helper->main_data, state_new, mjSTATE_PHYSICS);
 
-            MatrixXd feedBackGain = K[t] * stateFeedback;
+                // vel_diff = (state_new - state_old) / dt
+                mj_differentiatePos(MuJoCo_helper->model, vel_diff, 1.0, state_old, state_new);
+
+                // Compute state feedback
+                // position differences
+                for(int j = 0; j < dof; j++){
+                    int q_index = activeModelTranslator->StateIndexToQposIndex(j);
+                    state_feedback(j) = vel_diff[q_index];
+                }
+
+                // velocity differences
+                for(int j = 0; j < dof; j++){
+                    state_feedback(j + dof) = X_new(dof_quat + j) - X_old[t](dof_quat + j);
+                }
+            }
+
+            feedback_gain = K[t] * state_feedback;
 
             // Calculate new optimal controls
-            U_new[t] = _U + (alphas[alphaCount] * k[t]) + feedBackGain;
+            U_new[t] = U_old[t] + (alphas[alphaCount] * k[t]) + feedback_gain;
 
             // Clamp torque within limits
+            // TODO - replace this with model translator torque limits function, its better
             if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
                 for(int i = 0; i < num_ctrl; i++){
                     if (U_new[t](i) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new[t](i) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
@@ -604,7 +663,7 @@ double iLQR_SVR::ForwardsPass(double old_cost){
             }
 
 //            newCost += (newStateCost * active_physics_simulator->returnModelTimeStep());
-            newCost += newStateCost;
+            _new_cost += newStateCost;
 
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
@@ -613,13 +672,17 @@ double iLQR_SVR::ForwardsPass(double old_cost){
 
 //             if(t % 5 == 0){
 //                 const char* fplabel = "fp";
+//                 MuJoCo_helper->CopySystemState(MuJoCo_helper->vis_data, MuJoCo_helper->main_data);
+//                 MuJoCo_helper->ForwardSimulator(MuJoCo_helper->vis_data);
 //                 active_visualiser->render(fplabel);
 //             }
 
         }
 
-        if(newCost < old_cost){
-            costReduction = true;
+//        std::cout << "cost from alpha: " << alphas[alphaCount] << " is " << newCost << std::endl;
+
+        if(_new_cost < _old_cost){
+            cost_reduction = true;
         }
         else{
             if(alphaCount >= alphas.size() - 1){
@@ -638,11 +701,16 @@ double iLQR_SVR::ForwardsPass(double old_cost){
 
 //    std::cout << "expected :" << expected << " actual: " << old_cost - newCost << std::endl;
 
+    // Free memory
+    delete[] vel_diff;
+    delete[] state_old;
+    delete[] state_new;
+
     // If the cost was reduced
-    if(newCost < old_cost){
+    if(_new_cost < _old_cost){
         // Compute surprise
 
-        surprise = (old_cost - newCost) / expected;
+        surprise = (_old_cost - _new_cost) / expected;
         surprises.push_back(surprise);
 
         // Reset the system state to the initial state
@@ -651,13 +719,13 @@ double iLQR_SVR::ForwardsPass(double old_cost){
         //Copy the rollout buffer to saved systems state list, prevents recomputation using optimal controls
         MuJoCo_helper->CopyRolloutBufferToSavedSystemStatesList();
 
-        return newCost;
+        return _new_cost;
     }
 
     surprise = 0.0;
     surprises.push_back(0.0);
 
-    return old_cost;
+    return _old_cost;
 }
 
 double iLQR_SVR::ForwardsPassParallel(double old_cost){
@@ -855,13 +923,47 @@ bool iLQR_SVR::RolloutWithKMatricesReduction(std::vector<int> dof_indices, doubl
     return false;
 }
 
-std::vector<int> iLQR_SVR::checkKMatrices(){
+std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
+    std::vector<std::string> remove_dofs;
 
-    double *K_dofs_sums = new double[dof];
-    std::vector<int> dofs_to_remove;
-    for(int i = 0; i < dof; i++){
-        K_dofs_sums[i] = 0;
+    // ---------------------------- Eigen vector method ---------------------------------------------
+    std::vector<double> K_dofs_sums(dof, 0.0);
+
+    for(int t = 0; t < horizon_length; t += sampling_k_interval) {
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
+        if (!svd.computeV()) {
+            std::cerr << "SVD decomposition failed!" << std::endl;
+            break;
+        }
+
+//        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
+//        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
+
+        for (int i = 0; i < num_ctrl; i++) {
+            for (int j = 0; j < dof; j++) {
+                K_dofs_sums[j] += abs(svd.matrixV()(j, i));
+                K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
+            }
+        }
     }
+
+//    std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
+    std::vector<std::string> state_vector_name = activeModelTranslator->GetStateVectorNames();
+
+//    std::cout << "K_sums in order: ";
+    for(int i = 0; i < dof; i++) {
+        if (K_dofs_sums[i] < threshold_k_eignenvectors) {
+            remove_dofs.push_back(state_vector_name[i]);
+        }
+//        remove_dofs.push_back(state_vector_name[sorted_indices[i]]);
+//        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+    }
+//    std::cout << "\n";
+
+    return remove_dofs;
+
+    // TODO - make this optionally available
+    // ------------------------ Sampling and summing method ----------------------------
 //
 //    for(int t = 0; t < horizonLength; t += sampling_k_interval){
 //
@@ -874,47 +976,28 @@ std::vector<int> iLQR_SVR::checkKMatrices(){
 //        }
 //    }
 //
-
-    for(int t = 0; t < horizon_length; t += sampling_k_interval){
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
-        if (!svd.computeV()) {
-            std::cerr << "SVD decomposition failed!" << std::endl;
-            return dofs_to_remove;
-        }
-
-//        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
-//        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
-
-        for(int i = 0; i < num_ctrl; i++){
-            for(int j = 0; j < dof; j++){
-                K_dofs_sums[j] += abs(svd.matrixV()(j, i));
-                K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
-            }
-        }
-    }
-
-//    std::cout << "K matrices importance weightings: \n";
-    for (int i = 0; i < dof; i++){
-//        std::cout << "DOF " << i << " : " << K_dofs_sums[i] << "\n";
-
-        if(K_dofs_sums[i] < threshold_k_eignenvectors) {
-            dofs_to_remove.push_back(i);
-        }
-    }
-
-    return dofs_to_remove;
+//    std::vector<std::string> state_vector_name = activeModelTranslator->GetStateVectorNames();
+//    for(int i = 0; i < dof; i++) {
+//        if (K_dofs_sums[i] < threshold_k_eignenvectors) {
+//            remove_dofs.push_back(state_vector_name[i]);
+//        }
+//    }
+//
+//    // Free memory
+//    delete[] K_dofs_sums;
+//
+//    return remove_dofs;
 }
 
 void iLQR_SVR::UpdateNominal(){
 
     // Update the nominal state and control vector
     for(int t = 0 ; t < horizon_length; t++){
-        X_old.at(t + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[t + 1]);
+        X_old.at(t + 1) = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->saved_systems_state_list[t + 1]);
         U_old[t] = U_new[t].replicate(1, 1);
     }
 
     old_cost = new_cost;
-
 }
 
 void iLQR_SVR::PrintBanner(double time_rollout){
@@ -926,6 +1009,7 @@ void iLQR_SVR::PrintBanner(double time_rollout){
               << std::setw(12) << "| New Cost"
               << std::setw(8)  << "| Eps"
               << std::setw(10) << "| Lambda"
+              << std::setw(11) << "| num dofs"
               << std::setw(16) << "| % Derivatives"
               << std::setw(20) << "| Time Derivs (ms)"
               << std::setw(15) << "| Time BP (ms)"
@@ -933,27 +1017,20 @@ void iLQR_SVR::PrintBanner(double time_rollout){
               << std::setw(18) << "| Num Linesearches" << " |" << std::endl;
 }
 
-void iLQR_SVR::PrintBannerIteration(int iteration, double new_cost, double old_cost, double eps,
-                                double lambda, double percent_derivatives, double time_derivs, double time_bp,
+void iLQR_SVR::PrintBannerIteration(int iteration, double _new_cost, double _old_cost, double eps,
+                                double _lambda, double num_dofs, double percent_derivatives, double time_derivs, double time_bp,
                                 double time_fp, int num_linesearches){
 
     std::cout << std::left << "|" << std::setw(11) << iteration
-              << "|" << std::setw(11) << old_cost
-              << "|" << std::setw(11) << new_cost
+              << "|" << std::setw(11) << _old_cost
+              << "|" << std::setw(11) << _new_cost
               << "|" << std::setprecision(3) << std::setw(7)  << eps
-              << "|" << std::setw(9) << lambda
+              << "|" << std::setw(9) << _lambda
+              << "|" << std::setw(9) << num_dofs
               << "|" << std::setw(15) << percent_derivatives
               << "|" << std::setw(19) <<time_derivs
               << "|" << std::setw(14)  << time_bp
               << "|" << std::setw(14) << time_fp
               << "|" << std::setw(18) << num_linesearches << "|" << std::endl;
-
-//    std::cout << std::setprecision(4);
-//    std::cout << "|     " << iteration << "     |   " << std::setw(5) << old_cost << "    |    " << std::setw(5) << new_cost << "   |  ";
-//    std::cout << std::setprecision(2) << eps << " |   ";
-//    std::cout << std::setprecision(4) <<  lambda << "   |       " << std::setw(3) << percent_derivatives << "       |       ";
-//    std::cout << std::setprecision(3) << time_derivs << "       |     " << time_bp << "     |     " << time_fp << "     |         "
-//    << num_linesearches << "        |" << std::endl;
-
 }
 

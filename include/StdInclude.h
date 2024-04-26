@@ -131,9 +131,10 @@ m_point crossProduct(m_point vec1, m_point vec2);
 
 double GaussNoise(double mean, double stddev);
 
-bool compare(const std::pair<double, int>& a, const std::pair<double, int>& b);
+bool CompareDescend(const std::pair<double, int>& a, const std::pair<double, int>& b);
+bool CompareAscend(const std::pair<double, int>& a, const std::pair<double, int>& b);
 
-std::vector<int> sortIndices(const std::vector<double>& values);
+std::vector<int> SortIndices(const std::vector<double>& values, bool ascending);
 
 template <typename T>
 inline T* DataAt(std::vector<T>& vec, typename std::vector<T>::size_type elem) {

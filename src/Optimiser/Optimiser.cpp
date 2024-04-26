@@ -7,8 +7,8 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
     activeYamlReader = _yamlReader;
     activeDifferentiator = _differentiator;
 
-    dof = activeModelTranslator->dof;
-    num_ctrl = activeModelTranslator->num_ctrl;
+//    dof = activeModelTranslator->dof;
+//    num_ctrl = activeModelTranslator->num_ctrl;
 
     // Set up the derivative interpolator from YAML settings
     activeKeyPointMethod.name = activeModelTranslator->keypoint_method;

@@ -386,7 +386,7 @@ void KeypointGenerator::GenerateKeypointsOrderOfImportance(const std::vector<Mat
         }
 
         // Sort jerks in order of magnitude
-        std::vector<int> sorted_indices = sortIndices(jerk_vals);
+        std::vector<int> sorted_indices = SortIndices(jerk_vals, false);
 
         // Have to push the first and last time indices
         keypoints_per_dof[i].push_back(0);

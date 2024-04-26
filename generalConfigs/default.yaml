@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_moderate_clutter"
+task: "pushing_low_clutter"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -24,7 +24,7 @@ task: "pushing_moderate_clutter"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
+optimiser: "iLQR_SVR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
 runMode: "Optimise_once"

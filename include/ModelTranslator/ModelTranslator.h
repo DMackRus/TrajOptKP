@@ -311,6 +311,7 @@ public:
 
     // State vector objects and names
     struct stateVectorList current_state_vector;
+    struct stateVectorList full_state_vector;
 
     std::vector<std::string> current_state_vector_elements;
     std::vector<std::string> unused_state_vector_elements;
