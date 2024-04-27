@@ -1,9 +1,4 @@
-//
-// Created by dave on 07/03/23.
-//
-
-#ifndef PHYSICSSIMSWITCHING_VISUALIZER_H
-#define PHYSICSSIMSWITCHING_VISUALIZER_H
+#pragma once
 
 #include "MuJoCoHelper.h"
 #include <GLFW/glfw3.h>
@@ -15,10 +10,7 @@
 class Visualiser {
 public:
     Visualiser(std::shared_ptr<ModelTranslator> _modelTranslator);
-    void init();
     void update();
-    void draw();
-    void close();
 
     // ------------------------------- Variables -----------------------------------------
     // Screen variables
@@ -51,8 +43,6 @@ public:
     bool windowOpen();
     void render(const char* label);
 
-    float testVel = 0;
-
     std::vector<MatrixXd> replayControls;
     bool replayTriggered = false;
 
@@ -68,5 +58,3 @@ private:
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
 };
-
-#endif //PHYSICSSIMSWITCHING_VISUALIZER_H

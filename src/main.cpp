@@ -172,22 +172,42 @@ int main(int argc, char **argv) {
     //Instantiate my visualiser
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
 
+    // Setup the initial horizon, based on open loop or mpc method
+    int opt_horizon = 0;
+    if(runMode == "MPC_Until_Complete"){
+        opt_horizon = activeModelTranslator->MPC_horizon;
+    }
+    else{
+        opt_horizon = activeModelTranslator->openloop_horizon;
+    }
+
     // Choose an Optimiser
-    int openloop_horizon = activeModelTranslator->openloop_horizon;
     if(optimiser == "iLQR"){
-        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
+        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
+                                               activeModelTranslator->MuJoCo_helper,
+                                               activeDifferentiator,
+                                               opt_horizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQROptimiser;
     }
     else if(optimiser == "iLQR_SVR"){
-        iLQR_SVR_Optimiser = std::make_shared<iLQR_SVR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
+        iLQR_SVR_Optimiser = std::make_shared<iLQR_SVR>(activeModelTranslator,
+                                                        activeModelTranslator->MuJoCo_helper,
+                                                        activeDifferentiator,
+                                                        opt_horizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQR_SVR_Optimiser;
     }
     else if(optimiser == "PredictiveSampling"){
-        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, openloop_horizon, 8);
+        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator,
+                                                              activeModelTranslator->MuJoCo_helper,
+                                                              yamlReader, activeDifferentiator,
+                                                              opt_horizon, 8);
         activeOptimiser = stompOptimiser;
     }
     else if(optimiser == "GradDescent"){
-        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, activeVisualiser, openloop_horizon, yamlReader);
+        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator,
+                                                             activeModelTranslator->MuJoCo_helper,
+                                                             activeDifferentiator, activeVisualiser,
+                                                             opt_horizon, yamlReader);
         activeOptimiser = gradDescentOptimiser;
     }
     else{
@@ -247,7 +267,7 @@ int main(int argc, char **argv) {
 
         dofs_full = activeModelTranslator->dof;
 
-        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
+        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
 
         MatrixXd state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data);
         std::cout << "size of state vector quaternion: " << state_vector.rows() << std::endl;
@@ -259,7 +279,7 @@ int main(int argc, char **argv) {
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
 
         std::vector<MatrixXd> U_init;
-        U_init = activeModelTranslator->CreateInitOptimisationControls(openloop_horizon);
+        U_init = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
 
 
@@ -502,7 +522,10 @@ void AsyncMPC(){
 
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
-            activeVisualiser->trajectory_states.push_back(activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data));
+//            std::cout << "next state called \n";
+            MatrixXd next_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data);
+//            std::cout << "next state: " << next_state << std::endl;
+            activeVisualiser->trajectory_states.push_back(next_state);
 
             // Set the latest control
             activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data);

@@ -105,9 +105,6 @@ private:
     int last_iter_num_linesearches = 0;
     double last_alpha = 0.0f;
 
-    // Max horizon of optimisation.
-    int maxHorizon = 0;
-
     // Feedback gains matrices
     // open loop feedback gains
     vector<MatrixXd> k;

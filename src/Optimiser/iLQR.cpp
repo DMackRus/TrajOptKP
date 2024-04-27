@@ -4,7 +4,6 @@
 iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, int horizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
         Optimiser(_modelTranslator, MuJoCo_helper, _yamlReader, _differentiator){
 
-    maxHorizon = horizon;
     active_visualiser = _visualizer;
 
     // Initialise saved systems state list
@@ -15,8 +14,8 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
         MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
     }
 
-    // initialise all vectors of matrices
-    for(int i = 0; i < maxHorizon; i++){
+    // Initialise all vectors of matrices
+    for(int i = 0; i < horizon; i++){
 
         if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
             MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
@@ -29,13 +28,12 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
     // Whether to do some low pass filtering over A and B matrices
     filteringMethod = activeYamlReader->filtering;
 
-    Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, maxHorizon);
+    Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon);
 
 }
 
 void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
-    std::cout << "New horizon length: " << new_horizon << "\n";
     auto start = std::chrono::high_resolution_clock::now();
 
     bool update_ctrl, update_dof, update_horizon = false;
@@ -50,9 +48,15 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     }
 
     if(new_horizon != this->horizon_length){
+
+        // Create extra padding for vectors and matrices
+        if(new_horizon > this->horizon_length){
+            update_horizon = true;
+        }
         this->horizon_length = new_horizon;
-        update_horizon = true;
     }
+
+    numberOfTotalDerivs = horizon_length * dof;
 
     // Clear old matrices
     if(update_ctrl){
@@ -125,7 +129,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     // Resize Keypoint generator class
     keypoint_generator->Resize(dof, num_ctrl, horizon_length);
 
-    std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
+//    std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
 }
 
 double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd> initial_controls){
@@ -198,11 +202,12 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
 // -------------------------------------------------------------------------------------------------------
 std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length){
     auto optStart = high_resolution_clock::now();
+
+    // Make sure all matrices used in iLQR are correctly sized
+    Resize(dof, num_ctrl, horizon_length);
     
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls(horizon_length);
-    horizon_length = horizon_length;
-    numberOfTotalDerivs = horizon_length * dof;
 
     // TODO - code to adjust max horizon if opt horizon > max_horizon
 //    std::cout << "horizon is " << horizon_length << "\n";
