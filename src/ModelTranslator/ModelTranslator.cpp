@@ -76,6 +76,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
 
     // Set current state vector to the full state vector
     current_state_vector = full_state_vector;
+    UpdateSceneVisualisation();
 
     std::cout << "full state vector names: ";
     for(const auto & state_vector_name : full_state_vector.state_names){
@@ -141,8 +142,44 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
 
     // Update the number of dofs in the state vector
     current_state_vector.Update();
+    UpdateSceneVisualisation();
 
+}
 
+void ModelTranslator::UpdateSceneVisualisation(){
+    // Using the current state vector, update the geoms in the scene dependant how many dofs are active
+
+    for(const auto &body : current_state_vector.bodiesStates){
+        // count the number of dofs for this body
+        int dof_for_body = 0;
+        for(int i = 0; i < 3; i++){
+            if(body.activeLinearDOF[i]){
+                dof_for_body++;
+            }
+            if(body.activeAngularDOF[i]){
+                dof_for_body++;
+            }
+        }
+
+        // compute color
+        color body_color;
+        if(body.name == "goal"){
+            body_color = goal_colors[dof_for_body];
+        }
+        else{
+            body_color = distractor_colors[dof_for_body];
+        }
+
+        float color[4] = {
+                body_color.r,
+                body_color.g,
+                body_color.b,
+                body_color.a
+        };
+
+        // Set color
+        MuJoCo_helper->SetBodyColor(body.name, color);
+    }
 }
 
 std::vector<std::string> ModelTranslator::GetStateVectorNames(){
@@ -1099,10 +1136,6 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 
         MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
     }
-
-    // TODO - remove temp code
-    float color[4] = {0.5, 1, 1, 1};
-    MuJoCo_helper->SetBodyColor("goal", color);
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {

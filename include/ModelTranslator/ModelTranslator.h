@@ -34,6 +34,13 @@ enum clutterLevels{
     clutter_realWorld = 4
 };
 
+struct color{
+    float r;
+    float g;
+    float b;
+    float a;
+};
+
 class ModelTranslator {
 public:
     /**
@@ -96,6 +103,8 @@ public:
      * @return double The cost of the system at the given data index.
      */
     virtual double CostFunction(mjData* d, bool terminal);
+
+    virtual void UpdateSceneVisualisation();
 
     double CostFunctionBody(const bodyStateVec body, mjData *d, bool terminal);
 
@@ -341,6 +350,23 @@ public:
 
     // MPC horizon
     int MPC_horizon;
+
+    // num of dofs considered between 0 and 6
+    color distractor_colors[7] = {{1, 1,    0, 1},
+                                  {1, 0.84, 0, 1},
+                                  {1, 0.68, 0, 1},
+                                  {1, 0.53, 0, 1},
+                                  {1, 0.36, 0, 1},
+                                  {1, 0.20, 0, 1},
+                                  {1, 0,    0, 1}};
+
+    color goal_colors[7] =       {{0, 0.4, 0, 1},
+                                  {0, 0.5, 0, 1},
+                                  {0, 0.6, 0, 1},
+                                  {0, 0.7, 0, 1},
+                                  {0, 0.8, 0, 1},
+                                  {0, 0.9, 0, 1},
+                                  {0, 1.0, 0, 1}};
 
 protected:
 

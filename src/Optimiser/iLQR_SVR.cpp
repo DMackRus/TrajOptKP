@@ -4,7 +4,6 @@
 iLQR_SVR::iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, int horizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
         Optimiser(_modelTranslator, MuJoCo_helper, _yamlReader, _differentiator){
 
-    max_horizon = horizon;
     active_visualiser = _visualizer;
 
     // Initialise saved systems state list
@@ -16,7 +15,7 @@ iLQR_SVR::iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator, std::share
     }
 
     // initialise all vectors of matrices
-    for(int i = 0; i < max_horizon; i++){
+    for(int i = 0; i < horizon; i++){
 
         if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
             MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
@@ -29,7 +28,7 @@ iLQR_SVR::iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator, std::share
     // Whether to do some low pass filtering over A and B matrices
     filteringMethod = activeYamlReader->filtering;
 
-    Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, max_horizon);
+    Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon);
 
 }
 
@@ -345,7 +344,7 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     // Adjust state vector - remove candidates for removal
     if(!candidates_for_removal.empty()){
         activeModelTranslator->UpdateStateVector(candidates_for_removal, false);
-        Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, max_horizon);
+        Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon_length);
         std::cout << "removing dofs, new num dofs: " << activeModelTranslator->dof << "\n";
         for(int t = 0 ; t < horizon_length; t++) {
             X_old.at(t + 1) = activeModelTranslator->ReturnStateVectorQuaternions(

@@ -111,9 +111,6 @@ private:
     int last_iter_num_linesearches = 0;
     double last_alpha = 0.0f;
 
-    // Max horizon of optimisation.
-    int max_horizon = 0;
-
     // Feedback gains matrices
     // open loop feedback gains
     vector<MatrixXd> k;
@@ -121,7 +118,7 @@ private:
     vector<MatrixXd> K;
 
     int sampling_k_interval = 1;
-    double threshold_k_eignenvectors = 100.0;
+    double threshold_k_eignenvectors = 10.0;
     std::vector<std::string> candidates_for_removal;
 
 
