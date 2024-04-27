@@ -1081,20 +1081,28 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
         MuJoCo_helper->SetBodyVelocity(bodiesState.name, body_vel, d);
     }
 
-    // Optional - Set a body pose if relevant for task
-//    pose_7 goal_body;
-//    goal_body.position[0] = active_state_vector.bodiesStates[0].goalLinearPos[0];
-//    goal_body.position[1] = active_state_vector.bodiesStates[0].goalLinearPos[1];
-//    goal_body.position[2] = active_state_vector.bodiesStates[0].goalLinearPos[2];
-//
-//    m_point desired_eul = {active_state_vector.bodiesStates[0].goalAngularPos[0],
-//                        active_state_vector.bodiesStates[0].goalAngularPos[1],
-//                        active_state_vector.bodiesStates[0].goalAngularPos[2]};
-//
-//    goal_body.quat = eul2Quat(desired_eul);
-//
-//    MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
+    // If we have a goal body in the model, lets set it to the goal pose
+    // TODO - add this in task config yaml
+    // TODO - also this assumes first body is the goal body.
+    int body_id;
+    if(MuJoCo_helper->BodyExists("display_goal",  body_id)){
+        pose_7 goal_body;
+        goal_body.position[0] = full_state_vector.bodiesStates[0].goalLinearPos[0];
+        goal_body.position[1] = full_state_vector.bodiesStates[0].goalLinearPos[1];
+        goal_body.position[2] = full_state_vector.bodiesStates[0].goalLinearPos[2];
 
+        m_point desired_eul = {full_state_vector.bodiesStates[0].goalAngularPos[0],
+                               full_state_vector.bodiesStates[0].goalAngularPos[1],
+                               full_state_vector.bodiesStates[0].goalAngularPos[2]};
+
+        goal_body.quat = eul2Quat(desired_eul);
+
+        MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
+    }
+
+    // TODO - remove temp code
+    float color[4] = {0.5, 1, 1, 1};
+    MuJoCo_helper->SetBodyColor("goal", color);
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {

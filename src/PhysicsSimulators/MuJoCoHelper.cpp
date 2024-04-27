@@ -267,6 +267,28 @@ void MuJoCoHelper::GetRobotJointLimits(const string& robot_name, vector<double> 
 // --------------------------------- END OF ROBOT UTILITY ---------------------------------------
 
 // ------------------------------------- BODY UTILITY -------------------------------------------
+
+bool MuJoCoHelper::BodyExists(const string& body_name, int &body_index){
+    bool body_exists = false;
+
+    body_index = mj_name2id(model, mjOBJ_BODY, body_name.c_str());
+    if(body_index != -1){
+        body_exists = true;
+    }
+
+    return body_exists;
+}
+
+void MuJoCoHelper::SetBodyColor(const string& body_name, const float color[4]) const{
+    int body_id = mj_name2id(model, mjOBJ_BODY, body_name.c_str());
+    int geom_id = model->body_geomadr[body_id];
+
+    model->geom_rgba[geom_id * 4]     = color[0]; // Red
+    model->geom_rgba[geom_id * 4 + 1] = color[1]; // Green
+    model->geom_rgba[geom_id * 4 + 2] = color[2]; // Blue
+    model->geom_rgba[geom_id * 4 + 3] = color[3]; // Alpha
+}
+
 void MuJoCoHelper::SetBodyPoseQuat(const string& body_name, pose_7 pose, mjData *d) const{
     int body_id = mj_name2id(model, mjOBJ_BODY, body_name.c_str());
     const int joint_index = model->body_jntadr[body_id];

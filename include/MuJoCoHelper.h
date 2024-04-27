@@ -39,7 +39,9 @@ public:
     void GetRobotJointLimits(const string& robot_name, vector<double> &joint_limits, mjData *d);
 
     // Utility functions -- bodies
-//    bool isValidBodyName(const string& bodyName, int &bodyIndex);
+    bool BodyExists(const string& body_name, int &body_index);
+    void SetBodyColor(const string& body_name, const float color[4]) const;
+
     void SetBodyPoseQuat(const string& body_name, pose_7 pose, mjData *d) const;
     void SetBodyPoseAngle(const string& body_name, pose_6 pose, mjData *d) const;
     void SetBodyVelocity(const string& body_name, pose_6 velocity, mjData *d) const;
@@ -51,6 +53,8 @@ public:
 
     void GetBodyPoseQuatViaXpos(const string& body_name, pose_7 &pose, mjData *d) const;
     void GetBodyPoseAngleViaXpos(const string& body_name, pose_6 &pose, mjData *d) const;
+
+
 
     // Extras
     Eigen::MatrixXd GetJacobian(const std::string& body_name, mjData *d) const;
