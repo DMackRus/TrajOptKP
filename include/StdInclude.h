@@ -72,17 +72,29 @@ struct task{
 struct stateVectorList{
     int dof = 0;
     int dof_quat = 0;
+    int num_ctrl = 0;
+    std::vector<std::string> state_names;
     std::vector<robot> robots;
     std::vector<bodyStateVec> bodiesStates;
 
-    void ComputeNumDofs(){
+    void Update(){
         dof = 0;
         dof_quat = 0;
+        num_ctrl = 0;
+        state_names.clear();
+
+        std::string lin_suffixes[3] = {"_x", "_y", "_z"};
+        std::string ang_suffixes[3] = {"_roll", "_pitch", "_yaw"};
 
         for(auto & robot : robots){
             // Increment the number of dofs by the number of joints in the robots
             dof += static_cast<int>(robot.jointNames.size());
             dof_quat += static_cast<int>(robot.jointNames.size());
+            num_ctrl += static_cast<int>(robot.actuatorNames.size());
+
+            for(const auto & joint_name : robot.jointNames){
+                state_names.push_back(joint_name);
+            }
         }
 
         // Loop through all bodies in the state vector
@@ -91,6 +103,7 @@ struct stateVectorList{
                 if(body.activeLinearDOF[i]) {
                     dof++;
                     dof_quat++;
+                    state_names.push_back(body.name + lin_suffixes[i]);
                 }
             }
 
@@ -99,6 +112,7 @@ struct stateVectorList{
                 if(body.activeAngularDOF[i]){
                     any_angular_dofs = true;
                     dof++;
+                    state_names.push_back(body.name + ang_suffixes[i]);
                 }
             }
 

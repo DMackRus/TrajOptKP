@@ -36,6 +36,7 @@ iLQR_SVR::iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator, std::share
 void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
     auto start = std::chrono::high_resolution_clock::now();
+    std::cout << "new dofs: " << new_num_dofs << " new ctrl: " << new_num_ctrl << " new horizon: " << new_horizon << std::endl;
 
     bool update_ctrl = false;
     bool update_dof = false;
@@ -947,18 +948,29 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
         }
     }
 
-//    std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
+    std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
     std::vector<std::string> state_vector_name = activeModelTranslator->GetStateVectorNames();
 
-//    std::cout << "K_sums in order: ";
+    std::cout << "States: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << state_vector_name[sorted_indices[i]] << " ";
+    }
+    std::cout << "\n";
+
+    std::cout << "K_sums in order: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+    }
+    std::cout << "\n";
+
+
     for(int i = 0; i < dof; i++) {
         if (K_dofs_sums[i] < threshold_k_eignenvectors) {
             remove_dofs.push_back(state_vector_name[i]);
         }
-//        remove_dofs.push_back(state_vector_name[sorted_indices[i]]);
-//        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+
     }
-//    std::cout << "\n";
+
 
     return remove_dofs;
 

@@ -251,7 +251,7 @@ int main(int argc, char **argv) {
 
         MatrixXd state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data);
         std::cout << "size of state vector quaternion: " << state_vector.rows() << std::endl;
-        activeModelTranslator->current_state_vector.ComputeNumDofs();
+        activeModelTranslator->current_state_vector.Update();
         std::cout << "num dofs: " << activeModelTranslator->current_state_vector.dof << " num dofs quat: " << activeModelTranslator->current_state_vector.dof_quat << std::endl;
 
 

@@ -25,7 +25,7 @@ robots:
 bodies:
   goal:
     activeLinearDOF: [true, true, true]
-    activeAngularDOF: [false, false, false]
+    activeAngularDOF: [true, true, true]
     startLinearPos: [0.4, 0.2, 0.0]
     startAngularPos: [0, 0, 0]
     goalLinearPos: [0.6, 0.4, 0.0]
@@ -44,7 +44,7 @@ bodies:
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_1:
     activeLinearDOF: [true, true, true]
-    activeAngularDOF: [false, false, false]
+    activeAngularDOF: [true, true, true]
     startLinearPos: [0.48, 0.3, 0.0]
     startAngularPos: [0, 0, 0]
     goalLinearPos: [0.48, 0.3, 0.0]
@@ -63,7 +63,7 @@ bodies:
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_2:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ false, false, false ]
+    activeAngularDOF: [ true, true, true ]
     startLinearPos: [ 0.6, 0.4, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.6, 0.4, 0.0 ]
@@ -82,7 +82,7 @@ bodies:
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_3:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ false, false, false ]
+    activeAngularDOF: [ true, true, true ]
     startLinearPos: [ 0.7, 0.3, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, 0.3, 0.0 ]

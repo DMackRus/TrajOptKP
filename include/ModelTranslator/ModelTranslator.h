@@ -313,9 +313,7 @@ public:
     struct stateVectorList current_state_vector;
     struct stateVectorList full_state_vector;
 
-    std::vector<std::string> current_state_vector_elements;
     std::vector<std::string> unused_state_vector_elements;
-    std::vector<std::string> full_state_vector_elements;
 
     std::vector<std::string> iteration_readded_state_elements;
 

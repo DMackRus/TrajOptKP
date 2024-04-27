@@ -65,83 +65,20 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
 
     full_state_vector.robots = taskConfig.robots;
     full_state_vector.bodiesStates = taskConfig.bodiesStates;
-    full_state_vector.ComputeNumDofs();
 
-    // Set full state vector
+    // Updates the internal number of dofs, as well as the state vector name list
+    full_state_vector.Update();
+
+    dof = full_state_vector.dof;
+    // TODO - perhaps we dont need state vector size?
+    state_vector_size = dof * 2;
+    num_ctrl = full_state_vector.num_ctrl;
+
+    // Set current state vector to the full state vector
     current_state_vector = full_state_vector;
 
-    // --------- Set size of state vector correctly ------------
-    state_vector_size = 0;
-    for(auto & robot : current_state_vector.robots){
-        state_vector_size += (2 * static_cast<int>(robot.jointNames.size()));
-    }
-
-    for(auto & bodiesState : current_state_vector.bodiesStates){
-        for(int j = 0; j < 3; j++){
-            if(bodiesState.activeLinearDOF[j]){
-                state_vector_size += 2;
-            }
-            if(bodiesState.activeAngularDOF[j]){
-                state_vector_size += 2;
-            }
-        }
-    }
-
-    dof = state_vector_size / 2;
-
-    // --------- Set size of cost matrices correctly ------------
-    // TODO - doesnt work if more than 1 robot
-    num_ctrl = static_cast<int>(current_state_vector.robots[0].actuatorNames.size());
-
-    full_state_vector_elements.resize(dof);
-    current_state_vector_elements.resize(dof);
-
-    int index = 0;
-
-    // Assign state vector names
-    for(auto & robot : current_state_vector.robots){
-        for(const auto & joint_name : robot.jointNames){
-            full_state_vector_elements[index] = joint_name;
-            index++;
-        }
-    }
-
-    // bodies
-    for(auto & bodiesState : current_state_vector.bodiesStates){
-
-        // Linear
-        if(bodiesState.activeLinearDOF[0]){
-            full_state_vector_elements[index] = bodiesState.name + "_x";
-            index++;
-        }
-        if(bodiesState.activeLinearDOF[1]){
-            full_state_vector_elements[index] = bodiesState.name + "_y";
-            index++;
-        }
-        if(bodiesState.activeLinearDOF[2]){
-            full_state_vector_elements[index] = bodiesState.name + "_z";
-            index++;
-        }
-
-        // Angular
-        if(bodiesState.activeAngularDOF[0]){
-            full_state_vector_elements[index] = bodiesState.name + "_roll";
-            index++;
-        }
-        if(bodiesState.activeAngularDOF[1]){
-            full_state_vector_elements[index] = bodiesState.name + "_pitch";
-            index++;
-        }
-        if(bodiesState.activeAngularDOF[2]){
-            full_state_vector_elements[index] = bodiesState.name + "_yaw";
-            index++;
-        }
-    }
-
-    current_state_vector_elements = full_state_vector_elements;
-
     std::cout << "full state vector names: ";
-    for(const auto & state_vector_name : full_state_vector_elements){
+    for(const auto & state_vector_name : full_state_vector.state_names){
         std::cout << state_vector_name << " ";
     }
     std::cout << "\n";
@@ -202,7 +139,10 @@ void ModelTranslator::UpdateStateVector(std::vector<std::string> state_vector_na
         }
     }
 
-    current_state_vector.ComputeNumDofs();
+    // Update the number of dofs in the state vector
+    current_state_vector.Update();
+
+
 }
 
 std::vector<std::string> ModelTranslator::GetStateVectorNames(){
@@ -706,7 +646,7 @@ MatrixXd ModelTranslator::ReturnStateVector(mjData* d){
 MatrixXd ModelTranslator::ReturnStateVectorQuaternions(mjData *d){
 
     // TODO - this really shouldnt be called every time
-    current_state_vector.ComputeNumDofs();
+    current_state_vector.Update();
     int dof_pos_quat = current_state_vector.dof_quat;
 
     MatrixXd position_vector_quat(dof_pos_quat, 1);
@@ -1084,7 +1024,7 @@ bool ModelTranslator::SetVelocityVector(MatrixXd velocity_vector, mjData* d){
 }
 
 int ModelTranslator::StateIndexToQposIndex(int state_index){
-    std::string state_name = current_state_vector_elements[state_index];
+    std::string state_name = current_state_vector.state_names[state_index];
 
     bool found_body_tag = false;
     int joint_index;

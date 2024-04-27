@@ -121,7 +121,7 @@ private:
     vector<MatrixXd> K;
 
     int sampling_k_interval = 1;
-    double threshold_k_eignenvectors = 1.0;
+    double threshold_k_eignenvectors = 100.0;
     std::vector<std::string> candidates_for_removal;
 
 
@@ -133,10 +133,6 @@ private:
     double surprise = 0.0f;
     std::vector<double> surprises;
     std::vector<double> expecteds;
-
-
-
-
 
     /**
      * Checks whether the supplied matrix is positive defeinite.
