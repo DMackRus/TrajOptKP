@@ -522,10 +522,7 @@ void AsyncMPC(){
 
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
-//            std::cout << "next state called \n";
-            MatrixXd next_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data);
-//            std::cout << "next state: " << next_state << std::endl;
-            activeVisualiser->trajectory_states.push_back(next_state);
+            activeVisualiser->trajectory_states.push_back(activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data));
 
             // Set the latest control
             activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data);
@@ -699,14 +696,13 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             double smallestError = 1000.00;
             int bestMatchingStateIndex = 0;
             // TODO - possible issue if optimisation time > horizon
-            for(int i = low_bound; i < high_bound; i++){
+            for(int i = 0; i < OPT_HORIZON; i++){
 //                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
 //                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
                 double currError = 0.0f;
                 for(int j = 0; j < activeModelTranslator->state_vector_size; j++){
                     currError += abs(activeOptimiser->X_old[i](j) - current_vis_state(j));
                 }
-
                 if(currError < smallestError){
                     smallestError = currError;
                     bestMatchingStateIndex = i;

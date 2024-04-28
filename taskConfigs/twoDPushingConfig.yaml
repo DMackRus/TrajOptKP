@@ -27,14 +27,14 @@ robots:
 bodies:
   goal:
     activeLinearDOF: [true, true, true]
-    activeAngularDOF: [false, false, false]
+    activeAngularDOF: [true, true, true]
     startLinearPos: [ 0.5, 0.1, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, -0.1, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [0, 0, 0]
+    linearPosCost: [1, 1, 0]
     # When iLQR once
-    terminalLinearPosCost: [1000, 1000, 0]
+    terminalLinearPosCost: [0, 0, 0]
     linearVelCost: [0.1, 0.1, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]

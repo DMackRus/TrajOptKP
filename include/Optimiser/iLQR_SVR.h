@@ -118,7 +118,7 @@ private:
     vector<MatrixXd> K;
 
     int sampling_k_interval = 1;
-    double threshold_k_eignenvectors = 10.0;
+    double threshold_k_eignenvectors = 1.0;
     std::vector<std::string> candidates_for_removal;
 
 

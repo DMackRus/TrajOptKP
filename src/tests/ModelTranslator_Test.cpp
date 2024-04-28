@@ -32,9 +32,11 @@ TEST(ModelTranslator, default_state_vector_names){
     std::vector<std::string> expected_state_names = {"panda0_joint1", "panda0_joint2", "panda0_joint3",
                                                      "panda0_joint4", "panda0_joint5", "panda0_joint6",
                                                      "panda0_joint7", "panda0_finger_joint1", "panda0_finger_joint2",
-                                                     "goal_x", "goal_y", "goal_z", "goal_roll", "goal_pitch", "goal_yaw"};
+                                                     "goal_x", "goal_y", "goal_z", "goal_roll", "goal_pitch", "goal_yaw",
+                                                     "obstacle_1_x", "obstacle_1_y", "obstacle_1_z", "obstacle_1_roll", "obstacle_1_pitch", "obstacle_1_yaw",
+                                                     "obstacle_2_x", "obstacle_2_y", "obstacle_2_z", "obstacle_2_roll", "obstacle_2_pitch", "obstacle_2_yaw"};
 
-    std::vector<std::string> actual_state_names = model_translator->GetStateVectorNames();
+    std::vector<std::string> actual_state_names = model_translator->current_state_vector.state_names;
 
     ASSERT_TRUE(check_state_vectors_match(expected_state_names, actual_state_names));
 
@@ -49,7 +51,9 @@ TEST(ModelTranslator, set_state_vector){
 
     test_state_vector << 0, -0.183, 0, -3.1, 0, 1.34, 0, 0, 0,
             0.5, 0.2, 0.1, 0, 0, 0,
+            0.7, 0.1, 0.1, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0;
 
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper = model_translator->MuJoCo_helper;

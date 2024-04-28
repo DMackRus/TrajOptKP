@@ -5,7 +5,7 @@
 #mpc_horizon: 60
 #keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 #auto_adjust: false
-#minN: 1
+#minN: 100
 #maxN: 50
 #iterativeErrorThreshold: 0.0001
 #robots:
@@ -35,7 +35,7 @@
 #    goalAngularPos: [0, 0, 0]
 #    linearPosCost: [ 0, 0, 0 ]
 #    terminalLinearPosCost: [ 1000, 1000, 0 ]
-#    linearVelCost: [ 0.5, 0.5, 0 ]
+#    linearVelCost: [ 0.1, 0.1, 0 ]
 #    terminalLinearVelCost: [ 0, 0, 0 ]
 #    angularPosCost: [ 0, 0, 0 ]
 #    terminalAngularPosCost: [ 0, 0, 0 ]
