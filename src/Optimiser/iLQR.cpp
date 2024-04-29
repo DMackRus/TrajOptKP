@@ -711,7 +711,7 @@ double iLQR::ForwardsPass(double old_cost){
 
         }
 
-//        std::cout << "cost from alpha: " << alphas[alphaCount] << " is " << newCost << std::endl;
+        std::cout << "cost from alpha: " << alphas[alphaCount] << " is " << new_cost << std::endl;
 
         if(new_cost < old_cost){
             cost_reduction = true;

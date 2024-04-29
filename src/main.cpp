@@ -97,9 +97,6 @@ int main(int argc, char **argv) {
     task = yamlReader->taskName;
     taskInitMode = yamlReader->taskInitMode;
 
-
-    MatrixXd startStateVector(1, 1);
-
     // Instantiate model translator as specified by the config file.
     if(assign_task() == EXIT_FAILURE){
         return EXIT_FAILURE;
@@ -147,15 +144,22 @@ int main(int argc, char **argv) {
 
     }
 
-    startStateVector.resize(activeModelTranslator->state_vector_size, 1);
-
     // random start and goal state
     std::string taskPrefix = activeModelTranslator->model_name;
     if(taskInitMode == "random"){
         activeModelTranslator->GenerateRandomGoalAndStartState();
     }
     else if(taskInitMode == "fromCSV"){
-        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->current_state_vector);
+        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->full_state_vector);
+        activeModelTranslator->full_state_vector.Update();
+        activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
+        activeModelTranslator->UpdateSceneVisualisation();
+
+        std::cout << "goal pos " << activeModelTranslator->full_state_vector.bodiesStates[0].goalLinearPos[0] << " "
+        << activeModelTranslator->full_state_vector.bodiesStates[0].goalLinearPos[1] << " \n";
+
+        std::cout << "goal cost " << activeModelTranslator->full_state_vector.bodiesStates[0].terminalLinearPosCost[0] << " "
+        << activeModelTranslator->full_state_vector.bodiesStates[0].terminalLinearPosCost[1] << " \n";
     }
 
     // Initialise the system state from desired mechanism

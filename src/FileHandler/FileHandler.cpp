@@ -543,7 +543,6 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
             }
         }
     }
-    std::cout << "robot vel " << state_vector.robots[0].goalVel[1] << "\n";
 }
 
 void FileHandler::saveCostHistory(std::vector<double> costHistory, std::string filePrefix, int trajecNumber){
