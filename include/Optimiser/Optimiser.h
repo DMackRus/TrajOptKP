@@ -189,7 +189,7 @@ public:
     vector<MatrixXd> l_uu;
 
     // Saved states and controls
-    vector<MatrixXd> U_new;
+//    vector<MatrixXd> U_new;
     vector<MatrixXd> U_old;
     vector<MatrixXd> X_new;
     vector<MatrixXd> X_old;
@@ -214,6 +214,9 @@ protected:
 
     std::shared_ptr<FileHandler> activeYamlReader;
     std::shared_ptr<Differentiator> activeDifferentiator;
+
+    std::vector<std::vector<mujoco_data_min>> rollout_data;
+    int num_parallel_rollouts = 8;
 
     /**
      * Computes the dynamics derivatives at the specified indices. This function is used after computing a set of keypoints
@@ -252,6 +255,9 @@ protected:
      * @return filtered - The filtered values.
      */
     std::vector<double> FilterIndValLowPass(std::vector<double> unfiltered);
+
+    void SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index);
+    void SaveBestRollout(int thread_id);
 
 private:
     double epsConverge = 0.02;

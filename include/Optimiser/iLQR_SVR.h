@@ -122,9 +122,6 @@ private:
     double threshold_k_eignenvectors = 1.0;
     std::vector<std::string> candidates_for_removal;
 
-    std::vector<void (*)(double _old_cost, int thread_id, double alpha)> rollouts;
-
-
     double eps_acceptable_diff = 0.02;
 
     double delta_J = 0.0f;
@@ -184,14 +181,4 @@ private:
 
     // Visualiser object
     std::shared_ptr<Visualiser> active_visualiser;
-
-    // Control vector for parallel forwards pass rollout.
-    vector<vector<MatrixXd>> U_alpha;
-    int num_parallel_rollouts = 8;
-    std::vector<std::vector<mujoco_data_min>> rollout_data;
-
-    void WorkerForwardsPass(int threadId);
-
-    void SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index);
-    void SaveBestRollout(int thread_id);
 };

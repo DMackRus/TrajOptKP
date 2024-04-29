@@ -281,3 +281,52 @@ void Optimiser::setFIRFilter(std::vector<double> _FIRCoefficients){
     }
 }
 
+void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index){
+
+    rollout_data[thread_id][data_index].time = d->time;
+
+    for(int i = 0; i < MuJoCo_helper->model->nq; i++){
+        rollout_data[thread_id][data_index].q_pos[i] = d->qpos[i];
+    }
+
+    for(int i = 0; i < MuJoCo_helper->model->nv; i++){
+        rollout_data[thread_id][data_index].q_vel[i] = d->qvel[i];
+        rollout_data[thread_id][data_index].q_acc[i] = d->qacc[i];
+        rollout_data[thread_id][data_index].q_acc_warmstart[i] = d->qacc_warmstart[i];
+        rollout_data[thread_id][data_index].qfrc_applied[i] = d->qfrc_applied[i];
+    }
+
+    for(int i = 0; i < MuJoCo_helper->model->nu; i++){
+        rollout_data[thread_id][data_index].ctrl[i] = d->ctrl[i];
+    }
+
+    for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
+        rollout_data[thread_id][data_index].xfrc_applied[i] = d->xfrc_applied[i];
+    }
+}
+
+void Optimiser::SaveBestRollout(int thread_id){
+    for(int t = 0; t < horizon_length; t++){
+
+        MuJoCo_helper->saved_systems_state_list[t+1]->time = rollout_data[thread_id][t].time;
+
+        for(int i = 0; i < MuJoCo_helper->model->nq; i++){
+            MuJoCo_helper->saved_systems_state_list[t+1]->qpos[i] = rollout_data[thread_id][t].q_pos[i];
+        }
+
+        for(int i = 0; i < MuJoCo_helper->model->nv; i++){
+            MuJoCo_helper->saved_systems_state_list[t+1]->qvel[i]           = rollout_data[thread_id][t].q_vel[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qacc[i]           = rollout_data[thread_id][t].q_acc[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qacc_warmstart[i] = rollout_data[thread_id][t].q_acc_warmstart[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qfrc_applied[i]   = rollout_data[thread_id][t].qfrc_applied[i];
+        }
+
+        for(int i = 0; i < MuJoCo_helper->model->nu; i++){
+            MuJoCo_helper->saved_systems_state_list[t+1]->ctrl[i] = rollout_data[thread_id][t].ctrl[i];
+        }
+
+        for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
+            MuJoCo_helper->saved_systems_state_list[t+1]->xfrc_applied[i] = rollout_data[thread_id][t].xfrc_applied[i];
+        }
+    }
+}
