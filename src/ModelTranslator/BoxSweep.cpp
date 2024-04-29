@@ -107,10 +107,11 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
 bool BoxSweep::TaskComplete(mjData *d, double &dist){
     bool taskComplete = false;
 
-    MatrixXd currentState = ReturnStateVector(d);
+    pose_6 goal_pose;
+    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
 
-    double x_diff = currentState(7) - current_state_vector.bodiesStates[0].goalLinearPos[0];
-    double y_diff = currentState(8) - current_state_vector.bodiesStates[0].goalLinearPos[1];
+    double x_diff = goal_pose.position(0) - current_state_vector.bodiesStates[0].goalLinearPos[0];
+    double y_diff = goal_pose.position(1) - current_state_vector.bodiesStates[0].goalLinearPos[1];
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 

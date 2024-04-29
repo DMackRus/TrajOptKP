@@ -308,10 +308,13 @@ int GenTestingData::single_asynchronus_run(bool visualise,
 
         // Store latest control and state in a replay buffer
         activeVisualiser->trajectory_controls.push_back(next_control);
-        activeVisualiser->trajectory_states.push_back(activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data));
+        MatrixXd next_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                                       activeModelTranslator->full_state_vector);
+        activeVisualiser->trajectory_states.push_back(next_state);
 
         // Set the latest control
-        activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data);
+        activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data,
+                                                activeModelTranslator->current_state_vector);
 
         // Update the simulation
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
@@ -364,13 +367,16 @@ int GenTestingData::single_asynchronus_run(bool visualise,
     final_cost = 0.0f;
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-        activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data);
-        activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data);
+        activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
+                                                activeModelTranslator->current_state_vector);
+        activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
+                                              activeModelTranslator->full_state_vector);
 //        activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
 //
 //        activeVisualiser->render("playback");
 
-        final_cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false);
+        final_cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                          activeModelTranslator->full_state_vector, false);
     }
 
     std::cout << "final cost of entire MPC trajectory was: " << final_cost << "\n";
@@ -453,7 +459,9 @@ void GenTestingData::asynchronus_optimiser_worker(std::string method_directory, 
         // By the time we have computed optimal controls, main visualisation will be some number
         // of time-steps ahead. We need to find the correct control to apply.
 
-        MatrixXd current_vis_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data);
+        // TODO - decide whetehr full or current state
+        MatrixXd current_vis_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                                              activeModelTranslator->current_state_vector);
 
         double smallestError = 1000.00;
         int bestMatchingStateIndex = 0;

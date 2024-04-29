@@ -142,7 +142,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
 //    }
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, d);
 
-    X_old[0] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data);
+    X_old[0] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
     if(MuJoCo_helper->CheckIfDataIndexExists(0)){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
@@ -153,7 +153,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
 
     for(int i = 0; i < horizon_length; i++){
         // set controls
-        activeModelTranslator->SetControlVector(initial_controls[i], MuJoCo_helper->main_data);
+        activeModelTranslator->SetControlVector(initial_controls[i], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
         // Integrate simulator
         mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
@@ -161,16 +161,16 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
         // return cost for this state
         double state_cost;
         if(i == horizon_length - 1){
-            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
+            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector, true);
         }
         else{
-            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, false);
+            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector, false);
         }
 
         // If required to save states to trajectory tracking, then save state
         if(save_states){
-            X_old[i + 1] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data);
-            U_old[i] = activeModelTranslator->ReturnControlVector(MuJoCo_helper->main_data);
+            X_old[i + 1] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+            U_old[i] = activeModelTranslator->ReturnControlVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
             if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
                 MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
             }
@@ -377,7 +377,8 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
             // Update the X_old and U_old if cost was reduced
             if(new_cost < oldCost){
                 for(int j = 0 ; j < horizon_length; j++){
-                    X_old.at(j + 1) = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->saved_systems_state_list[j + 1]);
+                    X_old.at(j + 1) = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->saved_systems_state_list[j + 1],
+                                                                                          activeModelTranslator->full_state_vector);
                     U_old[j] = U_new[j].replicate(1, 1);
                 }
             }
@@ -624,8 +625,8 @@ double iLQR::ForwardsPass(double old_cost){
 
         for(int t = 0; t < horizon_length; t++) {
 
-            // TODO - hmmmmmmm
-            X_new = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data);
+            X_new = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data,
+                                                                        activeModelTranslator->full_state_vector);
 
             // Calculate difference from new state to old state
             // If there are no angular dofs, simply subtract the two
@@ -649,7 +650,7 @@ double iLQR::ForwardsPass(double old_cost){
                 // Compute state feedback
                 // position differences
                 for(int j = 0; j < dof; j++){
-                    int q_index = activeModelTranslator->StateIndexToQposIndex(j);
+                    int q_index = activeModelTranslator->StateIndexToQposIndex(j, activeModelTranslator->full_state_vector);
                     state_feedback(j) = vel_diff[q_index];
                 }
 
@@ -683,15 +684,15 @@ double iLQR::ForwardsPass(double old_cost){
                 }
             }
 
-            activeModelTranslator->SetControlVector(U_new[t], MuJoCo_helper->main_data);
+            activeModelTranslator->SetControlVector(U_new[t], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
             double newStateCost;
             // Terminal state
             if(t == horizon_length - 1){
-                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, true);
+                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector, true);
             }
             else{
-                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, false);
+                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector, false);
             }
 
 //            newCost += (newStateCost * active_physics_simulator->returnModelTimeStep());
@@ -777,7 +778,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->saved_systems_state_list[0]);
     }
 
-    MatrixXd initState = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[0]);
+    MatrixXd initState = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->full_state_vector);
     auto end = std::chrono::high_resolution_clock::now();
     auto copy_duration = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
     cout << "copy duration: " << copy_duration.count() / 1000.0f << endl;
@@ -798,7 +799,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
             //_U = activeModelTranslator->ReturnControlVector(t);
 //            _U = U_old[t].replicate(1, 1);
 
-            X_new = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[i + 1]);
+            X_new = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[i + 1], activeModelTranslator->full_state_vector);
 
             // Calculate difference from new state to old state
 //            stateFeedback = X_new - _X;
@@ -818,7 +819,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
                 }
             }
 
-            activeModelTranslator->SetControlVector(U_alpha[t][i], MuJoCo_helper->saved_systems_state_list[i + 1]);
+            activeModelTranslator->SetControlVector(U_alpha[t][i], MuJoCo_helper->saved_systems_state_list[i + 1], activeModelTranslator->full_state_vector);
 //            Xt = activeModelTranslator->ReturnStateVector(i+1);
 //            //cout << "Xt: " << Xt << endl;
 //
@@ -826,10 +827,10 @@ double iLQR::ForwardsPassParallel(double old_cost){
             double newStateCost;
             // Terminal state
             if(t == horizon_length - 1){
-                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->saved_systems_state_list[i + 1], true);
+                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->saved_systems_state_list[i + 1], activeModelTranslator->full_state_vector, true);
             }
             else{
-                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->saved_systems_state_list[i + 1], false);
+                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->saved_systems_state_list[i + 1], activeModelTranslator->full_state_vector,  false);
             }
 
             newCosts[i] += (newStateCost * MuJoCo_helper->ReturnModelTimeStep());
@@ -860,11 +861,11 @@ double iLQR::ForwardsPassParallel(double old_cost){
     if(newCost < old_cost){
         for(int i = 0; i < horizon_length; i++){
 
-            activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MuJoCo_helper->main_data);
+            activeModelTranslator->SetControlVector(U_alpha[i][bestAlphaIndex], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
             // Log the old state
-            X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data);
+            X_old.at(i + 1) = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
             MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
 
@@ -872,7 +873,7 @@ double iLQR::ForwardsPassParallel(double old_cost){
 
         }
 
-        MatrixXd testState = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[horizon_length - 1]);
+        MatrixXd testState = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[horizon_length - 1], activeModelTranslator->full_state_vector);
 //        cout << "final state after FP: " << testState.transpose() << endl;
 
         return newCost;

@@ -187,82 +187,82 @@ BoxFlick::BoxFlick(int _clutterLevel) : PushBaseClass("franka_gripper", "goal"){
 //    return randomGoalState;
 //}
 
-double BoxFlick::CostFunction(mjData *d, bool terminal){
-    double cost;
-//    MatrixXd Xt = ReturnStateVector(d);
-//    MatrixXd Ut = ReturnControlVector(d);
-//
-//    MatrixXd X_diff = Xt - X_desired;
-//    MatrixXd temp;
-//
-//    double obstacleDistCost;
-//
-//    double objectsDiffX = Xt(9) - boxStartX;
-//    double objectsDiffY = Xt(10) - boxStartY;
-//
-//    obstacleDistCost = (A * exp(-(pow(objectsDiffX,2)/sigma))) + (A * exp(-(pow(objectsDiffY,2)/sigma)));
-//
-////    obstacleDistCost = 0.01/(pow(objectsDiffX,2) + 0.1) + 0.01/(pow(objectsDiffY,2) + 0.1);
-//
+//double BoxFlick::CostFunction(mjData *d, bool terminal){
+//    double cost;
+////    MatrixXd Xt = ReturnStateVector(d);
+////    MatrixXd Ut = ReturnControlVector(d);
+////
+////    MatrixXd X_diff = Xt - X_desired;
+////    MatrixXd temp;
+////
+////    double obstacleDistCost;
+////
+////    double objectsDiffX = Xt(9) - boxStartX;
+////    double objectsDiffY = Xt(10) - boxStartY;
+////
+////    obstacleDistCost = (A * exp(-(pow(objectsDiffX,2)/sigma))) + (A * exp(-(pow(objectsDiffY,2)/sigma)));
+////
+//////    obstacleDistCost = 0.01/(pow(objectsDiffX,2) + 0.1) + 0.01/(pow(objectsDiffY,2) + 0.1);
+////
+//////    if(terminal){
+//////        obstacleDistCost = 1/(pow(hypotenuseDiff,2) + 0.1);
+//////    }
+////
 ////    if(terminal){
-////        obstacleDistCost = 1/(pow(hypotenuseDiff,2) + 0.1);
+////        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
 ////    }
+////    else{
+////        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
+////    }
+////
+////    cost = temp(0) + obstacleDistCost;
 //
-//    if(terminal){
-//        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
-//    }
-//    else{
-//        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
-//    }
+//    return cost;
+//}
 //
-//    cost = temp(0) + obstacleDistCost;
-
-    return cost;
-}
-
-void BoxFlick::CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-//    MatrixXd Xt = ReturnStateVector(d);
-//    MatrixXd Ut = ReturnControlVector(d);
-//    MatrixXd X_diff = Xt - X_desired;
-//
-//    // Special elemetns for gaussian distance of obstacle1 to goal
-//    double objectsDiffX = Xt(9) - boxStartX;
-//    double objectsDiffY = Xt(10) - boxStartY;
-//
-//    double exponentialX = exp(-(pow(objectsDiffX,2)/sigma));
-//    double exponentialY = exp(-(pow(objectsDiffY,2)/sigma));
-//
-//    double l_x_X_add = -(2 * A * objectsDiffX * exponentialX)/sigma;
-//    double l_x_Y_add = -(2 * A * objectsDiffY * exponentialY)/sigma;
-//
-//    double l_xx_X_add = (-2 * A * objectsDiffX * exponentialX)/sigma + (4 * pow(A, 2) * pow(objectsDiffX,2) * exponentialX)/pow(sigma,2);
-//    double l_xx_y_add = (-2 * A * objectsDiffY * exponentialY)/sigma + (4 * pow(A, 2) * pow(objectsDiffY,2) * exponentialY)/pow(sigma,2);
-//
-//    // Size cost derivatives appropriately
-//    l_x.resize(state_vector_size, 1);
-//    l_xx.resize(state_vector_size, state_vector_size);
-//
-//    l_u.resize(num_ctrl, 1);
-//    l_uu.resize(num_ctrl, num_ctrl);
-//
-//    if(terminal){
-//        l_x = 2 * Q_terminal * X_diff;
-//        l_xx = 2 * Q_terminal;
-//    }
-//    else{
-//        l_x = 2 * Q * X_diff;
-//        l_xx = 2 * Q;
-//    }
-//
-//    l_x(9) = l_x(9) + l_x_X_add;
-//    l_x(10) = l_x(10) + l_x_Y_add;
-//
-//    l_xx(9,9) = l_xx(9,9) + l_xx_X_add;
-//    l_xx(10,10) = l_xx(10,10) + l_xx_y_add;
-//
-//    l_u = 2 * R * Ut;
-//    l_uu = 2 * R;
-}
+//void BoxFlick::CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
+////    MatrixXd Xt = ReturnStateVector(d);
+////    MatrixXd Ut = ReturnControlVector(d);
+////    MatrixXd X_diff = Xt - X_desired;
+////
+////    // Special elemetns for gaussian distance of obstacle1 to goal
+////    double objectsDiffX = Xt(9) - boxStartX;
+////    double objectsDiffY = Xt(10) - boxStartY;
+////
+////    double exponentialX = exp(-(pow(objectsDiffX,2)/sigma));
+////    double exponentialY = exp(-(pow(objectsDiffY,2)/sigma));
+////
+////    double l_x_X_add = -(2 * A * objectsDiffX * exponentialX)/sigma;
+////    double l_x_Y_add = -(2 * A * objectsDiffY * exponentialY)/sigma;
+////
+////    double l_xx_X_add = (-2 * A * objectsDiffX * exponentialX)/sigma + (4 * pow(A, 2) * pow(objectsDiffX,2) * exponentialX)/pow(sigma,2);
+////    double l_xx_y_add = (-2 * A * objectsDiffY * exponentialY)/sigma + (4 * pow(A, 2) * pow(objectsDiffY,2) * exponentialY)/pow(sigma,2);
+////
+////    // Size cost derivatives appropriately
+////    l_x.resize(state_vector_size, 1);
+////    l_xx.resize(state_vector_size, state_vector_size);
+////
+////    l_u.resize(num_ctrl, 1);
+////    l_uu.resize(num_ctrl, num_ctrl);
+////
+////    if(terminal){
+////        l_x = 2 * Q_terminal * X_diff;
+////        l_xx = 2 * Q_terminal;
+////    }
+////    else{
+////        l_x = 2 * Q * X_diff;
+////        l_xx = 2 * Q;
+////    }
+////
+////    l_x(9) = l_x(9) + l_x_X_add;
+////    l_x(10) = l_x(10) + l_x_Y_add;
+////
+////    l_xx(9,9) = l_xx(9,9) + l_xx_X_add;
+////    l_xx(10,10) = l_xx(10,10) + l_xx_y_add;
+////
+////    l_u = 2 * R * Ut;
+////    l_uu = 2 * R;
+//}
 
 std::vector<MatrixXd> BoxFlick::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
@@ -330,10 +330,11 @@ std::vector<MatrixXd> BoxFlick::CreateInitOptimisationControls(int horizonLength
 bool BoxFlick::TaskComplete(mjData *d, double &dist){
     bool taskComplete = false;
 
-    MatrixXd currentState = ReturnStateVector(d);
+    pose_6 goal_pose;
+    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
 
-    double x_diff = currentState(9) - currentState(7);
-    double y_diff = currentState(10) - currentState(8);
+    double x_diff = goal_pose.position(0) - full_state_vector.bodiesStates[0].goalLinearPos[0];
+    double y_diff = goal_pose.position(1) - full_state_vector.bodiesStates[0].goalLinearPos[1];
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
     std::cout << "distance is: " << dist << std::endl;

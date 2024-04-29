@@ -7,17 +7,19 @@ pandaReaching::pandaReaching(): ModelTranslator(){
 }
 
 bool pandaReaching::TaskComplete(mjData *d, double &dist){
-    double cumError = 0.0f;
-    MatrixXd X = ReturnStateVector(d);
+    double cum_error = 0.0f;
 
-    for(int i = 0; i < dof; i++){
-        double diff = current_state_vector.robots[0].goalPos[i] - X(i);
-        cumError += diff;
+    std::vector<double> robot_joints;
+    MuJoCo_helper->GetRobotJointsPositions("panda", robot_joints, d);
+
+    for(int i = 0; i < full_state_vector.dof; i++){
+        double diff = full_state_vector.robots[0].goalPos[i] - robot_joints[i];
+        cum_error += diff;
     }
 
-    dist = cumError;
+    dist = cum_error;
 
-    if(cumError < 0.05){
+    if(cum_error < 0.05){
         return true;
     }
     else{
@@ -201,13 +203,13 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
 
         MatrixXd control(num_ctrl, 1);
         double gains[7] = {10, 10, 10, 10, 5, 5, 5};
-        MatrixXd Xt;
+//        MatrixXd Xt;
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
             MuJoCo_helper->GetRobotJointsGravityCompensationControls(current_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
 
-            Xt = ReturnStateVector(MuJoCo_helper->main_data);
+//            Xt = ReturnStateVector(MuJoCo_helper->main_data);
 
             for(int j = 0; j < num_ctrl; j++){
                 control(j) = gravCompensation[j];
@@ -215,7 +217,7 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
 //                control(j) += diff * gains[j];
             }
 
-            SetControlVector(control, MuJoCo_helper->main_data);
+            SetControlVector(control, MuJoCo_helper->main_data, full_state_vector);
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
             initControls.push_back(control);
         }

@@ -137,7 +137,8 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_quat, MuJoCo_helper->vis_data);
 
         std::cout << "body orientation " << body_eul.orientation(0) << " " << body_eul.orientation(1) << " " << body_eul.orientation(2) << "\n";
-        double cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
+        double cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data,
+                                                          activeModelTranslator->full_state_vector, false);
         std::cout << "cost: " << cost << std::endl;
 
         MatrixXd l_x, l_u, l_xx, l_uu;

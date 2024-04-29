@@ -57,11 +57,11 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/Differentiator/Differentiator.cpp
             src/Optimiser/Optimiser.cpp
             src/Optimiser/iLQR.cpp
-            src/Optimiser/PredictiveSampling.cpp
+#            src/Optimiser/PredictiveSampling.cpp
             src/ModelTranslator/BoxFlick.cpp
             src/ModelTranslator/Walker.cpp
             src/FileHandler/FileHandler.cpp
-            src/Optimiser/GradDescent.cpp
+#            src/Optimiser/GradDescent.cpp
             src/ModelTranslator/BoxSweep.cpp
             src/ModelTranslator/Acrobot.cpp
             src/ModelTranslator/Hopper.cpp

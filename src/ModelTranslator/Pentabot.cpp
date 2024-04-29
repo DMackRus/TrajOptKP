@@ -24,16 +24,14 @@ void Pentabot::ReturnRandomGoalState(){
 // TODO - fix
 bool Pentabot::TaskComplete(mjData *d, double &dist){
     dist = 0.0;
-
-    MatrixXd Xt = ReturnStateVector(d);
-
-    std::vector<double> robot_joints;
-    MuJoCo_helper->GetRobotJointsPositions("pentabot", robot_joints, d);
+    std::vector<double> pentabot_joints;
+    MuJoCo_helper->GetRobotJointsPositions("pentabot", pentabot_joints, d);
 
     for(int i = 0; i < dof; i++){
-        std::cout << "robot joint: " << robot_joints[i] << std::endl;
-        dist += abs(current_state_vector.robots[0].goalPos[i] - robot_joints[i]);
+        std::cout << "joint pos " << pentabot_joints[i] << "\n";
+        dist += abs(current_state_vector.robots[0].goalPos[i] - pentabot_joints[i]);
     }
+
     std::cout << "dist" << dist << std::endl;
 
     if(dist < 0.01){

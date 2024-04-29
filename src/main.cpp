@@ -22,8 +22,8 @@
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
 #include "Optimiser/iLQR_SVR.h"
-#include "Optimiser/PredictiveSampling.h"
-#include "Optimiser/GradDescent.h"
+//#include "Optimiser/PredictiveSampling.h"
+//#include "Optimiser/GradDescent.h"
 
 //----------------------- Testing methods ---------------------------
 #include "GenTestingData.h"
@@ -40,8 +40,8 @@ std::shared_ptr<Differentiator> activeDifferentiator;
 std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<iLQR> iLQROptimiser;
 std::shared_ptr<iLQR_SVR> iLQR_SVR_Optimiser;
-std::shared_ptr<PredictiveSampling> stompOptimiser;
-std::shared_ptr<GradDescent> gradDescentOptimiser;
+//std::shared_ptr<PredictiveSampling> stompOptimiser;
+//std::shared_ptr<GradDescent> gradDescentOptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
 
@@ -200,20 +200,20 @@ int main(int argc, char **argv) {
                                                         opt_horizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQR_SVR_Optimiser;
     }
-    else if(optimiser == "PredictiveSampling"){
-        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator,
-                                                              activeModelTranslator->MuJoCo_helper,
-                                                              yamlReader, activeDifferentiator,
-                                                              opt_horizon, 8);
-        activeOptimiser = stompOptimiser;
-    }
-    else if(optimiser == "GradDescent"){
-        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator,
-                                                             activeModelTranslator->MuJoCo_helper,
-                                                             activeDifferentiator, activeVisualiser,
-                                                             opt_horizon, yamlReader);
-        activeOptimiser = gradDescentOptimiser;
-    }
+//    else if(optimiser == "PredictiveSampling"){
+//        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator,
+//                                                              activeModelTranslator->MuJoCo_helper,
+//                                                              yamlReader, activeDifferentiator,
+//                                                              opt_horizon, 8);
+//        activeOptimiser = stompOptimiser;
+//    }
+//    else if(optimiser == "GradDescent"){
+//        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator,
+//                                                             activeModelTranslator->MuJoCo_helper,
+//                                                             activeDifferentiator, activeVisualiser,
+//                                                             opt_horizon, yamlReader);
+//        activeOptimiser = gradDescentOptimiser;
+//    }
     else{
         std::cerr << "invalid Optimiser selected, exiting" << endl;
         return -1;
@@ -273,10 +273,10 @@ int main(int argc, char **argv) {
 
         iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
 
-        MatrixXd state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data);
-        std::cout << "size of state vector quaternion: " << state_vector.rows() << std::endl;
-        activeModelTranslator->current_state_vector.Update();
-        std::cout << "num dofs: " << activeModelTranslator->current_state_vector.dof << " num dofs quat: " << activeModelTranslator->current_state_vector.dof_quat << std::endl;
+//        MatrixXd state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data);
+//        std::cout << "size of state vector quaternion: " << state_vector.rows() << std::endl;
+//        activeModelTranslator->current_state_vector.Update();
+//        std::cout << "num dofs: " << activeModelTranslator->current_state_vector.dof << " num dofs quat: " << activeModelTranslator->current_state_vector.dof_quat << std::endl;
 
 
         std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
                                                     "obstacle3_y", "obstacle3_pitch", "obstacle3_roll", "obstacle3_yaw",
                                                     "obstacle4_y", "obstacle4_pitch", "obstacle4_roll", "obstacle4_yaw",
                                                     "obstacle5_y", "obstacle5_pitch", "obstacle5_roll", "obstacle5_yaw",};
-        activeModelTranslator->UpdateStateVector(remove_elements, false);
+        activeModelTranslator->UpdateStateVector(activeModelTranslator->current_state_vector, remove_elements, false);
         dofs_reduced = activeModelTranslator->dof;
 
         // resize optimiser state
@@ -395,7 +395,8 @@ void InitControls(){
 
     while(activeVisualiser->windowOpen()){
 
-        activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data);
+        activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data,
+                                                activeModelTranslator->current_state_vector);
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->main_data);
 
 
@@ -449,10 +450,12 @@ void OpenLoopOptimisation(int opt_horizon){
     while(activeVisualiser->windowOpen()){
 
         if(showFinalControls){
-            activeModelTranslator->SetControlVector(finalControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data);
+            activeModelTranslator->SetControlVector(finalControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data,
+                                                    activeModelTranslator->current_state_vector);
         }
         else{
-            activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data);
+            activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data,
+                    activeModelTranslator->current_state_vector);
         }
 
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->main_data);
@@ -526,10 +529,12 @@ void AsyncMPC(){
 
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
-            activeVisualiser->trajectory_states.push_back(activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data));
+            MatrixXd next_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector);
+            activeVisualiser->trajectory_states.push_back(next_state);
 
             // Set the latest control
-            activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data);
+            activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data,
+                                                    activeModelTranslator->current_state_vector);
 
             // Update the simulation
             mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
@@ -571,10 +576,12 @@ void AsyncMPC(){
         double cost = 0.0f;
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
         for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-            activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data);
-            activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data);
+            activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
+                                                    activeModelTranslator->current_state_vector);
+            activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
+                                                  activeModelTranslator->current_state_vector);
             activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-            cost += (activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false) * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep());
+            cost += (activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->current_state_vector, false) * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep());
 
 //            activeVisualiser->render("live-MPC");
 
@@ -638,7 +645,8 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
             optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
 
-            activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
+            activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data,
+                                                    activeModelTranslator->current_state_vector);
             mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
         }
 
@@ -695,7 +703,8 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             // By the time we have computed optimal controls, main visualisation will be some number
             // of time-steps ahead. We need to find the correct control to apply.
 
-            MatrixXd current_vis_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data);
+            MatrixXd current_vis_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                                                  activeModelTranslator->current_state_vector);
 
             double smallestError = 1000.00;
             int bestMatchingStateIndex = 0;
@@ -705,6 +714,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 //                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
                 double currError = 0.0f;
                 for(int j = 0; j < activeModelTranslator->state_vector_size; j++){
+                    // TODO - im not sure about this, should we use full state?
                     currError += abs(activeOptimiser->X_old[i](j) - current_vis_state(j));
                 }
                 if(currError < smallestError){
@@ -739,12 +749,15 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
         for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
-            MatrixXd startState = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data);
+            MatrixXd startState = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                                           activeModelTranslator->current_state_vector);
             MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
-            double stateCost = activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false);
+            double stateCost = activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                                   activeModelTranslator->full_state_vector, false);
             trajecCost += stateCost  * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep();
 
-            activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
+            activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data,
+                                                    activeModelTranslator->current_state_vector);
             mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
         }
     }
@@ -785,7 +798,8 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
                 while(controlCounter < activeVisualiser->replayControls.size()){
                     MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
 
-                    activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
+                    activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data,
+                                                            activeModelTranslator->current_state_vector);
 
                     mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
 

@@ -248,7 +248,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
 
         init_controls.push_back(desiredControls);
 
-        SetControlVector(desiredControls, MuJoCo_helper->main_data);
+        SetControlVector(desiredControls, MuJoCo_helper->main_data, current_state_vector);
         mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
     }
