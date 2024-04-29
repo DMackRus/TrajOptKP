@@ -19,6 +19,27 @@ struct pose_6{
     m_point orientation;
 };
 
+struct mujoco_data_min{
+    double time;
+    std::vector<double> q_pos;
+    std::vector<double> q_vel;
+    std::vector<double> q_acc;
+    std::vector<double> q_acc_warmstart;
+    std::vector<double> qfrc_applied;
+    std::vector<double> xfrc_applied;
+    std::vector<double> ctrl;
+
+};
+
+//d_dest->time = d_src->time;
+//mju_copy(d_dest->qpos, d_src->qpos, m->nq);
+//mju_copy(d_dest->qvel, d_src->qvel, m->nv);
+//mju_copy(d_dest->qacc, d_src->qacc, m->nv);
+//mju_copy(d_dest->qacc_warmstart, d_src->qacc_warmstart, m->nv);
+//mju_copy(d_dest->qfrc_applied, d_src->qfrc_applied, m->nv);
+//mju_copy(d_dest->xfrc_applied, d_src->xfrc_applied, 6*m->nbody);
+//mju_copy(d_dest->ctrl, d_src->ctrl, m->nu);
+
 class MuJoCoHelper {
 public:
     // Constructor

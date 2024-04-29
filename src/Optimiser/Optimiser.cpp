@@ -7,9 +7,6 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
     activeYamlReader = _yamlReader;
     activeDifferentiator = _differentiator;
 
-//    dof = activeModelTranslator->dof;
-//    num_ctrl = activeModelTranslator->num_ctrl;
-
     // Set up the derivative interpolator from YAML settings
     activeKeyPointMethod.name = activeModelTranslator->keypoint_method;
     activeKeyPointMethod.auto_adjust = activeModelTranslator->auto_adjust;
@@ -41,31 +38,6 @@ bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
 
 void Optimiser::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
-//    dof = new_num_dofs;
-//    int state_vector_size = new_num_dofs * 2;
-//
-//    for(int t = 0; t < horizonLength; t++){
-//
-//        // State vectors
-//        X_new[t].resize(state_vector_size, 1);
-//        X_old[t].resize(state_vector_size, 1);
-//
-//        // Cost derivatives
-//        l_x[t].resize(state_vector_size, 1);
-//        l_xx[t].resize(state_vector_size, state_vector_size);
-//
-//        // Dynamics derivatives
-//        A[t].resize(state_vector_size, state_vector_size);
-//        A[t].block(0, 0, dof, dof).setIdentity();
-//        A[t].block(0, dof, dof, dof).setIdentity();
-//        A[t].block(0, dof, dof, dof) *= MuJoCo_helper->ReturnModelTimeStep();
-//        B[t].resize(state_vector_size, num_ctrl);
-//
-//    }
-}
-
-void Optimiser::SetTrajecNumber(int trajec_number) {
-    currentTrajecNumber = trajec_number;
 }
 
 void Optimiser::ReturnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
@@ -147,14 +119,14 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
 
     std::vector<int> timeIndices;
     for(int i = 0; i < keyPoints.size(); i++){
-        if(keyPoints[i].size() != 0){
+        if(!keyPoints[i].empty()){
             timeIndices.push_back(i);
         }
     }
 
     // Loop through keypoints and delete any entries that have no keypoints
     for(int i = 0; i < keyPoints.size(); i++){
-        if(keyPoints[i].size() == 0){
+        if(keyPoints[i].empty()){
             keyPoints.erase(keyPoints.begin() + i);
             i--;
         }
@@ -235,115 +207,6 @@ void Optimiser::WorkerComputeDerivatives(int threadId) {
                                         timeIndex, threadId, terminal, activeYamlReader->costDerivsFD, true, 1e-6);
     }
 }
-
-//void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, bool costDerivs){
-//    MatrixXd startB;
-//    MatrixXd endB;
-//    MatrixXd addB;
-//
-//    MatrixXd startACol1;
-//    MatrixXd endACol1;
-//    MatrixXd addACol1;
-//
-//    MatrixXd startACol2;
-//    MatrixXd endACol2;
-//    MatrixXd addACol2;
-//
-//    double start_l_x_col1;
-//    double end_l_x_col1;
-//    double add_l_x_col1;
-//    double start_l_x_col2;
-//    double end_l_x_col2;
-//    double add_l_x_col2;
-//
-//    MatrixXd start_l_xx_col1;
-//    MatrixXd end_l_xx_col1;
-//    MatrixXd add_l_xx_col1;
-//    MatrixXd start_l_xx_col2;
-//    MatrixXd end_l_xx_col2;
-//    MatrixXd add_l_xx_col2;
-//
-//    // Create an array to track startIndices of next interpolation for each dof
-//    int startIndices[dof];
-//    for(int i = 0; i < dof; i++){
-//        startIndices[i] = 0;
-//    }
-//
-//    // Loop through all the time indices - can skip the first
-//    // index as we preload the first index as the start index for all dofs.
-//    for(int t = 1; t < horizonLength; t++){
-//        // Loop through all the dofs
-//        for(int i = 0; i < dof; i++){
-//            // Check the current vector at that time segment for the current dof
-//            std::vector<int> columns = keyPoints[t];
-//
-//            // If there are no keypoints, continue onto second run of the loop
-//            if(columns.empty()){
-//                continue;
-//            }
-//
-//            for(int j = 0; j < columns.size(); j++){
-//
-//                // If there is a match, interpolate between the start index and the current index
-//                // For the given columns
-//                if(i == columns[j]){
-////                    cout << "dof: " << i << " end index: " << t << " start index: " << startIndices[i] << "\n";
-//                    startACol1 = A[startIndices[i]].block(0, i, 2*dof, 1);
-//                    endACol1 = A[t].block(0, i, 2*dof, 1);
-//                    addACol1 = (endACol1 - startACol1) / (t - startIndices[i]);
-//
-//                    // Same again for column 2 which is dof + i
-//                    startACol2 = A[startIndices[i]].block(0, i + dof, 2*dof, 1);
-//                    endACol2 = A[t].block(0, i + dof, 2*dof, 1);
-//                    addACol2 = (endACol2 - startACol2) / (t - startIndices[i]);
-//
-//                    if(costDerivs){
-//                        start_l_x_col1 = l_x[startIndices[i]](i, 0);
-//                        end_l_x_col1 = l_x[t](i, 0);
-//                        add_l_x_col1 = (end_l_x_col1 - start_l_x_col1) / (t - startIndices[i]);
-//
-//                        start_l_x_col2 = l_x[startIndices[i]](i + dof, 0);
-//                        end_l_x_col2 = l_x[t](i + dof, 0);
-//                        add_l_x_col2 = (end_l_x_col2 - start_l_x_col2) / (t - startIndices[i]);
-//
-//                        start_l_xx_col1 = l_xx[startIndices[i]].block(i, 0, 1, dof);
-//                        end_l_xx_col1 = l_xx[t].block(i, 0, 1, dof);
-//                        add_l_xx_col1 = (end_l_xx_col1 - start_l_xx_col1) / (t - startIndices[i]);
-//
-//                        start_l_xx_col2 = l_xx[startIndices[i]].block(i + dof, 0, 1, dof);
-//                        end_l_xx_col2 = l_xx[t].block(i + dof, 0, 1, dof);
-//                        add_l_xx_col2 = (end_l_xx_col2 - start_l_xx_col2) / (t - startIndices[i]);
-//                    }
-//
-//                    if(i < num_ctrl){
-//                        startB = B[startIndices[i]].block(0, i, 2*dof, 1);
-//                        endB = B[t].block(0, i, 2*dof, 1);
-//                        addB = (endB - startB) / (t - startIndices[i]);
-//                    }
-//
-//                    for(int k = startIndices[i]; k < t; k++){
-//                        A[k].block(0, i, 2*dof, 1) = startACol1 + ((k - startIndices[i]) * addACol1);
-//
-//                        A[k].block(0, i + dof, 2*dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
-//
-//                        if(costDerivs){
-//                            l_x[k](i) = start_l_x_col1 + ((k - startIndices[i]) * add_l_x_col1);
-//                            l_x[k](i + dof) = start_l_x_col2 + ((k - startIndices[i]) * add_l_x_col2);
-//
-//                            l_xx[k].block(i, 0, 1, dof) = start_l_xx_col1 + ((k - startIndices[i]) * add_l_xx_col1);
-//                            l_xx[k].block(i + dof, 0, 1, dof) = start_l_xx_col2 + ((k - startIndices[i]) * add_l_xx_col2);
-//                        }
-//
-//                        if(i < num_ctrl){
-//                            B[k].block(0, i, 2*dof, 1) = startB + ((k - startIndices[i]) * addB);
-//                        }
-//                    }
-//                    startIndices[i] = t;
-//                }
-//            }
-//        }
-//    }
-//}
 
 void Optimiser::FilterDynamicsMatrices() {
 

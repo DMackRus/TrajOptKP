@@ -80,15 +80,6 @@ public:
     virtual bool CheckForConvergence(double old_cost, double new_cost);
 
     /**
-     * This function assigns the current trajectory optimisation a number which can be used for saving any data
-     * required by the user to uniquely identify the trajectory.
-     *
-     * @param optimised_controls - The optimised control sequence.
-     * @param cost_history - The cost history of the optimisation.
-     */
-    void SetTrajecNumber(int trajec_number);
-
-    /**
      * Returns optimisation data about the last optimisation performed from function "Optimise". The data it returns
      * is timing data about the optimisation, the cost reduction, the average percentage of derivatives computed, and
      * the number of iterations it took to converge.
@@ -159,8 +150,6 @@ public:
     int num_threads_iterations;
     std::vector<int> timeIndicesGlobal;
 
-
-    int currentTrajecNumber = 0;
 
     double initialCost;
     double costReduction = 1.0f;

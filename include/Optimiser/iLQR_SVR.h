@@ -35,6 +35,7 @@
 #include "Visualiser.h"
 #include "FileHandler.h"
 #include <algorithm>
+#include <future>
 
 class iLQR_SVR: public Optimiser{
 public:
@@ -121,6 +122,8 @@ private:
     double threshold_k_eignenvectors = 1.0;
     std::vector<std::string> candidates_for_removal;
 
+    std::vector<void (*)(double _old_cost, int thread_id, double alpha)> rollouts;
+
 
     double eps_acceptable_diff = 0.02;
 
@@ -152,11 +155,12 @@ private:
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
      * in parallel over different alpha values to try find a new optimal sequence of controls.
      *
-     * @param old_cost - Previous cost of the old trajectory.
+     * @param thread_id - id of the thread
+     * @param alpha - Linesearch parameter between 0 and 1 ofr openloop feedback
      *
      * @return double - The cost of the new trajectory.
      */
-    double ForwardsPassParallel(double old_cost);
+    double ForwardsPassParallel(int thread_id, double alpha);
 
     std::vector<std::string> LeastImportantDofs();
 
@@ -183,4 +187,11 @@ private:
 
     // Control vector for parallel forwards pass rollout.
     vector<vector<MatrixXd>> U_alpha;
+    int num_parallel_rollouts = 8;
+    std::vector<std::vector<mujoco_data_min>> rollout_data;
+
+    void WorkerForwardsPass(int threadId);
+
+    void SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index);
+    void SaveBestRollout(int thread_id);
 };
