@@ -120,7 +120,7 @@ private:
 
     int sampling_k_interval = 1;
     int num_dofs_readd = 4;
-    double threshold_k_eignenvectors = 1.0;
+    double threshold_k_eignenvectors = 0.1;
     std::vector<std::string> candidates_for_removal;
 
     double eps_acceptable_diff = 0.02;

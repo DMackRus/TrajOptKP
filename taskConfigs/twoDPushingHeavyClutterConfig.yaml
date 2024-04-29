@@ -187,7 +187,7 @@ openloop_horizon: 1500
 mpc_horizon: 60
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
-minN: 1
+minN: 5
 maxN: 50
 iterativeErrorThreshold: 0.0001
 robots:
@@ -209,15 +209,15 @@ robots:
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   goal:
-    activeLinearDOF: [true, true, false]
+    activeLinearDOF: [true, true, true]
     activeAngularDOF: [false, false, false]
     startLinearPos: [0.4, 0.2, 0.0]
     startAngularPos: [0, 0, 0]
     goalLinearPos: [0.7, 0.4, 0.0]
     goalAngularPos: [0, 0, 0]
-    linearPosCost: [ 0, 0, 0 ]
-    terminalLinearPosCost: [ 1000, 1000, 0 ]
-    linearVelCost: [ 0.5, 0.5, 0 ]
+    linearPosCost: [ 2, 2, 0 ]
+    terminalLinearPosCost: [ 0, 0, 0 ]
+    linearVelCost: [ 0.3, 0.3, 0 ]
     terminalLinearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]
     terminalAngularPosCost: [ 0, 0, 0 ]
@@ -229,7 +229,7 @@ bodies:
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_1:
-    activeLinearDOF: [true, true, false]
+    activeLinearDOF: [true, true, true]
     activeAngularDOF: [false, false, false]
     startLinearPos: [0.65, 0.45, 0.0]
     startAngularPos: [0, 0, 0]
@@ -248,7 +248,7 @@ bodies:
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_2:
-    activeLinearDOF: [ true, true, false ]
+    activeLinearDOF: [ true, true, true ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.68, 0.3, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
@@ -267,7 +267,7 @@ bodies:
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_3:
-    activeLinearDOF: [ true, true, false ]
+    activeLinearDOF: [ true, true, true ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.68, 0.3, 0.2 ]
     startAngularPos: [ 0, 0, 0 ]
@@ -286,7 +286,7 @@ bodies:
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_4:
-    activeLinearDOF: [ true, true, false ]
+    activeLinearDOF: [ true, true, true ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.5, 0.2, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
@@ -305,7 +305,7 @@ bodies:
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_5:
-    activeLinearDOF: [ true, true, false ]
+    activeLinearDOF: [ true, true, true ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.55, 0.45, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
@@ -324,7 +324,7 @@ bodies:
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_6:
-    activeLinearDOF: [ true, true, false ]
+    activeLinearDOF: [ true, true, true ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.6, 0.15, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
@@ -343,7 +343,7 @@ bodies:
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_7:
-    activeLinearDOF: [ true, true, false ]
+    activeLinearDOF: [ true, true, true ]
     activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.75, 0.5, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]

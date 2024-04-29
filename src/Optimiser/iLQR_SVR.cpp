@@ -154,9 +154,9 @@ void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     // Resize Keypoint generator class
     keypoint_generator->Resize(dof, num_ctrl, horizon_length);
 
-    std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
-
-    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
+//    std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
+//
+//    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
 
 }
 
@@ -391,11 +391,11 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     candidates_for_removal = LeastImportantDofs();
 
     // TODO - remove temp code
-    std::cout << "dofs to remove: ";
-    for(const auto & removal_dof : candidates_for_removal){
-        std::cout << removal_dof << " ";
-    }
-    std::cout << std::endl;
+//    std::cout << "dofs to remove: ";
+//    for(const auto & removal_dof : candidates_for_removal){
+//        std::cout << removal_dof << " ";
+//    }
+//    std::cout << std::endl;
 
     time_backwards_pass_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
@@ -413,12 +413,14 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
         new_cost = ForwardsPass(old_cost);
     }
     else{
+        auto temp_timer = high_resolution_clock::now();
         std::vector<std::future<double>> futures;
         std::vector<double> alphas;
 
         for(int i = 0; i < num_parallel_rollouts; i++){
             alphas.push_back(1.0 - (double)i/num_parallel_rollouts);
         }
+//        std::cout << "setup threads: " << duration_cast<microseconds>(high_resolution_clock::now() - temp_timer).count() / 1000.0f << "ms \n";
 
         // Create tasks and push them into the vector
         for (int i = 0; i < num_parallel_rollouts; ++i) {
@@ -868,17 +870,17 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
     std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
     std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
 
-    std::cout << "States: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << state_vector_name[sorted_indices[i]] << " ";
-    }
-    std::cout << "\n";
+//    std::cout << "States: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << state_vector_name[sorted_indices[i]] << " ";
+//    }
+//    std::cout << "\n";
 
-    std::cout << "K_sums in order: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-    }
-    std::cout << "\n";
+//    std::cout << "K_sums in order: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+//    }
+//    std::cout << "\n";
 
 
     for(int i = 0; i < dof; i++) {
@@ -919,28 +921,44 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
 }
 
 void iLQR_SVR::AdjustCurrentStateVector(){
-
     bool update_nominal = false;
 
-    // If we reduced the cost last iteration, reduce the state vector size
-    if(!cost_reduced_last_iter){
-        // Sample a number of unsued dofs to readd
-        std::vector<std::string> re_add_dofs = activeModelTranslator->RandomSampleUnusedDofs(num_dofs_readd);
+    std::vector<std::string> re_add_dofs = activeModelTranslator->RandomSampleUnusedDofs(num_dofs_readd);
 
-        if(!re_add_dofs.empty()){
-            activeModelTranslator->UpdateCurrentStateVector(re_add_dofs, true);
-            std::cout << "readding dofs \n";
-            update_nominal = true;
+    if(!re_add_dofs.empty()){
+        std::cout << "readding dofs ";
+        for(const auto & re_add_dof : re_add_dofs){
+            std::cout << re_add_dof << " ";
         }
-    }
-    else{
-        if(!candidates_for_removal.empty()){
-            activeModelTranslator->UpdateCurrentStateVector(candidates_for_removal, false);
+        std::cout << "\n";
+        std::cout << "size of readd dofs: " << re_add_dofs.size() << "\n";
+        activeModelTranslator->UpdateCurrentStateVector(re_add_dofs, true);
 
-            update_nominal = true;
-            std::cout << "removing dofs, new num dofs: " << activeModelTranslator->dof << "\n";
-        }
+        update_nominal = true;
     }
+
+    if(!candidates_for_removal.empty()){
+        activeModelTranslator->UpdateCurrentStateVector(candidates_for_removal, false);
+
+        update_nominal = true;
+//        std::cout << "removing dofs, new num dofs: " << activeModelTranslator->dof << "\n";
+        std::cout << "removing dofs ";
+        for(const auto & remove_dof : candidates_for_removal){
+            std::cout << remove_dof << " ";
+        }
+        std::cout << "\n";
+    }
+
+//    std::cout << "current state vector: ";
+//    for(int i = 0; i < activeModelTranslator->current_state_vector.state_names.size(); i++){
+//        std::cout << activeModelTranslator->current_state_vector.state_names[i] << " ";
+//    }
+//    std::cout << "\n";
+//    std::cout << "unused state vector: ";
+//    for(int i = 0; i < activeModelTranslator->unused_state_vector_elements.size(); i++){
+//        std::cout << activeModelTranslator->unused_state_vector_elements[i] << " ";
+//    }
+//    std::cout << "\n";
 
     if(update_nominal){
         Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon_length);
@@ -950,8 +968,6 @@ void iLQR_SVR::AdjustCurrentStateVector(){
                     activeModelTranslator->current_state_vector);
         }
     }
-
-
 }
 
 void iLQR_SVR::UpdateNominal(){

@@ -91,6 +91,15 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
     // robot joint names
     // bodies - {body_name}_x, {body_name}_y, {body_name}_z, {body_name}_roll, {body_name}_pitch, {body_name}_yaw
 
+    // TODO (DMackRus) - This is an assumption but should be fine
+    if(add_extra_states){
+        dof += static_cast<int>(state_vector_names.size());
+    }
+    else{
+        dof -= static_cast<int>(state_vector_names.size());
+    }
+    std::cout << "dof inside update current state vector =: " << dof << "\n";
+
     // Keep track of elements not inside current state vector
     if(!add_extra_states){
         for(const auto & state_vector_name : state_vector_names){
@@ -109,13 +118,7 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
         }
     }
 
-    // TODO (DMackRus) - This is an assumption but should be fine
-    if(add_extra_states){
-        dof += static_cast<int>(state_vector_names.size());
-    }
-    else{
-        dof -= static_cast<int>(state_vector_names.size());
-    }
+
 
     state_vector_size = dof * 2;
 
@@ -178,15 +181,28 @@ std::vector<std::string> ModelTranslator::RandomSampleUnusedDofs(int num_dofs){
     }
 
     std::random_device rd;
-    std::mt19937 gen(rd());
+    std::mt19937 g(rd());
+    std::shuffle(copy_unused.begin(), copy_unused.end(), g);
+
+    // Take the first four elements
+//    std::vector<int> sampled(copy_unused.begin(), copy_unused.begin() + 4);
 
     for(int i = 0; i < num_dofs; i++){
-        std::uniform_int_distribution<int> distrib(0, static_cast<int>(copy_unused.size()));
-        int rand_int = distrib(gen);
-
-        dofs_names.push_back(copy_unused[rand_int]);
-        copy_unused.erase(copy_unused.begin() + rand_int);
+        dofs_names.push_back(copy_unused[i]);
     }
+
+
+//    std::random_device rd;
+//    std::mt19937 gen(rd());
+//    std::cout << "num dofs to resample: " << num_dofs << "\n";
+//
+//    for(int i = 0; i < num_dofs; i++){
+//        std::uniform_int_distribution<int> distrib(0, static_cast<int>(copy_unused.size()));
+//        int rand_int = distrib(gen);
+//
+//        dofs_names.push_back(copy_unused[rand_int]);
+//        copy_unused.erase(copy_unused.begin() + rand_int);
+//    }
 
     return dofs_names;
 }
