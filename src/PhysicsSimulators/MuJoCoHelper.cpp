@@ -526,10 +526,8 @@ bool MuJoCoHelper::CheckBodyForCollisions(const string& body_name, mjData *d) co
 bool MuJoCoHelper::AppendSystemStateToEnd(mjData *d){
 
     saved_systems_state_list.push_back(mj_makeData(model));
-    fp_rollout_data.push_back(mj_makeData(model));
 
     CpMjData(model, saved_systems_state_list.back(), d);
-    CpMjData(model, fp_rollout_data.back(), d);
 
     return true;
 }
@@ -570,17 +568,6 @@ void MuJoCoHelper::CpMjData(const mjModel* m, mjData* d_dest, mjData* d_src){
     mju_copy(d_dest->qfrc_applied, d_src->qfrc_applied, m->nv);
     mju_copy(d_dest->xfrc_applied, d_src->xfrc_applied, 6*m->nbody);
     mju_copy(d_dest->ctrl, d_src->ctrl, m->nu);
-}
-
-void MuJoCoHelper::SaveDataToRolloutBuffer(mjData *d, int rollout_index){
-
-    CpMjData(model, fp_rollout_data[rollout_index], d);
-}
-
-void MuJoCoHelper::CopyRolloutBufferToSavedSystemStatesList(){
-    for(int i = 1; i < fp_rollout_data.size(); i++){
-        CpMjData(model, saved_systems_state_list[i], fp_rollout_data[i]);
-    }
 }
 
 // ------------------------------- END OF SYSTEM STATE FUNCTIONS ----------------------------------------

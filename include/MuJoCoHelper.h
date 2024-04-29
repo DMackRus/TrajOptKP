@@ -88,8 +88,6 @@ public:
     bool CopySystemState(mjData *d_dest, mjData *d_src) const;
     bool DeleteSystemStateFromIndex(int list_index);
     bool ClearSystemStateList();
-    void SaveDataToRolloutBuffer(mjData *d, int rollout_index);
-    void CopyRolloutBufferToSavedSystemStatesList();
 
     static void CpMjData(const mjModel* m, mjData* d_dest, mjData* d_src);
 
@@ -113,7 +111,6 @@ public:
     double* SensorState(mjData *d, const std::string& sensor_name);
 
     vector<mjData*> saved_systems_state_list;       // List of saved system states
-    vector<mjData*> fp_rollout_data;                // forwards pass rollout data
     mjData* master_reset_data{};                    // Master reset mujoco data
     mjData* main_data{};                            // main MuJoCo data
     mjData* vis_data{};                             // Visualisation MuJoCo data

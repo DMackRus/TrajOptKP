@@ -276,6 +276,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
     // Optimise for a set number of iterations
+    cost_reduced_last_iter = true;
     for(int i = 0; i < max_iterations; i++) {
         numIterationsForConvergence++;
 
