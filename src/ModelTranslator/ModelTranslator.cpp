@@ -85,11 +85,29 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     std::cout << "\n";
 }
 
-void ModelTranslator::UpdateStateVector(struct stateVectorList &state_vector, std::vector<std::string> state_vector_names, bool add_extra_states){
+void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_vector_names, bool add_extra_states){
 
     // state vector names -
     // robot joint names
     // bodies - {body_name}_x, {body_name}_y, {body_name}_z, {body_name}_roll, {body_name}_pitch, {body_name}_yaw
+
+    // Keep track of elements not inside current state vector
+    if(!add_extra_states){
+        for(const auto & state_vector_name : state_vector_names){
+            unused_state_vector_elements.push_back(state_vector_name);
+        }
+    }
+    else{
+        for(const auto & state_vector_name : state_vector_names){
+            for(int i = 0; i < unused_state_vector_elements.size(); i++){
+                if(unused_state_vector_elements[i] == state_vector_name){
+                    // remove that element from this list
+                    unused_state_vector_elements.erase(unused_state_vector_elements.begin() + i);
+                    break;
+                }
+            }
+        }
+    }
 
     // TODO (DMackRus) - This is an assumption but should be fine
     if(add_extra_states){
@@ -101,7 +119,7 @@ void ModelTranslator::UpdateStateVector(struct stateVectorList &state_vector, st
 
     state_vector_size = dof * 2;
 
-    for(auto & robot : state_vector.robots){
+    for(auto & robot : current_state_vector.robots){
         for(int joint = 0; joint < robot.jointNames.size(); joint++){
 
             for(int i = 0; i < state_vector_names.size(); i++){
@@ -111,7 +129,7 @@ void ModelTranslator::UpdateStateVector(struct stateVectorList &state_vector, st
     }
 
     // Remove or add elements for bodies in the state vector
-    for(auto & bodiesState : state_vector.bodiesStates){
+    for(auto & bodiesState : current_state_vector.bodiesStates){
         std::string body_name = bodiesState.name;
         for(auto & state_vector_name : state_vector_names){
             size_t found = state_vector_name.find(body_name);
@@ -141,8 +159,36 @@ void ModelTranslator::UpdateStateVector(struct stateVectorList &state_vector, st
     }
 
     // Update the number of dofs in the state vector
-    state_vector.Update();
+    current_state_vector.Update();
     UpdateSceneVisualisation();
+}
+
+std::vector<std::string> ModelTranslator::RandomSampleUnusedDofs(int num_dofs){
+    std::vector<std::string> dofs_names;
+    std::vector<std::string> copy_unused = unused_state_vector_elements;
+
+    // If no unused elements, return empty list
+    if(unused_state_vector_elements.empty()){
+        return dofs_names;
+    }
+
+    // Clamp number resample to number of unused elements
+    if(unused_state_vector_elements.size() < num_dofs){
+        num_dofs = static_cast<int>(unused_state_vector_elements.size());
+    }
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+
+    for(int i = 0; i < num_dofs; i++){
+        std::uniform_int_distribution<int> distrib(0, static_cast<int>(copy_unused.size()));
+        int rand_int = distrib(gen);
+
+        dofs_names.push_back(copy_unused[rand_int]);
+        copy_unused.erase(copy_unused.begin() + rand_int);
+    }
+
+    return dofs_names;
 }
 
 void ModelTranslator::UpdateSceneVisualisation(){
@@ -161,7 +207,7 @@ void ModelTranslator::UpdateSceneVisualisation(){
         }
 
         // compute color
-        color body_color;
+        color body_color{};
         if(body.name == "goal"){
             body_color = goal_colors[dof_for_body];
         }
@@ -180,45 +226,6 @@ void ModelTranslator::UpdateSceneVisualisation(){
         MuJoCo_helper->SetBodyColor(body.name, color);
     }
 }
-
-//std::vector<std::string> ModelTranslator::GetStateVectorNames(){
-//    std::vector<std::string> state_vector_names;
-//
-//    for(auto & robot : current_state_vector.robots){
-//        for(const auto & jointName : robot.jointNames){
-//            // TODO (DMackRus) - Need to add ability for joints not to be automatically included in state vector?
-//            state_vector_names.push_back(jointName);
-//        }
-//    }
-//
-//    for(auto & bodiesState : current_state_vector.bodiesStates){
-//        if(bodiesState.activeLinearDOF[0]){
-//            state_vector_names.push_back(bodiesState.name + "_x");
-//        }
-//
-//        if(bodiesState.activeLinearDOF[1]){
-//            state_vector_names.push_back(bodiesState.name + "_y");
-//        }
-//
-//        if(bodiesState.activeLinearDOF[2]){
-//            state_vector_names.push_back(bodiesState.name + "_z");
-//        }
-//
-//        if(bodiesState.activeAngularDOF[0]){
-//            state_vector_names.push_back(bodiesState.name + "_roll");
-//        }
-//
-//        if(bodiesState.activeAngularDOF[1]){
-//            state_vector_names.push_back(bodiesState.name + "_pitch");
-//        }
-//
-//        if(bodiesState.activeAngularDOF[2]){
-//            state_vector_names.push_back(bodiesState.name + "_yaw");
-//        }
-//    }
-//
-//    return state_vector_names;
-//}
 
 double ModelTranslator::CostFunction(mjData* d, const struct stateVectorList &state_vector, bool terminal){
     double cost = 0.0f;

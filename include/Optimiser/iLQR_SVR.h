@@ -98,7 +98,7 @@ public:
     double avg_expected = 0.0;
     double new_cost = 0.0;
     double old_cost = 0.0;
-    double cost_reduced_last_iter = true;
+    bool cost_reduced_last_iter = true;
 
 
 private:
@@ -119,6 +119,7 @@ private:
     vector<MatrixXd> K;
 
     int sampling_k_interval = 1;
+    int num_dofs_readd = 4;
     double threshold_k_eignenvectors = 1.0;
     std::vector<std::string> candidates_for_removal;
 
@@ -178,6 +179,8 @@ private:
     bool UpdateLambda(bool valid_backwards_pass);
 
     void UpdateNominal();
+
+    void AdjustCurrentStateVector();
 
     // Visualiser object
     std::shared_ptr<Visualiser> active_visualiser;

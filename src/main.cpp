@@ -317,7 +317,7 @@ int main(int argc, char **argv) {
                                                     "obstacle3_y", "obstacle3_pitch", "obstacle3_roll", "obstacle3_yaw",
                                                     "obstacle4_y", "obstacle4_pitch", "obstacle4_roll", "obstacle4_yaw",
                                                     "obstacle5_y", "obstacle5_pitch", "obstacle5_roll", "obstacle5_yaw",};
-        activeModelTranslator->UpdateStateVector(activeModelTranslator->current_state_vector, remove_elements, false);
+        activeModelTranslator->UpdateCurrentStateVector(remove_elements, false);
         dofs_reduced = activeModelTranslator->dof;
 
         // resize optimiser state

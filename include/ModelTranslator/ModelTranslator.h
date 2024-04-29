@@ -25,6 +25,7 @@
 #include "StdInclude.h"
 #include "MuJoCoHelper.h"
 #include "FileHandler.h"
+#include <random>
 
 enum clutterLevels{
     noClutter = 0,
@@ -53,20 +54,19 @@ public:
      * Update the state vector of the system by either adding or removing elements from
      * the state vector.
      *
-     * @param state_vector The state vector element being changed
      * @param state_vector_names The names of the state vector elements to add or remove.
      * @param add_extra_states Whether to add or remove the state vector elements.
      *
      */
-    void UpdateStateVector(struct stateVectorList &state_vector, std::vector<std::string> state_vector_names, bool add_extra_states);
+    void UpdateCurrentStateVector(std::vector<std::string> state_vector_names, bool add_extra_states);
 
     /**
-     * Returns the current names of the state vector elements in order.
+     * Randomly sample a number of unused dofs from the full state vector
      *
-     * @return std::vector<std::string> The names of the active state vector elements.
+     * @param num_dofs The number of dofs to resample.
      *
      */
-//    std::vector<std::string> GetStateVectorNames();
+    std::vector<std::string> RandomSampleUnusedDofs(int num_dofs);
 
     /**
      * Returns a random start state for the system. This is used mainly for generating

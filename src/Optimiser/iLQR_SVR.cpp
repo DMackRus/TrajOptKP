@@ -365,16 +365,7 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
     // Resample new dofs - subject to criteria
     // Adjust state vector - remove candidates for removal
-    if(!candidates_for_removal.empty()){
-        activeModelTranslator->UpdateStateVector(activeModelTranslator->current_state_vector, candidates_for_removal, false);
-        Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon_length);
-        std::cout << "removing dofs, new num dofs: " << activeModelTranslator->dof << "\n";
-        for(int t = 0 ; t < horizon_length; t++) {
-            X_old.at(t + 1) = activeModelTranslator->ReturnStateVectorQuaternions(
-                    MuJoCo_helper->saved_systems_state_list[t + 1],
-                    activeModelTranslator->current_state_vector);
-        }
-    }
+    AdjustCurrentStateVector();
 
     // STEP 1 - Generate dynamics derivatives and cost derivatives
     auto timer_start = high_resolution_clock::now();
@@ -443,6 +434,7 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
         // Compute best alpha
         auto min_index = std::min_element(results.begin(), results.end()) - results.begin();
+        last_iter_num_linesearches = min_index;
 
         // Check if best cost from rollouts < old_cost
         if(results[min_index] < old_cost){
@@ -484,51 +476,6 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     converged = CheckForConvergence(old_cost, new_cost);
 }
 
-
-    // Forwards Pass
-
-    // Update state vector
-
-// Experimental
-//auto time_start_k = high_resolution_clock::now();
-//            std::vector<int> dofs_to_reduce = checkKMatrices();
-//            std::cout << "time check k matrices: " << duration_cast<microseconds>(high_resolution_clock::now() - time_start_k).count() / 1000.0f << "ms" << std::endl;
-
-// Extra rollout with dimensionality
-//            bool dimensionality_reduction_accepted = false;
-//            if(dofs_to_reduce.size() > 0){
-//                std::cout << "Reducing dimensionality of state vector" << std::endl;
-//                dimensionality_reduction_accepted = RolloutWithKMatricesReduction(dofs_to_reduce, oldCost, newCost, last_alpha);
-//            }
-
-//            if(dimensionality_reduction_accepted){
-//                // reduce the dimensionality of the state vector...
-//                std::vector<std::string> state_vector_names = activeModelTranslator->GetStateVectorNames();
-//                std::vector<std::string> dofs_to_reduce_str;
-//                // pop the elements depending on dofs_to_reduce
-//
-//                // TESTING
-////                dofs_to_reduce_str.push_back("blueTin_x");
-////                dofs_to_reduce_str.push_back("blueTin_y");
-//                for(int i = 0; i < dofs_to_reduce.size(); i++){
-//                    dofs_to_reduce_str.push_back(state_vector_names[dofs_to_reduce[i]]);
-//                }
-//
-//                // Temp print
-//                if(verbose_output){
-////                    std::cout << "Reducing dimensionality of state vector by removing: " << std::endl;
-////                    for(int i = 0; i < dofs_to_reduce_str.size(); i++){
-////                        std::cout << dofs_to_reduce_str[i] << std::endl;
-////                    }
-//                }
-//                activeModelTranslator->UpdateStateVector(dofs_to_reduce_str, false);
-//
-//                ResizeStateVector(activeModelTranslator->dof);
-//                for(int t = 0; t < horizonLength; t++){
-//                    K[t].resize(num_ctrl, activeModelTranslator->dof * 2);
-//                }
-//                keypoint_generator->ResizeStateVector(activeModelTranslator->dof, horizon_length);
-//            }
 
 // ------------------------------------------- STEP 2 FUNCTIONS (BACKWARDS PASS) ----------------------------------------------
 bool iLQR_SVR::BackwardsPassQuuRegularisation(){
@@ -969,6 +916,42 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
 //    delete[] K_dofs_sums;
 //
 //    return remove_dofs;
+}
+
+void iLQR_SVR::AdjustCurrentStateVector(){
+
+    bool update_nominal = false;
+
+    // If we reduced the cost last iteration, reduce the state vector size
+    if(!cost_reduced_last_iter){
+        // Sample a number of unsued dofs to readd
+        std::vector<std::string> re_add_dofs = activeModelTranslator->RandomSampleUnusedDofs(num_dofs_readd);
+
+        if(!re_add_dofs.empty()){
+            activeModelTranslator->UpdateCurrentStateVector(re_add_dofs, true);
+            std::cout << "readding dofs \n";
+            update_nominal = true;
+        }
+    }
+    else{
+        if(!candidates_for_removal.empty()){
+            activeModelTranslator->UpdateCurrentStateVector(candidates_for_removal, false);
+
+            update_nominal = true;
+            std::cout << "removing dofs, new num dofs: " << activeModelTranslator->dof << "\n";
+        }
+    }
+
+    if(update_nominal){
+        Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon_length);
+        for(int t = 0 ; t < horizon_length; t++) {
+            X_old.at(t + 1) = activeModelTranslator->ReturnStateVectorQuaternions(
+                    MuJoCo_helper->saved_systems_state_list[t + 1],
+                    activeModelTranslator->current_state_vector);
+        }
+    }
+
+
 }
 
 void iLQR_SVR::UpdateNominal(){
