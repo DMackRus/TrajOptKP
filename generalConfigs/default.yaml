@@ -49,3 +49,5 @@ costDerivsFD: false       # True or false, for FD computation of cost derivative
 
 minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
+
+async_mpc: true

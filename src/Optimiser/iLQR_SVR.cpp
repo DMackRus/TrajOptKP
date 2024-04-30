@@ -37,7 +37,7 @@ iLQR_SVR::iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator, std::share
 void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
     auto start = std::chrono::high_resolution_clock::now();
-    std::cout << "new dofs: " << new_num_dofs << " new ctrl: " << new_num_ctrl << " new horizon: " << new_horizon << std::endl;
+//    std::cout << "new dofs: " << new_num_dofs << " new ctrl: " << new_num_ctrl << " new horizon: " << new_horizon << std::endl;
 
     bool update_ctrl = false;
     bool update_dof = false;
@@ -122,7 +122,6 @@ void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         X_new.push_back(MatrixXd(num_dof_quat + num_dof, 1));
     }
 
-    // TODO - validate this method of saving trajectory data works correctly
     if(update_horizon){
         // Clear old rollout datas
         for(int i = 0; i < num_parallel_rollouts; i++){
@@ -409,8 +408,10 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
     // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
     timer_start = high_resolution_clock::now();
-    if(1){
+    double best_alpha = 0.0;
+    if(0){
         new_cost = ForwardsPass(old_cost);
+        best_alpha = last_iter_num_linesearches;
     }
     else{
         auto temp_timer = high_resolution_clock::now();
@@ -436,7 +437,7 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
         // Compute best alpha
         auto min_index = std::min_element(results.begin(), results.end()) - results.begin();
-        last_iter_num_linesearches = min_index;
+        best_alpha = alphas[min_index];
 
         // Check if best cost from rollouts < old_cost
         if(results[min_index] < old_cost){
@@ -456,7 +457,7 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
         PrintBannerIteration(iteration_num, new_cost, old_cost,
                              1 - (new_cost / old_cost), lambda, dof, percentage_derivs_per_iteration[iteration_num],
                              time_get_derivs_ms[iteration_num], time_backwards_pass_ms[iteration_num], time_forwardsPass_ms[iteration_num],
-                             last_iter_num_linesearches);
+                             best_alpha);
     }
 
     // STEP 4 - Check for convergence
@@ -911,17 +912,17 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
     std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
     std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
 
-    std::cout << "States: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << state_vector_name[sorted_indices[i]] << " ";
-    }
-    std::cout << "\n";
-
-    std::cout << "K_sums in order: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-    }
-    std::cout << "\n";
+//    std::cout << "States: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << state_vector_name[sorted_indices[i]] << " ";
+//    }
+//    std::cout << "\n";
+//
+//    std::cout << "K_sums in order: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+//    }
+//    std::cout << "\n";
 
 
     for(int i = 0; i < dof; i++) {
@@ -940,11 +941,11 @@ void iLQR_SVR::AdjustCurrentStateVector(){
     std::vector<std::string> re_add_dofs = activeModelTranslator->RandomSampleUnusedDofs(num_dofs_readd);
 
     if(!re_add_dofs.empty()){
-        std::cout << "readding dofs ";
-        for(const auto & re_add_dof : re_add_dofs){
-            std::cout << re_add_dof << " ";
-        }
-        std::cout << "\n";
+//        std::cout << "readding dofs ";
+//        for(const auto & re_add_dof : re_add_dofs){
+//            std::cout << re_add_dof << " ";
+//        }
+//        std::cout << "\n";
         activeModelTranslator->UpdateCurrentStateVector(re_add_dofs, true);
 
         update_nominal = true;
@@ -952,11 +953,11 @@ void iLQR_SVR::AdjustCurrentStateVector(){
 
     if(!candidates_for_removal.empty()){
 
-        std::cout << "removing dofs ";
-        for(const auto & remove_dof : candidates_for_removal){
-            std::cout << remove_dof << " ";
-        }
-        std::cout << "\n";
+//        std::cout << "removing dofs ";
+//        for(const auto & remove_dof : candidates_for_removal){
+//            std::cout << remove_dof << " ";
+//        }
+//        std::cout << "\n";
 
         activeModelTranslator->UpdateCurrentStateVector(candidates_for_removal, false);
 
@@ -965,16 +966,16 @@ void iLQR_SVR::AdjustCurrentStateVector(){
 
     }
 
-    std::cout << "current state vector: ";
-    for(int i = 0; i < activeModelTranslator->current_state_vector.state_names.size(); i++){
-        std::cout << activeModelTranslator->current_state_vector.state_names[i] << " ";
-    }
-    std::cout << "\n";
-    std::cout << "unused state vector: ";
-    for(int i = 0; i < activeModelTranslator->unused_state_vector_elements.size(); i++){
-        std::cout << activeModelTranslator->unused_state_vector_elements[i] << " ";
-    }
-    std::cout << "\n";
+//    std::cout << "current state vector: ";
+//    for(int i = 0; i < activeModelTranslator->current_state_vector.state_names.size(); i++){
+//        std::cout << activeModelTranslator->current_state_vector.state_names[i] << " ";
+//    }
+//    std::cout << "\n";
+//    std::cout << "unused state vector: ";
+//    for(int i = 0; i < activeModelTranslator->unused_state_vector_elements.size(); i++){
+//        std::cout << activeModelTranslator->unused_state_vector_elements[i] << " ";
+//    }
+//    std::cout << "\n";
 
     if(update_nominal){
         Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon_length);
@@ -1015,12 +1016,12 @@ void iLQR_SVR::PrintBanner(double time_rollout){
               << std::setw(20) << "| Time Derivs (ms)"
               << std::setw(15) << "| Time BP (ms)"
               << std::setw(15) << "| Time FP (ms)"
-              << std::setw(18) << "| Num Linesearches" << " |" << std::endl;
+              << std::setw(18) << "|   Best Alpha  " << " |" << std::endl;
 }
 
 void iLQR_SVR::PrintBannerIteration(int iteration, double _new_cost, double _old_cost, double eps,
                                 double _lambda, double num_dofs, double percent_derivatives, double time_derivs, double time_bp,
-                                double time_fp, int num_linesearches){
+                                double time_fp, double best_alpha){
 
     std::cout << std::left << "|" << std::setw(11) << iteration
               << "|" << std::setw(11) << _old_cost
@@ -1032,5 +1033,5 @@ void iLQR_SVR::PrintBannerIteration(int iteration, double _new_cost, double _old
               << "|" << std::setw(19) <<time_derivs
               << "|" << std::setw(14)  << time_bp
               << "|" << std::setw(14) << time_fp
-              << "|" << std::setw(18) << num_linesearches << "|" << std::endl;
+              << "|" << std::setw(18) << best_alpha << "|" << std::endl;
 }

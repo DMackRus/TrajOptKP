@@ -83,7 +83,7 @@ public:
 
     void PrintBannerIteration(int iteration, double _new_cost, double _old_cost, double eps,
                               double _lambda, double num_dofs, double percent_derivatives, double time_derivs, double time_bp,
-                              double time_fp, int num_linesearches);
+                              double time_fp, double best_alpha);
 
     void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
 
@@ -119,9 +119,9 @@ private:
     vector<MatrixXd> K;
 
     int sampling_k_interval = 1;
-    int num_dofs_readd = 0;
-//    double threshold_k_eignenvectors = 0.00000000000000000001; // maybe 0.001 or 0.0001
-    double threshold_k_eigenvectors = 0.1;
+    int num_dofs_readd = 1;
+    double threshold_k_eigenvectors = 0.1; // maybe 0.001 or 0.0001
+//    double threshold_k_eigenvectors = 0.1;
     std::vector<std::string> candidates_for_removal;
 
     double eps_acceptable_diff = 0.02;

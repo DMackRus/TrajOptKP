@@ -485,7 +485,7 @@ void GenTestingData::asynchronus_optimiser_worker(std::string method_directory, 
 
         activeVisualiser->controlBuffer = optimisedControls;
         activeVisualiser->current_control_index = bestMatchingStateIndex;
-        activeVisualiser->new_controls_flag = true;
+//        activeVisualiser->new_controls_flag = true;
 
         mtx.unlock();
     }

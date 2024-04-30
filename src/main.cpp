@@ -45,9 +45,13 @@ std::shared_ptr<iLQR_SVR> iLQR_SVR_Optimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
 
+bool async_mpc;
 std::string task;
 bool mpc_visualise = true;
 bool playback = true;
+
+std::mutex mtx;
+std::condition_variable cv;
 
 int assign_task();
 
@@ -96,6 +100,7 @@ int main(int argc, char **argv) {
     runMode = yamlReader->project_run_mode;
     task = yamlReader->taskName;
     taskInitMode = yamlReader->taskInitMode;
+    async_mpc = yamlReader->async_mpc;
 
     // Instantiate model translator as specified by the config file.
     if(assign_task() == EXIT_FAILURE){
@@ -533,6 +538,20 @@ void AsyncMPC(){
         while(task_time++ < MAX_TASK_TIME){
             begin = std::chrono::steady_clock::now();
 
+            if(!async_mpc){
+                // wait here until new control ready
+                {
+                    std::unique_lock<std::mutex> lock(mtx);
+                    cv.wait(lock);
+                }
+
+
+//                while(!activeVisualiser->new_controls_flag){
+//
+//                }
+                activeVisualiser->current_control_index = 0;
+
+            }
             if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
 
                 next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
@@ -582,30 +601,34 @@ void AsyncMPC(){
             int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
             if(difference_ms > 0) {
-                difference_ms = 20;
+//                difference_ms = 20;
                 std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
             }
         }
 
-        std::mutex mtx;
-        mtx.lock();
-        stop_mpc = true;
-        mtx.unlock();
+        {
+            std::unique_lock<std::mutex> lock(mtx);
+            stop_mpc = true;
+        }
+//        std::mutex mtx;
+//        mtx.lock();
+//
+//        mtx.unlock();
         MPC_controls_thread.join();
 
         double cost = 0.0f;
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-        for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-            activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
-                                                    activeModelTranslator->current_state_vector);
-            activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
-                                                  activeModelTranslator->current_state_vector);
-            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-            cost += (activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->current_state_vector, false) * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep());
-
-//            activeVisualiser->render("live-MPC");
-
-        }
+//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+//        for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
+//            activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
+//                                                    activeModelTranslator->current_state_vector);
+//            activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
+//                                                  activeModelTranslator->current_state_vector);
+//            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+//            cost += (activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->current_state_vector, false) * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep());
+//
+////            activeVisualiser->render("live-MPC");
+//
+//        }
 
         std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
         std::cout << "avg opt time: " << avg_opt_time << " ms \n";
@@ -757,7 +780,8 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
             activeVisualiser->current_control_index = bestMatchingStateIndex;
             std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
 
-            activeVisualiser->new_controls_flag = true;
+//            activeVisualiser->new_controls_flag = true;
+            cv.notify_one();
 
             mtx.unlock();
         }

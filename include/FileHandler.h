@@ -39,6 +39,7 @@ public:
     int csvRow = 0;
     std::string filtering = "none";
     bool costDerivsFD = false;
+    bool async_mpc = true;
     ofstream fileOutput;
 
     int minIter;
