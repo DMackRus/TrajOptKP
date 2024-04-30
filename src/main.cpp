@@ -578,20 +578,7 @@ void AsyncMPC(){
                 cout << "task complete - dist: " << dist  << endl;
                 break;
             }
-
-
-
         }
-
-//        if(!async_mpc){
-//            // wait here until new control ready
-//            {
-//                std::unique_lock<std::mutex> lock(mtx);
-//                cv.wait(lock);
-//            }
-//
-//            activeVisualiser->current_control_index = 0;
-//        }
 
         // Update the visualisation
         // Unsure why rendering every time causes it to lag so much more???
@@ -624,18 +611,18 @@ void AsyncMPC(){
     MPC_controls_thread.join();
 
     double cost = 0.0f;
-//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-//            activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
-//                                                    activeModelTranslator->current_state_vector);
-//            activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
-//                                                  activeModelTranslator->current_state_vector);
-//            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-//            cost += (activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->current_state_vector, false) * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep());
-//
-////            activeVisualiser->render("live-MPC");
-//
-//        }
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
+            activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
+                                                    activeModelTranslator->current_state_vector);
+            activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
+                                                  activeModelTranslator->full_state_vector);
+            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+            cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, false);
+
+//            activeVisualiser->render("live-MPC");
+
+        }
 
     std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
     std::cout << "avg opt time: " << avg_opt_time << " ms \n";
