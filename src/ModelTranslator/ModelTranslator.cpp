@@ -91,6 +91,20 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
     // robot joint names
     // bodies - {body_name}_x, {body_name}_y, {body_name}_z, {body_name}_roll, {body_name}_pitch, {body_name}_yaw
 
+    // TODO - make this more robust, with how we handle robot joints
+    // Checks if any state names contain panda, ignore these
+    for (auto it = state_vector_names.begin(); it != state_vector_names.end(); /* no increment here */) {
+        // Check if the string contains "panda"
+        if (it->find("panda") != std::string::npos) {
+            // Remove the string
+            it = state_vector_names.erase(it); // erase() returns the iterator to the next valid position
+        } else {
+            // Move to the next string
+            ++it;
+        }
+    }
+
+
     // TODO (DMackRus) - This is an assumption but should be fine
     if(add_extra_states){
         dof += static_cast<int>(state_vector_names.size());
@@ -98,7 +112,6 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
     else{
         dof -= static_cast<int>(state_vector_names.size());
     }
-    std::cout << "dof inside update current state vector =: " << dof << "\n";
 
     // Keep track of elements not inside current state vector
     if(!add_extra_states){
@@ -117,8 +130,6 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
             }
         }
     }
-
-
 
     state_vector_size = dof * 2;
 

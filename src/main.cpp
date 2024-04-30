@@ -278,98 +278,116 @@ int main(int argc, char **argv) {
 //        activeModelTranslator->current_state_vector.Update();
 //        std::cout << "num dofs: " << activeModelTranslator->current_state_vector.dof << " num dofs quat: " << activeModelTranslator->current_state_vector.dof_quat << std::endl;
 
-
-        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
-
-        std::vector<MatrixXd> U_init;
-        U_init = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-
-
-        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
-        std::cout << "rollout done \n";
-
-        // Compute derivatives
-        auto timer_start = std::chrono::high_resolution_clock::now();
-
-        for(int i = 0; i < N; i++){
-            timer_start = std::chrono::high_resolution_clock::now();
-            iLQROptimiser->GenerateDerivatives();
-            time_derivs_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::high_resolution_clock::now() - timer_start).count());
+        std::cout << "state vector: ";
+        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
+            std::cout << state_name << " ";
         }
+        std::cout << "\n";
+        std::cout << "size of state vector before: " << activeModelTranslator->current_state_vector.dof << " \n";
 
-        for(int i = 0; i < N; i++){
-            timer_start = std::chrono::high_resolution_clock::now();
-            iLQROptimiser->BackwardsPassQuuRegularisation();
-            time_bp_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::high_resolution_clock::now() - timer_start).count());
+        // remove elements
+        std::vector<std::string> remove = {"panda0_joint1", "goal_x", "obstacle_1_x"};
+        activeModelTranslator->UpdateCurrentStateVector(remove, false);
+
+        std::cout << "state vector: ";
+        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
+            std::cout << state_name << " ";
         }
+        std::cout << "\n";
+        std::cout << "size of state vector after: " << activeModelTranslator->current_state_vector.dof << " \n";
 
 
-        // Remove elements from task
-        std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw",
-                                                    "mediumCylinder_y", "mediumCylinder_pitch", "mediumCylinder_roll", "mediumCylinder_yaw",
-                                                    "bigBox_y", "bigBox_pitch", "bigBox_roll", "bigBox_yaw",
-                                                    "obstacle1_y", "obstacle1_pitch", "obstacle1_roll", "obstacle1_yaw",
-                                                    "obstacle2_y", "obstacle2_pitch", "obstacle2_roll", "obstacle2_yaw",
-                                                    "obstacle3_y", "obstacle3_pitch", "obstacle3_roll", "obstacle3_yaw",
-                                                    "obstacle4_y", "obstacle4_pitch", "obstacle4_roll", "obstacle4_yaw",
-                                                    "obstacle5_y", "obstacle5_pitch", "obstacle5_roll", "obstacle5_yaw",};
-        activeModelTranslator->UpdateCurrentStateVector(remove_elements, false);
-        dofs_reduced = activeModelTranslator->dof;
-
-        // resize optimiser state
-        iLQROptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, iLQROptimiser->horizon_length);
-
-        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
-        std::cout << "2nd rollout done \n";
-
-        // Compute derivatives
-        for(int i = 0; i < N; i++){
-            timer_start = std::chrono::high_resolution_clock::now();
-            iLQROptimiser->GenerateDerivatives();
-            time_derivs_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::high_resolution_clock::now() - timer_start).count());
-        }
-
-        // Compute backwards pass
-        for(int i = 0; i < N; i++){
-            timer_start = std::chrono::high_resolution_clock::now();
-            iLQROptimiser->BackwardsPassQuuRegularisation();
-            time_bp_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::high_resolution_clock::now() - timer_start).count());
-        }
-
-        double avg_time_derivs_full, avg_time_derivs_reduced, avg_time_bp_full, avg_time_bp_reduced;
-
-        for(int i = 0; i < N; i++){
-            avg_time_derivs_full += time_derivs_full[i];
-            avg_time_derivs_reduced += time_derivs_reduced[i];
-            avg_time_bp_full += time_bp_full[i];
-            avg_time_bp_reduced += time_bp_reduced[i];
-        }
-
-        avg_time_derivs_full /= N;
-        avg_time_derivs_reduced /= N;
-        avg_time_bp_full /= N;
-        avg_time_bp_reduced /= N;
-
-        std::cout << "-------- Results of state vector dimensionality reduction ----------- \n";
-        std::cout << "num dofs in full state vector: " << dofs_full << "\n";
-        std::cout << "time of derivs for full state vector: " << avg_time_derivs_full << " ms \n";
-        std::cout << "time of bp for full state vector: " << avg_time_bp_full << " ms \n";
-        std::cout << "num dofs in reduced state vector: " << dofs_reduced << "\n";
-        std::cout << "time of derivs for reduced state vector: " << avg_time_derivs_reduced << " ms\n";
-        std::cout << "time of bp for reduced state vector: " << avg_time_bp_reduced << " ms\n";
-
-        double percentage_decrease_derivs = (1 - (avg_time_derivs_reduced / avg_time_derivs_full)) * 100.0;
-        double percentage_decrease_bp = (1 - (avg_time_bp_reduced / avg_time_bp_full)) * 100.0;
-        double dof_percentage_decrease = (1 - ((double)dofs_reduced / (double)dofs_full)) * 100.0;
-        std::cout << "percent decrease of derivatives: " << percentage_decrease_derivs << "\n";
-        std::cout << "percent decrease of backwards pass: " << percentage_decrease_bp << "\n";
-        std::cout << "expected percentage decrease: " << dof_percentage_decrease << "\n";
+//        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+//
+//        std::vector<MatrixXd> U_init;
+//        U_init = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+//
+//
+//        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
+//        std::cout << "rollout done \n";
+//
+//        // Compute derivatives
+//        auto timer_start = std::chrono::high_resolution_clock::now();
+//
+//        for(int i = 0; i < N; i++){
+//            timer_start = std::chrono::high_resolution_clock::now();
+//            iLQROptimiser->GenerateDerivatives();
+//            time_derivs_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+//                    std::chrono::high_resolution_clock::now() - timer_start).count());
+//        }
+//
+//        for(int i = 0; i < N; i++){
+//            timer_start = std::chrono::high_resolution_clock::now();
+//            iLQROptimiser->BackwardsPassQuuRegularisation();
+//            time_bp_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+//                    std::chrono::high_resolution_clock::now() - timer_start).count());
+//        }
+//
+//
+//        // Remove elements from task
+//        std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw",
+//                                                    "mediumCylinder_y", "mediumCylinder_pitch", "mediumCylinder_roll", "mediumCylinder_yaw",
+//                                                    "bigBox_y", "bigBox_pitch", "bigBox_roll", "bigBox_yaw",
+//                                                    "obstacle1_y", "obstacle1_pitch", "obstacle1_roll", "obstacle1_yaw",
+//                                                    "obstacle2_y", "obstacle2_pitch", "obstacle2_roll", "obstacle2_yaw",
+//                                                    "obstacle3_y", "obstacle3_pitch", "obstacle3_roll", "obstacle3_yaw",
+//                                                    "obstacle4_y", "obstacle4_pitch", "obstacle4_roll", "obstacle4_yaw",
+//                                                    "obstacle5_y", "obstacle5_pitch", "obstacle5_roll", "obstacle5_yaw",};
+//        activeModelTranslator->UpdateCurrentStateVector(remove_elements, false);
+//        dofs_reduced = activeModelTranslator->dof;
+//
+//        // resize optimiser state
+//        iLQROptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, iLQROptimiser->horizon_length);
+//
+//        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
+//        std::cout << "2nd rollout done \n";
+//
+//        // Compute derivatives
+//        for(int i = 0; i < N; i++){
+//            timer_start = std::chrono::high_resolution_clock::now();
+//            iLQROptimiser->GenerateDerivatives();
+//            time_derivs_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+//                    std::chrono::high_resolution_clock::now() - timer_start).count());
+//        }
+//
+//        // Compute backwards pass
+//        for(int i = 0; i < N; i++){
+//            timer_start = std::chrono::high_resolution_clock::now();
+//            iLQROptimiser->BackwardsPassQuuRegularisation();
+//            time_bp_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+//                    std::chrono::high_resolution_clock::now() - timer_start).count());
+//        }
+//
+//        double avg_time_derivs_full, avg_time_derivs_reduced, avg_time_bp_full, avg_time_bp_reduced;
+//
+//        for(int i = 0; i < N; i++){
+//            avg_time_derivs_full += time_derivs_full[i];
+//            avg_time_derivs_reduced += time_derivs_reduced[i];
+//            avg_time_bp_full += time_bp_full[i];
+//            avg_time_bp_reduced += time_bp_reduced[i];
+//        }
+//
+//        avg_time_derivs_full /= N;
+//        avg_time_derivs_reduced /= N;
+//        avg_time_bp_full /= N;
+//        avg_time_bp_reduced /= N;
+//
+//        std::cout << "-------- Results of state vector dimensionality reduction ----------- \n";
+//        std::cout << "num dofs in full state vector: " << dofs_full << "\n";
+//        std::cout << "time of derivs for full state vector: " << avg_time_derivs_full << " ms \n";
+//        std::cout << "time of bp for full state vector: " << avg_time_bp_full << " ms \n";
+//        std::cout << "num dofs in reduced state vector: " << dofs_reduced << "\n";
+//        std::cout << "time of derivs for reduced state vector: " << avg_time_derivs_reduced << " ms\n";
+//        std::cout << "time of bp for reduced state vector: " << avg_time_bp_reduced << " ms\n";
+//
+//        double percentage_decrease_derivs = (1 - (avg_time_derivs_reduced / avg_time_derivs_full)) * 100.0;
+//        double percentage_decrease_bp = (1 - (avg_time_bp_reduced / avg_time_bp_full)) * 100.0;
+//        double dof_percentage_decrease = (1 - ((double)dofs_reduced / (double)dofs_full)) * 100.0;
+//        std::cout << "percent decrease of derivatives: " << percentage_decrease_derivs << "\n";
+//        std::cout << "percent decrease of backwards pass: " << percentage_decrease_bp << "\n";
+//        std::cout << "expected percentage decrease: " << dof_percentage_decrease << "\n";
 
         return EXIT_FAILURE;
     }
@@ -527,6 +545,8 @@ void AsyncMPC(){
                 next_control = empty_control;
             }
 
+            std::cout << "next control is: " << next_control.transpose() << "\n";
+
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
             MatrixXd next_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector);
@@ -562,7 +582,7 @@ void AsyncMPC(){
             int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
             if(difference_ms > 0) {
-//                difference_ms = 20;
+                difference_ms = 20;
                 std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
             }
         }
@@ -662,9 +682,17 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
                 int current_control_index = activeVisualiser->current_control_index;
 
                 // Slice the optimised controls to get the current control
-                for(int i = 0; i < current_control_index; i++){
-                    optimisedControls.erase(optimisedControls.begin());
-                    optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
+//                for(int i = 0; i < current_control_index; i++){
+//                    optimisedControls.erase(optimisedControls.begin());
+//                    optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
+//                }
+
+                optimisedControls.erase(optimisedControls.begin(), optimisedControls.begin() + current_control_index);
+
+                // Append the last element N times
+                MatrixXd last_control = optimisedControls.back();
+                for (int i = 0; i < current_control_index; ++i) {
+                    optimisedControls.push_back(last_control);
                 }
             }
             optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], optimisedControls, 1, 1, OPT_HORIZON);
@@ -708,7 +736,7 @@ void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingD
 
             double smallestError = 1000.00;
             int bestMatchingStateIndex = 0;
-            // TODO - possible issue if optimisation time > horizon
+//            // TODO - possible issue if optimisation time > horizon
             for(int i = 0; i < OPT_HORIZON; i++){
 //                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
 //                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;

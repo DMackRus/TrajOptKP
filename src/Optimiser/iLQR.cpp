@@ -351,6 +351,8 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         optimisedControls[i] = U_old[i];
     }
 
+    std::cout << "optimised control[0] " << optimisedControls[0].transpose() << "\n";
+
     return optimisedControls;
 }
 
@@ -400,6 +402,9 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
                              last_iter_num_linesearches);
     }
 
+    // STEP 4 - Check for convergence
+    converged = CheckForConvergence(old_cost, new_cost);
+
     if(new_cost < old_cost){
         UpdateNominal();
         cost_reduced_last_iter = true;
@@ -415,8 +420,8 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
     cost_history.push_back(new_cost);
 
-    // STEP 4 - Check for convergence
-    converged = CheckForConvergence(old_cost, new_cost);
+
+
 }
 
 

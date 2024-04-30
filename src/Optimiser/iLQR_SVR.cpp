@@ -381,7 +381,7 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     bool valid_backwards_pass = false;
 
     timer_start = high_resolution_clock::now();
-    while(!valid_backwards_pass){
+    while(!valid_backwards_pass || lambda_exit){
         valid_backwards_pass = BackwardsPassQuuRegularisation();
         lambda_exit = UpdateLambda(valid_backwards_pass);
 
@@ -409,7 +409,7 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
     // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
     timer_start = high_resolution_clock::now();
-    if(0){
+    if(1){
         new_cost = ForwardsPass(old_cost);
     }
     else{
@@ -459,6 +459,9 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
                              last_iter_num_linesearches);
     }
 
+    // STEP 4 - Check for convergence
+    converged = CheckForConvergence(old_cost, new_cost);
+
     if(new_cost < old_cost){
         UpdateNominal();
         cost_reduced_last_iter = true;
@@ -473,9 +476,6 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     }
 
     cost_history.push_back(new_cost);
-
-    // STEP 4 - Check for convergence
-    converged = CheckForConvergence(old_cost, new_cost);
 }
 
 
@@ -847,22 +847,63 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
     std::vector<std::string> remove_dofs;
 
     // ---------------------------- Eigen vector method ---------------------------------------------
+//    std::vector<double> K_dofs_sums(dof, 0.0);
+//
+//    for(int t = 0; t < horizon_length; t += sampling_k_interval) {
+//        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
+//        if (!svd.computeV()) {
+//            std::cerr << "SVD decomposition failed!" << std::endl;
+//            break;
+//        }
+//
+////        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
+////        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
+//
+//        for (int i = 0; i < num_ctrl; i++) {
+//            for (int j = 0; j < dof; j++) {
+//                K_dofs_sums[j] += abs(svd.matrixV()(j, i));
+//                K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
+//            }
+//        }
+//    }
+//
+//    std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
+//    std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
+//
+////    std::cout << "States: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << state_vector_name[sorted_indices[i]] << " ";
+////    }
+////    std::cout << "\n";
+//
+////    std::cout << "K_sums in order: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+////    }
+////    std::cout << "\n";
+//
+//
+//    for(int i = 0; i < dof; i++) {
+//        if (K_dofs_sums[i] < threshold_k_eignenvectors) {
+//            remove_dofs.push_back(state_vector_name[i]);
+//        }
+//
+//    }
+//
+//    return remove_dofs;
+
+    // TODO - make this optionally available
+    //------------------------ Sampling and summing method ----------------------------
+
     std::vector<double> K_dofs_sums(dof, 0.0);
 
-    for(int t = 0; t < horizon_length; t += sampling_k_interval) {
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
-        if (!svd.computeV()) {
-            std::cerr << "SVD decomposition failed!" << std::endl;
-            break;
-        }
+    for(int t = 0; t < horizon_length; t += sampling_k_interval){
 
-//        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
-//        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
+        for(int i = 0; i < dof; i++){
 
-        for (int i = 0; i < num_ctrl; i++) {
-            for (int j = 0; j < dof; j++) {
-                K_dofs_sums[j] += abs(svd.matrixV()(j, i));
-                K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
+            for(int j = 0; j < num_ctrl; j++){
+                K_dofs_sums[i] += abs(K[t](j, i));
+                K_dofs_sums[i] += abs(K[t](j, i + dof));
             }
         }
     }
@@ -870,54 +911,27 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
     std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
     std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
 
-//    std::cout << "States: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << state_vector_name[sorted_indices[i]] << " ";
-//    }
-//    std::cout << "\n";
+    std::cout << "States: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << state_vector_name[sorted_indices[i]] << " ";
+    }
+    std::cout << "\n";
 
-//    std::cout << "K_sums in order: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-//    }
-//    std::cout << "\n";
+    std::cout << "K_sums in order: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+    }
+    std::cout << "\n";
 
 
     for(int i = 0; i < dof; i++) {
-        if (K_dofs_sums[i] < threshold_k_eignenvectors) {
+        if (K_dofs_sums[i] < threshold_k_eigenvectors) {
             remove_dofs.push_back(state_vector_name[i]);
         }
 
     }
 
-
     return remove_dofs;
-
-    // TODO - make this optionally available
-    // ------------------------ Sampling and summing method ----------------------------
-//
-//    for(int t = 0; t < horizonLength; t += sampling_k_interval){
-//
-//        for(int i = 0; i < dof; i++){
-//
-//            for(int j = 0; j < num_ctrl; j++){
-//                K_dofs_sums[i] += abs(K[t](j, i));
-//                K_dofs_sums[i] += abs(K[t](j, i + dof));
-//            }
-//        }
-//    }
-//
-//    std::vector<std::string> state_vector_name = activeModelTranslator->GetStateVectorNames();
-//    for(int i = 0; i < dof; i++) {
-//        if (K_dofs_sums[i] < threshold_k_eignenvectors) {
-//            remove_dofs.push_back(state_vector_name[i]);
-//        }
-//    }
-//
-//    // Free memory
-//    delete[] K_dofs_sums;
-//
-//    return remove_dofs;
 }
 
 void iLQR_SVR::AdjustCurrentStateVector(){
@@ -931,37 +945,42 @@ void iLQR_SVR::AdjustCurrentStateVector(){
             std::cout << re_add_dof << " ";
         }
         std::cout << "\n";
-        std::cout << "size of readd dofs: " << re_add_dofs.size() << "\n";
         activeModelTranslator->UpdateCurrentStateVector(re_add_dofs, true);
 
         update_nominal = true;
     }
 
     if(!candidates_for_removal.empty()){
-        activeModelTranslator->UpdateCurrentStateVector(candidates_for_removal, false);
 
-        update_nominal = true;
-//        std::cout << "removing dofs, new num dofs: " << activeModelTranslator->dof << "\n";
         std::cout << "removing dofs ";
         for(const auto & remove_dof : candidates_for_removal){
             std::cout << remove_dof << " ";
         }
         std::cout << "\n";
+
+        activeModelTranslator->UpdateCurrentStateVector(candidates_for_removal, false);
+
+        update_nominal = true;
+//        std::cout << "removing dofs, new num dofs: " << activeModelTranslator->dof << "\n";
+
     }
 
-//    std::cout << "current state vector: ";
-//    for(int i = 0; i < activeModelTranslator->current_state_vector.state_names.size(); i++){
-//        std::cout << activeModelTranslator->current_state_vector.state_names[i] << " ";
-//    }
-//    std::cout << "\n";
-//    std::cout << "unused state vector: ";
-//    for(int i = 0; i < activeModelTranslator->unused_state_vector_elements.size(); i++){
-//        std::cout << activeModelTranslator->unused_state_vector_elements[i] << " ";
-//    }
-//    std::cout << "\n";
+    std::cout << "current state vector: ";
+    for(int i = 0; i < activeModelTranslator->current_state_vector.state_names.size(); i++){
+        std::cout << activeModelTranslator->current_state_vector.state_names[i] << " ";
+    }
+    std::cout << "\n";
+    std::cout << "unused state vector: ";
+    for(int i = 0; i < activeModelTranslator->unused_state_vector_elements.size(); i++){
+        std::cout << activeModelTranslator->unused_state_vector_elements[i] << " ";
+    }
+    std::cout << "\n";
 
     if(update_nominal){
         Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon_length);
+        X_old.at(0) = activeModelTranslator->ReturnStateVectorQuaternions(
+                MuJoCo_helper->saved_systems_state_list[0],
+                activeModelTranslator->current_state_vector);
         for(int t = 0 ; t < horizon_length; t++) {
             X_old.at(t + 1) = activeModelTranslator->ReturnStateVectorQuaternions(
                     MuJoCo_helper->saved_systems_state_list[t + 1],
