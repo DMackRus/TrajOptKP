@@ -306,8 +306,8 @@ std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initia
     opt_time_ms = optDuration.count() / 1000.0f;
 
     if(verbose_output){
-        cout << setprecision(4);
-        cout << " --------------------------------------------------- optimisation complete, took: " << opt_time_ms << " ms --------------------------------------------------" << endl;
+        cout << setprecision(1) << std::fixed;
+        cout << " --------------------------------------------------- optimisation complete, took: " << opt_time_ms << " ms -----------------------------------------------------------" << endl;
     }
 
     // Time get derivs
@@ -1003,8 +1003,8 @@ void iLQR_SVR::UpdateNominal(){
 }
 
 void iLQR_SVR::PrintBanner(double time_rollout){
-    std::cout << "--------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
-    std::cout << "|                                                 iLQR_SVR begins, initial rollout took: " << std::setprecision(4) << time_rollout << "                                             |" << std::endl;
+    std::cout << "-------------------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;
+    std::cout << "|                                                 iLQR_SVR begins, initial rollout took: " << std::setprecision(4) << time_rollout << "                                                        |" << std::endl;
 
     std::cout << std::left << std::setw(12) << "| Iteration"
               << std::setw(12) << "| Old Cost"
@@ -1020,18 +1020,18 @@ void iLQR_SVR::PrintBanner(double time_rollout){
 }
 
 void iLQR_SVR::PrintBannerIteration(int iteration, double _new_cost, double _old_cost, double eps,
-                                double _lambda, double num_dofs, double percent_derivatives, double time_derivs, double time_bp,
+                                double _lambda, int num_dofs, double percent_derivatives, double time_derivs, double time_bp,
                                 double time_fp, double best_alpha){
 
     std::cout << std::left << "|" << std::setw(11) << iteration
               << "|" << std::setw(11) << _old_cost
               << "|" << std::setw(11) << _new_cost
               << "|" << std::setprecision(3) << std::setw(7)  << eps
-              << "|" << std::setw(9) << _lambda
-              << "|" << std::setw(9) << num_dofs
+              << "|" << std::setw(9)<< std::setprecision(5) << _lambda
+              << "|" << std::setw(10) << num_dofs
               << "|" << std::setw(15) << percent_derivatives
-              << "|" << std::setw(19) <<time_derivs
+              << "|" << std::setw(19) << fixed << std::setprecision(0) <<  time_derivs
               << "|" << std::setw(14)  << time_bp
               << "|" << std::setw(14) << time_fp
-              << "|" << std::setw(18) << best_alpha << "|" << std::endl;
+              << "|" << std::setw(18) << std::setprecision(3) << best_alpha << "|" << std::endl;
 }

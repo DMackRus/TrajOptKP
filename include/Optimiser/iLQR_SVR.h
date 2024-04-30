@@ -82,7 +82,7 @@ public:
     static void PrintBanner(double time_rollout);
 
     void PrintBannerIteration(int iteration, double _new_cost, double _old_cost, double eps,
-                              double _lambda, double num_dofs, double percent_derivatives, double time_derivs, double time_bp,
+                              double _lambda, int num_dofs, double percent_derivatives, double time_derivs, double time_bp,
                               double time_fp, double best_alpha);
 
     void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
