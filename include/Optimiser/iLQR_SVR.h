@@ -122,6 +122,9 @@ private:
     int num_dofs_readd = 1;
     double threshold_k_eigenvectors = 0.1; // maybe 0.001 or 0.0001
 //    double threshold_k_eigenvectors = 0.1;
+
+    // Open loop as high as 10k!! (when using sum method)
+    // MPC - much smaller, maybe 0.1?
     std::vector<std::string> candidates_for_removal;
 
     double eps_acceptable_diff = 0.02;
