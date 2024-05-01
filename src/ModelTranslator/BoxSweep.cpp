@@ -8,10 +8,9 @@ BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "goal"){
 }
 
 void BoxSweep::ReturnRandomStartState(){
-    MatrixXd randomStartState(state_vector_size, 1);
-
     double robot_config[7] = {-0.178, 0.7, -0.0593, -1.73, 0, 0.722, -1.6};
 
+    // TODO - should this be current or full????
     // Franka Panda starting cofniguration
     for(int i = 0; i < 7; i++){
         current_state_vector.robots[0].startPos[i] = robot_config[i];

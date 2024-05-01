@@ -30,7 +30,7 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
     // Whether to do some low pass filtering over A and B matrices
     filteringMethod = activeYamlReader->filtering;
 
-    Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon);
+    Resize(activeModelTranslator->current_state_vector.dof, activeModelTranslator->current_state_vector.num_ctrl, horizon);
 
 }
 

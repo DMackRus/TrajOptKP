@@ -105,70 +105,6 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    // ---------- General Testing data run modes ---------
-    if(runMode == "Generate_testing_data"){
-        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
-                                       activeDifferentiator, activeVisualiser, yamlReader);
-
-        int task_horizon = 100;
-        int task_timeout = 2000;
-
-        if(argc > 2){
-            task_horizon = std::atoi(argv[2]);
-        }
-
-        if(argc > 3){
-            task_timeout = std::atoi(argv[3]);
-        }
-
-        return myTestingObject.gen_data_async_mpc(task_horizon, task_timeout);
-
-    }
-
-    if(runMode == "Generate_dynamics_data"){
-        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
-                                       activeDifferentiator, activeVisualiser, yamlReader);
-
-        return myTestingObject.GenerateDynamicsDerivsData(100, 4);
-    }
-
-    if(runMode == "Generate_test_scenes"){
-        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
-                                       activeDifferentiator, activeVisualiser, yamlReader);
-
-        return myTestingObject.GenerateTestScenes(100);
-    }
-
-    if(runMode == "Generate_openloop_data"){
-
-    }
-
-    if(runMode == "Generate_asynchronus_mpc_data"){
-
-    }
-
-    // random start and goal state
-    std::string taskPrefix = activeModelTranslator->model_name;
-    if(taskInitMode == "random"){
-        activeModelTranslator->GenerateRandomGoalAndStartState();
-    }
-    else if(taskInitMode == "fromCSV"){
-        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->full_state_vector);
-        activeModelTranslator->full_state_vector.Update();
-        activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
-        activeModelTranslator->UpdateSceneVisualisation();
-
-        std::cout << "goal pos " << activeModelTranslator->full_state_vector.bodiesStates[0].goalLinearPos[0] << " "
-        << activeModelTranslator->full_state_vector.bodiesStates[0].goalLinearPos[1] << " \n";
-
-        std::cout << "goal cost " << activeModelTranslator->full_state_vector.bodiesStates[0].terminalLinearPosCost[0] << " "
-        << activeModelTranslator->full_state_vector.bodiesStates[0].terminalLinearPosCost[1] << " \n";
-    }
-
-    // Initialise the system state from desired mechanism
-    // Set goal pose here maybe???
-    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
-
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
 
     for(int j = 0; j < 5; j++){
@@ -222,6 +158,65 @@ int main(int argc, char **argv) {
         return -1;
     }
 
+    if(runMode == "Generate_dynamics_data"){
+        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        return myTestingObject.GenerateDynamicsDerivsData(100, 4);
+    }
+
+    if(runMode == "Generate_test_scenes"){
+        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        return myTestingObject.GenerateTestScenes(100);
+    }
+
+    if(runMode == "Generate_openloop_data"){
+
+
+    }
+
+    if(runMode == "Generate_asynchronus_mpc_data"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_horizon = 60;
+        int task_timeout = 2000;
+
+        if(argc > 2){
+            task_horizon = std::atoi(argv[2]);
+        }
+
+        if(argc > 3){
+            task_timeout = std::atoi(argv[3]);
+        }
+
+        return myTestingObject.gen_data_async_mpc(task_horizon, task_timeout);
+    }
+
+    // random start and goal state
+    std::string taskPrefix = activeModelTranslator->model_name;
+    if(taskInitMode == "random"){
+        activeModelTranslator->GenerateRandomGoalAndStartState();
+    }
+    else if(taskInitMode == "fromCSV"){
+        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->full_state_vector);
+        activeModelTranslator->full_state_vector.Update();
+        activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
+        activeModelTranslator->UpdateSceneVisualisation();
+
+//        std::cout << "goal pos " << activeModelTranslator->full_state_vector.bodiesStates[0].goalLinearPos[0] << " "
+//        << activeModelTranslator->full_state_vector.bodiesStates[0].goalLinearPos[1] << " \n";
+//
+//        std::cout << "goal cost " << activeModelTranslator->full_state_vector.bodiesStates[0].terminalLinearPosCost[0] << " "
+//        << activeModelTranslator->full_state_vector.bodiesStates[0].terminalLinearPosCost[1] << " \n";
+    }
+
+    // Initialise the system state from desired mechanism
+    // Set goal pose here maybe???
+    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+
     // Methods of control / visualisation
     if(runMode == "Init_controls"){
         cout << "SHOWING INIT CONTROLS MODE \n";
@@ -272,7 +267,7 @@ int main(int argc, char **argv) {
         int dofs_full, dofs_reduced;
         int N = 10;
 
-        dofs_full = activeModelTranslator->dof;
+        dofs_full = activeModelTranslator->full_state_vector.dof;
 
         iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
 
@@ -556,7 +551,7 @@ void AsyncMPC(){
                 std::string robot_name = activeModelTranslator->current_state_vector.robots[0].name;
                 activeModelTranslator->MuJoCo_helper->GetRobotJointsGravityCompensationControls(robot_name, grav_compensation,
                                                                                                 activeModelTranslator->MuJoCo_helper->vis_data);
-                MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
+                MatrixXd empty_control(activeModelTranslator->current_state_vector.num_ctrl, 1);
 //                empty_control.setZero();
                 for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
                     empty_control(i) = grav_compensation[i];
@@ -627,8 +622,6 @@ void AsyncMPC(){
             activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, false);
 
-//            activeVisualiser->render("live-MPC");
-
         }
 
     std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
@@ -643,9 +636,6 @@ void AsyncMPC(){
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
 // Optimiser settings. This function can then return necessary testing data for us to store
 void MPCUntilComplete(int OPT_HORIZON){
-
-    // TODO - hmmmmmmm, why?
-    activeVisualiser->replayControls.clear();
 
     std::vector<double> time_get_derivs;
     std::vector<double> time_bp;
@@ -705,6 +695,7 @@ void MPCUntilComplete(int OPT_HORIZON){
         // Compute the best starting state
         double smallestError = 1000.00;
         int bestMatchingStateIndex = optTimeToTimeSteps;
+//        int bestMatchingStateIndex = 0;
         if(bestMatchingStateIndex >= OPT_HORIZON){
             bestMatchingStateIndex = OPT_HORIZON - 1;
         }
@@ -732,16 +723,10 @@ void MPCUntilComplete(int OPT_HORIZON){
             // Set the current control index to the best matching state index
             activeVisualiser->current_control_index = bestMatchingStateIndex;
 
-//            cv.notify_one();
             apply_next_control = true;
-
         }
 
         std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
-
-
-//        mtx.unlock();
-
     }
 
     avg_time_derivs = 0.0;

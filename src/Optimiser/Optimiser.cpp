@@ -20,7 +20,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
 
     keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
                                                              MuJoCo_helper,
-                                                             activeModelTranslator->dof,
+                                                             activeModelTranslator->current_state_vector.dof,
                                                              0);
 
     keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
@@ -80,17 +80,16 @@ void Optimiser::GenerateDerivatives(){
     }
 
     auto start_interp_time = high_resolution_clock::now();
-//    InterpolateDerivatives(keypoint_generator->keypoints, activeYamlReader->costDerivsFD);
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, horizon_length,
                                                A, B, l_x, l_u, l_xx, l_uu, activeYamlReader->costDerivsFD,
-                                               num_ctrl);
+                                               activeModelTranslator->current_state_vector.num_ctrl);
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
     double average_percent_derivs = 0.0f;
-    for(int i = 0; i < dof; i++){
+    for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
         average_percent_derivs += keypoint_generator->last_percentages[i];
     }
-    average_percent_derivs /= dof;
+    average_percent_derivs /= activeModelTranslator->current_state_vector.dof;
 
     percentage_derivs_per_iteration.push_back(average_percent_derivs);
 
@@ -133,7 +132,7 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     }
 
     current_iteration = 0;
-    num_threads_iterations = keyPoints.size();
+    num_threads_iterations = static_cast<int>(keyPoints.size());
     timeIndicesGlobal = timeIndices;
 
     // TODO - remove this? It is used for WorkerComputeDerivatives function to compute derivatives in parallel
@@ -156,9 +155,10 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     }
 
     // compute derivs serially
-//    for(int i = 0; i < horizonLength; i++){
-//        if(keyPoints[i].size() != 0){
-//            activeDifferentiator->ComputeDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false, i, false, 0);
+//    for(int i = 0; i < horizon_length; i++){
+//        if(!keyPoints[i].empty()){
+//            activeDifferentiator->ComputeDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_u[i], l_xx[i], l_uu[i],
+//                                                     i, 0, false, activeYamlReader->costDerivsFD, true, 1e-6);
 //        }
 //    }
       
@@ -168,16 +168,9 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
 
     if(!activeYamlReader->costDerivsFD){
         for(int i = 0; i < horizon_length; i++){
-            if(i == 0){
-                activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
-                                                       activeModelTranslator->current_state_vector,
-                                                       l_x[i], l_xx[i], l_u[i], l_uu[i], false);
-            }
-            else{
-                activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
-                                                       activeModelTranslator->current_state_vector,
-                                                       l_x[i], l_xx[i], l_u[i], l_uu[i], false);
-            }
+            activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
+                                                   activeModelTranslator->current_state_vector,
+                                                   l_x[i], l_xx[i], l_u[i], l_uu[i], false);
         }
         activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizon_length - 1],
                                                activeModelTranslator->current_state_vector,
@@ -209,6 +202,9 @@ void Optimiser::WorkerComputeDerivatives(int threadId) {
 }
 
 void Optimiser::FilterDynamicsMatrices() {
+
+    // Aliases
+    int dof = activeModelTranslator->current_state_vector.dof;
 
     for(int i = dof; i < 2 * dof; i++){
         for(int j = 0; j < 2 * dof; j++){

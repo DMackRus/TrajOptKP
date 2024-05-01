@@ -49,20 +49,6 @@ void walker::ReturnRandomGoalState(){
     current_state_vector.robots[0].goalVel[1] = rand_body_vel;
 }
 
-std::vector<MatrixXd> walker::CreateInitOptimisationControls(int horizonLength){
-    std::vector<MatrixXd> initControls;
-
-    MatrixXd control(num_ctrl, 1);
-    for(int i = 0; i < horizonLength; i++){
-
-        for(int j = 0; j < num_ctrl; j++){
-            control(j) = 0.0f;
-        }
-        initControls.push_back(control);
-    }
-    return initControls;
-}
-
 //double walker::CostFunction(mjData *d, bool terminal){
 //    double cost;
 //    MatrixXd Xt = ReturnStateVector(d);

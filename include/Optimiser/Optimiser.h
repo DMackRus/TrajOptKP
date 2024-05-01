@@ -79,6 +79,10 @@ public:
      */
     virtual bool CheckForConvergence(double old_cost, double new_cost);
 
+    virtual std::string ReturnName(){
+        return "general";
+    }
+
     /**
      * Returns optimisation data about the last optimisation performed from function "Optimise". The data it returns
      * is timing data about the optimisation, the cost reduction, the average percentage of derivatives computed, and
@@ -216,7 +220,7 @@ protected:
     std::shared_ptr<Differentiator> activeDifferentiator;
 
     std::vector<std::vector<mujoco_data_min>> rollout_data;
-    int num_parallel_rollouts = 8;
+    int num_parallel_rollouts = 6;
 
     /**
      * Computes the dynamics derivatives at the specified indices. This function is used after computing a set of keypoints

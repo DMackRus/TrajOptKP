@@ -1,5 +1,5 @@
 #modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing_heavyClutter.xml"
-#modelName: "/push_hCl"
+#modelName: "/push_mcl"
 #timeStep: 0.004
 #openloop_horizon: 1500
 #mpc_horizon: 60
@@ -181,7 +181,7 @@
 #    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
 
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing_heavyClutter.xml"
-modelName: "/push_hCl"
+modelName: "/push_mcl"
 timeStep: 0.004
 openloop_horizon: 2000
 mpc_horizon: 60

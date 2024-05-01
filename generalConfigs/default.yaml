@@ -27,7 +27,7 @@ task: "pushing_moderate_clutter"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "MPC_until_completion"
+runMode: "Generate_asynchronus_mpc_data"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -35,14 +35,13 @@ runMode: "MPC_until_completion"
 
 # Extra testing modes for debugging/generating testing data
 # "Generate_test_scenes"          - Generate a set of randomly generated test scenes for the task.
-# "Generate_testing_data"         - Loop through all test scenes and evaluate the Optimiser and key-point performance.
-# "Generate_openloop_data"        -
-# "Generate_asynchronus_mpc_data" -
+# "Generate_openloop_data"        - Loop through all the test scenes, using current optimiser and perform open loop optimisation tests.
+# "Generate_asynchronus_mpc_data" - Loop through all the tests scenes, using current optimiser and perform asyncronus MPC optimisation.
 # "Generate_filtering_data"       - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 # "Generate_dynamics_data"        - Loop thorugh 100 CSV files and generate A, B, X, U data over a horizon and save to file.
 
 taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+csvRow: 2                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: false       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)

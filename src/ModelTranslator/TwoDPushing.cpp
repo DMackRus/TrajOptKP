@@ -194,7 +194,6 @@ void TwoDPushing::ReturnRandomStartState(){
 }
 
 void TwoDPushing::ReturnRandomGoalState(){
-    MatrixXd randomGoalState(state_vector_size, 1);
 
     // Robot configuration doesnt matter for this task
     for(int i = 0; i < current_state_vector.robots[0].jointNames.size(); i++){

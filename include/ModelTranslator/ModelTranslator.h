@@ -66,7 +66,7 @@ public:
      * @param num_dofs The number of dofs to resample.
      *
      */
-    std::vector<std::string> RandomSampleUnusedDofs(int num_dofs);
+    std::vector<std::string> RandomSampleUnusedDofs(int num_dofs) const;
 
     /**
      * Returns a random start state for the system. This is used mainly for generating
@@ -328,13 +328,13 @@ public:
 
     // Number of degrees of freedom of the system (Note, this is set by used via yaml file, it doesnt necessary
     // include all dofs for every object, if they are intentionally left out.
-    int dof = 0;
-
-    // Number of actuated joints of the system
-    int num_ctrl = 0;
-
-    // Size of the state vector (typically 2 x dof)
-    int state_vector_size = 0;
+//    int dof = 0;
+//
+//    // Number of actuated joints of the system
+//    int num_ctrl = 0;
+//
+//    // Size of the state vector (typically 2 x dof)
+//    int state_vector_size = 0;
 
     // State vector objects and names
     struct stateVectorList current_state_vector;

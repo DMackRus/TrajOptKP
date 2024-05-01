@@ -144,7 +144,8 @@ void pandaReaching::ReturnRandomStartState(){
         }
     }
 
-    for(int i = 0; i < dof; i++){
+    // TODO - shouldnt this be full state vector?
+    for(int i = 0; i < full_state_vector.dof; i++){
         current_state_vector.robots[0].startPos[i] = joint_positions[i];
     }
 
@@ -190,14 +191,15 @@ void pandaReaching::ReturnRandomGoalState(){
 
     }
 
-    for(int i = 0; i < dof; i++){
+    for(int i = 0; i < full_state_vector.dof; i++){
         current_state_vector.robots[0].goalPos[i] = joints_positions[i];
         current_state_vector.robots[0].goalVel[i] = 0.0;
     }
 }
 
 std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonLength){
-    std::vector<MatrixXd> initControls;
+    std::vector<MatrixXd> init_controls;
+    int num_ctrl = current_state_vector.num_ctrl;
 
     if(current_state_vector.robots[0].torqueControlled){
 
@@ -219,7 +221,7 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
 
             SetControlVector(control, MuJoCo_helper->main_data, full_state_vector);
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
-            initControls.push_back(control);
+            init_controls.push_back(control);
         }
     }
     else{
@@ -228,5 +230,5 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
 
     
 
-    return initControls;
+    return init_controls;
 }

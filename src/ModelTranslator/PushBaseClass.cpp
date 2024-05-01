@@ -135,6 +135,9 @@ std::vector<m_point> PushBaseClass::CreateAllEETransitPoints(const std::vector<m
 std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const std::vector<m_point> &EE_path){
     std::vector<MatrixXd> init_controls;
 
+    // Aliases
+    int num_ctrl = current_state_vector.num_ctrl;
+
     pose_7 EE_start_pose;
     pose_6 goalobj_startPose;
     MuJoCo_helper->GetBodyPoseQuatViaXpos(EE_name, EE_start_pose, MuJoCo_helper->main_data);

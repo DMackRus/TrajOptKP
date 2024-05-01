@@ -69,11 +69,6 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     // Updates the internal number of dofs, as well as the state vector name list
     full_state_vector.Update();
 
-    dof = full_state_vector.dof;
-    // TODO - perhaps we dont need state vector size?
-    state_vector_size = dof * 2;
-    num_ctrl = full_state_vector.num_ctrl;
-
     // Set current state vector to the full state vector
     current_state_vector = full_state_vector;
     UpdateSceneVisualisation();
@@ -107,10 +102,10 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
 
     // TODO (DMackRus) - This is an assumption but should be fine
     if(add_extra_states){
-        dof += static_cast<int>(state_vector_names.size());
+        current_state_vector.dof += static_cast<int>(state_vector_names.size());
     }
     else{
-        dof -= static_cast<int>(state_vector_names.size());
+        current_state_vector.dof -= static_cast<int>(state_vector_names.size());
     }
 
     // Keep track of elements not inside current state vector
@@ -130,8 +125,6 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
             }
         }
     }
-
-    state_vector_size = dof * 2;
 
     for(auto & robot : current_state_vector.robots){
         for(int joint = 0; joint < robot.jointNames.size(); joint++){
@@ -177,7 +170,7 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
     UpdateSceneVisualisation();
 }
 
-std::vector<std::string> ModelTranslator::RandomSampleUnusedDofs(int num_dofs){
+std::vector<std::string> ModelTranslator::RandomSampleUnusedDofs(int num_dofs) const{
     std::vector<std::string> dofs_names;
     std::vector<std::string> copy_unused = unused_state_vector_elements;
 
@@ -195,25 +188,9 @@ std::vector<std::string> ModelTranslator::RandomSampleUnusedDofs(int num_dofs){
     std::mt19937 g(rd());
     std::shuffle(copy_unused.begin(), copy_unused.end(), g);
 
-    // Take the first four elements
-//    std::vector<int> sampled(copy_unused.begin(), copy_unused.begin() + 4);
-
     for(int i = 0; i < num_dofs; i++){
         dofs_names.push_back(copy_unused[i]);
     }
-
-
-//    std::random_device rd;
-//    std::mt19937 gen(rd());
-//    std::cout << "num dofs to resample: " << num_dofs << "\n";
-//
-//    for(int i = 0; i < num_dofs; i++){
-//        std::uniform_int_distribution<int> distrib(0, static_cast<int>(copy_unused.size()));
-//        int rand_int = distrib(gen);
-//
-//        dofs_names.push_back(copy_unused[rand_int]);
-//        copy_unused.erase(copy_unused.begin() + rand_int);
-//    }
 
     return dofs_names;
 }
@@ -457,6 +434,10 @@ void ModelTranslator::CostDerivatives(mjData* d, const struct stateVectorList &s
         std::cerr << "mismatch in dof size between cost derivatives and passed state vector, exiting \n";
         exit(1);
     }
+
+    // Aliases
+    int dof = state_vector.dof;
+    int num_ctrl = state_vector.num_ctrl;
 
     // Set matrices to zero as these matrices should mostly be sparse.
     l_u.setZero();
@@ -1124,6 +1105,9 @@ int ModelTranslator::StateIndexToQposIndex(int state_index, const struct stateVe
 
 void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 
+    // Reset time of simulation
+    d->time = 0.0;
+
     // Initialise robot positions to start configuration
     for(auto & robot : full_state_vector.robots){
         std::vector<double> zero_robot_velocities(robot.jointNames.size(), 0.0);
@@ -1164,21 +1148,24 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
                                full_state_vector.bodiesStates[0].goalAngularPos[2]};
 
         goal_body.quat = eul2Quat(desired_eul);
+        std::cout << "goal body pos: " << goal_body.position[0] << " " << goal_body.position[1] << " " << goal_body.position[2] << "\n";
 
         MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
     }
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {
-    std::vector<MatrixXd> initControls;
+    std::vector<MatrixXd> init_controls;
+
+    int num_ctrl = full_state_vector.num_ctrl;
 
     for(int i = 0; i < horizon_length; i++){
         MatrixXd emptyControl(num_ctrl, 1);
         for(int j = 0; j < num_ctrl; j++){
             emptyControl(j) = 0.0f;
         }
-        initControls.push_back(emptyControl);
+        init_controls.push_back(emptyControl);
     }
 
-    return initControls;
+    return init_controls;
 }

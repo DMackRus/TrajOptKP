@@ -1,7 +1,3 @@
-//
-// Created by davidrussell on 1/17/24.
-//
-
 #pragma once
 
 #include "StdInclude.h"
@@ -15,7 +11,7 @@
 class GenTestingData{
 
 public:
-    GenTestingData(std::shared_ptr<iLQR> iLQROptimiser_,
+    GenTestingData(std::shared_ptr<Optimiser> optimiser,
                    std::shared_ptr<ModelTranslator> activeModelTranslator_,
                    std::shared_ptr<Differentiator> activeDifferentiator_,
                    std::shared_ptr<Visualiser> activeVisualiser_,
@@ -76,31 +72,35 @@ public:
      * @Param task_number: The task number to be performed
      *
      */
-    void asynchronus_optimiser_worker(std::string method_directory, int task_number, int task_horizon);
+    void asynchronus_optimiser_worker(const std::string& method_directory, int task_number, int task_horizon);
 
     int GenerateDynamicsDerivsData(int num_trajecs, int num_iters_per_task);
 
     int GenerateTestScenes(int num_scenes);
 
 
-    std::shared_ptr<iLQR> iLQROptimiser;
+    std::shared_ptr<Optimiser> optimiser;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<Differentiator> activeDifferentiator;
     std::shared_ptr<Visualiser> activeVisualiser;
     std::shared_ptr<FileHandler> yamlReader;
 
-
 private:
 
-    bool stop_opt_thread = false;
+    std::mutex mtx;
 
-    double final_cost = 0.0f;
-    double final_dist = 0.0f;
-    double average_opt_time_ms = 0.0f;
-    double average_percent_derivs = 0.0f;
-    double average_time_derivs_ms = 0.0f;
-    double average_time_fp_ms = 0.0f;
-    double average_time_bp_ms = 0.0f;
-    double average_surprise = 0.0f;
+    bool stop_opt_thread = false;
+    bool apply_next_control = false;
+    bool async_mpc;
+
+    double final_cost = 0.0;
+    double final_dist = 0.0;
+    double average_dof = 0.0;
+    double average_opt_time_ms = 0.0;
+    double average_percent_derivs = 0.0;
+    double average_time_derivs_ms = 0.0;
+    double average_time_fp_ms = 0.0;
+    double average_time_bp_ms = 0.0;
+    double average_surprise = 0.0;
 
 };

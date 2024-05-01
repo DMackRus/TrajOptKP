@@ -11,8 +11,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                                         int data_index, int tid, bool terminal, bool cost_derivs,
                                         bool central_diff, double eps){
 
-    dof = model_translator->dof;
-    num_ctrl = model_translator->num_ctrl;
+    // Aliases
+    dof = model_translator->current_state_vector.dof;
+    num_ctrl = model_translator->current_state_vector.num_ctrl;
     dim_state = 2 * dof;
 
     // Aliases

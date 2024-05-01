@@ -30,7 +30,8 @@ iLQR_SVR::iLQR_SVR(std::shared_ptr<ModelTranslator> _modelTranslator, std::share
     // Whether to do some low pass filtering over A and B matrices
     filteringMethod = activeYamlReader->filtering;
 
-    Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon);
+    Resize(activeModelTranslator->current_state_vector.dof,
+           activeModelTranslator->current_state_vector.num_ctrl, horizon);
 
 }
 
@@ -242,10 +243,10 @@ std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initia
     numberOfTotalDerivs = horizon_length * dof;
 
     // TODO - code to adjust max horizon if opt horizon > max_horizon
-    std::cout << "horizon is " << horizon_length << "\n";
+//    std::cout << "horizon is " << horizon_length << "\n";
 
     if(keypoint_generator->horizon != this->horizon_length){
-        std::cout << "horizon length changed" << std::endl;
+//        std::cout << "horizon length changed" << std::endl;
         keypoint_generator->Resize(dof, num_ctrl, horizon_length);
     }
 
@@ -978,7 +979,8 @@ void iLQR_SVR::AdjustCurrentStateVector(){
 //    std::cout << "\n";
 
     if(update_nominal){
-        Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, horizon_length);
+        Resize(activeModelTranslator->current_state_vector.dof,
+               activeModelTranslator->current_state_vector.num_ctrl, horizon_length);
         X_old.at(0) = activeModelTranslator->ReturnStateVectorQuaternions(
                 MuJoCo_helper->saved_systems_state_list[0],
                 activeModelTranslator->current_state_vector);

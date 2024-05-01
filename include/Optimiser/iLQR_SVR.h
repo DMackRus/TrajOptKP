@@ -87,6 +87,10 @@ public:
 
     void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
 
+    std::string ReturnName() override{
+        return "iLQR_SVR";
+    }
+
     /**
      * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
      *

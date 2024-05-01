@@ -1,5 +1,5 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml"
-modelName: "/push_nCl"
+modelName: "/push_ncl"
 timeStep: 0.008
 openloop_horizon: 1000
 mpc_horizon: 50
