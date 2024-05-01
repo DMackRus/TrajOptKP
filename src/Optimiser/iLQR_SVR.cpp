@@ -388,11 +388,11 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     }
 
     // Check importance of dofs
-    candidates_for_removal = LeastImportantDofs();
+    activeModelTranslator->candidates_for_removal = LeastImportantDofs();
 
     // TODO - remove temp code
 //    std::cout << "dofs to remove: ";
-//    for(const auto & removal_dof : candidates_for_removal){
+//    for(const auto & removal_dof : activeModelTranslator->candidates_for_removal){
 //        std::cout << removal_dof << " ";
 //    }
 //    std::cout << std::endl;
@@ -952,7 +952,7 @@ void iLQR_SVR::AdjustCurrentStateVector(){
         update_nominal = true;
     }
 
-    if(!candidates_for_removal.empty()){
+    if(!activeModelTranslator->candidates_for_removal.empty()){
 
 //        std::cout << "removing dofs ";
 //        for(const auto & remove_dof : candidates_for_removal){
@@ -960,7 +960,7 @@ void iLQR_SVR::AdjustCurrentStateVector(){
 //        }
 //        std::cout << "\n";
 
-        activeModelTranslator->UpdateCurrentStateVector(candidates_for_removal, false);
+        activeModelTranslator->UpdateCurrentStateVector(activeModelTranslator->candidates_for_removal, false);
 
         update_nominal = true;
 //        std::cout << "removing dofs, new num dofs: " << activeModelTranslator->dof << "\n";

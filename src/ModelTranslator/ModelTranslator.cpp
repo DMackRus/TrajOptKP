@@ -66,12 +66,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     full_state_vector.robots = taskConfig.robots;
     full_state_vector.bodiesStates = taskConfig.bodiesStates;
 
-    // Updates the internal number of dofs, as well as the state vector name list
-    full_state_vector.Update();
-
-    // Set current state vector to the full state vector
-    current_state_vector = full_state_vector;
-    UpdateSceneVisualisation();
+    ResetSVR();
 
     std::cout << "full state vector names: ";
     for(const auto & state_vector_name : full_state_vector.state_names){

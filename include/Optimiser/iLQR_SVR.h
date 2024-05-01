@@ -129,7 +129,7 @@ private:
 
     // Open loop as high as 10k!! (when using sum method)
     // MPC - much smaller, maybe 0.1?
-    std::vector<std::string> candidates_for_removal;
+//    std::vector<std::string> candidates_for_removal;
 
     double eps_acceptable_diff = 0.02;
 

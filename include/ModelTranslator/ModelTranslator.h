@@ -325,22 +325,25 @@ public:
 
     void InitialiseSystemToStartState(mjData* d);
 
+    // Reset the state vector reduction variables
+    void ResetSVR(){
+        // Updates the internal number of dofs, as well as the state vector name list
+        full_state_vector.Update();
 
-    // Number of degrees of freedom of the system (Note, this is set by used via yaml file, it doesnt necessary
-    // include all dofs for every object, if they are intentionally left out.
-//    int dof = 0;
-//
-//    // Number of actuated joints of the system
-//    int num_ctrl = 0;
-//
-//    // Size of the state vector (typically 2 x dof)
-//    int state_vector_size = 0;
+        // Set current state vector to the full state vector
+        current_state_vector = full_state_vector;
+        UpdateSceneVisualisation();
+
+        unused_state_vector_elements.clear();
+        candidates_for_removal.clear();
+    }
 
     // State vector objects and names
     struct stateVectorList current_state_vector;
     struct stateVectorList full_state_vector;
 
     std::vector<std::string> unused_state_vector_elements;
+    std::vector<std::string> candidates_for_removal;
 
     std::vector<std::string> iteration_readded_state_elements;
 

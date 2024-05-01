@@ -192,7 +192,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
     // -----------------------------------------------------------------------------
 
     auto startTimer = std::chrono::high_resolution_clock::now();
-    optimiser->verbose_output = false;
+    optimiser->verbose_output = true;
 
     optimiser->SetCurrentKeypointMethod(keypoint_method);
 
@@ -272,6 +272,9 @@ int GenTestingData::single_asynchronus_run(bool visualise,
 
     activeVisualiser->trajectory_controls.clear();
     activeVisualiser->trajectory_states.clear();
+    activeVisualiser->current_control_index = 0;
+    stop_opt_thread = false;
+    apply_next_control = false;
 
     std::thread MPC_controls_thread;
     // Start the thread running
@@ -337,9 +340,8 @@ int GenTestingData::single_asynchronus_run(bool visualise,
             task_time++;
 
             // Check if task complete
-            double dist;
-            if(activeModelTranslator->TaskComplete(activeModelTranslator->MuJoCo_helper->vis_data, dist)){
-                cout << "task complete - dist: " << dist  << endl;
+            if(activeModelTranslator->TaskComplete(activeModelTranslator->MuJoCo_helper->vis_data, final_dist)){
+                cout << "task complete - dist: " << final_dist  << endl;
                 break;
             }
         }
@@ -594,7 +596,7 @@ void GenTestingData::asynchronus_optimiser_worker(const std::string& method_dire
             apply_next_control = true;
         }
 
-//        std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
+        std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
     }
 
     // Save specific trajectory data
