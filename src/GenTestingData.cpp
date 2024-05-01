@@ -228,7 +228,6 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         // Reset gravity back to normal
 //        activeModelTranslator->MuJoCo_helper->model->opt.gravity[2] = -9.81;
         single_asynchronus_run(true, method_directory, i, task_horizon, task_timeout);
-        stop_opt_thread = false;
 
         // ------------------------- data storage -------------------------------------
         finalCostsRow.push_back(final_cost);
@@ -255,7 +254,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
 
     // Loop through rows
     for(int i = 0; i < num_trials; i++){
-        file_output << finalCostsRow[i] << "," << finalDistRow[i] << "," << avgOptTimesRow[i] << "," << avgPercentDerivsRow[i] << ",";
+        file_output << finalCostsRow[i] << "," << finalDistRow[i] << "," << finalDofRow[i] << "," << avgOptTimesRow[i] << "," << avgPercentDerivsRow[i] << ",";
         file_output << avgTimeForDerivsRow[i] << "," << avgTimeBPRow[i] << "," << avgTimeFPRow[i] << "," <<  avgSurpriseRow[i] << std::endl;
     }
 
