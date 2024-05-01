@@ -552,12 +552,19 @@ void AsyncMPC(){
             }
             else{
                 // TODO make this grav compensation controls?
+                std::vector<double> grav_compensation;
+                std::string robot_name = activeModelTranslator->current_state_vector.robots[0].name;
+                activeModelTranslator->MuJoCo_helper->GetRobotJointsGravityCompensationControls(robot_name, grav_compensation,
+                                                                                                activeModelTranslator->MuJoCo_helper->vis_data);
                 MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
-                empty_control.setZero();
+//                empty_control.setZero();
+                for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
+                    empty_control(i) = grav_compensation[i];
+                }
                 next_control = empty_control;
             }
 
-            std::cout << "next control is: " << next_control.transpose() << "\n";
+//            std::cout << "next control is: " << next_control.transpose() << "\n";
 
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
@@ -698,6 +705,9 @@ void MPCUntilComplete(int OPT_HORIZON){
         // Compute the best starting state
         double smallestError = 1000.00;
         int bestMatchingStateIndex = optTimeToTimeSteps;
+        if(bestMatchingStateIndex >= OPT_HORIZON){
+            bestMatchingStateIndex = OPT_HORIZON - 1;
+        }
 //            // TODO - possible issue if optimisation time > horizon
 //        for(int i = 0; i < OPT_HORIZON; i++){
 ////                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
