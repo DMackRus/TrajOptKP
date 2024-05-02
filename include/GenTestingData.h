@@ -5,6 +5,7 @@
 #include <thread>
 #include <mutex>
 #include <filesystem>
+#include <yaml-cpp/yaml.h>
 
 #define APPLY_NOISE 0
 
@@ -36,6 +37,8 @@ public:
      * @return 1 if successful, 0 if not
      */
     int gen_data_async_mpc(int task_horizon, int task_timeout);
+
+    int GenDataOpenloopOptimisation(int task_horizon);
 
     /**
      * This function tests a particular keypoint method for a static number
@@ -78,7 +81,6 @@ public:
 
     int GenerateTestScenes(int num_scenes);
 
-
     std::shared_ptr<Optimiser> optimiser;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<Differentiator> activeDifferentiator;
@@ -86,6 +88,18 @@ public:
     std::shared_ptr<FileHandler> yamlReader;
 
 private:
+
+    std::string CreateTestName(const std::string& testing_method);
+
+    void SaveTestSummaryData(keypoint_method keypoint_method,
+                             int opt_horizon,
+                             double control_noise,
+                             const std::string& optimiser_name,
+                             const std::string& testing_directory);
+
+//    void SaveTestData(const std::string& testing_directory, )
+
+    double controls_noise = 0.0;
 
     std::mutex mtx;
 

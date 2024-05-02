@@ -12,12 +12,24 @@ GenTestingData::GenTestingData(std::shared_ptr<Optimiser> optimiser_,
     activeVisualiser = activeVisualiser_;
     yamlReader = yamlReader_;
 
-    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
+    activeDifferentiator = activeDifferentiator_;
 
-//    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
-//    optimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper,
-//                                       activeDifferentiator, activeModelTranslator->openloop_horizon, activeVisualiser,
-//                                       yamlReader);
+}
+
+int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
+    std::cout << "beginiing testing openloop optimisation for " << activeModelTranslator->model_name << std::endl;
+    std::cout << "optimisation horizon is: " << task_horizon << std::endl;
+
+    // --------------------------- Data we want to save ------------------------------
+    // Individual trajectory information, including;
+    // New cost, iteration time, dofs, % derivs, time derivs, time bp, time fp
+
+    // Summary file over all N trajectories, with:
+    // Cost reduction, optimisation time, num iterations, avg dofs, avg %derivs, avg time derivs, avg time bp, avg time fp,
+
+    // Create the file directory root path dynamically
+
+
 }
 
 int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
@@ -31,7 +43,7 @@ int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
 
-    testing_asynchronus_mpc(keypoint_method, 100, task_horizon, task_timeout);
+    testing_asynchronus_mpc(keypoint_method, 2, task_horizon, task_timeout);
 
 
 //    std::vector<int> minN = {1};
@@ -111,84 +123,19 @@ int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
 
 int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials, int task_horizon, int task_timeout){
 
-    // ------------------ make method name ------------------
-    std::string method_name;
-    if(keypoint_method.auto_adjust){
-        method_name = "AA_" + std::to_string(keypoint_method.min_N) + "_" + std::to_string(keypoint_method.max_N);
-    }
-    else{
-        if(keypoint_method.name == "set_interval") {
-            method_name = "SI_" + std::to_string(keypoint_method.min_N);
-        }
-        else if(keypoint_method.name == "velocity_change"){
-            int substring_length = 3;
-            if(keypoint_method.velocity_change_thresholds[0] < 0.1){
-                substring_length = 4;
-            }
-            method_name = "VC_" +
-                          std::to_string(keypoint_method.min_N) + "_" +
-                          std::to_string(keypoint_method.max_N) + "_" +
-                          std::to_string(keypoint_method.velocity_change_thresholds[0]).substr(0, substring_length);
-        }
-        else if(keypoint_method.name == "adaptive_jerk"){
-            int substring_length = 4;
-            if(keypoint_method.jerk_thresholds[0] <= 0.001){
-                substring_length = 5;
-            }
-            if(keypoint_method.jerk_thresholds[0] <= 0.0001){
-                substring_length = 6;
-            }
-            method_name = "AJ_" +
-                          std::to_string(keypoint_method.min_N) + "_" +
-                          std::to_string(keypoint_method.max_N) + "_" +
-                          std::to_string(keypoint_method.jerk_thresholds[0]).substr(0, substring_length);
-        }
-    }
 
-    std::string task_prefix = activeModelTranslator->model_name;
-
-    // Make sure directories exist
-    std::string projectParentPath = __FILE__;
-    projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
-    projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
-
-    std::string optimiser_name = optimiser->ReturnName();
-    std::string rootPath = projectParentPath + "/testingData/" + optimiser_name + "/" + task_prefix +  "_" + std::to_string(task_horizon);
-
-    // Check if task directory exists, if not create it
-    if (!filesystem::exists(rootPath)) {
-        if (!filesystem::create_directories(rootPath)) {
-            std::cerr << "Failed to create directory: " << rootPath << std::endl;
-        }
-    }
-
-    // Check if method directory exists, if not create it
-    std::string method_directory = rootPath + "/" + method_name;
-    if (!filesystem::exists(method_directory)) {
-        if (!filesystem::create_directories(method_directory)) {
-            std::cerr << "Failed to create directory: " << method_directory << std::endl;
-            exit(1);
-        }
-    }
+    std::string method_directory = CreateTestName("aynchronus_mpc");
 
     // ------------------------- data storage -------------------------------------
-    std::vector<double> finalCostsRow;
-
-    std::vector<double> finalDistRow;
-
-    std::vector<double> finalDofRow;
-
-    std::vector<double> avgOptTimesRow;
-
-    std::vector<double> avgPercentDerivsRow;
-
-    std::vector<double> avgTimeForDerivsRow;
-
-    std::vector<double> avgTimeBPRow;
-
-    std::vector<double> avgTimeFPRow;
-
-    std::vector<double> avgSurpriseRow;
+    std::vector<double> final_costs;
+    std::vector<double> final_distances;
+    std::vector<double> final_num_dofs;
+    std::vector<double> avg_opt_time;
+    std::vector<double> avg_percent_derivs;
+    std::vector<double> avg_time_derivs;
+    std::vector<double> avg_time_bp;
+    std::vector<double> avg_time_fp;
+    std::vector<double> avg_surprise;
     // -----------------------------------------------------------------------------
 
     auto startTimer = std::chrono::high_resolution_clock::now();
@@ -201,7 +148,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         optimiser->keypoint_generator->ResetCache();
         // Load start and desired state from csv file
 
-        yamlReader->loadTaskFromFile(task_prefix, i, activeModelTranslator->full_state_vector);
+        yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector);
         activeModelTranslator->full_state_vector.Update();
         activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
         activeModelTranslator->UpdateSceneVisualisation();
@@ -230,15 +177,15 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         single_asynchronus_run(true, method_directory, i, task_horizon, task_timeout);
 
         // ------------------------- data storage -------------------------------------
-        finalCostsRow.push_back(final_cost);
-        finalDistRow.push_back(final_dist);
-        finalDofRow.push_back(average_dof);
-        avgOptTimesRow.push_back(average_opt_time_ms);
-        avgPercentDerivsRow.push_back(average_percent_derivs);
-        avgTimeForDerivsRow.push_back(average_time_derivs_ms);
-        avgTimeBPRow.push_back(average_time_bp_ms);
-        avgTimeFPRow.push_back(average_time_fp_ms);
-        avgSurpriseRow.push_back(average_surprise);
+        final_costs.push_back(final_cost);
+        final_distances.push_back(final_dist);
+        final_num_dofs.push_back(average_dof);
+        avg_opt_time.push_back(average_opt_time_ms);
+        avg_percent_derivs.push_back(average_percent_derivs);
+        avg_time_derivs.push_back(average_time_derivs_ms);
+        avg_time_bp.push_back(average_time_bp_ms);
+        avg_time_fp.push_back(average_time_fp_ms);
+        avg_surprise.push_back(average_surprise);
     }
 
     // ----------------------- Save data to file -------------------------------------
@@ -254,11 +201,15 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
 
     // Loop through rows
     for(int i = 0; i < num_trials; i++){
-        file_output << finalCostsRow[i] << "," << finalDistRow[i] << "," << finalDofRow[i] << "," << avgOptTimesRow[i] << "," << avgPercentDerivsRow[i] << ",";
-        file_output << avgTimeForDerivsRow[i] << "," << avgTimeBPRow[i] << "," << avgTimeFPRow[i] << "," <<  avgSurpriseRow[i] << std::endl;
+        file_output << final_costs[i] << "," << final_distances[i] << "," << final_num_dofs[i] << "," << avg_opt_time[i] << "," << avg_percent_derivs[i] << ",";
+        file_output << avg_time_derivs[i] << "," << avg_time_bp[i] << "," << avg_time_fp[i] << "," << avg_surprise[i] << std::endl;
     }
 
     file_output.close();
+
+    SaveTestSummaryData(keypoint_method, task_horizon,
+                        controls_noise, optimiser->ReturnName(),
+                        method_directory);
 
     return 1;
 }
@@ -718,4 +669,113 @@ int GenTestingData::GenerateTestScenes(int num_scenes){
     }
 
     return EXIT_SUCCESS;
+}
+
+std::string GenTestingData::CreateTestName(const std::string& testing_method) {
+
+    // Go back two directories
+    std::string project_parent_path = __FILE__;
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+
+    std::string task_prefix = activeModelTranslator->model_name;
+
+    std::string time_stamp = GetCurrentTimestamp();
+
+    std::string optimiser_name = optimiser->ReturnName();
+
+    std::string root_path = project_parent_path + "/testingData/" + optimiser_name;
+
+    // Check if optimiser directory exists
+    if (!filesystem::exists(root_path)) {
+        if (!filesystem::create_directories(root_path)) {
+            std::cerr << "Failed to create directory: " << root_path << std::endl;
+        }
+    }
+
+    std::string method_directory = root_path + "/" + task_prefix + "_" + testing_method + "_" + time_stamp;
+
+    // Check if method directory exists, if not create it
+    if (!filesystem::exists(method_directory)) {
+        if (!filesystem::create_directories(method_directory)) {
+            std::cerr << "Failed to create directory: " << method_directory << std::endl;
+            exit(1);
+        }
+    }
+
+    return method_directory;
+}
+
+void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
+                                         int opt_horizon,
+                                         double control_noise,
+                                         const std::string& optimiser_name,
+                                         const std::string& testing_directory){
+
+//  ------------------ make method name ------------------
+    std::string keypoint_method_name;
+    if(keypoint_method.auto_adjust){
+        keypoint_method_name = "AA_" + std::to_string(keypoint_method.min_N) + "_" + std::to_string(keypoint_method.max_N);
+    }
+    else{
+        if(keypoint_method.name == "set_interval") {
+            keypoint_method_name = "SI_" + std::to_string(keypoint_method.min_N);
+        }
+        else if(keypoint_method.name == "velocity_change"){
+            int substring_length = 3;
+            if(keypoint_method.velocity_change_thresholds[0] < 0.1){
+                substring_length = 4;
+            }
+            keypoint_method_name = "VC_" +
+                          std::to_string(keypoint_method.min_N) + "_" +
+                          std::to_string(keypoint_method.max_N) + "_" +
+                          std::to_string(keypoint_method.velocity_change_thresholds[0]).substr(0, substring_length);
+        }
+        else if(keypoint_method.name == "adaptive_jerk"){
+            int substring_length = 4;
+            if(keypoint_method.jerk_thresholds[0] <= 0.001){
+                substring_length = 5;
+            }
+            if(keypoint_method.jerk_thresholds[0] <= 0.0001){
+                substring_length = 6;
+            }
+            keypoint_method_name = "AJ_" +
+                          std::to_string(keypoint_method.min_N) + "_" +
+                          std::to_string(keypoint_method.max_N) + "_" +
+                          std::to_string(keypoint_method.jerk_thresholds[0]).substr(0, substring_length);
+        }
+    }
+
+//    YAML::Node data;
+    YAML::Emitter out;
+
+    out << YAML::BeginMap;
+    out << YAML::Key << "optimisation horizon";
+    out << YAML::Value << opt_horizon;
+
+    out << YAML::Key << "controls_noise";
+    out << YAML::Value << control_noise;
+
+    out << YAML::Key << "keypoint_name";
+    out << YAML::Value << keypoint_method_name;
+
+    out << YAML::Key << "model timestep";
+    out << YAML::Value << activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep();
+
+    if(optimiser_name == "iLQR_SVR"){
+        out << YAML::Key << "num_dofs_readd";
+        out << YAML::Value << optimiser->num_dofs_readd;
+
+        out << YAML::Key << "K_matrix_threshold";
+        out << YAML::Value << optimiser->K_matrix_threshold;
+    }
+    out << YAML::EndMap;
+
+    // Open a file for writing
+    std::string file_name = testing_directory + "/summary.yaml";
+    std::cout << "file_name: " << file_name << "\n";
+
+    std::ofstream fout(file_name);
+    fout << out.c_str();
+    fout.close();
 }

@@ -8,6 +8,7 @@
 #include <memory>
 #include <chrono>
 #include <random>
+#include <iomanip>
 
 #define PI          3.14152
 
@@ -157,6 +158,16 @@ inline T* DataAt(std::vector<T>& vec, typename std::vector<T>::size_type elem) {
     } else {
         return nullptr;
     }
+}
+
+inline std::string GetCurrentTimestamp() {
+    auto now = std::chrono::system_clock::now();
+    auto now_c = std::chrono::system_clock::to_time_t(now);
+    std::tm* now_tm = std::localtime(&now_c);
+
+    std::ostringstream oss;
+    oss << std::put_time(now_tm, "%Y%m%d_%H%M");
+    return oss.str();
 }
 
 bool endsWith(const std::string& mainString, const std::string& subString);

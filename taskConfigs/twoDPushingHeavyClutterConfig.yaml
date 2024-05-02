@@ -184,10 +184,10 @@ modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing_heavyClutter.
 modelName: "/push_mcl"
 timeStep: 0.004
 openloop_horizon: 2000
-mpc_horizon: 60
+mpc_horizon: 80
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
-minN: 10
+minN: 2
 maxN: 50
 iterativeErrorThreshold: 0.0001
 robots:

@@ -173,10 +173,22 @@ int main(int argc, char **argv) {
     }
 
     if(runMode == "Generate_openloop_data"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_horizon = 60;
+        int task_timeout = 2000;
+
+        if(argc > 2){
+            task_horizon = std::atoi(argv[2]);
+        }
+
+        if(argc > 3){
+            task_timeout = std::atoi(argv[3]);
+        }
 
 
     }
-
     if(runMode == "Generate_asynchronus_mpc_data"){
         GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
@@ -682,10 +694,6 @@ void MPCUntilComplete(int OPT_HORIZON){
         percent_derivs_computed.push_back(activeOptimiser->avg_percent_derivs);
 
         int optTimeToTimeSteps = activeOptimiser->opt_time_ms / (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000);
-        int low_bound = optTimeToTimeSteps - 3;
-        if (low_bound < 0) low_bound = 0;
-
-        int high_bound = optTimeToTimeSteps + 3;
 
         // By the time we have computed optimal controls, main visualisation will be some number
         // of time-steps ahead. We need to find the correct control to apply.
@@ -695,16 +703,15 @@ void MPCUntilComplete(int OPT_HORIZON){
         // Compute the best starting state
         double smallestError = 1000.00;
         int bestMatchingStateIndex = optTimeToTimeSteps;
-//        int bestMatchingStateIndex = 0;
-        if(bestMatchingStateIndex >= OPT_HORIZON){
-            bestMatchingStateIndex = OPT_HORIZON - 1;
-        }
-//            // TODO - possible issue if optimisation time > horizon
+
+//        if(bestMatchingStateIndex >= OPT_HORIZON){
+//            bestMatchingStateIndex = OPT_HORIZON - 1;
+//        }
 //        for(int i = 0; i < OPT_HORIZON; i++){
 ////                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
 ////                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
 //            double currError = 0.0f;
-//            for(int j = 0; j < activeModelTranslator->state_vector_size; j++){
+//            for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
 //                // TODO - im not sure about this, should we use full state?
 //                currError += abs(activeOptimiser->X_old[i](j) - current_state(j));
 //            }
