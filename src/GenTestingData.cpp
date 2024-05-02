@@ -32,7 +32,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
 
 }
 
-int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
+int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
 
     std::cout << "beginning testing asynchronus MPC for " << activeModelTranslator->model_name << std::endl;
     std::cout << "optimisation horizon is: " << task_horizon << " task timeout : " << task_timeout << "\n";
@@ -43,7 +43,7 @@ int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
 
-    testing_asynchronus_mpc(keypoint_method, 2, task_horizon, task_timeout);
+    TestingAsynchronusMPC(keypoint_method, 2, task_horizon, task_timeout);
 
 
 //    std::vector<int> minN = {1};
@@ -121,7 +121,7 @@ int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
     return EXIT_SUCCESS;
 }
 
-int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials, int task_horizon, int task_timeout){
+int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method, int num_trials, int task_horzion, int task_timeout){
 
 
     std::string method_directory = CreateTestName("aynchronus_mpc");
@@ -174,7 +174,7 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
         // Perform the optimisation MPC test here asynchronously
         // Reset gravity back to normal
 //        activeModelTranslator->MuJoCo_helper->model->opt.gravity[2] = -9.81;
-        single_asynchronus_run(true, method_directory, i, task_horizon, task_timeout);
+        SingleAsynchronusRun(true, method_directory, i, task_horzion, task_timeout);
 
         // ------------------------- data storage -------------------------------------
         final_costs.push_back(final_cost);
@@ -190,7 +190,6 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
 
     // ----------------------- Save data to file -------------------------------------
     std::string filename = method_directory + "/summary.csv";
-    std::cout << "file_name: " << filename << std::endl;
 
     ofstream file_output;
     file_output.open(filename);
@@ -207,18 +206,18 @@ int GenTestingData::testing_asynchronus_mpc(keypoint_method keypoint_method, int
 
     file_output.close();
 
-    SaveTestSummaryData(keypoint_method, task_horizon,
+    SaveTestSummaryData(keypoint_method, task_horzion,
                         controls_noise, optimiser->ReturnName(),
                         method_directory);
 
     return 1;
 }
 
-int GenTestingData::single_asynchronus_run(bool visualise,
-                                           const std::string method_directory,
-                                           int task_number,
-                                           int task_horizon,
-                                           const int TASK_TIMEOUT){
+int GenTestingData::SingleAsynchronusRun(bool visualise,
+                                         const std::string& method_directory,
+                                         int task_number,
+                                         int task_horizon,
+                                         const int TASK_TIMEOUT){
 
     activeVisualiser->trajectory_controls.clear();
     activeVisualiser->trajectory_states.clear();
@@ -228,7 +227,7 @@ int GenTestingData::single_asynchronus_run(bool visualise,
 
     std::thread MPC_controls_thread;
     // Start the thread running
-    MPC_controls_thread = std::thread(&GenTestingData::asynchronus_optimiser_worker, this, method_directory, task_number, task_horizon);
+    MPC_controls_thread = std::thread(&GenTestingData::AsyncronusMPCWorker, this, method_directory, task_number, task_horizon);
 
     int vis_counter = 0;
     MatrixXd next_control;
@@ -267,14 +266,10 @@ int GenTestingData::single_asynchronus_run(bool visualise,
                 next_control = empty_control;
             }
 
-            if(APPLY_NOISE){
-                for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
-                    double gauss_noise = GaussNoise(0, 0.1);
-                    next_control(i, 0) += gauss_noise;
-                }
+            for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
+                double gauss_noise = GaussNoise(0, controls_noise);
+                next_control(i, 0) += gauss_noise;
             }
-
-//            std::cout << "next control is: " << next_control.transpose() << "\n";
 
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
@@ -345,133 +340,10 @@ int GenTestingData::single_asynchronus_run(bool visualise,
     std::cout << "avg time BP: " << average_time_bp_ms << " ms \n";
     std::cout << "avg time FP: " << average_time_fp_ms << " ms \n";
 
-
-    // --------------------------------------------------------------------------------------------
-
-//    activeVisualiser->trajectory_controls.clear();
-//    activeVisualiser->trajectory_states.clear();
-//
-//    // Make a thread for the Optimiser
-//    std::thread MPC_controls_thread;
-//    // Start the thread running
-//    MPC_controls_thread = std::thread(&GenTestingData::asynchronus_optimiser_worker, this, method_directory, task_number, task_horizon);
-//    int vis_counter = 0;
-//    MatrixXd next_control;
-//    // timer variables
-//    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-//    std::chrono::steady_clock::time_point end;
-//
-//    // elapsed task time
-//    int task_time = 0;
-//
-//    activeModelTranslator->MuJoCo_helper->vis_data->time = 0.0f;
-//
-//    while(task_time++ < TASK_TIMEOUT){
-//        begin = std::chrono::steady_clock::now();
-//
-//        if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
-//
-//            next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
-//            // Increment the current control index
-//            activeVisualiser->current_control_index++;
-//        }
-//        else{
-//            MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
-//            empty_control.setZero();
-//            next_control = empty_control;
-//        }
-//
-//        if(APPLY_NOISE){
-//            for(int i = 0; i < activeModelTranslator->num_ctrl; i++){
-//                double gauss_noise = GaussNoise(0, 0.1);
-//                next_control(i, 0) += gauss_noise;
-//            }
-//        }
-//
-//        // Store latest control and state in a replay buffer
-//        activeVisualiser->trajectory_controls.push_back(next_control);
-//        MatrixXd next_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data,
-//                                                                       activeModelTranslator->full_state_vector);
-//        activeVisualiser->trajectory_states.push_back(next_state);
-//
-//        // Set the latest control
-//        activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data,
-//                                                activeModelTranslator->current_state_vector);
-//
-//        // Update the simulation
-//        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
-//
-////        std::cout << "time: " << activeModelTranslator->MuJoCo_helper->vis_data->time << std::endl;
-//
-//        double dist;
-//        if(activeModelTranslator->TaskComplete(activeModelTranslator->MuJoCo_helper->vis_data, dist)){
-//            std::cout << "Task complete" << std::endl;
-//            break;
-//        }
-//
-//        // Update the visualisation
-//        // Unsure why rendering every time causes it to lag so much more???
-//        vis_counter++;
-//        if(vis_counter > 5 && visualise){
-//            activeVisualiser->render("live-MPC");
-//            vis_counter = 0;
-//        }
-//
-//        end = std::chrono::steady_clock::now();
-//        // time taken
-//        auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-//
-//        // compare how long we took versus the timestep of the model
-//        int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
-//
-//        if(difference_ms > 0) {
-//            std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
-//        }
-////        else
-////            std::cout << "visualisation took " << (time_taken / 1000.0f) << " ms, longer than time-step, skipping sleep \n";
-//
-//
-//        // Testing condition - change gravity halfway through task.
-////        if(task_time == 1000){
-////            activeModelTranslator->MuJoCo_helper->model->opt.gravity[2] = -13;
-////        }
-//    }
-//
-//    // Store final distance in final_dist
-//    activeModelTranslator->TaskComplete(activeModelTranslator->MuJoCo_helper->vis_data, final_dist);
-//
-//    std::mutex mtx;
-//    mtx.lock();
-//    stop_opt_thread = true;
-//    mtx.unlock();
-//    MPC_controls_thread.join();
-//
-//    final_cost = 0.0;
-//    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//    for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-//        activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
-//                                                activeModelTranslator->current_state_vector);
-//        activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
-//                                              activeModelTranslator->full_state_vector);
-////        activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-////
-////        activeVisualiser->render("playback");
-//
-//        final_cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data,
-//                                                          activeModelTranslator->full_state_vector, false);
-//    }
-//
-//    std::cout << "final cost of entire MPC trajectory was: " << final_cost << "\n";
-//    std::cout << "avg opt time: " << average_opt_time_ms << " ms \n";
-//    std::cout << "avg percent derivs: " << average_percent_derivs << " % \n";
-//    std::cout << "avg time derivs: " << average_time_derivs_ms << " ms \n";
-//    std::cout << "avg time BP: " << average_time_bp_ms << " ms \n";
-//    std::cout << "avg time FP: " << average_time_fp_ms << " ms \n";
-
     return EXIT_SUCCESS;
 }
 
-void GenTestingData::asynchronus_optimiser_worker(const std::string& method_directory, int task_number, int task_horizon){
+void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, int task_number, int task_horizon){
     std::vector<double> time_iteration;
     std::vector<int> num_dofs;
     std::vector<double> time_get_derivs;
@@ -746,7 +618,6 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
         }
     }
 
-//    YAML::Node data;
     YAML::Emitter out;
 
     out << YAML::BeginMap;
@@ -773,7 +644,6 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
 
     // Open a file for writing
     std::string file_name = testing_directory + "/summary.yaml";
-    std::cout << "file_name: " << file_name << "\n";
 
     std::ofstream fout(file_name);
     fout << out.c_str();

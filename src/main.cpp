@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
             task_timeout = std::atoi(argv[3]);
         }
 
-        return myTestingObject.gen_data_async_mpc(task_horizon, task_timeout);
+        return myTestingObject.GenDataAsyncMPC(task_horizon, task_timeout);
     }
 
     // random start and goal state

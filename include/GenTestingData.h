@@ -28,7 +28,7 @@ public:
      *
      * @Return: 1 if successful, 0 if not
      */
-    int testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size);
+//    int testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size);
 
     /**
      * Tests different parametrisations of velocity change methods (different minN, maxN
@@ -36,7 +36,7 @@ public:
      *
      * @return 1 if successful, 0 if not
      */
-    int gen_data_async_mpc(int task_horizon, int task_timeout);
+    int GenDataAsyncMPC(int task_horizon, int task_timeout);
 
     int GenDataOpenloopOptimisation(int task_horizon);
 
@@ -51,7 +51,7 @@ public:
      *
      * @Return: 1 if successful, 0 if not
      */
-    int testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials, int task_horzion, int task_timeout);
+    int TestingAsynchronusMPC(const keypoint_method& keypoint_method, int num_trials, int task_horzion, int task_timeout);
 
     /**
      * This function performs an asynchronus MPC optimisation for a set number of time-steps
@@ -64,7 +64,7 @@ public:
      *
      * @Return: 1 if successful, 0 if not
      */
-    int single_asynchronus_run(bool visualise, const std::string method_directory, int task_number, int task_horizon, const int TASK_TIMEOUT);
+    int SingleAsynchronusRun(bool visualise, const std::string& method_directory, int task_number, int task_horizon, int TASK_TIMEOUT);
 
     /**
      * This function performs an asynchronus MPC optimisation with another thread doing simulation
@@ -75,7 +75,7 @@ public:
      * @Param task_number: The task number to be performed
      *
      */
-    void asynchronus_optimiser_worker(const std::string& method_directory, int task_number, int task_horizon);
+    void AsyncronusMPCWorker(const std::string& method_directory, int task_number, int task_horizon);
 
     int GenerateDynamicsDerivsData(int num_trajecs, int num_iters_per_task);
 
@@ -97,15 +97,13 @@ private:
                              const std::string& optimiser_name,
                              const std::string& testing_directory);
 
-//    void SaveTestData(const std::string& testing_directory, )
-
     double controls_noise = 0.0;
 
     std::mutex mtx;
 
     bool stop_opt_thread = false;
     bool apply_next_control = false;
-    bool async_mpc;
+    bool async_mpc = true;
 
     double final_cost = 0.0;
     double final_dist = 0.0;
@@ -116,5 +114,4 @@ private:
     double average_time_fp_ms = 0.0;
     double average_time_bp_ms = 0.0;
     double average_surprise = 0.0;
-
 };
