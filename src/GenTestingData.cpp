@@ -31,7 +31,7 @@ int GenTestingData::gen_data_async_mpc(int task_horizon, int task_timeout){
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
 
-    testing_asynchronus_mpc(keypoint_method, 2, task_horizon, task_timeout);
+    testing_asynchronus_mpc(keypoint_method, 100, task_horizon, task_timeout);
 
 
 //    std::vector<int> minN = {1};
@@ -361,7 +361,7 @@ int GenTestingData::single_asynchronus_run(bool visualise,
         int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-//                difference_ms = 20;
+//            difference_ms = 10;
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
     }

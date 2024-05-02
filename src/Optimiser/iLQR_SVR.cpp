@@ -849,63 +849,22 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
     std::vector<std::string> remove_dofs;
 
     // ---------------------------- Eigen vector method ---------------------------------------------
-//    std::vector<double> K_dofs_sums(dof, 0.0);
-//
-//    for(int t = 0; t < horizon_length; t += sampling_k_interval) {
-//        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
-//        if (!svd.computeV()) {
-//            std::cerr << "SVD decomposition failed!" << std::endl;
-//            break;
-//        }
-//
-////        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
-////        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
-//
-//        for (int i = 0; i < num_ctrl; i++) {
-//            for (int j = 0; j < dof; j++) {
-//                K_dofs_sums[j] += abs(svd.matrixV()(j, i));
-//                K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
-//            }
-//        }
-//    }
-//
-//    std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
-//    std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
-//
-////    std::cout << "States: ";
-////    for(int i = 0; i < dof; i++){
-////        std::cout << state_vector_name[sorted_indices[i]] << " ";
-////    }
-////    std::cout << "\n";
-//
-////    std::cout << "K_sums in order: ";
-////    for(int i = 0; i < dof; i++){
-////        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-////    }
-////    std::cout << "\n";
-//
-//
-//    for(int i = 0; i < dof; i++) {
-//        if (K_dofs_sums[i] < threshold_k_eignenvectors) {
-//            remove_dofs.push_back(state_vector_name[i]);
-//        }
-//
-//    }
-//
-//    return remove_dofs;
-
-    // TODO - make this optionally available
-    //------------------------ Sampling and summing method ----------------------------
-
     std::vector<double> K_dofs_sums(dof, 0.0);
 
-    for(int t = 0; t < horizon_length; t += sampling_k_interval){
+    for(int t = 0; t < horizon_length; t += sampling_k_interval) {
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
+        if (!svd.computeV()) {
+            std::cerr << "SVD decomposition failed!" << std::endl;
+            break;
+        }
 
-        for(int i = 0; i < dof; i++){
+//        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
+//        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
 
-            for(int j = 0; j < num_ctrl; j++){
-                K_dofs_sums[i] += abs(K[t](j, i));
-                K_dofs_sums[i] += abs(K[t](j, i + dof));
+        for (int i = 0; i < num_ctrl; i++) {
+            for (int j = 0; j < dof; j++) {
+                K_dofs_sums[j] += abs(svd.matrixV()(j, i));
+                K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
             }
         }
     }
@@ -918,7 +877,7 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
 //        std::cout << state_vector_name[sorted_indices[i]] << " ";
 //    }
 //    std::cout << "\n";
-//
+
 //    std::cout << "K_sums in order: ";
 //    for(int i = 0; i < dof; i++){
 //        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
@@ -930,10 +889,50 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
         if (K_dofs_sums[i] < threshold_k_eigenvectors) {
             remove_dofs.push_back(state_vector_name[i]);
         }
-
     }
 
     return remove_dofs;
+
+//    // TODO - make this optionally available
+//    //------------------------ Sampling and summing method ----------------------------
+//
+//    std::vector<double> K_dofs_sums(dof, 0.0);
+//
+//    for(int t = 0; t < horizon_length; t += sampling_k_interval){
+//
+//        for(int i = 0; i < dof; i++){
+//
+//            for(int j = 0; j < num_ctrl; j++){
+//                K_dofs_sums[i] += abs(K[t](j, i));
+//                K_dofs_sums[i] += abs(K[t](j, i + dof));
+//            }
+//        }
+//    }
+//
+//    std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
+//    std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
+//
+////    std::cout << "States: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << state_vector_name[sorted_indices[i]] << " ";
+////    }
+////    std::cout << "\n";
+////
+////    std::cout << "K_sums in order: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+////    }
+////    std::cout << "\n";
+//
+//
+//    for(int i = 0; i < dof; i++) {
+//        if (K_dofs_sums[i] < threshold_k_eigenvectors) {
+//            remove_dofs.push_back(state_vector_name[i]);
+//        }
+//
+//    }
+//
+//    return remove_dofs;
 }
 
 void iLQR_SVR::AdjustCurrentStateVector(){

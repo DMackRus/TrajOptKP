@@ -124,7 +124,7 @@ private:
 
     int sampling_k_interval = 1;
     int num_dofs_readd = 4;
-    double threshold_k_eigenvectors = 1000.0; // maybe 0.001 or 0.0001
+    double threshold_k_eigenvectors = 10.0; // maybe 0.001 or 0.0001
 //    double threshold_k_eigenvectors = 0.1;
 
     // Open loop as high as 10k!! (when using sum method)
