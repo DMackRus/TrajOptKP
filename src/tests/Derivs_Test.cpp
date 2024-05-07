@@ -46,7 +46,7 @@ void compare_dynamics_derivatives(){
     std::vector<MatrixXd> A_mine;
     std::vector<MatrixXd> B_mine;
 
-    int dof_model_translator = model_translator->dof;
+    int dof_model_translator = model_translator->current_state_vector.dof;
 
     A_mine.push_back(MatrixXd(dof_model_translator*2, dof_model_translator*2));
     B_mine.push_back(MatrixXd(dof_model_translator*2, dim_action));
@@ -104,9 +104,9 @@ TEST(Derivatives, acrobot)
     differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
 
     // Initialise a state for the simulator
-    MatrixXd start_state(model_translator->state_vector_size, 1);
+    MatrixXd start_state(model_translator->current_state_vector.dof*2, 1);
     start_state << 0, 0, 0, 0;
-    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
+    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data, model_translator->current_state_vector);
 
     // Step the similar to stabilise things
     for(int j = 0; j < 5; j++){
@@ -192,16 +192,17 @@ TEST(Derivatives, cost_derivatives_no_angular){
     // Append data to save systems state list
     model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
 
-    MatrixXd l_x(model_translator->dof * 2, 1);
-    MatrixXd l_xx(model_translator->dof * 2, model_translator->dof * 2);
-    MatrixXd l_u(model_translator->num_ctrl, 1);
-    MatrixXd l_uu(model_translator->num_ctrl, model_translator->num_ctrl);
+    MatrixXd l_x(model_translator->current_state_vector.dof * 2, 1);
+    MatrixXd l_xx(model_translator->current_state_vector.dof * 2, model_translator->current_state_vector.dof * 2);
+    MatrixXd l_u(model_translator->current_state_vector.num_ctrl, 1);
+    MatrixXd l_uu(model_translator->current_state_vector.num_ctrl, model_translator->current_state_vector.num_ctrl);
 
     model_translator->CostDerivatives(model_translator->MuJoCo_helper->saved_systems_state_list[0],
+                                        model_translator->current_state_vector,
                                         l_x, l_xx, l_u, l_uu, false);
 
-    MatrixXd l_x_expected(model_translator->dof * 2, 1);
-    MatrixXd l_xx_expected(model_translator->dof * 2, model_translator->dof * 2);
+    MatrixXd l_x_expected(model_translator->current_state_vector.dof * 2, 1);
+    MatrixXd l_xx_expected(model_translator->current_state_vector.dof * 2, model_translator->current_state_vector.dof * 2);
 
     l_x_expected.setZero();
     l_xx_expected.setZero();

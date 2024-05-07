@@ -796,7 +796,7 @@ void KeypointGenerator::UpdateLastPercentageDerivatives(std::vector<std::vector<
 std::vector<double> KeypointGenerator::ComputePercentageDerivatives(std::vector<std::vector<int>> &keypoints){
     std::vector<int> dof_count = std::vector<int>(dof, 0);
     std::vector<double> percentages = std::vector<double>(dof, 0);
-    for(int t = 0; t < horizon - 1; t++){
+    for(int t = 0; t < horizon; t++){
         for(int i = 0; i < keypoints[t].size(); i++){
             for(int j = 0; j < dof; j++){
                 // if match between keypoint and dof

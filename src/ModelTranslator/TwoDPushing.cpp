@@ -238,6 +238,7 @@ std::vector<MatrixXd> TwoDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<m_point> allWayPoints;
     goalPos(0) = current_state_vector.bodiesStates[0].goalLinearPos[0];
     goalPos(1) = current_state_vector.bodiesStates[0].goalLinearPos[1];
+    goalPos(2) = 0.0;
     EEWayPointsSetup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
 //    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;

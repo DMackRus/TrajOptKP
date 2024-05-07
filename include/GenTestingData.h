@@ -7,8 +7,6 @@
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 
-#define APPLY_NOISE 0
-
 class GenTestingData{
 
 public:
@@ -80,6 +78,11 @@ public:
     int GenerateDynamicsDerivsData(int num_trajecs, int num_iters_per_task);
 
     int GenerateTestScenes(int num_scenes);
+
+    void SetParamsiLQR_SVR(int re_add_dofs, double threshold){
+        optimiser->num_dofs_readd = re_add_dofs;
+        optimiser->K_matrix_threshold = threshold;
+    }
 
     std::shared_ptr<Optimiser> optimiser;
     std::shared_ptr<ModelTranslator> activeModelTranslator;

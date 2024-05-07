@@ -176,17 +176,23 @@ int main(int argc, char **argv) {
         GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
 
-        int task_horizon = 60;
-        int task_timeout = 2000;
+        int task_horizon = activeModelTranslator->openloop_horizon;
+        int re_add_dofs;
+        double K_threshold;
 
         if(argc > 2){
             task_horizon = std::atoi(argv[2]);
         }
 
         if(argc > 3){
-            task_timeout = std::atoi(argv[3]);
+            re_add_dofs = std::atoi(argv[3]);
+            K_threshold = std::atof(argv[4]);
+
+            myTestingObject.SetParamsiLQR_SVR(re_add_dofs, K_threshold);
+            std::cout << "set optimiser parameters \n";
         }
 
+        return myTestingObject.GenDataOpenloopOptimisation(task_horizon);
 
     }
     if(runMode == "Generate_asynchronus_mpc_data"){
@@ -195,6 +201,8 @@ int main(int argc, char **argv) {
 
         int task_horizon = 60;
         int task_timeout = 2000;
+        int re_add_dofs;
+        double K_threshold;
 
         if(argc > 2){
             task_horizon = std::atoi(argv[2]);
@@ -202,6 +210,14 @@ int main(int argc, char **argv) {
 
         if(argc > 3){
             task_timeout = std::atoi(argv[3]);
+        }
+
+        if(argc > 4){
+            re_add_dofs = std::atoi(argv[4]);
+            K_threshold = std::atof(argv[5]);
+
+            myTestingObject.SetParamsiLQR_SVR(re_add_dofs, K_threshold);
+            std::cout << "set optimiser parameters \n";
         }
 
         return myTestingObject.GenDataAsyncMPC(task_horizon, task_timeout);
@@ -217,12 +233,6 @@ int main(int argc, char **argv) {
         activeModelTranslator->full_state_vector.Update();
         activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
         activeModelTranslator->UpdateSceneVisualisation();
-
-//        std::cout << "goal pos " << activeModelTranslator->full_state_vector.bodiesStates[0].goalLinearPos[0] << " "
-//        << activeModelTranslator->full_state_vector.bodiesStates[0].goalLinearPos[1] << " \n";
-//
-//        std::cout << "goal cost " << activeModelTranslator->full_state_vector.bodiesStates[0].terminalLinearPosCost[0] << " "
-//        << activeModelTranslator->full_state_vector.bodiesStates[0].terminalLinearPosCost[1] << " \n";
     }
 
     // Initialise the system state from desired mechanism
@@ -704,22 +714,22 @@ void MPCUntilComplete(int OPT_HORIZON){
         double smallestError = 1000.00;
         int bestMatchingStateIndex = optTimeToTimeSteps;
 
-//        if(bestMatchingStateIndex >= OPT_HORIZON){
-//            bestMatchingStateIndex = OPT_HORIZON - 1;
-//        }
-//        for(int i = 0; i < OPT_HORIZON; i++){
-////                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
-////                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
-//            double currError = 0.0f;
-//            for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
-//                // TODO - im not sure about this, should we use full state?
-//                currError += abs(activeOptimiser->X_old[i](j) - current_state(j));
-//            }
-//            if(currError < smallestError){
-//                smallestError = currError;
-//                bestMatchingStateIndex = i;
-//            }
-//        }
+        if(bestMatchingStateIndex >= OPT_HORIZON){
+            bestMatchingStateIndex = OPT_HORIZON - 1;
+        }
+        for(int i = 0; i < OPT_HORIZON; i++){
+//                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
+//                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
+            double currError = 0.0f;
+            for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
+                // TODO - im not sure about this, should we use full state?
+                currError += abs(activeOptimiser->X_old[i](j) - current_state(j));
+            }
+            if(currError < smallestError){
+                smallestError = currError;
+                bestMatchingStateIndex = i;
+            }
+        }
 
         // Mutex lock
         {

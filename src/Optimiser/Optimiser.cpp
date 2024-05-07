@@ -43,10 +43,10 @@ void Optimiser::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 void Optimiser::ReturnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
 
     _optTime = opt_time_ms;
-    _costReduction = costReduction;
+    _costReduction = cost_reduction;
     _avgPercentageDerivs = avg_percent_derivs;
     _avgTimeGettingDerivs = avg_time_get_derivs_ms;
-    _numIterations = numIterationsForConvergence;
+    _numIterations = num_iterations;
 }
 
 keypoint_method Optimiser::ReturnCurrentKeypointMethod(){
@@ -85,7 +85,7 @@ void Optimiser::GenerateDerivatives(){
                                                activeModelTranslator->current_state_vector.num_ctrl);
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
-    double average_percent_derivs = 0.0f;
+    double average_percent_derivs = 0.0;
     for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
         average_percent_derivs += keypoint_generator->last_percentages[i];
     }

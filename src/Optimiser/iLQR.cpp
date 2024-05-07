@@ -207,7 +207,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
         cost += state_cost;
     }
 
-    initialCost = cost;
+    initial_cost = cost;
     cost_history.push_back(cost);
 
     return cost;
@@ -229,6 +229,11 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
 std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length){
     auto optStart = high_resolution_clock::now();
 
+    // resize internal matrices if required
+    Resize(activeModelTranslator->current_state_vector.dof,
+           activeModelTranslator->current_state_vector.num_ctrl,
+           horizon_length);
+
     // Make sure all matrices used in iLQR are correctly sized
     Resize(dof, num_ctrl, horizon_length);
     
@@ -245,19 +250,20 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     // ---------------------- Clear data saving variables ----------------------
     cost_history.clear();
-    opt_time_ms = 0.0f;
-    percentage_derivs_per_iteration.clear();
-    timeDerivsPerIter.clear();
+
+    opt_time_ms = 0.0;
+    avg_time_get_derivs_ms = 0.0;
+    avg_time_forwards_pass_ms = 0.0;
+    avg_time_backwards_pass_ms = 0.0;
+    avg_surprise = 0.0;
+    avg_expected = 0.0;
     avg_percent_derivs = 0;
-    numIterationsForConvergence = 0;
-
-    avg_time_get_derivs_ms = 0.0f;
-    avg_time_forwards_pass_ms = 0.0f;
-    avg_time_backwards_pass_ms = 0.0f;
-    avg_surprise = 0.0f;
-    avg_expected = 0.0f;
+    num_iterations = 0;
+    avg_dofs = 0.0;
 
     percentage_derivs_per_iteration.clear();
+    num_dofs.clear();
+    cost_history.clear();
     time_backwards_pass_ms.clear();
     time_forwardsPass_ms.clear();
     time_get_derivs_ms.clear();
@@ -272,13 +278,13 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     if(verbose_output) {
         PrintBanner(duration.count() / 1000.0f);
     }
-    initialCost = old_cost;
+    initial_cost = old_cost;
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
     // Optimise for a set number of iterations
     cost_reduced_last_iter = true;
     for(int i = 0; i < max_iterations; i++) {
-        numIterationsForConvergence++;
+        num_iterations++;
 
         bool lambda_exit, converged = false;
         Iteration(i, converged, lambda_exit);
@@ -294,7 +300,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     // --------------------  Computing testing results ---------------------------
 
-    costReduction = 1 - (new_cost / initialCost);
+    cost_reduction = 1 - (new_cost / initial_cost);
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
     opt_time_ms = optDuration.count() / 1000.0f;
@@ -303,6 +309,12 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         cout << setprecision(4);
         cout << " --------------------------------------------------- optimisation complete, took: " << opt_time_ms << " ms --------------------------------------------------" << endl;
     }
+
+    // Average number of dofs
+    for(int _num_dofs : num_dofs){
+        avg_dofs += _num_dofs;
+    }
+    avg_dofs /= static_cast<int>(num_dofs.size());
 
     // Time get derivs
     for(double time_get_derivs_m : time_get_derivs_ms){
@@ -358,6 +370,8 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
 void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
+    // This should always remain the same in baseline iLQR
+    num_dofs.push_back(activeModelTranslator->current_state_vector.dof);
 
     // STEP 1 - Generate dynamics derivatives and cost derivatives
     auto timer_start = high_resolution_clock::now();
@@ -376,6 +390,10 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     while(!valid_backwards_pass){
         valid_backwards_pass = BackwardsPassQuuRegularisation();
         lambda_exit = UpdateLambda(valid_backwards_pass);
+
+        if(lambda_exit){
+            break;
+        }
 
     }
 
@@ -656,7 +674,7 @@ double iLQR::ForwardsPass(double _old_cost){
 
         }
 
-//        std::cout << "cost from alpha: " << alphas[alphaCount] << " is " << newCost << std::endl;
+        std::cout << "cost from alpha: " << alphas[alphaCount] << " is " << _new_cost << std::endl;
 
         if(_new_cost < _old_cost){
             cost_reduction = true;

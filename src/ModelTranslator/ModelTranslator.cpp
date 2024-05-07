@@ -66,6 +66,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     full_state_vector.robots = taskConfig.robots;
     full_state_vector.bodiesStates = taskConfig.bodiesStates;
 
+    // Clear optimiser dof and num ctrl so matrices are properly sized
     ResetSVR();
 
     std::cout << "full state vector names: ";

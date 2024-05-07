@@ -149,20 +149,17 @@ public:
                                         int dataIndex, int threadId, bool terminal, bool costDerivs,
                                         bool central_diff, double eps)> tasks;
 
-    // current_iteration used for parallelisation.
+    // current_iteration used for parallelisation of dynamics derivatives
     std::atomic<int> current_iteration;
     int num_threads_iterations;
     std::vector<int> timeIndicesGlobal;
 
-
-    double initialCost;
-    double costReduction = 1.0f;
+    double initial_cost = 0.0;
+    double cost_reduction = 0.0;
 
     int numberOfTotalDerivs = 0;
 
-    std::vector<double> timeDerivsPerIter;
-
-    int numIterationsForConvergence;
+    int num_iterations;
 
     std::string filteringMethod = "none";
 
@@ -170,13 +167,15 @@ public:
     // ------- Timing variables --------------
     double opt_time_ms;
     std::vector<double> time_get_derivs_ms;
-    double avg_time_get_derivs_ms = 0.0f;
+    double avg_time_get_derivs_ms = 0.0;
     std::vector<double> time_backwards_pass_ms;
-    double avg_time_backwards_pass_ms = 0.0f;
+    double avg_time_backwards_pass_ms = 0.0;
     std::vector<double> time_forwardsPass_ms;
-    double avg_time_forwards_pass_ms = 0.0f;
+    double avg_time_forwards_pass_ms = 0.0;
     std::vector<double> percentage_derivs_per_iteration;
-    double avg_percent_derivs;
+    double avg_percent_derivs = 0.0;
+    std::vector<int> num_dofs;
+    double avg_dofs = 0.0;
     bool verbose_output = true;
 
     // - Top level function - ensures all derivatives are calculated over an entire trajectory by some method
@@ -208,20 +207,18 @@ public:
 
     int sampling_k_interval = 1;
     int num_dofs_readd = 2;
-    double K_matrix_threshold = 1000.0; // maybe 0.001 or 0.0001
+    double K_matrix_threshold = 1.5; // maybe 0.001 or 0.0001
 //    double threshold_k_eigenvectors = 0.1;
 
-    // Open loop as high as 10k!! (when using sum method)
-    // MPC - much smaller, maybe 0.1?
+    keypoint_method activeKeyPointMethod;
+
+    int dof = 0;
+    int num_ctrl = 0;
 
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
 
-    int dof;
-    int num_ctrl;
-
-    keypoint_method activeKeyPointMethod;
     std::vector<std::vector<int>> keypointsGlobal;
 
     std::shared_ptr<FileHandler> activeYamlReader;

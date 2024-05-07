@@ -46,11 +46,13 @@ void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     if(new_num_ctrl != this->num_ctrl){
         this->num_ctrl = new_num_ctrl;
         update_ctrl = true;
+        std::cout << "update ctrl \n";
     }
 
     if(new_num_dofs != this->dof){
         this->dof = new_num_dofs;
         update_dof = true;
+//        std::cout << "update dof \n";
     }
 
     if(new_horizon != this->horizon_length){
@@ -155,7 +157,6 @@ void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     keypoint_generator->Resize(dof, num_ctrl, horizon_length);
 
 //    std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
-//
 //    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
 
 }
@@ -215,7 +216,7 @@ double iLQR_SVR::RolloutTrajectory(mjData* d, bool save_states, std::vector<Matr
         cost += state_cost;
     }
 
-    initialCost = cost;
+    initial_cost = cost;
     cost_history.push_back(cost);
 
     return cost;
@@ -237,6 +238,11 @@ double iLQR_SVR::RolloutTrajectory(mjData* d, bool save_states, std::vector<Matr
 std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length){
     auto optStart = high_resolution_clock::now();
 
+    // resize internal matrices if required
+    Resize(activeModelTranslator->current_state_vector.dof,
+           activeModelTranslator->current_state_vector.num_ctrl,
+           horizon_length);
+
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls(horizon_length);
     this->horizon_length = horizon_length;
@@ -245,26 +251,22 @@ std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initia
     // TODO - code to adjust max horizon if opt horizon > max_horizon
 //    std::cout << "horizon is " << horizon_length << "\n";
 
-    if(keypoint_generator->horizon != this->horizon_length){
-//        std::cout << "horizon length changed" << std::endl;
-        keypoint_generator->Resize(dof, num_ctrl, horizon_length);
-    }
-
     // ---------------------- Clear data saving variables ----------------------
     cost_history.clear();
-    opt_time_ms = 0.0;
-    percentage_derivs_per_iteration.clear();
-    timeDerivsPerIter.clear();
-    avg_percent_derivs = 0;
-    numIterationsForConvergence = 0;
 
+    opt_time_ms = 0.0;
     avg_time_get_derivs_ms = 0.0;
     avg_time_forwards_pass_ms = 0.0;
     avg_time_backwards_pass_ms = 0.0;
     avg_surprise = 0.0;
     avg_expected = 0.0;
+    avg_percent_derivs = 0;
+    num_iterations = 0;
+    avg_dofs = 0.0;
 
     percentage_derivs_per_iteration.clear();
+    num_dofs.clear();
+    cost_history.clear();
     time_backwards_pass_ms.clear();
     time_forwardsPass_ms.clear();
     time_get_derivs_ms.clear();
@@ -279,13 +281,13 @@ std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initia
     if(verbose_output) {
         PrintBanner(duration.count() / 1000.0f);
     }
-    initialCost = old_cost;
+    initial_cost = old_cost;
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
     // Optimise for a set number of iterations
     cost_reduced_last_iter = true;
     for(int i = 0; i < max_iterations; i++) {
-        numIterationsForConvergence++;
+        num_iterations++;
 
         bool lambda_exit, converged = false;
         Iteration(i, converged, lambda_exit);
@@ -301,7 +303,7 @@ std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initia
 
     // --------------------  Computing testing results ---------------------------
 
-    costReduction = 1 - (new_cost / initialCost);
+    cost_reduction = 1.0 - (new_cost / initial_cost);
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
     opt_time_ms = optDuration.count() / 1000.0f;
@@ -310,6 +312,12 @@ std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initia
         cout << setprecision(1) << std::fixed;
         cout << " --------------------------------------------------- optimisation complete, took: " << opt_time_ms << " ms -----------------------------------------------------------" << endl;
     }
+
+    // Average number of dofs
+    for(int _num_dofs : num_dofs){
+        avg_dofs += _num_dofs;
+    }
+    avg_dofs /= static_cast<int>(num_dofs.size());
 
     // Time get derivs
     for(double time_get_derivs_m : time_get_derivs_ms){
@@ -366,12 +374,14 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     // Resample new dofs - subject to criteria
     // Adjust state vector - remove candidates for removal
     AdjustCurrentStateVector();
+    num_dofs.push_back(activeModelTranslator->current_state_vector.dof);
 
     // STEP 1 - Generate dynamics derivatives and cost derivatives
     auto timer_start = high_resolution_clock::now();
     if(cost_reduced_last_iter){
         GenerateDerivatives();
 //        std::cout << "A[0] \n" << A[0] << "\n";
+//        std::cout << "A[horizonLength - 1]" << A[horizon_length - 1] << "\n";
 //        std::cout << "B[0] \n" << B[0] << "\n";
 //        std::cout << "l_x[0] \n" << l_x[0] << "\n";
     }
@@ -384,7 +394,9 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     while(!valid_backwards_pass || lambda_exit){
         valid_backwards_pass = BackwardsPassQuuRegularisation();
         lambda_exit = UpdateLambda(valid_backwards_pass);
-
+        if(lambda_exit){
+            break;
+        }
     }
 
     // Check importance of dofs
@@ -409,7 +421,7 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
     // STEP 3 - Forwards Pass - use the optimal control feedback law and rollout in simulation and calculate new cost of trajectory
     timer_start = high_resolution_clock::now();
-    double best_alpha = 0.0;
+    double best_alpha;
     if(0){
         new_cost = ForwardsPass(old_cost);
         best_alpha = last_iter_num_linesearches;
@@ -896,40 +908,44 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
 //    // TODO - make this optionally available
 //    //------------------------ Sampling and summing method ----------------------------
 //
-    std::vector<double> K_dofs_sums(dof, 0.0);
+    std::vector<double> K_dofs_sums(activeModelTranslator->current_state_vector.dof, 0.0);
 
     for(int t = 0; t < horizon_length; t += sampling_k_interval){
 
-        for(int i = 0; i < dof; i++){
+        for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
 
             for(int j = 0; j < num_ctrl; j++){
                 K_dofs_sums[i] += abs(K[t](j, i));
-                K_dofs_sums[i] += abs(K[t](j, i + dof));
+                K_dofs_sums[i] += abs(K[t](j, i + activeModelTranslator->current_state_vector.dof));
             }
         }
+    }
+
+    // Normalise K_dofs_sum by horizon_length
+    for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
+        K_dofs_sums[i] /= horizon_length;
     }
 
     std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
     std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
 
-//    std::cout << "States: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << state_vector_name[sorted_indices[i]] << " ";
-//    }
-//    std::cout << "\n";
-//
-//    std::cout << "K_sums in order: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-//    }
-//    std::cout << "\n";
+    std::cout << "States: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << state_vector_name[sorted_indices[i]] << " ";
+    }
+    std::cout << "\n";
+
+    std::cout << "K_sums in order: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+    }
+    std::cout << "\n";
 
 
-    for(int i = 0; i < dof; i++) {
+    for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++) {
         if (K_dofs_sums[i] < K_matrix_threshold) {
             remove_dofs.push_back(state_vector_name[i]);
         }
-
     }
 
     return remove_dofs;
@@ -954,7 +970,7 @@ void iLQR_SVR::AdjustCurrentStateVector(){
     if(!activeModelTranslator->candidates_for_removal.empty()){
 
 //        std::cout << "removing dofs ";
-//        for(const auto & remove_dof : candidates_for_removal){
+//        for(const auto & remove_dof : activeModelTranslator->candidates_for_removal){
 //            std::cout << remove_dof << " ";
 //        }
 //        std::cout << "\n";

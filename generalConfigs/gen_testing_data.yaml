@@ -2,34 +2,51 @@
 #                                     General config file
 # -------------------------------------------------------------------------------------------------
 
-task: "walker_run"
-# Current implemented tasks are:
-# "double_pendulum", "acrobot", "reaching", "pushing_no_clutter", "pushing_low_clutter",
-# "pushing_moderate_clutter", "pushing_moderate_clutter_constrained",
-# "box_push_toppling", "box_flick_no_clutter", "box_flick_low_clutter", "box_flick_moderate_clutter",
-# "walker_walk", "walker_run", "walker_uneven", "hopper", "box_sweep"
+# Task to be performed
+task: "pushing_moderate_clutter"
+# -----------------------------  Task list ------------------------------------
+#
+# ----- Toy tasks -----
+# "acrobot", "piston_block", "pentabot"
+#
+# -- Free robot arm motion ---
+# "reaching"
+#
+# -- Non-prehensile manipulation --
+# "pushing_no_clutter", "pushing_low_clutter", "pushing_moderate_clutter",
+# "pushing_moderate_clutter_constrained",
+# "box_flick_no_clutter", "box_flick_low_clutter", "box_flick_moderate_clutter",
+# "box_sweep", "3D_pushing"
+#
+# ---- Locomotion ----
+# "walker_walk", "walker_run", "walker_uneven"
+#
+# ------------------------------------------------------------------------------
 
-optimiser: "interpolated_iLQR"  #Possible optimisers: "interpolated_iLQR", "stomp", "gradDescent"
+# Optimiser
+optimiser: "iLQR_SVR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
-# init control = 0, optimise once = 1, MPCContinous = 2, MPC_until_completion = 3, generateTestScenes = 4, generateTestingData = 5, generateFilteringData = 6
-# generic testing = 9
-runMode: "Generate_testing_data"
+# Run mode for the program
+runMode: "Generate_openloop_data"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
-# "MPC_continuous"          - Perform MPC continuously until program terminated. Display current state of the system.
 # "MPC_until_completion"    - Perform MPC until the task is completed. Display current state of the system.
+
 # Extra testing modes for debugging/generating testing data
-# "Generate_test_scenes"    - Generate a set of randomly generated test scenes for the task.
-# "Generate_testing_data"   - Loop through all test scenes and evaluate the Optimiser and key-point performance.
-# "Generate_filtering_data" - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
+# "Generate_test_scenes"          - Generate a set of randomly generated test scenes for the task.
+# "Generate_openloop_data"        - Loop through all the test scenes, using current optimiser and perform open loop optimisation tests.
+# "Generate_asynchronus_mpc_data" - Loop through all the tests scenes, using current optimiser and perform asyncronus MPC optimisation.
+# "Generate_filtering_data"       - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
+# "Generate_dynamics_data"        - Loop thorugh 100 CSV files and generate A, B, X, U data over a horizon and save to file.
 
-taskInitMode: "fromCSV"   # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+csvRow: 83                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
-filtering: "none"         # FIR or low_pass or none - Filterting of derivative values over trajectory length.
+filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: false       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
 minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
-maxHorizon: 4000          # Maximum number of times-steps for optimisation horizon
+
+async_mpc: true
