@@ -218,7 +218,7 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
 int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method, int num_trials, int task_horzion, int task_timeout){
 
 
-    std::string method_directory = CreateTestName("aynchronus_mpc");
+    std::string method_directory = CreateTestName("asynchronus_mpc");
 
     // ------------------------- data storage -------------------------------------
     std::vector<double> final_costs;
