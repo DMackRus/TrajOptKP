@@ -166,17 +166,17 @@ void TwoDPushing::ReturnRandomStartState(){
     // Robot start configuration
     double robot_start_config[7] = {0, -0.183, 0, -3.1, 0, 1.34, 0};
 
-    for(int i = 0; i < current_state_vector.robots[0].jointNames.size(); i++){
-        current_state_vector.robots[0].startPos[i] = robot_start_config[i];
+    for(int i = 0; i < full_state_vector.robots[0].jointNames.size(); i++){
+        full_state_vector.robots[0].startPos[i] = robot_start_config[i];
     }
 
-    current_state_vector.bodiesStates[0].startLinearPos[0] = startX;
-    current_state_vector.bodiesStates[0].startLinearPos[1] = startY;
-    current_state_vector.bodiesStates[0].startLinearPos[2] = 0.032;
+    full_state_vector.bodiesStates[0].startLinearPos[0] = startX;
+    full_state_vector.bodiesStates[0].startLinearPos[1] = startY;
+    full_state_vector.bodiesStates[0].startLinearPos[2] = 0.032;
 
-    current_state_vector.bodiesStates[0].startAngularPos[0] = 0.0;
-    current_state_vector.bodiesStates[0].startAngularPos[1] = 0.0;
-    current_state_vector.bodiesStates[0].startAngularPos[2] = 0.0;
+    full_state_vector.bodiesStates[0].startAngularPos[0] = 0.0;
+    full_state_vector.bodiesStates[0].startAngularPos[1] = 0.0;
+    full_state_vector.bodiesStates[0].startAngularPos[2] = 0.0;
 
     // Distractor body poses
     for(int i = 0; i < object_names.size(); i++){
@@ -185,42 +185,42 @@ void TwoDPushing::ReturnRandomStartState(){
         MuJoCo_helper->GetBodyPoseAngle(object_names[i], obstacle_pose, MuJoCo_helper->master_reset_data);
 
         for(int j = 0; j < 3; j++){
-            current_state_vector.bodiesStates[i + 1].startLinearPos[j] = obstacle_pose.position[j];
-            current_state_vector.bodiesStates[i + 1].startAngularPos[j] = obstacle_pose.orientation[j];
+            full_state_vector.bodiesStates[i + 1].startLinearPos[j] = obstacle_pose.position[j];
+            full_state_vector.bodiesStates[i + 1].startAngularPos[j] = obstacle_pose.orientation[j];
         }
     }
     std::cout << "in generation \n";
-    std::cout << "body " << current_state_vector.bodiesStates[2].name << " x: " << current_state_vector.bodiesStates[2].startLinearPos[0] << " y: " << current_state_vector.bodiesStates[2].startLinearPos[1] << std::endl;
+    std::cout << "body " << full_state_vector.bodiesStates[2].name << " x: " << full_state_vector.bodiesStates[2].startLinearPos[0] << " y: " << full_state_vector.bodiesStates[2].startLinearPos[1] << std::endl;
 }
 
 void TwoDPushing::ReturnRandomGoalState(){
 
     // Robot configuration doesnt matter for this task
-    for(int i = 0; i < current_state_vector.robots[0].jointNames.size(); i++){
-        current_state_vector.robots[0].goalPos[i] = 0.0;
-        current_state_vector.robots[0].goalVel[i] = 0.0;
+    for(int i = 0; i < full_state_vector.robots[0].jointNames.size(); i++){
+        full_state_vector.robots[0].goalPos[i] = 0.0;
+        full_state_vector.robots[0].goalVel[i] = 0.0;
     }
 
     // Goal object body
     std::cout << "goal x" << randomGoalX << "goal y: " << randomGoalY << std::endl;
-    current_state_vector.bodiesStates[0].goalLinearPos[0] = randomGoalX;
-    current_state_vector.bodiesStates[0].goalLinearPos[1] = randomGoalY;
-    current_state_vector.bodiesStates[0].goalLinearPos[2] = 0.0;
+    full_state_vector.bodiesStates[0].goalLinearPos[0] = randomGoalX;
+    full_state_vector.bodiesStates[0].goalLinearPos[1] = randomGoalY;
+    full_state_vector.bodiesStates[0].goalLinearPos[2] = 0.0;
 
-    current_state_vector.bodiesStates[0].goalAngularPos[0] = 0.0;
-    current_state_vector.bodiesStates[0].goalAngularPos[1] = 0.0;
-    current_state_vector.bodiesStates[0].goalAngularPos[2] = 0.0;
+    full_state_vector.bodiesStates[0].goalAngularPos[0] = 0.0;
+    full_state_vector.bodiesStates[0].goalAngularPos[1] = 0.0;
+    full_state_vector.bodiesStates[0].goalAngularPos[2] = 0.0;
 
     // Distractor objects
-    for(int i = 1; i < current_state_vector.bodiesStates.size(); i++){
+    for(int i = 1; i < full_state_vector.bodiesStates.size(); i++){
 
-        current_state_vector.bodiesStates[i].goalLinearPos[0] = 0.0;
-        current_state_vector.bodiesStates[i].goalLinearPos[1] = 0.0;
-        current_state_vector.bodiesStates[i].goalLinearPos[2] = 0.0;
+        full_state_vector.bodiesStates[i].goalLinearPos[0] = full_state_vector.bodiesStates[i].startLinearPos[0];
+        full_state_vector.bodiesStates[i].goalLinearPos[1] = full_state_vector.bodiesStates[i].startLinearPos[1];
+        full_state_vector.bodiesStates[i].goalLinearPos[2] = full_state_vector.bodiesStates[i].startLinearPos[2];
 
-        current_state_vector.bodiesStates[i].goalAngularPos[0] = 0.0;
-        current_state_vector.bodiesStates[i].goalAngularPos[1] = 0.0;
-        current_state_vector.bodiesStates[i].goalAngularPos[2] = 0.0;
+        full_state_vector.bodiesStates[i].goalAngularPos[0] = full_state_vector.bodiesStates[i].startAngularPos[0];
+        full_state_vector.bodiesStates[i].goalAngularPos[1] = full_state_vector.bodiesStates[i].startAngularPos[1];
+        full_state_vector.bodiesStates[i].goalAngularPos[2] = full_state_vector.bodiesStates[i].startAngularPos[2];
     }
 }
 

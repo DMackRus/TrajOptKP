@@ -641,12 +641,13 @@ int GenTestingData::GenerateDynamicsDerivsData(int num_trajecs, int num_iters_pe
 }
 
 int GenTestingData::GenerateTestScenes(int num_scenes){
-    for(int i = 0; i < 200; i++){
+    for(int i = 0; i < num_scenes; i++){
         activeModelTranslator->GenerateRandomGoalAndStartState();
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->vis_data);
         mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
         activeVisualiser->render("Generating random test scenes");
-        yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->current_state_vector);
+        yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector);
+        std::cout << "scene " << i << " generated \n";
     }
 
     return EXIT_SUCCESS;

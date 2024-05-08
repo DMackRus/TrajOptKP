@@ -169,7 +169,7 @@ int main(int argc, char **argv) {
         GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
 
-        return myTestingObject.GenerateTestScenes(100);
+        return myTestingObject.GenerateTestScenes(200);
     }
 
     if(runMode == "Generate_openloop_data"){
