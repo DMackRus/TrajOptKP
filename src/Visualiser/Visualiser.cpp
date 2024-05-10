@@ -216,7 +216,6 @@ void Visualiser::windowCloseCallback(GLFWwindow * /*window*/) {
     // Use this flag if you wish not to terminate now.
     // glfwSetWindowShouldClose(window, GLFW_FALSE);
 
-
 //    mjv_freeScene(&scn);
 //    mjr_freeContext(&con);
 //
@@ -242,14 +241,10 @@ void Visualiser::render(const char* label) {
 //        glfwGetFramebufferSize(window, &width, &height);
 
         unsigned char* pixels = new unsigned char[3 * width * height]; // assuming RGB channels
+        auto timer_start = std::chrono::steady_clock::now();
         glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+//        std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - timer_start).count() << std::endl;
 
-        // Output pixel data (for demonstration purposes)
-        std::cout << "First pixel RGB values: " <<
-                  static_cast<int>(pixels[1000000]) << ", " <<
-                  static_cast<int>(pixels[100001]) << ", " <<
-                  static_cast<int>(pixels[100002]) << std::endl;
-//        std::vector<unsigned char> pixels(3 * width * height); // 3 for RGB channels
 //        glPixelStorei(GL_PACK_ALIGNMENT, 1); // Ensure byte alignment
 //        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 
@@ -264,16 +259,12 @@ void Visualiser::render(const char* label) {
                 double r = pixels[index] / 255.0;
                 double g = pixels[index + 1] / 255.0;
                 double b = pixels[index + 2] / 255.0;
-//                std::cout << "index: " << index << "\n";
-                std::cout << "pixels are: " << r << " " << g << " " << b << "\n";
-                png.plot(i,j, r, g, b);
+                png.plot(j,i, r, g, b);
             }
         }
         png.close();
 
         delete[] pixels;
-
-
 
         frame_count++;
     }

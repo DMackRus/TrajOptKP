@@ -42,7 +42,8 @@ std::shared_ptr<iLQR_SVR> iLQR_SVR_Optimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
 
-bool async_mpc;
+bool record_trajectory = false;
+bool async_mpc = true;
 std::string task;
 bool mpc_visualise = true;
 bool playback = true;
@@ -99,6 +100,7 @@ int main(int argc, char **argv) {
     task = yamlReader->taskName;
     taskInitMode = yamlReader->taskInitMode;
     async_mpc = yamlReader->async_mpc;
+    record_trajectory = yamlReader->record_trajectory;
 
     // Instantiate model translator as specified by the config file.
     if(assign_task() == EXIT_FAILURE){
@@ -420,7 +422,6 @@ void InitControls(){
     int optHorizon = 2500;
     int controlCounter = 0;
     int visualCounter = 0;
-    bool trajectory_recorded = false;
 
     std::vector<MatrixXd> initControls;
 
@@ -433,7 +434,10 @@ void InitControls(){
     initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
 
 
-    activeVisualiser->StartRecording("test");
+    if(record_trajectory){
+        activeVisualiser->StartRecording(task + "_init_controls");
+    }
+
     while(activeVisualiser->windowOpen()){
 
         activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data,
@@ -454,71 +458,80 @@ void InitControls(){
             visualCounter = 0;
             activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
             activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-            activeVisualiser->render("show init controls");
+            if(record_trajectory){
+                activeVisualiser->render("");
+            }
+            else{
+                activeVisualiser->render("show init controls");
+            }
+
         }
     }
 }
 
 void OpenLoopOptimisation(int opt_horizon){
-    int controlCounter = 0;
-    int visualCounter = 0;
-    bool showFinalControls = true;
+    int control_counter = 0;
+    int visual_counter = 0;
+    bool show_opt_controls = true;
     const char* label = "Final trajectory after optimisation";
 
-    std::cout << "opt horizon is" << opt_horizon << std::endl;
+    std::vector<MatrixXd> init_controls;
+    std::vector<MatrixXd> optimised_controls;
 
-    std::vector<MatrixXd> initControls;
-    std::vector<MatrixXd> finalControls;
-
-    std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+    std::vector<MatrixXd> init_setup_controls = activeModelTranslator->CreateInitSetupControls(1000);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
 
-    std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+    std::vector<MatrixXd> init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-    auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, opt_horizon);
-    auto stop = high_resolution_clock::now();
-    auto linDuration = duration_cast<microseconds>(stop - start);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                                        init_opt_controls, yamlReader->maxIter,
+                                                                        yamlReader->minIter, opt_horizon);
 
     // Stitch together setup controls with init control + optimised controls
-    initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
-    finalControls.insert(finalControls.end(), optimisedControls.begin(), optimisedControls.end());
+    init_controls.insert(init_controls.end(), init_opt_controls.begin(), init_opt_controls.end());
+    optimised_controls.insert(optimised_controls.end(), optimisedControls.begin(), optimisedControls.end());
 
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
+    if(record_trajectory){
+        activeVisualiser->StartRecording(task + "_optimised_controls");
+        label = "";
+    }
     while(activeVisualiser->windowOpen()){
 
-        if(showFinalControls){
-            activeModelTranslator->SetControlVector(finalControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data,
+        if(show_opt_controls){
+            activeModelTranslator->SetControlVector(optimised_controls[control_counter], activeModelTranslator->MuJoCo_helper->main_data,
                                                     activeModelTranslator->current_state_vector);
         }
         else{
-            activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data,
-                    activeModelTranslator->current_state_vector);
+            activeModelTranslator->SetControlVector(init_controls[control_counter], activeModelTranslator->MuJoCo_helper->main_data,
+                                                    activeModelTranslator->current_state_vector);
         }
 
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->main_data);
 
-        controlCounter++;
-        visualCounter++;
+        control_counter++;
+        visual_counter++;
 
-        if(controlCounter >= finalControls.size()){
-            controlCounter = 0;
+        if(control_counter >= optimised_controls.size()){
+            control_counter = 0;
             activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-            showFinalControls = !showFinalControls;
-            if(showFinalControls){
+            show_opt_controls = !show_opt_controls;
+            if(show_opt_controls){
                 label = "Final trajectory after optimisation";
             }
             else{
                 label = "Initial trajectory before optimisation";
             }
+
+            activeVisualiser->StopRecording();
         }
 
-        if(visualCounter >= 5){
-            visualCounter = 0;
+        if(visual_counter >= 5){
+            visual_counter = 0;
             activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
             activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             activeVisualiser->render(label);

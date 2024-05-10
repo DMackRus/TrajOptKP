@@ -315,6 +315,7 @@ void FileHandler::readSettingsFile(std::string settingsFilePath){
     maxIter = node["maxIter"].as<int>();
 
     async_mpc = node["async_mpc"].as<bool>();
+    record_trajectory = node["record"].as<bool>();
 }
 
 void FileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength){

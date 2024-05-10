@@ -40,6 +40,7 @@ public:
     std::string filtering = "none";
     bool costDerivsFD = false;
     bool async_mpc = true;
+    bool record_trajectory = false;
     ofstream fileOutput;
 
     int minIter;
