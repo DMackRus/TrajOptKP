@@ -206,8 +206,9 @@ public:
     std::shared_ptr<KeypointGenerator> keypoint_generator;
 
     int sampling_k_interval = 1;
-    int num_dofs_readd = 2;
-    double K_matrix_threshold = 1.5; // maybe 0.001 or 0.0001
+    int num_dofs_readd = 4;
+    double K_matrix_threshold = 30; // maybe 0.001 or 0.0001
+    bool eigen_vector_method = true;
 //    double threshold_k_eigenvectors = 0.1;
 
     keypoint_method activeKeyPointMethod;

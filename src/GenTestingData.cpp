@@ -36,9 +36,9 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     std::vector<int> num_iterations;
     std::vector<double> avg_num_dofs;
     std::vector<double> avg_percent_derivs;
-    std::vector<double> avg_time_derivs;
-    std::vector<double> avg_time_bp;
-    std::vector<double> avg_time_fp;
+    std::vector<double> total_time_derivs;
+    std::vector<double> total_time_bp;
+    std::vector<double> total_time_fp;
     // -----------------------------------------------------------------------------
 
     auto startTimer = std::chrono::high_resolution_clock::now();
@@ -94,9 +94,9 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
         num_iterations.push_back(optimiser->num_iterations);
         avg_num_dofs.push_back(optimiser->avg_dofs);
         avg_percent_derivs.push_back(optimiser->avg_percent_derivs);
-        avg_time_derivs.push_back(optimiser->avg_time_get_derivs_ms);
-        avg_time_bp.push_back(optimiser->avg_time_backwards_pass_ms);
-        avg_time_fp.push_back(optimiser->avg_time_forwards_pass_ms);
+        total_time_derivs.push_back(std::accumulate(optimiser->time_get_derivs_ms.begin(), optimiser->time_get_derivs_ms.end(), 0));
+        total_time_bp.push_back(std::accumulate(optimiser->time_backwards_pass_ms.begin(), optimiser->time_backwards_pass_ms.end(), 0));
+        total_time_fp.push_back(std::accumulate(optimiser->time_forwardsPass_ms.begin(), optimiser->time_forwardsPass_ms.end(), 0));
     }
 
     // ----------------------- Save data to file -------------------------------------
@@ -113,8 +113,8 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     // Loop through rows
     for(int i = 0; i < cost_reductions.size(); i++){
         file_output << cost_reductions[i] << "," << optimisation_times[i] << "," << num_iterations[i] << ",";
-        file_output << avg_num_dofs[i] << "," << avg_percent_derivs[i] << "," << avg_time_derivs[i] << ",";
-        file_output << avg_time_bp[i] << "," << avg_time_fp[i] << std::endl;
+        file_output << avg_num_dofs[i] << "," << avg_percent_derivs[i] << "," << total_time_derivs[i] << ",";
+        file_output << total_time_bp[i] << "," << total_time_fp[i] << std::endl;
     }
 
     file_output.close();
@@ -749,6 +749,9 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
 
         out << YAML::Key << "K_matrix_threshold";
         out << YAML::Value << optimiser->K_matrix_threshold;
+
+        out << YAML::Key << "Eigen vector method";
+        out << YAML::Value << optimiser->eigen_vector_method;
     }
     out << YAML::EndMap;
 

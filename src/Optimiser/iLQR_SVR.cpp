@@ -859,92 +859,93 @@ double iLQR_SVR::ForwardsPassParallel(int thread_id, double alpha){
 
 std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
     std::vector<std::string> remove_dofs;
+    std::vector<double> K_dofs_sums(dof, 0.0);
 
     // ---------------------------- Eigen vector method ---------------------------------------------
-//    std::vector<double> K_dofs_sums(dof, 0.0);
-//
-//    for(int t = 0; t < horizon_length; t += sampling_k_interval) {
-//        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
-//        if (!svd.computeV()) {
-//            std::cerr << "SVD decomposition failed!" << std::endl;
-//            break;
-//        }
-//
-////        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
-////        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
-//
-//        for (int i = 0; i < num_ctrl; i++) {
-//            for (int j = 0; j < dof; j++) {
-//                K_dofs_sums[j] += abs(svd.matrixV()(j, i));
-//                K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
-//            }
-//        }
-//    }
-//
-//    std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
-//    std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
-//
-////    std::cout << "States: ";
-////    for(int i = 0; i < dof; i++){
-////        std::cout << state_vector_name[sorted_indices[i]] << " ";
-////    }
-////    std::cout << "\n";
-//
-////    std::cout << "K_sums in order: ";
-////    for(int i = 0; i < dof; i++){
-////        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-////    }
-////    std::cout << "\n";
-//
-//
-//    for(int i = 0; i < dof; i++) {
-//        if (K_dofs_sums[i] < threshold_k_eigenvectors) {
-//            remove_dofs.push_back(state_vector_name[i]);
-//        }
-//    }
-//
-//    return remove_dofs;
+    if(eigen_vector_method){
+        for(int t = 0; t < horizon_length; t += sampling_k_interval) {
+            Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
+            if (!svd.computeV()) {
+                std::cerr << "SVD decomposition failed!" << std::endl;
+                break;
+            }
 
-//    // TODO - make this optionally available
-//    //------------------------ Sampling and summing method ----------------------------
-//
-    std::vector<double> K_dofs_sums(activeModelTranslator->current_state_vector.dof, 0.0);
+//        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
+//        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
 
-    for(int t = 0; t < horizon_length; t += sampling_k_interval){
+            for (int i = 0; i < num_ctrl; i++) {
+                for (int j = 0; j < dof; j++) {
+                    K_dofs_sums[j] += abs(svd.matrixV()(j, i));
+                    K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
+                }
+            }
+        }
 
+        std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
+        std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
+
+        // Normalise K_dofs_sum by horizon_length
         for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
+            K_dofs_sums[i] /= horizon_length;
+        }
 
-            for(int j = 0; j < num_ctrl; j++){
-                K_dofs_sums[i] += abs(K[t](j, i));
-                K_dofs_sums[i] += abs(K[t](j, i + activeModelTranslator->current_state_vector.dof));
+        std::cout << "States: ";
+        for(int i = 0; i < dof; i++){
+            std::cout << state_vector_name[sorted_indices[i]] << " ";
+        }
+        std::cout << "\n";
+
+        std::cout << "K_sums in order: ";
+        for(int i = 0; i < dof; i++){
+            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+        }
+        std::cout << "\n";
+
+
+        for(int i = 0; i < dof; i++) {
+            if (K_dofs_sums[i] < K_matrix_threshold) {
+                remove_dofs.push_back(state_vector_name[i]);
             }
         }
     }
+    //------------------------ Sampling and summing method ----------------------------
+    else{
+        for(int t = 0; t < horizon_length; t += sampling_k_interval){
 
-    // Normalise K_dofs_sum by horizon_length
-    for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
-        K_dofs_sums[i] /= horizon_length;
-    }
+            for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
 
-    std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
-    std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
+                for(int j = 0; j < num_ctrl; j++){
+                    K_dofs_sums[i] += abs(K[t](j, i));
+                    K_dofs_sums[i] += abs(K[t](j, i + activeModelTranslator->current_state_vector.dof));
+                }
+            }
+        }
 
-    std::cout << "States: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << state_vector_name[sorted_indices[i]] << " ";
-    }
-    std::cout << "\n";
+        // Normalise K_dofs_sum by horizon_length
+        for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
+            K_dofs_sums[i] /= horizon_length;
+        }
 
-    std::cout << "K_sums in order: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-    }
-    std::cout << "\n";
+        std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
+        std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
+
+        std::cout << "States: ";
+        for(int i = 0; i < dof; i++){
+            std::cout << state_vector_name[sorted_indices[i]] << " ";
+        }
+        std::cout << "\n";
+
+        std::cout << "K_sums in order: ";
+        for(int i = 0; i < dof; i++){
+            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+        }
+        std::cout << "\n";
 
 
-    for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++) {
-        if (K_dofs_sums[i] < K_matrix_threshold) {
-            remove_dofs.push_back(state_vector_name[i]);
+        for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++) {
+            if (K_dofs_sums[i] < K_matrix_threshold) {
+                remove_dofs.push_back(state_vector_name[i]);
+            }
         }
     }
 
