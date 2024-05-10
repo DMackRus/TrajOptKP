@@ -2,6 +2,7 @@
 
 #include "MuJoCoHelper.h"
 #include <GLFW/glfw3.h>
+#include <pngwriter.h>
 #include "StdInclude.h"
 #include "ModelTranslator/ModelTranslator.h"
 #include "Differentiator.h"
@@ -43,6 +44,9 @@ public:
     bool windowOpen();
     void render(const char* label);
 
+    void StartRecording(std::string file_name);
+    void StopRecording();
+
     std::vector<MatrixXd> replayControls;
     bool replayTriggered = false;
 
@@ -55,6 +59,12 @@ public:
     bool task_finished = false;
 
 private:
+    std::string video_filename = "";
+    bool record_render_frames = false;
+    int width = 1200;
+    int height = 900;
+    int frame_count = 0;
+
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
 };

@@ -236,4 +236,72 @@ void Visualiser::render(const char* label) {
     MuJoCo_helper->UpdateScene(window, label);
     glfwSwapBuffers(window);
     glfwPollEvents();
+
+    // If we are recording for a video
+    if(record_render_frames){
+//        glfwGetFramebufferSize(window, &width, &height);
+
+        unsigned char* pixels = new unsigned char[3 * width * height]; // assuming RGB channels
+        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+        // Output pixel data (for demonstration purposes)
+        std::cout << "First pixel RGB values: " <<
+                  static_cast<int>(pixels[1000000]) << ", " <<
+                  static_cast<int>(pixels[100001]) << ", " <<
+                  static_cast<int>(pixels[100002]) << std::endl;
+//        std::vector<unsigned char> pixels(3 * width * height); // 3 for RGB channels
+//        glPixelStorei(GL_PACK_ALIGNMENT, 1); // Ensure byte alignment
+//        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+
+        // Write pixel data to a file
+        std::string filename = video_filename + "/frame_" + std::to_string(frame_count) + ".png";
+        pngwriter png(width,height,0,filename.c_str());
+
+        int index = 0;
+        for(int i = 0; i < height; i++){
+            for(int j = 0; j < width ; j++){
+                index += 3;
+                double r = pixels[index] / 255.0;
+                double g = pixels[index + 1] / 255.0;
+                double b = pixels[index + 2] / 255.0;
+//                std::cout << "index: " << index << "\n";
+                std::cout << "pixels are: " << r << " " << g << " " << b << "\n";
+                png.plot(i,j, r, g, b);
+            }
+        }
+        png.close();
+
+        delete[] pixels;
+
+
+
+        frame_count++;
+    }
+}
+
+void Visualiser::StartRecording(std::string file_name){
+    record_render_frames = true;
+
+    glfwGetFramebufferSize(window, &width, &height);
+    frame_count = 0;
+
+    std::string project_parent_path = __FILE__;
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+
+
+    video_filename = project_parent_path + "/media/videos/" + file_name;
+    std::cout << "video filename: " << video_filename << "\n";
+    // Create a directory in media/video/file_name/0.rgb ...
+    if (!filesystem::exists(video_filename)) {
+        if (!filesystem::create_directories(video_filename)) {
+            std::cerr << "Failed to create directory: " << video_filename << std::endl;
+        }
+    }
+
+}
+
+void Visualiser::StopRecording() {
+    record_render_frames = false;
 }

@@ -44,6 +44,14 @@ endif (TARGET yaml-cpp::yaml-cpp)
 set(PROJECT_INCLUDE_DIR ${PARENT_DIR}/${PROJECT_NAME}/include)
 message(STATUS "project include directory: " ${PROJECT_INCLUDE_DIR})
 
+# PNG writer
+find_package(PNGwriter 0.7.0)
+
+if(PNGwriter_FOUND)
+#    target_link_libraries(YourTarget PRIVATE PNGwriter::PNGwriter)
+    message(STATUS "PNG writer library found")
+endif(PNGwriter_FOUND)
+
 # Create libraries
 #add_library(MuJoCo_helper STATIC src/PhysicsSimulators/MuJoCoHelper.cpp )
 
@@ -79,7 +87,7 @@ include_directories(
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
 enable_testing()
 
