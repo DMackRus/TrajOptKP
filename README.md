@@ -25,7 +25,7 @@ cd mujoco_temp
 mkdir build
 cd build
 cmake ..
-make --build .
+cmake --build .
 cmake .. -DCMAKE_INSTALL_PREFIX="~/mujoco"
 cmake --install .
 echo export MJ_HOME='"'$(pwd)/mujoco'"' >> ~/.bashrc
@@ -200,15 +200,13 @@ This iterative process is repeated until all segments satisfy the error requirem
 interval is reached.
 
 ## To-Do
-- [ ] Overhaul method of loading and saving tasks. 
-Store all dofs rather than just defualt state vector. This will be easier in the long run.
-- [ ] Fix all random state task generation after deletion of X_desired vector.
-- [ ] Rework main.cpp so that all tasks are their own executable instead.
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.
 - [ ] Add more examples
 - [ ] starting camera variables in model file
 - [ ] improved parallelisation on iterative error method
+- [ ] Fix unit tests.
+- [ ] Add png writer as a requirement for this repo (https://github.com/pngwriter/pngwriter)
 
 ## Citing
 Coming soon.

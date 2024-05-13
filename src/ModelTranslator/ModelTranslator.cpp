@@ -194,25 +194,39 @@ std::vector<std::string> ModelTranslator::RandomSampleUnusedDofs(int num_dofs) c
 void ModelTranslator::UpdateSceneVisualisation(){
     // Using the current state vector, update the geoms in the scene dependant how many dofs are active
 
-    for(const auto &body : current_state_vector.bodiesStates){
+    for(int  i = 0; i < current_state_vector.bodiesStates.size(); i++){
+
         // count the number of dofs for this body
-        int dof_for_body = 0;
-        for(int i = 0; i < 3; i++){
-            if(body.activeLinearDOF[i]){
-                dof_for_body++;
+        int current_dof_for_body = 0;
+        int full_dof_for_body = 0;
+        for(int j = 0; j < 3; j++){
+            // Current state vector
+            if(current_state_vector.bodiesStates[i].activeLinearDOF[j]){
+                current_dof_for_body++;
             }
-            if(body.activeAngularDOF[i]){
-                dof_for_body++;
+            if(current_state_vector.bodiesStates[i].activeAngularDOF[j]){
+                current_dof_for_body++;
+            }
+
+            // Full state vector
+            if(full_state_vector.bodiesStates[i].activeLinearDOF[j]){
+                full_dof_for_body++;
+            }
+            if(full_state_vector.bodiesStates[i].activeAngularDOF[j]){
+                full_dof_for_body++;
             }
         }
 
+        float percentage_dofs_used = (float)current_dof_for_body / (float)full_dof_for_body;
+        int color_index = 6.0f * percentage_dofs_used;
+
         // compute color
-        color body_color{};
-        if(body.name == "goal"){
-            body_color = goal_colors[dof_for_body];
+        color body_color;
+        if(current_state_vector.bodiesStates[i].name == "goal"){
+            body_color = goal_colors[color_index];
         }
         else{
-            body_color = distractor_colors[dof_for_body];
+            body_color = distractor_colors[color_index];
         }
 
         float color[4] = {
@@ -223,7 +237,7 @@ void ModelTranslator::UpdateSceneVisualisation(){
         };
 
         // Set color
-        MuJoCo_helper->SetBodyColor(body.name, color);
+        MuJoCo_helper->SetBodyColor(current_state_vector.bodiesStates[i].name, color);
     }
 }
 
