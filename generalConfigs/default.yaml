@@ -51,4 +51,4 @@ maxIter: 10               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
 
-record: false
+record: true

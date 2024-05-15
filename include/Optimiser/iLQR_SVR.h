@@ -179,6 +179,8 @@ private:
 
     void UpdateNominal();
 
+    void ResampleNewDofs();
+    void RemoveDofs();
     void AdjustCurrentStateVector();
 
     // Visualiser object

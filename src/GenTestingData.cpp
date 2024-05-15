@@ -412,7 +412,7 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
         activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
-                                                activeModelTranslator->current_state_vector);
+                                                activeModelTranslator->full_state_vector);
         activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
                                               activeModelTranslator->full_state_vector);
         activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);

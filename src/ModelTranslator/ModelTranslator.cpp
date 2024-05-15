@@ -163,7 +163,12 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
 
     // Update the number of dofs in the state vector
     current_state_vector.Update();
-    UpdateSceneVisualisation();
+
+    // TODO - decide if good idea or not
+    // if readding dofs, dont update scene vis yet
+    if(!add_extra_states){
+        UpdateSceneVisualisation();
+    }
 }
 
 std::vector<std::string> ModelTranslator::RandomSampleUnusedDofs(int num_dofs) const{

@@ -51,6 +51,9 @@ bool playback = true;
 std::mutex mtx;
 std::condition_variable cv;
 
+std::vector<stateVectorList> tracking_state_vector;
+stateVectorList current_mpc_state_vector;
+
 bool apply_next_control = false;
 
 int assign_task();
@@ -569,10 +572,16 @@ void AsyncMPC(){
     int MAX_TASK_TIME = 2500;
     int task_time = 0;
 
+    // Setup initial state vector for visualisation
+    current_mpc_state_vector = activeModelTranslator->current_state_vector;
+
     while(task_time < MAX_TASK_TIME){
         begin = std::chrono::steady_clock::now();
 
         if(async_mpc || (!async_mpc && apply_next_control)){
+
+            tracking_state_vector.push_back(current_mpc_state_vector);
+
 
             if(!async_mpc){
                 apply_next_control = false;
@@ -658,8 +667,13 @@ void AsyncMPC(){
         activeVisualiser->StartRecording(task + "_MPC");
     }
     for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
+
+        // Update current state vector for visualising what was being consider at this point
+        activeModelTranslator->current_state_vector = tracking_state_vector[i];
+        activeModelTranslator->UpdateSceneVisualisation();
+
         activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
-                                                activeModelTranslator->current_state_vector);
+                                                activeModelTranslator->full_state_vector);
         activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
                                               activeModelTranslator->full_state_vector);
         activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
@@ -698,6 +712,7 @@ void MPCUntilComplete(int OPT_HORIZON){
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     optimised_controls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1, OPT_HORIZON);
+    current_mpc_state_vector = activeModelTranslator->current_state_vector;
 
     MatrixXd current_state;
 
@@ -719,6 +734,7 @@ void MPCUntilComplete(int OPT_HORIZON){
         }
 
         optimised_controls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], optimised_controls, 1, 1, OPT_HORIZON);
+        current_mpc_state_vector = activeModelTranslator->current_state_vector;
 
         // Store last iteration timing results
         time_get_derivs.push_back(activeOptimiser->avg_time_get_derivs_ms);

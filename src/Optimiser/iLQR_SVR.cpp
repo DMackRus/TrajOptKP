@@ -373,7 +373,8 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
     // Resample new dofs - subject to criteria
     // Adjust state vector - remove candidates for removal
-    AdjustCurrentStateVector();
+//    AdjustCurrentStateVector();
+    ResampleNewDofs();
     num_dofs.push_back(activeModelTranslator->current_state_vector.dof);
 
     // STEP 1 - Generate dynamics derivatives and cost derivatives
@@ -490,6 +491,8 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     }
 
     cost_history.push_back(new_cost);
+
+    RemoveDofs();
 }
 
 
@@ -950,6 +953,42 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
     }
 
     return remove_dofs;
+}
+
+void iLQR_SVR::ResampleNewDofs(){
+    std::vector<std::string> re_add_dofs = activeModelTranslator->RandomSampleUnusedDofs(num_dofs_readd);
+
+    if(!re_add_dofs.empty()){
+        activeModelTranslator->UpdateCurrentStateVector(re_add_dofs, true);
+    }
+
+    Resize(activeModelTranslator->current_state_vector.dof,
+           activeModelTranslator->current_state_vector.num_ctrl, horizon_length);
+    X_old.at(0) = activeModelTranslator->ReturnStateVectorQuaternions(
+            MuJoCo_helper->saved_systems_state_list[0],
+            activeModelTranslator->current_state_vector);
+    for(int t = 0; t < horizon_length; t++) {
+        X_old.at(t + 1) = activeModelTranslator->ReturnStateVectorQuaternions(
+                MuJoCo_helper->saved_systems_state_list[t + 1],
+                activeModelTranslator->current_state_vector);
+    }
+}
+
+void iLQR_SVR::RemoveDofs(){
+    if(!activeModelTranslator->candidates_for_removal.empty()){
+        activeModelTranslator->UpdateCurrentStateVector(activeModelTranslator->candidates_for_removal, false);
+    }
+
+    Resize(activeModelTranslator->current_state_vector.dof,
+           activeModelTranslator->current_state_vector.num_ctrl, horizon_length);
+    X_old.at(0) = activeModelTranslator->ReturnStateVectorQuaternions(
+            MuJoCo_helper->saved_systems_state_list[0],
+            activeModelTranslator->current_state_vector);
+    for(int t = 0; t < horizon_length; t++) {
+        X_old.at(t + 1) = activeModelTranslator->ReturnStateVectorQuaternions(
+                MuJoCo_helper->saved_systems_state_list[t + 1],
+                activeModelTranslator->current_state_vector);
+    }
 }
 
 void iLQR_SVR::AdjustCurrentStateVector(){
