@@ -636,10 +636,10 @@ double iLQR::ForwardsPass(double _old_cost){
 
             // Clamp torque within limits
             // TODO - replace this with model translator torque limits function, its better
-            if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
+            if(activeModelTranslator->current_state_vector.robots[0].torque_controlled){
                 for(int i = 0; i < num_ctrl; i++){
-                    if (U_new(i) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new(i) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
-                    if (U_new(i) < -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new(i) = -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
+                    if (U_new(i) > activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
+                    if (U_new(i) < -activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = -activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
                 }
             }
 
@@ -775,10 +775,10 @@ double iLQR::ForwardsPassParallel(double old_cost){
             U_alpha[t][i] = U_old[t] + (alphas[i] * k[t]) + feedBackGain;
 
             // Clamp torque within limits
-            if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
+            if(activeModelTranslator->current_state_vector.robots[0].torque_controlled){
                 for(int k = 0; k < num_ctrl; k++){
-                    if (U_alpha[t][i](k) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[k];
-                    if (U_alpha[t][i](k) < -activeModelTranslator->current_state_vector.robots[0].torqueLimits[k]) U_alpha[t][i](k) = -activeModelTranslator->current_state_vector.robots[0].torqueLimits[k];
+                    if (U_alpha[t][i](k) > activeModelTranslator->current_state_vector.robots[0].torque_limits[k]) U_alpha[t][i](k) = activeModelTranslator->current_state_vector.robots[0].torque_limits[k];
+                    if (U_alpha[t][i](k) < -activeModelTranslator->current_state_vector.robots[0].torque_limits[k]) U_alpha[t][i](k) = -activeModelTranslator->current_state_vector.robots[0].torque_limits[k];
                 }
             }
 

@@ -14,42 +14,43 @@
 
 struct robot{
     std::string name;
-    std::vector<std::string> jointNames;
-    std::vector<std::string> actuatorNames;
-    bool torqueControlled;
-    std::vector<double> torqueLimits;
-    std::vector<double> startPos;
-    std::vector<double> goalPos;
-    std::vector<double> goalVel;
-    std::vector<double> jointPosCosts;
+    std::vector<std::string> joint_names;
+    std::vector<std::string> actuator_names;
+    bool torque_controlled;
+    std::vector<double> torque_limits;
+    std::vector<double> start_pos;
+    std::vector<double> goal_pos;
+    std::vector<double> goal_vel;
+    std::vector<double> joint_pos_costs;
     std::vector<double> jointVelCosts;
-    std::vector<double> terminalJointPosCosts;
-    std::vector<double> terminalJointVelCosts;
-    std::vector<double> jointControlCosts;
-    std::vector<double> jointJerkThresholds;
-    std::vector<double> magVelThresholds;
+    std::vector<double> terminal_joint_pos_costs;
+    std::vector<double> terminal_joint_vel_costs;
+    std::vector<double> joint_controls_costs;
+    std::vector<double> jerk_thresholds;
+    std::vector<double> vel_change_thresholds;
 };
 
 struct bodyStateVec{
     std::string name;
-    bool activeLinearDOF[3];
-    bool activeAngularDOF[3];
-    double startLinearPos[3];
-    double startAngularPos[3];
-    double goalLinearPos[3];
-    double goalAngularPos[3];
+    bool rigid;
+    bool active_linear_dof[3];
+    bool active_angular_dof[3];
+    double start_linear_pos[3];
+    double start_angular_pos[3];
+    double goal_linear_pos[3];
+    double goal_angular_pos[3];
     double linearPosCost[3];
-    double terminalLinearPosCost[3];
-    double linearVelCost[3];
-    double terminalLinearVelCost[3];
-    double angularPosCost[3];
-    double terminalAngularPosCost[3];
-    double angularVelCost[3];
-    double terminalAngularVelCost[3];
-    double linearJerkThreshold[3];
-    double angularJerkThreshold[3];
-    double linearMagVelThreshold[3];
-    double angularMagVelThreshold[3];
+    double terminal_linear_pos_cost[3];
+    double linear_vel_cost[3];
+    double terminal_linear_vel_cost[3];
+    double angular_pos_cost[3];
+    double terminal_angular_pos_cost[3];
+    double angular_vel_cost[3];
+    double terminal_angular_vel_cost[3];
+    double linear_jerk_threshold[3];
+    double angular_jerk_threshold[3];
+    double linear_vel_change_threshold[3];
+    double angular_vel_change_threshold[3];
 };
 
 struct task{
@@ -76,7 +77,7 @@ struct stateVectorList{
     int num_ctrl = 0;
     std::vector<std::string> state_names;
     std::vector<robot> robots;
-    std::vector<bodyStateVec> bodiesStates;
+    std::vector<bodyStateVec> bodies;
 
     void Update(){
         dof = 0;
@@ -89,19 +90,19 @@ struct stateVectorList{
 
         for(auto & robot : robots){
             // Increment the number of dofs by the number of joints in the robots
-            dof += static_cast<int>(robot.jointNames.size());
-            dof_quat += static_cast<int>(robot.jointNames.size());
-            num_ctrl += static_cast<int>(robot.actuatorNames.size());
+            dof += static_cast<int>(robot.joint_names.size());
+            dof_quat += static_cast<int>(robot.joint_names.size());
+            num_ctrl += static_cast<int>(robot.actuator_names.size());
 
-            for(const auto & joint_name : robot.jointNames){
+            for(const auto & joint_name : robot.joint_names){
                 state_names.push_back(joint_name);
             }
         }
 
         // Loop through all bodies in the state vector
-        for(auto & body : bodiesStates) {
+        for(auto & body : bodies) {
             for(int i = 0; i < 3; i++) {
-                if(body.activeLinearDOF[i]) {
+                if(body.active_linear_dof[i]) {
                     dof++;
                     dof_quat++;
                     state_names.push_back(body.name + lin_suffixes[i]);
@@ -110,7 +111,7 @@ struct stateVectorList{
 
             bool any_angular_dofs = false;
             for(int i = 0; i < 3; i++){
-                if(body.activeAngularDOF[i]){
+                if(body.active_angular_dof[i]){
                     any_angular_dofs = true;
                     dof++;
                     state_names.push_back(body.name + ang_suffixes[i]);

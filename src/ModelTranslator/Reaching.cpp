@@ -13,7 +13,7 @@ bool pandaReaching::TaskComplete(mjData *d, double &dist){
     MuJoCo_helper->GetRobotJointsPositions("panda", robot_joints, d);
 
     for(int i = 0; i < full_state_vector.dof; i++){
-        double diff = full_state_vector.robots[0].goalPos[i] - robot_joints[i];
+        double diff = full_state_vector.robots[0].goal_pos[i] - robot_joints[i];
         cum_error += diff;
     }
 
@@ -146,7 +146,7 @@ void pandaReaching::ReturnRandomStartState(){
 
     // TODO - shouldnt this be full state vector?
     for(int i = 0; i < full_state_vector.dof; i++){
-        current_state_vector.robots[0].startPos[i] = joint_positions[i];
+        current_state_vector.robots[0].start_pos[i] = joint_positions[i];
     }
 
 }
@@ -168,11 +168,11 @@ void pandaReaching::ReturnRandomGoalState(){
         std::string robotName = "panda";
         for(int i = 0; i < 7; i++){
             double target_joint_val;
-            if(current_state_vector.robots[0].startPos[i] - jointOffsets[i] > jointLimsMin[i]){
-                target_joint_val = current_state_vector.robots[0].startPos[i] - jointOffsets[i];
+            if(current_state_vector.robots[0].start_pos[i] - jointOffsets[i] > jointLimsMin[i]){
+                target_joint_val = current_state_vector.robots[0].start_pos[i] - jointOffsets[i];
             }
             else{
-                target_joint_val = current_state_vector.robots[0].startPos[i] + jointOffsets[i];
+                target_joint_val = current_state_vector.robots[0].start_pos[i] + jointOffsets[i];
             }
 
             double randomJoint = randFloat(target_joint_val - jointOffsetNoise[i], target_joint_val + jointOffsetNoise[i]);
@@ -192,8 +192,8 @@ void pandaReaching::ReturnRandomGoalState(){
     }
 
     for(int i = 0; i < full_state_vector.dof; i++){
-        current_state_vector.robots[0].goalPos[i] = joints_positions[i];
-        current_state_vector.robots[0].goalVel[i] = 0.0;
+        current_state_vector.robots[0].goal_pos[i] = joints_positions[i];
+        current_state_vector.robots[0].goal_vel[i] = 0.0;
     }
 }
 
@@ -201,7 +201,7 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
     std::vector<MatrixXd> init_controls;
     int num_ctrl = current_state_vector.num_ctrl;
 
-    if(current_state_vector.robots[0].torqueControlled){
+    if(current_state_vector.robots[0].torque_controlled){
 
         MatrixXd control(num_ctrl, 1);
         double gains[7] = {10, 10, 10, 10, 5, 5, 5};

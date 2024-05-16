@@ -6,30 +6,30 @@ PistonBlock::PistonBlock(){
 }
 
 void PistonBlock::ReturnRandomStartState(){
-    current_state_vector.robots[0].startPos[0] = 0.0;
+    current_state_vector.robots[0].start_pos[0] = 0.0;
 
     // Initialise the body
-    current_state_vector.bodiesStates[0].startLinearPos[0] = 0.0;
-    current_state_vector.bodiesStates[0].startLinearPos[1] = 0.9;
-    current_state_vector.bodiesStates[0].startLinearPos[2] = 0.1;
+    current_state_vector.bodies[0].start_linear_pos[0] = 0.0;
+    current_state_vector.bodies[0].start_linear_pos[1] = 0.9;
+    current_state_vector.bodies[0].start_linear_pos[2] = 0.1;
 
-    current_state_vector.bodiesStates[0].startAngularPos[0] = 0.0;
-    current_state_vector.bodiesStates[0].startAngularPos[1] = 0.0;
-    current_state_vector.bodiesStates[0].startAngularPos[2] = 0.0;
+    current_state_vector.bodies[0].start_angular_pos[0] = 0.0;
+    current_state_vector.bodies[0].start_angular_pos[1] = 0.0;
+    current_state_vector.bodies[0].start_angular_pos[2] = 0.0;
 }
 
 void PistonBlock::ReturnRandomGoalState(){
-    current_state_vector.robots[0].goalPos[0] = 0.0;
-    current_state_vector.robots[0].goalVel[0] = 0.0;
+    current_state_vector.robots[0].goal_pos[0] = 0.0;
+    current_state_vector.robots[0].goal_vel[0] = 0.0;
 
     // Initialise the body
-    current_state_vector.bodiesStates[0].goalLinearPos[0] = 0.0;
-    current_state_vector.bodiesStates[0].goalLinearPos[1] = randFloat(1.0, 1.5);
-    current_state_vector.bodiesStates[0].goalLinearPos[2] = 0.0;
+    current_state_vector.bodies[0].goal_linear_pos[0] = 0.0;
+    current_state_vector.bodies[0].goal_linear_pos[1] = randFloat(1.0, 1.5);
+    current_state_vector.bodies[0].goal_linear_pos[2] = 0.0;
 
-    current_state_vector.bodiesStates[0].goalAngularPos[0] = 0.0;
-    current_state_vector.bodiesStates[0].goalAngularPos[1] = 0.0;
-    current_state_vector.bodiesStates[0].goalAngularPos[2] = 0.0;
+    current_state_vector.bodies[0].goal_angular_pos[0] = 0.0;
+    current_state_vector.bodies[0].goal_angular_pos[1] = 0.0;
+    current_state_vector.bodies[0].goal_angular_pos[2] = 0.0;
 }
 
 std::vector<MatrixXd> PistonBlock::CreateInitOptimisationControls(int horizonLength){
@@ -39,8 +39,8 @@ std::vector<MatrixXd> PistonBlock::CreateInitOptimisationControls(int horizonLen
     std::string goalMarkerName = "display_goal";
     pose_6 display_goal_pose;
     MuJoCo_helper->GetBodyPoseAngle("display_goal", display_goal_pose, MuJoCo_helper->master_reset_data);
-    display_goal_pose.position[0] = current_state_vector.bodiesStates[0].goalLinearPos[0];
-    display_goal_pose.position[1] = current_state_vector.bodiesStates[0].goalLinearPos[1];
+    display_goal_pose.position[0] = current_state_vector.bodies[0].goal_linear_pos[0];
+    display_goal_pose.position[1] = current_state_vector.bodies[0].goal_linear_pos[1];
     MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, display_goal_pose, MuJoCo_helper->master_reset_data);
 
     // Create controls where we move forward to contact the box

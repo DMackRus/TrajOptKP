@@ -671,10 +671,10 @@ double iLQR_SVR::ForwardsPass(double _old_cost){
 
             // Clamp torque within limits
             // TODO - replace this with model translator torque limits function, its better
-            if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
+            if(activeModelTranslator->current_state_vector.robots[0].torque_controlled){
                 for(int i = 0; i < num_ctrl; i++){
-                    if (U_new(i) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new(i) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
-                    if (U_new(i) < -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new(i) = -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
+                    if (U_new(i) > activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
+                    if (U_new(i) < -activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = -activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
                 }
             }
 
@@ -817,10 +817,10 @@ double iLQR_SVR::ForwardsPassParallel(int thread_id, double alpha){
 
         // Clamp torque within limits
         // TODO - replace this with model translator torque limits function, its better
-        if(activeModelTranslator->current_state_vector.robots[0].torqueControlled){
+        if(activeModelTranslator->current_state_vector.robots[0].torque_controlled){
             for(int i = 0; i < num_ctrl; i++){
-                if (U_new(i) > activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new(i) = activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
-                if (U_new(i) < -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i]) U_new(i) = -activeModelTranslator->current_state_vector.robots[0].torqueLimits[i];
+                if (U_new(i) > activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
+                if (U_new(i) < -activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = -activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
             }
         }
 

@@ -34,19 +34,19 @@ void walker::ReturnRandomStartState(){
     double start_config[9] = {0, 0, 0, 1, -1, 0.2, 0, 0, 0};
 
     for(int i = 0; i < 9; i++){
-        current_state_vector.robots[0].startPos[i] = start_config[i];
+        current_state_vector.robots[0].start_pos[i] = start_config[i];
     }
 }
 
 void walker::ReturnRandomGoalState(){
     for(int i = 0; i < 9; i++){
-        current_state_vector.robots[0].goalPos[i] = 0.0;
-        current_state_vector.robots[0].goalVel[i] = 0.0;
+        current_state_vector.robots[0].goal_pos[i] = 0.0;
+        current_state_vector.robots[0].goal_vel[i] = 0.0;
     }
 
     // Random body velocity between low_bound_vel and hig_bound_vel
     float rand_body_vel = randFloat(low_bound_velocity, high_bound_velocity);
-    current_state_vector.robots[0].goalVel[1] = rand_body_vel;
+    current_state_vector.robots[0].goal_vel[1] = rand_body_vel;
 }
 
 //double walker::CostFunction(mjData *d, bool terminal){

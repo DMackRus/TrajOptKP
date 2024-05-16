@@ -27,8 +27,8 @@ std::vector<MatrixXd> SquishSoft::CreateInitSetupControls(int horizonLength){
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = current_state_vector.bodiesStates[0].goalLinearPos[0];
-    goalPos(1) = current_state_vector.bodiesStates[0].goalLinearPos[1];
+    goalPos(0) = current_state_vector.bodies[0].goal_linear_pos[0];
+    goalPos(1) = current_state_vector.bodies[0].goal_linear_pos[1];
     goalPos(2) = 0.0;
     EEWayPointsSetup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
@@ -50,8 +50,8 @@ std::vector<MatrixXd> SquishSoft::CreateInitOptimisationControls(int horizonLeng
     std::string goalMarkerName = "display_goal";
     pose_6 displayBodyPose;
     MuJoCo_helper->GetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
-    displayBodyPose.position[0] = current_state_vector.bodiesStates[0].goalLinearPos[0];
-    displayBodyPose.position[1] = current_state_vector.bodiesStates[0].goalLinearPos[1];
+    displayBodyPose.position[0] = current_state_vector.bodies[0].goal_linear_pos[0];
+    displayBodyPose.position[1] = current_state_vector.bodies[0].goal_linear_pos[1];
     displayBodyPose.position[2] = 0.0f;
     MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
 
@@ -61,8 +61,8 @@ std::vector<MatrixXd> SquishSoft::CreateInitOptimisationControls(int horizonLeng
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = current_state_vector.bodiesStates[0].goalLinearPos[0];
-    goalPos(1) = current_state_vector.bodiesStates[0].goalLinearPos[1];
+    goalPos(0) = current_state_vector.bodies[0].goal_linear_pos[0];
+    goalPos(1) = current_state_vector.bodies[0].goal_linear_pos[1];
     EEWayPointsPush(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << mainWayPoints.size() << " waypoints created" << endl;
 //    cout << "mainwaypoint 0: " << mainWayPoints[1] << endl;
@@ -83,8 +83,8 @@ bool SquishSoft::TaskComplete(mjData *d, double &dist){
     pose_6 goal_pose;
     MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
 
-    double x_diff = goal_pose.position(0) - current_state_vector.bodiesStates[0].goalLinearPos[0];
-    double y_diff = goal_pose.position(1) - current_state_vector.bodiesStates[0].goalLinearPos[1];
+    double x_diff = goal_pose.position(0) - current_state_vector.bodies[0].goal_linear_pos[0];
+    double y_diff = goal_pose.position(1) - current_state_vector.bodies[0].goal_linear_pos[1];
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 

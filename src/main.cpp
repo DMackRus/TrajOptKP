@@ -279,8 +279,24 @@ int main(int argc, char **argv) {
 //        std::cout << "quat: " << test << std::endl;
 //        std::cout << "axis test: " << axis_test << "\n";
 //
-//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 //        activeModelTranslator->MuJoCo_helper->SetBodyPoseAngle("goal", object, activeModelTranslator->MuJoCo_helper->vis_data);
+
+
+        std::string flex_name = "Jelly2";
+        int flexId = mj_name2id(activeModelTranslator->MuJoCo_helper->model, mjOBJ_FLEX, flex_name.c_str());
+        int firstVertadr = activeModelTranslator->MuJoCo_helper->model->flex_vertadr[flexId];
+        int numVertices = activeModelTranslator->MuJoCo_helper->model->flex_vertnum[flexId];
+
+        int body_id = activeModelTranslator->MuJoCo_helper->model->flex_vertbodyid[firstVertadr];
+        int geom_id = activeModelTranslator->MuJoCo_helper->model->body_geomadr[body_id];
+
+        std::cout << "flex id: " << flexId << " first vert adr: " << firstVertadr << "body is: " << body_id << "geom id: " << geom_id << "\n";
+
+        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4]     = 0; // Red
+        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 1] = 0; // Green
+        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 2] = 0; // Blue
+        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 3] = 0.5; // Alpha
 //
         while(activeVisualiser->windowOpen()){
 //            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
@@ -289,10 +305,10 @@ int main(int argc, char **argv) {
         }
         // --------------------------------------------------------------------------------------------------------------
 
-        std::vector<double> time_derivs_full;
-        std::vector<double> time_bp_full;
-        std::vector<double> time_derivs_reduced;
-        std::vector<double> time_bp_reduced;
+//        std::vector<double> time_derivs_full;
+//        std::vector<double> time_bp_full;
+//        std::vector<double> time_derivs_reduced;
+//        std::vector<double> time_bp_reduced;
 
 //        int dofs_full, dofs_reduced;
 //        int N = 10;

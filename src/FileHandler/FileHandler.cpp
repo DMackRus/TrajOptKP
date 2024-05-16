@@ -159,20 +159,20 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
         }
 
         tempRobot.name = robotName;
-        tempRobot.jointNames = jointNames;
-        tempRobot.actuatorNames = actuatorNames;
-        tempRobot.torqueControlled = torqueControlled;
-        tempRobot.torqueLimits = torqueLimits;
-        tempRobot.startPos = startPos;
-        tempRobot.goalPos = goalPos;
-        tempRobot.goalVel = goalVel;
-        tempRobot.jointPosCosts = jointPosCosts;
+        tempRobot.joint_names = jointNames;
+        tempRobot.actuator_names = actuatorNames;
+        tempRobot.torque_controlled = torqueControlled;
+        tempRobot.torque_limits = torqueLimits;
+        tempRobot.start_pos = startPos;
+        tempRobot.goal_pos = goalPos;
+        tempRobot.goal_vel = goalVel;
+        tempRobot.joint_pos_costs = jointPosCosts;
         tempRobot.jointVelCosts = jointVelCosts;
-        tempRobot.terminalJointPosCosts = terminalJointPosCosts;
-        tempRobot.terminalJointVelCosts = terminalJointVelCosts;
-        tempRobot.jointControlCosts = jointControlCosts;
-        tempRobot.jointJerkThresholds = jointJerkThresholds;
-        tempRobot.magVelThresholds = magVelThresholds;
+        tempRobot.terminal_joint_pos_costs = terminalJointPosCosts;
+        tempRobot.terminal_joint_vel_costs = terminalJointVelCosts;
+        tempRobot.joint_controls_costs = jointControlCosts;
+        tempRobot.jerk_thresholds = jointJerkThresholds;
+        tempRobot.vel_change_thresholds = magVelThresholds;
 
         _taskConfig.robots.push_back(tempRobot);
     }
@@ -276,24 +276,24 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
 
         tempBody.name = bodyName;
         for(int i = 0; i < 3; i++){
-            tempBody.activeLinearDOF[i] = activeLinearDOF[i];
-            tempBody.activeAngularDOF[i] = activeAngularDOF[i];
-            tempBody.startLinearPos[i] = startLinearPos[i];
-            tempBody.startAngularPos[i] = startAngularPos[i];
-            tempBody.goalLinearPos[i] = goalLinearPos[i];
-            tempBody.goalAngularPos[i] = goalAngularPos[i];
+            tempBody.active_linear_dof[i] = activeLinearDOF[i];
+            tempBody.active_angular_dof[i] = activeAngularDOF[i];
+            tempBody.start_linear_pos[i] = startLinearPos[i];
+            tempBody.start_angular_pos[i] = startAngularPos[i];
+            tempBody.goal_linear_pos[i] = goalLinearPos[i];
+            tempBody.goal_angular_pos[i] = goalAngularPos[i];
             tempBody.linearPosCost[i] = linearPosCosts[i];
-            tempBody.terminalLinearPosCost[i] = terminalLinearPosCosts[i];
-            tempBody.linearVelCost[i] = linearVelCosts[i];
-            tempBody.terminalLinearVelCost[i] = terminalLinearVelCosts[i];
-            tempBody.angularPosCost[i] = angularPosCosts[i];
-            tempBody.terminalAngularPosCost[i] = terminalAngularPosCosts[i];
-            tempBody.angularVelCost[i] = angularVelCosts[i];
-            tempBody.terminalAngularVelCost[i] = terminalAngularVelCosts[i];
-            tempBody.linearJerkThreshold[i] = linearJerkThreshold[i];
-            tempBody.angularJerkThreshold[i] = angularJerkThreshold[i];
-            tempBody.linearMagVelThreshold[i] = linearMagVelThreshold[i];
-            tempBody.angularMagVelThreshold[i] = angularMagVelThreshold[i];
+            tempBody.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
+            tempBody.linear_vel_cost[i] = linearVelCosts[i];
+            tempBody.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
+            tempBody.angular_pos_cost[i] = angularPosCosts[i];
+            tempBody.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
+            tempBody.angular_vel_cost[i] = angularVelCosts[i];
+            tempBody.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
+            tempBody.linear_jerk_threshold[i] = linearJerkThreshold[i];
+            tempBody.angular_jerk_threshold[i] = angularJerkThreshold[i];
+            tempBody.linear_vel_change_threshold[i] = linearMagVelThreshold[i];
+            tempBody.angular_vel_change_threshold[i] = angularMagVelThreshold[i];
         }
         _taskConfig.bodiesStates.push_back(tempBody);
     }
@@ -401,31 +401,31 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
     // -------------------- Start values --------------------------------
     // Robot positions
     for(auto & robot : state_vector.robots){
-        for(int i = 0; i < robot.jointNames.size(); i++){
-            fileOutput << robot.startPos[i] << ",";
+        for(int i = 0; i < robot.joint_names.size(); i++){
+            fileOutput << robot.start_pos[i] << ",";
         }
     }
 
     // Body poses
-    for( auto body : state_vector.bodiesStates){
+    for( auto body : state_vector.bodies){
         for(int i = 0; i < 3; i++){
-            fileOutput << body.startLinearPos[i] << ",";
+            fileOutput << body.start_linear_pos[i] << ",";
         }
 
         for(int i = 0; i < 3; i++){
-            fileOutput << body.startAngularPos[i] << ",";
+            fileOutput << body.start_angular_pos[i] << ",";
         }
     }
 
     // Robot velocities
     for(auto & robot : state_vector.robots){
-        for(int i = 0; i < robot.jointNames.size(); i++){
+        for(int i = 0; i < robot.joint_names.size(); i++){
             fileOutput << 0 << ",";
         }
     }
 
     // Body velocities
-    for( auto body : state_vector.bodiesStates){
+    for( auto body : state_vector.bodies){
         for(int i = 0; i < 3; i++){
             fileOutput << 0 << ",";
         }
@@ -437,31 +437,31 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
 
     // ----------------- Goal values ---------------------------
     for(auto & robot : state_vector.robots){
-        for(int i = 0; i < robot.jointNames.size(); i++){
-            fileOutput << robot.goalPos[i] << ",";
+        for(int i = 0; i < robot.joint_names.size(); i++){
+            fileOutput << robot.goal_pos[i] << ",";
         }
     }
 
     // Body poses
-    for( auto body : state_vector.bodiesStates){
+    for( auto body : state_vector.bodies){
         for(int i = 0; i < 3; i++){
-            fileOutput << body.goalLinearPos[i] << ",";
+            fileOutput << body.goal_linear_pos[i] << ",";
         }
 
         for(int i = 0; i < 3; i++){
-            fileOutput << body.goalAngularPos[i] << ",";
+            fileOutput << body.goal_angular_pos[i] << ",";
         }
     }
 
     // Robot velocities
     for(auto & robot : state_vector.robots){
-        for(int i = 0; i < robot.jointNames.size(); i++){
-            fileOutput << robot.goalVel[i] << ",";
+        for(int i = 0; i < robot.joint_names.size(); i++){
+            fileOutput << robot.goal_vel[i] << ",";
         }
     }
 
     // Body velocities
-    for( auto body : state_vector.bodiesStates){
+    for( auto body : state_vector.bodies){
         for(int i = 0; i < 3; i++){
             fileOutput << 0 << ",";
         }
@@ -493,11 +493,11 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
     // Loop through robots
     int state_vector_size = 0;
     for(auto & robot : state_vector.robots){
-        state_vector_size += 2 * static_cast<int>(robot.jointNames.size());
+        state_vector_size += 2 * static_cast<int>(robot.joint_names.size());
     }
 
     // Loop through bodies
-    for( auto body : state_vector.bodiesStates){
+    for( auto body : state_vector.bodies){
         // x, y, z, r, p, y and *2 for velocities
         state_vector_size += 12;
     }
@@ -522,26 +522,26 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
 
         int counter = 0;
         for(auto & robot : state_vector.robots){
-            for(int i = 0; i < robot.jointNames.size(); i++){
-                robot.startPos[i] = stod(row[counter]);
-                robot.goalPos[i] = stod(row[counter + state_vector_size]);
-                robot.goalVel[i] = stod(row[counter + state_vector_size + (state_vector_size / 2)]);
+            for(int i = 0; i < robot.joint_names.size(); i++){
+                robot.start_pos[i] = stod(row[counter]);
+                robot.goal_pos[i] = stod(row[counter + state_vector_size]);
+                robot.goal_vel[i] = stod(row[counter + state_vector_size + (state_vector_size / 2)]);
                 counter++;
             }
         }
 
-        for(auto & body : state_vector.bodiesStates){
+        for(auto & body : state_vector.bodies){
             // Linear (x, y, z)
             for(int i = 0; i < 3; i++){
-                body.startLinearPos[i] = stod(row[counter]);
-                body.goalLinearPos[i] = stod(row[counter + state_vector_size]);
+                body.start_linear_pos[i] = stod(row[counter]);
+                body.goal_linear_pos[i] = stod(row[counter + state_vector_size]);
                 counter++;
             }
 
             // Angular roll pitch yaw
             for(int i = 0; i < 3; i++){
-                body.startAngularPos[i] = stod(row[counter]);
-                body.goalAngularPos[i] = stod(row[counter + state_vector_size]);
+                body.start_angular_pos[i] = stod(row[counter]);
+                body.goal_angular_pos[i] = stod(row[counter + state_vector_size]);
                 counter++;
             }
         }
