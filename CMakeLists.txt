@@ -78,7 +78,9 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/ThreeDPushing.cpp
             src/ModelTranslator/PushBaseClass.cpp
             src/ModelTranslator/Pentabot.cpp
-            src/ModelTranslator/PistonBlock.cpp src/Optimiser/iLQR_SVR.cpp include/Optimiser/iLQR_SVR.h)
+            src/ModelTranslator/PistonBlock.cpp
+            src/Optimiser/iLQR_SVR.cpp
+            src/ModelTranslator/SquishSoft.cpp)
 
 include_directories(
         include

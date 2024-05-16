@@ -695,6 +695,10 @@ void MuJoCoHelper::Scroll(double yoffset){
 // --------------------------------- END OF VISUALIZATION FUNCTIONS ---------------------------------------
 
 void MuJoCoHelper::InitSimulator(double timestep, const char* file_name){
+
+    // Should make this optional
+    InitialisePlugins();
+
     char error[1000];
     auto load_start = std::chrono::high_resolution_clock::now();
     model = mj_loadXML(file_name, nullptr, error, 1000);
@@ -761,4 +765,30 @@ double* MuJoCoHelper::SensorState(mjData *d, const std::string& sensor_name){
     } else {
         return d->sensordata + model->sensor_adr[id];
     }
+}
+
+void MuJoCoHelper::InitialisePlugins(){
+    std::cout << "initialise plugins \n";
+    int nplugin = mjp_pluginCount();
+    if (nplugin) {
+        std::printf("Built-in plugins:\n");
+        for (int i = 0; i < nplugin; ++i) {
+            std::printf("    %s\n", mjp_getPluginAtSlot(i)->name);
+        }
+    }
+
+    std::string path = __FILE__;
+    path = path.substr(0, path.find_last_of("/\\"));
+    path = path.substr(0, path.find_last_of("/\\"));
+    path = path.substr(0, path.find_last_of("/\\"));
+
+    const std::string plugin_dir = path + "/mujoco_plugins";
+    std::cout << "plugin dir: " << plugin_dir << "\n";
+    mj_loadAllPluginLibraries(
+            plugin_dir.c_str(), +[](const char* filename, int first, int count) {
+                std::printf("Plugins registered by library '%s':\n", filename);
+                for (int i = first; i < first + count; ++i) {
+                    std::printf("    %s\n", mjp_getPluginAtSlot(i)->name);
+                }
+            });
 }

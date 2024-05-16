@@ -31,15 +31,6 @@ struct mujoco_data_min{
 
 };
 
-//d_dest->time = d_src->time;
-//mju_copy(d_dest->qpos, d_src->qpos, m->nq);
-//mju_copy(d_dest->qvel, d_src->qvel, m->nv);
-//mju_copy(d_dest->qacc, d_src->qacc, m->nv);
-//mju_copy(d_dest->qacc_warmstart, d_src->qacc_warmstart, m->nv);
-//mju_copy(d_dest->qfrc_applied, d_src->qfrc_applied, m->nv);
-//mju_copy(d_dest->xfrc_applied, d_src->xfrc_applied, 6*m->nbody);
-//mju_copy(d_dest->ctrl, d_src->ctrl, m->nu);
-
 class MuJoCoHelper {
 public:
     // Constructor
@@ -109,6 +100,8 @@ public:
     double ReturnModelTimeStep() const;
 
     double* SensorState(mjData *d, const std::string& sensor_name);
+
+    void InitialisePlugins();
 
     vector<mjData*> saved_systems_state_list;       // List of saved system states
     mjData* master_reset_data{};                    // Master reset mujoco data

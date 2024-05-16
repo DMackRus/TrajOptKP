@@ -16,6 +16,8 @@
 #include "ModelTranslator/BoxSweep.h"
 
 #include "ModelTranslator/Walker.h"
+
+#include "ModelTranslator/SquishSoft.h"
 //#include "Hopper.h"
 //#include "humanoid.h"
 
@@ -280,10 +282,11 @@ int main(int argc, char **argv) {
 //        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 //        activeModelTranslator->MuJoCo_helper->SetBodyPoseAngle("goal", object, activeModelTranslator->MuJoCo_helper->vis_data);
 //
-//        while(activeVisualiser->windowOpen()){
+        while(activeVisualiser->windowOpen()){
 //            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-//            activeVisualiser->render("Test");
-//        }
+            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+            activeVisualiser->render("Test");
+        }
         // --------------------------------------------------------------------------------------------------------------
 
         std::vector<double> time_derivs_full;
@@ -291,35 +294,35 @@ int main(int argc, char **argv) {
         std::vector<double> time_derivs_reduced;
         std::vector<double> time_bp_reduced;
 
-        int dofs_full, dofs_reduced;
-        int N = 10;
-
-        dofs_full = activeModelTranslator->full_state_vector.dof;
-
-        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
+//        int dofs_full, dofs_reduced;
+//        int N = 10;
+//
+//        dofs_full = activeModelTranslator->full_state_vector.dof;
+//
+//        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
 
 //        MatrixXd state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data);
 //        std::cout << "size of state vector quaternion: " << state_vector.rows() << std::endl;
 //        activeModelTranslator->current_state_vector.Update();
 //        std::cout << "num dofs: " << activeModelTranslator->current_state_vector.dof << " num dofs quat: " << activeModelTranslator->current_state_vector.dof_quat << std::endl;
 
-        std::cout << "state vector: ";
-        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
-            std::cout << state_name << " ";
-        }
-        std::cout << "\n";
-        std::cout << "size of state vector before: " << activeModelTranslator->current_state_vector.dof << " \n";
-
-        // remove elements
-        std::vector<std::string> remove = {"panda0_joint1", "goal_x", "obstacle_1_x"};
-        activeModelTranslator->UpdateCurrentStateVector(remove, false);
-
-        std::cout << "state vector: ";
-        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
-            std::cout << state_name << " ";
-        }
-        std::cout << "\n";
-        std::cout << "size of state vector after: " << activeModelTranslator->current_state_vector.dof << " \n";
+//        std::cout << "state vector: ";
+//        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
+//            std::cout << state_name << " ";
+//        }
+//        std::cout << "\n";
+//        std::cout << "size of state vector before: " << activeModelTranslator->current_state_vector.dof << " \n";
+//
+//        // remove elements
+//        std::vector<std::string> remove = {"panda0_joint1", "goal_x", "obstacle_1_x"};
+//        activeModelTranslator->UpdateCurrentStateVector(remove, false);
+//
+//        std::cout << "state vector: ";
+//        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
+//            std::cout << state_name << " ";
+//        }
+//        std::cout << "\n";
+//        std::cout << "size of state vector after: " << activeModelTranslator->current_state_vector.dof << " \n";
 
 
 //        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
@@ -881,6 +884,11 @@ int assign_task(){
     else if(task == "piston_block"){
         std::shared_ptr<PistonBlock> my_piston_block = std::make_shared<PistonBlock>();
         activeModelTranslator = my_piston_block;
+    }
+    else if(task == "squish_soft"){
+        std::shared_ptr<SquishSoft> my_squish_soft = std::make_shared<SquishSoft>();
+        activeModelTranslator = my_squish_soft;
+
     }
     else{
         std::cout << "invalid scene selected, exiting" << std::endl;

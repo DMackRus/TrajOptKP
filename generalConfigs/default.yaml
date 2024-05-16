@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_moderate_clutter"
+task: "squish_soft"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -16,7 +16,7 @@ task: "pushing_moderate_clutter"
 # "pushing_no_clutter", "pushing_low_clutter", "pushing_moderate_clutter",
 # "pushing_moderate_clutter_constrained",
 # "box_flick_no_clutter", "box_flick_low_clutter", "box_flick_moderate_clutter",
-# "box_sweep", "3D_pushing"
+# "box_sweep", "3D_pushing", "squish_soft"
 #
 # ---- Locomotion ----
 # "walker_walk", "walker_run", "walker_uneven"
@@ -27,7 +27,7 @@ task: "pushing_moderate_clutter"
 optimiser: "iLQR_SVR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "MPC_until_completion"
+runMode: "Optimise_once"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -40,8 +40,8 @@ runMode: "MPC_until_completion"
 # "Generate_filtering_data"       - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 # "Generate_dynamics_data"        - Loop thorugh 100 CSV files and generate A, B, X, U data over a horizon and save to file.
 
-taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 1                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+taskInitMode: "fromYAML"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+csvRow: 6                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: false       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)

@@ -207,6 +207,7 @@ interval is reached.
 - [ ] improved parallelisation on iterative error method
 - [ ] Fix unit tests.
 - [ ] Add png writer as a requirement for this repo (https://github.com/pngwriter/pngwriter)
+- [ ] Fix issue with custom MuJoCo fork, and need for plugins.
 
 ## Citing
 Coming soon.
