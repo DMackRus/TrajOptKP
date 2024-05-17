@@ -8,6 +8,9 @@ FileHandler::FileHandler(){
     // interpolated iLQR
     optimiser = "interpolated_iLQR";
 
+    minIter = 2;
+    maxIter = 5;
+
     // Get project parent path
     projectParentPath = __FILE__;
     projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
@@ -177,9 +180,9 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
         _taskConfig.robots.push_back(tempRobot);
     }
 
-    // Loop through bodies
+    // Loop through rigid bodies
     for(YAML::const_iterator body_it=node["bodies"].begin(); body_it!=node["bodies"].end(); ++body_it) {
-        bodyStateVec tempBody;
+        rigid_body _rigid_body;
         std::string bodyName;
         bool activeLinearDOF[3];
         bool activeAngularDOF[3];
@@ -274,32 +277,141 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
             angularMagVelThreshold[i] = body_it->second["angularMagVelThreshold"][i].as<double>();
         }
 
-        tempBody.name = bodyName;
+        _rigid_body.name = bodyName;
         for(int i = 0; i < 3; i++){
-            tempBody.active_linear_dof[i] = activeLinearDOF[i];
-            tempBody.active_angular_dof[i] = activeAngularDOF[i];
-            tempBody.start_linear_pos[i] = startLinearPos[i];
-            tempBody.start_angular_pos[i] = startAngularPos[i];
-            tempBody.goal_linear_pos[i] = goalLinearPos[i];
-            tempBody.goal_angular_pos[i] = goalAngularPos[i];
-            tempBody.linearPosCost[i] = linearPosCosts[i];
-            tempBody.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
-            tempBody.linear_vel_cost[i] = linearVelCosts[i];
-            tempBody.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
-            tempBody.angular_pos_cost[i] = angularPosCosts[i];
-            tempBody.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
-            tempBody.angular_vel_cost[i] = angularVelCosts[i];
-            tempBody.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
-            tempBody.linear_jerk_threshold[i] = linearJerkThreshold[i];
-            tempBody.angular_jerk_threshold[i] = angularJerkThreshold[i];
-            tempBody.linear_vel_change_threshold[i] = linearMagVelThreshold[i];
-            tempBody.angular_vel_change_threshold[i] = angularMagVelThreshold[i];
+            _rigid_body.active_linear_dof[i] = activeLinearDOF[i];
+            _rigid_body.active_angular_dof[i] = activeAngularDOF[i];
+            _rigid_body.start_linear_pos[i] = startLinearPos[i];
+            _rigid_body.start_angular_pos[i] = startAngularPos[i];
+            _rigid_body.goal_linear_pos[i] = goalLinearPos[i];
+            _rigid_body.goal_angular_pos[i] = goalAngularPos[i];
+            _rigid_body.linearPosCost[i] = linearPosCosts[i];
+            _rigid_body.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
+            _rigid_body.linear_vel_cost[i] = linearVelCosts[i];
+            _rigid_body.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
+            _rigid_body.angular_pos_cost[i] = angularPosCosts[i];
+            _rigid_body.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
+            _rigid_body.angular_vel_cost[i] = angularVelCosts[i];
+            _rigid_body.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
+            _rigid_body.linear_jerk_threshold[i] = linearJerkThreshold[i];
+            _rigid_body.angular_jerk_threshold[i] = angularJerkThreshold[i];
+            _rigid_body.linear_vel_change_threshold[i] = linearMagVelThreshold[i];
+            _rigid_body.angular_vel_change_threshold[i] = angularMagVelThreshold[i];
         }
-        _taskConfig.bodiesStates.push_back(tempBody);
+        _taskConfig.rigid_bodies.push_back(_rigid_body);
+    }
+
+    // Loop through soft bodies
+    for(YAML::const_iterator body_it=node["soft_bodies"].begin(); body_it!=node["soft_bodies"].end(); ++body_it) {
+        soft_body _soft_body;
+        std::string bodyName;
+        int num_vertices;
+        std::vector<vertex> vertices;
+        double startLinearPos[3];
+        double startAngularPos[3];
+        double goalLinearPos[3];
+        double goalAngularPos[3];
+        double linearPosCosts[3];
+        double terminalLinearPosCosts[3];
+        double linearVelCosts[3];
+        double terminalLinearVelCosts[3];
+        double angularPosCosts[3];
+        double terminalAngularPosCosts[3];
+        double angularVelCosts[3];
+        double terminalAngularVelCosts[3];
+
+        bodyName = body_it->first.as<string>();
+        num_vertices = body_it->second["num_vertices"].as<int>();
+
+        for(int i = 0; i < num_vertices; i++){
+            vertex _vertex{};
+            for(int j = 0; j < 3; j++){
+                _vertex.active_linear_dof[j] = body_it->second["activeLinearDOF"][j].as<bool>();
+
+                _vertex.linear_jerk_threshold[j] = body_it->second["linearMagVelThreshold"][j].as<double>();
+                _vertex.linear_vel_change_threshold[j] = body_it->second["angularMagVelThreshold"][j].as<double>();
+            }
+
+            vertices.push_back(_vertex);
+        }
+
+        for(int i = 0; i < body_it->second["startLinearPos"].size(); i++){
+            startLinearPos[i] = body_it->second["startLinearPos"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["startAngularPos"].size(); i++){
+            startAngularPos[i] = body_it->second["startAngularPos"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["goalLinearPos"].size(); i++){
+            goalLinearPos[i] = body_it->second["goalLinearPos"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["goalAngularPos"].size(); i++){
+            goalAngularPos[i] = body_it->second["goalAngularPos"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["linearPosCost"].size(); i++){
+            linearPosCosts[i] = body_it->second["linearPosCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["terminalLinearPosCost"].size(); i++){
+            terminalLinearPosCosts[i] = body_it->second["terminalLinearPosCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["linearVelCost"].size(); i++){
+            linearVelCosts[i] = body_it->second["linearVelCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["terminalLinearVelCost"].size(); i++){
+            terminalLinearVelCosts[i] = body_it->second["terminalLinearVelCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["angularPosCost"].size(); i++){
+            angularPosCosts[i] = body_it->second["angularPosCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["terminalAngularPosCost"].size(); i++){
+            terminalAngularPosCosts[i] = body_it->second["terminalAngularPosCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["angularVelCost"].size(); i++){
+            angularVelCosts[i] = body_it->second["angularVelCost"][i].as<double>();
+        }
+
+        for(int i = 0; i < body_it->second["terminalAngularVelCost"].size(); i++){
+            terminalAngularVelCosts[i] = body_it->second["terminalAngularVelCost"][i].as<double>();
+        }
+
+        _soft_body.name = bodyName;
+        _soft_body.num_vertices = num_vertices;
+
+        // Soft body vertices
+        for(int i = 0; i < num_vertices; i++){
+            _soft_body.vertices.push_back(vertices[i]);
+        }
+
+        // General centroid of soft body qualities
+        for(int i = 0; i < 3; i++){
+            _soft_body.start_linear_pos[i] = startLinearPos[i];
+            _soft_body.start_angular_pos[i] = startAngularPos[i];
+            _soft_body.goal_linear_pos[i] = goalLinearPos[i];
+            _soft_body.goal_angular_pos[i] = goalAngularPos[i];
+            _soft_body.linearPosCost[i] = linearPosCosts[i];
+            _soft_body.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
+            _soft_body.linear_vel_cost[i] = linearVelCosts[i];
+            _soft_body.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
+            _soft_body.angular_pos_cost[i] = angularPosCosts[i];
+            _soft_body.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
+            _soft_body.angular_vel_cost[i] = angularVelCosts[i];
+            _soft_body.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
+        }
+
+        _taskConfig.soft_bodies.push_back(_soft_body);
     }
 }
 
-void FileHandler::readSettingsFile(std::string settingsFilePath){
+void FileHandler::readSettingsFile(const std::string& settingsFilePath){
 
     YAML::Node node = YAML::LoadFile(projectParentPath + settingsFilePath);
 
@@ -407,7 +519,7 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
     }
 
     // Body poses
-    for( auto body : state_vector.bodies){
+    for( auto body : state_vector.rigid_bodies){
         for(int i = 0; i < 3; i++){
             fileOutput << body.start_linear_pos[i] << ",";
         }
@@ -425,7 +537,7 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
     }
 
     // Body velocities
-    for( auto body : state_vector.bodies){
+    for( auto body : state_vector.rigid_bodies){
         for(int i = 0; i < 3; i++){
             fileOutput << 0 << ",";
         }
@@ -443,7 +555,7 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
     }
 
     // Body poses
-    for( auto body : state_vector.bodies){
+    for( auto body : state_vector.rigid_bodies){
         for(int i = 0; i < 3; i++){
             fileOutput << body.goal_linear_pos[i] << ",";
         }
@@ -461,7 +573,7 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
     }
 
     // Body velocities
-    for( auto body : state_vector.bodies){
+    for( auto body : state_vector.rigid_bodies){
         for(int i = 0; i < 3; i++){
             fileOutput << 0 << ",";
         }
@@ -497,7 +609,7 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
     }
 
     // Loop through bodies
-    for( auto body : state_vector.bodies){
+    for( auto body : state_vector.rigid_bodies){
         // x, y, z, r, p, y and *2 for velocities
         state_vector_size += 12;
     }
@@ -530,7 +642,7 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
             }
         }
 
-        for(auto & body : state_vector.bodies){
+        for(auto & body : state_vector.rigid_bodies){
             // Linear (x, y, z)
             for(int i = 0; i < 3; i++){
                 body.start_linear_pos[i] = stod(row[counter]);

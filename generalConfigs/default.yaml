@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_moderate_clutter"
+task: "squish_soft"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -27,7 +27,7 @@ task: "pushing_moderate_clutter"
 optimiser: "iLQR_SVR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "MPC_until_completion"
+runMode: "-"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.

@@ -96,8 +96,8 @@ There are some high level settings, as follows:
 - **max_N**: Maximum interval between key-points
 - **iterative_error_threshold**: Error threshold for iterative error method
 
-As well as these high level settings, there is the task description. Every task is specified by a collection of **robots** amd **bodies**.
-**Robots** are actuated whereas **bodies** are not. This list of robots and bodies instantiates the trajectory 
+As well as these high level settings, there is the task description. Every task is specified by a collection of **robots** amd **rigid_bodies**.
+**Robots** are actuated whereas **rigid_bodies** are not. This list of robots and rigid_bodies instantiates the trajectory 
 optimisation problem, by defining starting and desired states, as well as cost attributes. Finally, there are also settings
 for each DoF that relate to key-point methods, Please see the [Key-points](#Key-points) section for additional details.
 

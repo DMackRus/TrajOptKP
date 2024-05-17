@@ -18,15 +18,15 @@ void BoxSweep::ReturnRandomStartState(){
 
     // Large box configuration
     for(int i = 0; i < 3; i++){
-        current_state_vector.bodies[0].start_linear_pos[i] = 0.0;
-        current_state_vector.bodies[0].start_angular_pos[i] = 0.0;
+        current_state_vector.rigid_bodies[0].start_linear_pos[i] = 0.0;
+        current_state_vector.rigid_bodies[0].start_angular_pos[i] = 0.0;
     }
 
     // Set X position for big box
-    current_state_vector.bodies[0].start_linear_pos[0] = 0.65;
+    current_state_vector.rigid_bodies[0].start_linear_pos[0] = 0.65;
 
     // Set Z position for big box
-    current_state_vector.bodies[0].start_linear_pos[2] = 0.16;
+    current_state_vector.rigid_bodies[0].start_linear_pos[2] = 0.16;
 
 }
 
@@ -47,13 +47,13 @@ void BoxSweep::ReturnRandomGoalState(){
 
     // Large box configuration
     for(int i = 0; i < 3; i++){
-        current_state_vector.bodies[0].goal_linear_pos[i] = 0.0;
-        current_state_vector.bodies[0].goal_angular_pos[i] = 0.0;
+        current_state_vector.rigid_bodies[0].goal_linear_pos[i] = 0.0;
+        current_state_vector.rigid_bodies[0].goal_angular_pos[i] = 0.0;
     }
 
     // Set goal location for big box
-    current_state_vector.bodies[0].goal_linear_pos[0] = randX;
-    current_state_vector.bodies[0].goal_linear_pos[1] = randY;
+    current_state_vector.rigid_bodies[0].goal_linear_pos[0] = randX;
+    current_state_vector.rigid_bodies[0].goal_linear_pos[1] = randY;
 
 }
 
@@ -72,13 +72,13 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     // Set the goal position so that we can see where we are pushing to
     std::string goalMarkerName = "display_goal";
     pose_7 display_goal_pose;
-    display_goal_pose.position[0] = current_state_vector.bodies[0].goal_linear_pos[0];
-    display_goal_pose.position[1] = current_state_vector.bodies[0].goal_linear_pos[1];
+    display_goal_pose.position[0] = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+    display_goal_pose.position[1] = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
     display_goal_pose.position[2] = 0.0f;
 
-    m_point desired_eul = {current_state_vector.bodies[0].goal_angular_pos[0],
-                           current_state_vector.bodies[0].goal_angular_pos[1],
-                           current_state_vector.bodies[0].goal_angular_pos[2]};
+    m_point desired_eul = {current_state_vector.rigid_bodies[0].goal_angular_pos[0],
+                           current_state_vector.rigid_bodies[0].goal_angular_pos[1],
+                           current_state_vector.rigid_bodies[0].goal_angular_pos[2]};
 
     display_goal_pose.quat = eul2Quat(desired_eul);
 
@@ -90,8 +90,8 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goal_pos(0) = current_state_vector.bodies[0].goal_linear_pos[0];
-    goal_pos(1) = current_state_vector.bodies[0].goal_linear_pos[1];
+    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
     EEWayPointsPush(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
 
     // Step 2 - create all subwaypoints over the entire trajectory
@@ -109,8 +109,8 @@ bool BoxSweep::TaskComplete(mjData *d, double &dist){
     pose_6 goal_pose;
     MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
 
-    double x_diff = goal_pose.position(0) - current_state_vector.bodies[0].goal_linear_pos[0];
-    double y_diff = goal_pose.position(1) - current_state_vector.bodies[0].goal_linear_pos[1];
+    double x_diff = goal_pose.position(0) - current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+    double y_diff = goal_pose.position(1) - current_state_vector.rigid_bodies[0].goal_linear_pos[1];
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 

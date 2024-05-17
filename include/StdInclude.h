@@ -30,9 +30,8 @@ struct robot{
     std::vector<double> vel_change_thresholds;
 };
 
-struct bodyStateVec{
+struct rigid_body{
     std::string name;
-    bool rigid;
     bool active_linear_dof[3];
     bool active_angular_dof[3];
     double start_linear_pos[3];
@@ -53,9 +52,41 @@ struct bodyStateVec{
     double angular_vel_change_threshold[3];
 };
 
+struct vertex{
+    bool active_linear_dof[3];
+    double linear_jerk_threshold[3];
+    double linear_vel_change_threshold[3];
+};
+
+struct soft_body{
+    std::string name;
+    int num_vertices;
+//    std::vector<bool> active_linear_dof;
+    std::vector<vertex> vertices;
+
+    // Centroid of the soft body
+    double start_linear_pos[3];
+    double start_angular_pos[3];
+    double goal_linear_pos[3];
+    double goal_angular_pos[3];
+    double linearPosCost[3];
+    double terminal_linear_pos_cost[3];
+    double linear_vel_cost[3];
+    double terminal_linear_vel_cost[3];
+    double angular_pos_cost[3];
+    double terminal_angular_pos_cost[3];
+    double angular_vel_cost[3];
+    double terminal_angular_vel_cost[3];
+
+    // Individual vertices specific
+//    std::vector<double> linear_jerk_threshold;
+//    std::vector<double> linear_vel_change_threshold;
+};
+
 struct task{
     std::vector<robot> robots;
-    std::vector<bodyStateVec> bodiesStates;
+    std::vector<rigid_body> rigid_bodies;
+    std::vector<soft_body> soft_bodies;
     double modelTimeStep;
     int openloop_horizon;
     int mpc_horizon;
@@ -77,7 +108,8 @@ struct stateVectorList{
     int num_ctrl = 0;
     std::vector<std::string> state_names;
     std::vector<robot> robots;
-    std::vector<bodyStateVec> bodies;
+    std::vector<rigid_body> rigid_bodies;
+    std::vector<soft_body> soft_bodies;
 
     void Update(){
         dof = 0;
@@ -100,7 +132,7 @@ struct stateVectorList{
         }
 
         // Loop through all bodies in the state vector
-        for(auto & body : bodies) {
+        for(auto & body : rigid_bodies) {
             for(int i = 0; i < 3; i++) {
                 if(body.active_linear_dof[i]) {
                     dof++;
@@ -120,6 +152,18 @@ struct stateVectorList{
 
             if(any_angular_dofs){
                 dof_quat += 4;
+            }
+        }
+
+        for(auto & soft_body: soft_bodies){
+            for(int i = 0; i < soft_body.num_vertices; i++){
+                for(int j = 0; j < 3; j++){
+                    if(soft_body.vertices[i].active_linear_dof[j]){
+                        dof++;
+                        dof_quat++;
+                        state_names.push_back(soft_body.name + "_V" + std::to_string(i) + lin_suffixes[j]);
+                    }
+                }
             }
         }
     }

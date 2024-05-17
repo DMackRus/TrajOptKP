@@ -333,8 +333,8 @@ bool BoxFlick::TaskComplete(mjData *d, double &dist){
     pose_6 goal_pose;
     MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
 
-    double x_diff = goal_pose.position(0) - full_state_vector.bodies[0].goal_linear_pos[0];
-    double y_diff = goal_pose.position(1) - full_state_vector.bodies[0].goal_linear_pos[1];
+    double x_diff = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+    double y_diff = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
     std::cout << "distance is: " << dist << std::endl;

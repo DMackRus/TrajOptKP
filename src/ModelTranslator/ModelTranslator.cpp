@@ -45,7 +45,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
         }
     }
 
-    for(auto & bodiesState : taskConfig.bodiesStates){
+    for(auto & bodiesState : taskConfig.rigid_bodies){
         bodyNames.push_back(bodiesState.name);
         for(int j = 0; j < 3; j++){
             jerk_thresholds.push_back(bodiesState.linear_jerk_threshold[j]);
@@ -61,10 +61,13 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     }
 
     MuJoCo_helper = std::make_shared<MuJoCoHelper>(taskConfig.robots, bodyNames);
+
+    // Init simulator, make xml, make data, init plugins if required
     MuJoCo_helper->InitSimulator(taskConfig.modelTimeStep, _modelPath);
 
     full_state_vector.robots = taskConfig.robots;
-    full_state_vector.bodies = taskConfig.bodiesStates;
+    full_state_vector.rigid_bodies = taskConfig.rigid_bodies;
+    full_state_vector.soft_bodies = taskConfig.soft_bodies;
 
     // Clear optimiser dof and num ctrl so matrices are properly sized
     ResetSVR();
@@ -132,7 +135,7 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
     }
 
     // Remove or add elements for bodies in the state vector
-    for(auto & bodiesState : current_state_vector.bodies){
+    for(auto & bodiesState : current_state_vector.rigid_bodies){
         std::string body_name = bodiesState.name;
         for(auto & state_vector_name : state_vector_names){
             size_t found = state_vector_name.find(body_name);
@@ -199,25 +202,25 @@ std::vector<std::string> ModelTranslator::RandomSampleUnusedDofs(int num_dofs) c
 void ModelTranslator::UpdateSceneVisualisation(){
     // Using the current state vector, update the geoms in the scene dependant how many dofs are active
 
-    for(int  i = 0; i < current_state_vector.bodies.size(); i++){
+    for(int  i = 0; i < current_state_vector.rigid_bodies.size(); i++){
 
         // count the number of dofs for this body
         int current_dof_for_body = 0;
         int full_dof_for_body = 0;
         for(int j = 0; j < 3; j++){
             // Current state vector
-            if(current_state_vector.bodies[i].active_linear_dof[j]){
+            if(current_state_vector.rigid_bodies[i].active_linear_dof[j]){
                 current_dof_for_body++;
             }
-            if(current_state_vector.bodies[i].active_angular_dof[j]){
+            if(current_state_vector.rigid_bodies[i].active_angular_dof[j]){
                 current_dof_for_body++;
             }
 
             // Full state vector
-            if(full_state_vector.bodies[i].active_linear_dof[j]){
+            if(full_state_vector.rigid_bodies[i].active_linear_dof[j]){
                 full_dof_for_body++;
             }
-            if(full_state_vector.bodies[i].active_angular_dof[j]){
+            if(full_state_vector.rigid_bodies[i].active_angular_dof[j]){
                 full_dof_for_body++;
             }
         }
@@ -227,7 +230,7 @@ void ModelTranslator::UpdateSceneVisualisation(){
 
         // compute color
         color body_color;
-        if(current_state_vector.bodies[i].name == "goal"){
+        if(current_state_vector.rigid_bodies[i].name == "goal"){
             body_color = goal_colors[color_index];
         }
         else{
@@ -242,7 +245,7 @@ void ModelTranslator::UpdateSceneVisualisation(){
         };
 
         // Set color
-        MuJoCo_helper->SetBodyColor(current_state_vector.bodies[i].name, color);
+        MuJoCo_helper->SetBodyColor(current_state_vector.rigid_bodies[i].name, color);
     }
 }
 
@@ -287,14 +290,14 @@ double ModelTranslator::CostFunction(mjData* d, const struct stateVectorList &st
     }
 
     // Loop through the bodies in simulation
-    for(const auto &body : state_vector.bodies){
+    for(const auto &body : state_vector.rigid_bodies){
         cost += CostFunctionBody(body, d, terminal);
     }
 
     return cost;
 }
 
-double ModelTranslator::CostFunctionBody(const bodyStateVec& body, mjData *d, bool terminal){
+double ModelTranslator::CostFunctionBody(const rigid_body& body, mjData *d, bool terminal){
     double cost = 0.0;
 
     pose_6 body_pose;
@@ -512,7 +515,7 @@ void ModelTranslator::CostDerivatives(mjData* d, const struct stateVectorList &s
         R_index += robot_num_actuators;
     }
 
-    for(const auto& body : state_vector.bodies){
+    for(const auto& body : state_vector.rigid_bodies){
         pose_6 body_pose;
         pose_6 body_vel;
         MuJoCo_helper->GetBodyPoseAngle(body.name, body_pose, d);
@@ -826,7 +829,7 @@ MatrixXd ModelTranslator::ReturnPositionVector(mjData* d, const struct stateVect
     }
 
     // Loop through all bodies in the state vector
-    for(auto & bodiesState : state_vector.bodies){
+    for(auto & bodiesState : state_vector.rigid_bodies){
         // Get the body's position and orientation
         pose_6 body_pose;
         MuJoCo_helper->GetBodyPoseAngle(bodiesState.name, body_pose, d);
@@ -846,6 +849,8 @@ MatrixXd ModelTranslator::ReturnPositionVector(mjData* d, const struct stateVect
             }
         }
     }
+
+
 
     return position_vector;
 }
@@ -870,7 +875,7 @@ MatrixXd ModelTranslator::ReturnPositionVectorQuat(mjData *d, const struct state
     }
 
     // Loop through all bodies in the state vector
-    for(auto & bodiesState : state_vector.bodies){
+    for(auto & bodiesState : state_vector.rigid_bodies){
         // Get the body's position and orientation
         pose_7 body_pose;
         MuJoCo_helper->GetBodyPoseQuat(bodiesState.name, body_pose, d);
@@ -921,7 +926,7 @@ MatrixXd ModelTranslator::ReturnVelocityVector(mjData* d, const struct stateVect
     }
 
     // Loop through all bodies in the state vector
-    for(auto & bodiesState : state_vector.bodies){
+    for(auto & bodiesState : state_vector.rigid_bodies){
         // Get the body's position and orientation
         pose_6 body_velocities;
         MuJoCo_helper->GetBodyVelocity(bodiesState.name, body_velocities, d);
@@ -1011,7 +1016,7 @@ bool ModelTranslator::SetPositionVector(MatrixXd position_vector, mjData* d, con
     }
 
     // Loop through all bodies in the state vector
-    for(auto & bodiesState : state_vector.bodies){
+    for(auto & bodiesState : state_vector.rigid_bodies){
         // Get the body's position and orientation
         pose_6 body_pose;
         MuJoCo_helper->GetBodyPoseAngle(bodiesState.name, body_pose, d);
@@ -1061,7 +1066,7 @@ bool ModelTranslator::SetVelocityVector(MatrixXd velocity_vector, mjData* d, con
 
 
     // Loop through all bodies in the state vector
-    for(auto & bodiesState : state_vector.bodies){
+    for(auto & bodiesState : state_vector.rigid_bodies){
         // Get the body's position and orientation
         pose_6 body_velocity;
         MuJoCo_helper->GetBodyVelocity(bodiesState.name, body_velocity, d);
@@ -1131,7 +1136,7 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
     }
 
     // Initialise body poses to start configuration
-    for(auto & bodiesState : full_state_vector.bodies){
+    for(auto & bodiesState : full_state_vector.rigid_bodies){
 
         pose_6 body_pose;
         pose_6 body_vel;
@@ -1154,13 +1159,13 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
     int body_id;
     if(MuJoCo_helper->BodyExists("display_goal",  body_id)){
         pose_7 goal_body;
-        goal_body.position[0] = full_state_vector.bodies[0].goal_linear_pos[0];
-        goal_body.position[1] = full_state_vector.bodies[0].goal_linear_pos[1];
-        goal_body.position[2] = full_state_vector.bodies[0].goal_linear_pos[2];
+        goal_body.position[0] = full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+        goal_body.position[1] = full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+        goal_body.position[2] = full_state_vector.rigid_bodies[0].goal_linear_pos[2];
 
-        m_point desired_eul = {full_state_vector.bodies[0].goal_angular_pos[0],
-                               full_state_vector.bodies[0].goal_angular_pos[1],
-                               full_state_vector.bodies[0].goal_angular_pos[2]};
+        m_point desired_eul = {full_state_vector.rigid_bodies[0].goal_angular_pos[0],
+                               full_state_vector.rigid_bodies[0].goal_angular_pos[1],
+                               full_state_vector.rigid_bodies[0].goal_angular_pos[2]};
 
         goal_body.quat = eul2Quat(desired_eul);
         std::cout << "goal body pos: " << goal_body.position[0] << " " << goal_body.position[1] << " " << goal_body.position[2] << "\n";
