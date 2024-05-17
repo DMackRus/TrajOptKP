@@ -434,6 +434,101 @@ void MuJoCoHelper::GetBodyAcceleration(const string& body_name, pose_6 &accelera
 }
 // --------------------------------- END OF BODY UTILITY ---------------------------------------
 
+// ---------------------------------- SOFT BODY UTILITY ----------------------------------------
+
+void MuJoCoHelper::SetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
+    int flex_id = mj_name2id(model, mjOBJ_FLEX, flex_name.c_str());
+    int first_vert_address = model->flex_vertadr[flex_id];
+    int num_vertices = model->flex_vertnum[flex_id];
+
+    // Safety check to make sure vertex_id < num_vertices inside flex object
+    if(vertex_id > num_vertices){
+        std::cerr << "Vertex id in set soft body pos, vertex id: " << vertex_id << "num vertices: " << num_vertices << "\n";
+        exit(1);
+    }
+
+    int body_id = model->flex_vertbodyid[first_vert_address + vertex_id];
+    const int joint_index = model->body_jntadr[body_id];
+    const int qpos_index = model->jnt_qposadr[joint_index];
+
+    d->qpos[qpos_index + 0] = pose.position[0];
+    d->qpos[qpos_index + 1] = pose.position[1];
+    d->qpos[qpos_index + 2] = pose.position[2];
+}
+
+void MuJoCoHelper::SetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
+    int flex_id = mj_name2id(model, mjOBJ_FLEX, flex_name.c_str());
+    int first_vert_address = model->flex_vertadr[flex_id];
+    int num_vertices = model->flex_vertnum[flex_id];
+
+    // Safety check to make sure vertex_id < num_vertices inside flex object
+    if(vertex_id > num_vertices){
+        std::cerr << "Vertex id in set soft body vel, vertex id: " << vertex_id << "num vertices: " << num_vertices << "\n";
+        exit(1);
+    }
+
+    int body_id = model->flex_vertbodyid[first_vert_address + vertex_id];
+    const int joint_index = model->body_jntadr[body_id];
+    const int qvel_index = model->jnt_dofadr[joint_index];
+
+    d->qpos[qvel_index + 0] = pose.position[0];
+    d->qpos[qvel_index + 1] = pose.position[1];
+    d->qpos[qvel_index + 2] = pose.position[2];
+}
+
+void MuJoCoHelper::GetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
+
+    int flex_id = mj_name2id(model, mjOBJ_FLEX, flex_name.c_str());
+    int first_vertex_adr = model->flex_vertadr[flex_id];
+    int num_vertices = model->flex_vertnum[flex_id];
+
+    // Safety check to make sure vertex_id < num_vertices inside flex object
+    if(vertex_id > num_vertices){
+        std::cerr << "Vertex id in get soft body pos, vertex id: " << vertex_id << "num vertices: " << num_vertices << "\n";
+        exit(1);
+    }
+
+    int body_id = model->flex_vertbodyid[first_vertex_adr + vertex_id];
+    const int joint_index = model->body_jntadr[body_id];
+    const int qpos_index = model->jnt_qposadr[joint_index];
+
+    pose.position[0] = d->qpos[qpos_index + 0];
+    pose.position[1] = d->qpos[qpos_index + 1];
+    pose.position[2] = d->qpos[qpos_index + 2];
+
+    // Jus to initialise values to something, not used
+    pose.orientation[0] = 0.0;
+    pose.orientation[1] = 0.0;
+    pose.orientation[2] = 0.0;
+}
+
+void MuJoCoHelper::GetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
+    int flex_id = mj_name2id(model, mjOBJ_FLEX, flex_name.c_str());
+    int first_vertex_adr = model->flex_vertadr[flex_id];
+    int num_vertices = model->flex_vertnum[flex_id];
+
+    // Safety check to make sure vertex_id < num_vertices inside flex object
+    if(vertex_id > num_vertices){
+        std::cerr << "Vertex id in get soft body vel, vertex id: " << vertex_id << "num vertices: " << num_vertices << "\n";
+        exit(1);
+    }
+
+    int body_id = model->flex_vertbodyid[first_vertex_adr + vertex_id];
+    const int joint_index = model->body_jntadr[body_id];
+    const int qpos_index = model->jnt_dofadr[joint_index];
+
+    pose.position[0] = d->qpos[qpos_index + 0];
+    pose.position[1] = d->qpos[qpos_index + 1];
+    pose.position[2] = d->qpos[qpos_index + 2];
+
+    // Jus to initialise values to something, not used
+    pose.orientation[0] = 0.0;
+    pose.orientation[1] = 0.0;
+    pose.orientation[2] = 0.0;
+}
+
+// -------------------------------END OF SOFT BODY UTILITY -------------------------------------
+
 // - TODO create jacobian dynamically for the robot
 Eigen::MatrixXd MuJoCoHelper::GetJacobian(const std::string& body_name, mjData *d) const{
     Eigen::MatrixXd jacobian(6, 7);

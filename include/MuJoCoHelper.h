@@ -50,7 +50,7 @@ public:
     void GetRobotControlLimits(const string& robot_name, vector<double> &control_limits);
     void GetRobotJointLimits(const string& robot_name, vector<double> &joint_limits, mjData *d);
 
-    // Utility functions -- bodies
+    // Utility functions -- rigid bodies
     bool BodyExists(const string& body_name, int &body_index);
     void SetBodyColor(const string& body_name, const float color[4]) const;
 
@@ -65,6 +65,13 @@ public:
 
     void GetBodyPoseQuatViaXpos(const string& body_name, pose_7 &pose, mjData *d) const;
     void GetBodyPoseAngleViaXpos(const string& body_name, pose_6 &pose, mjData *d) const;
+
+    // Utility functions -- soft bodies
+    void SetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
+    void SetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
+
+    void GetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
+    void GetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
 
 
 

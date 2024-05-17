@@ -1178,23 +1178,27 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
         MuJoCo_helper->SetRobotJointsVelocities(robot.name, zero_robot_velocities, d);
     }
 
-    // Initialise body poses to start configuration
-    for(auto & bodiesState : full_state_vector.rigid_bodies){
+    // Initialise rigid body poses to start configuration
+    for(auto & rigid_body : full_state_vector.rigid_bodies){
 
         pose_6 body_pose;
         pose_6 body_vel;
 
         for(int i = 0; i < 3; i++){
-            body_pose.position[i] = bodiesState.start_linear_pos[i];
-            body_pose.orientation[i] = bodiesState.start_angular_pos[i];
+            body_pose.position[i] = rigid_body.start_linear_pos[i];
+            body_pose.orientation[i] = rigid_body.start_angular_pos[i];
 
             body_vel.position[i] = 0.0;
             body_vel.orientation[i] = 0.0;
         }
 
-        MuJoCo_helper->SetBodyPoseAngle(bodiesState.name, body_pose, d);
-        MuJoCo_helper->SetBodyVelocity(bodiesState.name, body_vel, d);
+        MuJoCo_helper->SetBodyPoseAngle(rigid_body.name, body_pose, d);
+        MuJoCo_helper->SetBodyVelocity(rigid_body.name, body_vel, d);
     }
+
+    // Initialise soft body poses to start configuration
+
+
 
     // If we have a goal body in the model, lets set it to the goal pose
     // TODO - add this in task config yaml
