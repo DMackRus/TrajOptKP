@@ -266,6 +266,19 @@ int main(int argc, char **argv) {
 
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
+        std::cout << "nq: " << activeModelTranslator->MuJoCo_helper->model->nq << "\n";
+        std::cout << "nv: " << activeModelTranslator->MuJoCo_helper->model->nv << "\n";
+        std::cout << "nbody: " << activeModelTranslator->MuJoCo_helper->model->nbody << "\n";
+
+        // Print state vector name and its associated q pos index
+        std::cout << "dof in current state vector: " << activeModelTranslator->current_state_vector.dof << "\n";
+        std::cout << "state vector names size: " << activeModelTranslator->current_state_vector.state_names.size() << "\n";
+        for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
+            std::cout << "i: " << i << "\n";
+            int q_index = activeModelTranslator->StateIndexToQposIndex(i, activeModelTranslator->current_state_vector);
+            std::cout << "state name: " << activeModelTranslator->current_state_vector.state_names[i] << ": " << q_index << "\n";
+        }
+
         //
         activeModelTranslator->current_state_vector.PrintFormattedStateVector();
 

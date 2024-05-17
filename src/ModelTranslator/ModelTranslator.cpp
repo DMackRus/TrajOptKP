@@ -871,7 +871,7 @@ MatrixXd ModelTranslator::ReturnPositionVector(mjData* d, const struct stateVect
         current_state_index += static_cast<int>(robot.joint_names.size());
     }
 
-    // Loop through all bodies in the state vector
+    // ------------------- Rigid body position elements --------------------
     for(auto & bodiesState : state_vector.rigid_bodies){
         // Get the body's position and orientation
         pose_6 body_pose;
@@ -893,7 +893,22 @@ MatrixXd ModelTranslator::ReturnPositionVector(mjData* d, const struct stateVect
         }
     }
 
+    //  ------------------ Soft body position elements -----------------------------------
+    for(auto & soft_body : state_vector.soft_bodies){
+        // Get the body's position and orientation
+        pose_6 body_pose;
 
+        for(int i = 0; i < soft_body.num_vertices; i++){
+
+            MuJoCo_helper->GetSoftBodyVertexPos(soft_body.name, i, body_pose, d);
+            for(int j = 0; j < 3; j++){
+                if(soft_body.vertices[i].active_linear_dof[j]){
+                    position_vector(current_state_index, 0) = body_pose.position[j];
+                    current_state_index++;
+                }
+            }
+        }
+    }
 
     return position_vector;
 }
@@ -948,6 +963,23 @@ MatrixXd ModelTranslator::ReturnPositionVectorQuat(mjData *d, const struct state
         }
     }
 
+    //  ------------------ Soft body position elements -----------------------------------
+    for(auto & soft_body : state_vector.soft_bodies){
+        // Get the body's position and orientation
+        pose_6 body_pose;
+
+        for(int i = 0; i < soft_body.num_vertices; i++){
+
+            MuJoCo_helper->GetSoftBodyVertexPos(soft_body.name, i, body_pose, d);
+            for(int j = 0; j < 3; j++){
+                if(soft_body.vertices[i].active_linear_dof[j]){
+                    position_vector(current_state_index, 0) = body_pose.position[j];
+                    current_state_index++;
+                }
+            }
+        }
+    }
+
     return position_vector;
 }
 
@@ -968,7 +1000,7 @@ MatrixXd ModelTranslator::ReturnVelocityVector(mjData* d, const struct stateVect
         current_state_index += static_cast<int>(robot.joint_names.size());
     }
 
-    // Loop through all bodies in the state vector
+    // ------------------- Rigid body velocity elements -------------------
     for(auto & bodiesState : state_vector.rigid_bodies){
         // Get the body's position and orientation
         pose_6 body_velocities;
@@ -986,6 +1018,23 @@ MatrixXd ModelTranslator::ReturnVelocityVector(mjData* d, const struct stateVect
             if(bodiesState.active_angular_dof[j]){
                 velocity_vector(current_state_index, 0) = body_velocities.orientation[j];
                 current_state_index++;
+            }
+        }
+    }
+
+    //  ------------------ Soft body velocity elements -----------------------------------
+    for(auto & soft_body : state_vector.soft_bodies){
+        // Get the body's position and orientation
+        pose_6 body_velocities;
+
+        for(int i = 0; i < soft_body.num_vertices; i++){
+
+            MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, body_velocities, d);
+            for(int j = 0; j < 3; j++){
+                if(soft_body.vertices[i].active_linear_dof[j]){
+                    velocity_vector(current_state_index, 0) = body_velocities.position[j];
+                    current_state_index++;
+                }
             }
         }
     }
@@ -1058,28 +1107,48 @@ bool ModelTranslator::SetPositionVector(MatrixXd position_vector, mjData* d, con
         current_state_index += static_cast<int>(robot.joint_names.size());
     }
 
-    // Loop through all bodies in the state vector
-    for(auto & bodiesState : state_vector.rigid_bodies){
+    // -------------------- rigid body position elements ---------------------------
+    for(auto & rigid_body : state_vector.rigid_bodies){
         // Get the body's position and orientation
         pose_6 body_pose;
-        MuJoCo_helper->GetBodyPoseAngle(bodiesState.name, body_pose, d);
+        MuJoCo_helper->GetBodyPoseAngle(rigid_body.name, body_pose, d);
 
         for(int j = 0; j < 3; j++) {
             // Linear positions
-            if (bodiesState.active_linear_dof[j]) {
+            if (rigid_body.active_linear_dof[j]) {
                 body_pose.position[j] = position_vector(current_state_index, 0);
                 current_state_index++;
             }
         }
         for(int j = 0; j < 3; j++) {
             // angular positions
-            if(bodiesState.active_angular_dof[j]){
+            if(rigid_body.active_angular_dof[j]){
                 body_pose.orientation[j] = position_vector(current_state_index, 0);
                 current_state_index++;
             }
         }
 
-        MuJoCo_helper->SetBodyPoseAngle(bodiesState.name, body_pose, d);
+        MuJoCo_helper->SetBodyPoseAngle(rigid_body.name, body_pose, d);
+    }
+
+    //  ------------------ Soft body position elements -----------------------------------
+    for(auto & soft_body : state_vector.soft_bodies){
+        // Get the body's position and orientation
+        pose_6 body_pose;
+
+
+        for(int i = 0; i < soft_body.num_vertices; i++){
+
+            MuJoCo_helper->GetSoftBodyVertexPos(soft_body.name, i, body_pose, d);
+            for(int j = 0; j < 3; j++){
+                if(soft_body.vertices[i].active_linear_dof[j]){
+                    body_pose.position[j] = position_vector(current_state_index, 0);
+                    current_state_index++;
+                }
+
+            }
+            MuJoCo_helper->SetSoftBodyVertexPos(soft_body.name, i, body_pose, d);
+        }
     }
 
     return true;
@@ -1108,7 +1177,7 @@ bool ModelTranslator::SetVelocityVector(MatrixXd velocity_vector, mjData* d, con
     }
 
 
-    // Loop through all bodies in the state vector
+    // -------------------- rigid body velocity elemenets --------------------
     for(auto & bodiesState : state_vector.rigid_bodies){
         // Get the body's position and orientation
         pose_6 body_velocity;
@@ -1132,38 +1201,119 @@ bool ModelTranslator::SetVelocityVector(MatrixXd velocity_vector, mjData* d, con
         MuJoCo_helper->SetBodyVelocity(bodiesState.name, body_velocity, d);
     }
 
+    //  ------------------ Soft body velocity elements -----------------------------------
+    for(auto & soft_body : state_vector.soft_bodies){
+        // Get the body's position and orientation
+        pose_6 body_pose;
+
+        for(int i = 0; i < soft_body.num_vertices; i++){
+            MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, body_pose, d);
+            for(int j = 0; j < 3; j++){
+                if(soft_body.vertices[i].active_linear_dof[j]){
+                    body_pose.position[j] = velocity_vector(current_state_index, 0);
+                    current_state_index++;
+                }
+            }
+            MuJoCo_helper->SetSoftBodyVertexVel(soft_body.name, i, body_pose, d);
+        }
+    }
+
     return true;
 }
 
 int ModelTranslator::StateIndexToQposIndex(int state_index, const struct stateVectorList &state_vector){
     std::string state_name = state_vector.state_names[state_index];
-
-    bool found_body_tag = false;
     int joint_index;
     int body_index_offset = 0;
-    std::string joint_name;
+    std::string rigid_body_tags[6]{"_x", "_y", "_z", "_roll", "_pitch", "_yaw"};
+    bool found_rigid_body_tag = false;
 
-    std::string body_tags[6]{"_x", "_y", "_z", "_roll", "_pitch", "_yaw"};
+    // Determine whether the state_name is a robot, rigid body or soft body
+
+    // --------------------------    Soft body checker ---------------------------------
+    // First check for '_V', which determins whether its a soft body.
+    size_t found = state_name.find('_V');
+    // If we find _V, its a soft body
+    if(found != std::string::npos){
+
+        // Remove _V_{x,y,z}
+        std::string flex_name = state_name.substr(0, found);
+
+        // --------- Compute vertex number -------------
+        // Find the position of the second underscore
+        size_t secondUnderscorePos = state_name.find('_', found + 2);
+
+        std::string numberString = state_name.substr(found + 1, secondUnderscorePos - (found + 1));
+        int vertex_number = std::atoi(numberString.c_str());
+
+        // Get flex id
+        int flex_id = mj_name2id(MuJoCo_helper->model, mjOBJ_FLEX, flex_name.c_str());
+        int first_vertex_adr = MuJoCo_helper->model->flex_vertadr[flex_id];
+
+        int body_id = MuJoCo_helper->model->flex_vertbodyid[first_vertex_adr + vertex_number];
+        joint_index = MuJoCo_helper->model->body_jntadr[body_id];
+        const int start = MuJoCo_helper->model->jnt_dofadr[joint_index];
+
+        // offset index {x, y, z}
+        for(int i = 0; i < 3; i++){
+            found_rigid_body_tag = endsWith(state_name, rigid_body_tags[i]);
+
+            if(found_rigid_body_tag){
+                body_index_offset = i;
+                break;
+            }
+        }
+
+        return start + body_index_offset;
+    }
+
+
+    // ----------------------------- Rigid body checker --------------------------------
     for(int i = 0; i < 6; i++){
-        found_body_tag = endsWith(state_name, body_tags[i]);
+        found_rigid_body_tag = endsWith(state_name, rigid_body_tags[i]);
 
-        if(found_body_tag){
+        if(found_rigid_body_tag){
             // Remove body tag from string
-            state_name.erase(state_name.length() - body_tags[i].length(), body_tags[i].length());
+            state_name.erase(state_name.length() - rigid_body_tags[i].length(), rigid_body_tags[i].length());
             body_index_offset = i;
             break;
         }
     }
 
-    if(found_body_tag){
+    if(found_rigid_body_tag){
+        // Remove body tag suffix
         int bodyId = mj_name2id(MuJoCo_helper->model, mjOBJ_BODY, state_name.c_str());
         joint_index = MuJoCo_helper->model->jnt_dofadr[MuJoCo_helper->model->body_jntadr[bodyId]];
-    }
-    else{
-        joint_index = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_name.c_str());
+
+        return joint_index + body_index_offset;
     }
 
-    return joint_index + body_index_offset;
+    // if not a soft or rigid body, its a robot joint
+    return mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_name.c_str());
+
+
+//    std::string joint_name;
+//
+//    for(int i = 0; i < 6; i++){
+//        found_rigid_body_tag = endsWith(state_name, body_tags[i]);
+//
+//        if(found_rigid_body_tag){
+//            // Remove body tag from string
+//            state_name.erase(state_name.length() - body_tags[i].length(), body_tags[i].length());
+//            body_index_offset = i;
+//            break;
+//        }
+//    }
+//
+//    if(found_rigid_body_tag){
+//        int bodyId = mj_name2id(MuJoCo_helper->model, mjOBJ_BODY, state_name.c_str());
+//        joint_index = MuJoCo_helper->model->jnt_dofadr[MuJoCo_helper->model->body_jntadr[bodyId]];
+//    }
+//    else{
+//        joint_index = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_name.c_str());
+//    }
+//
+//    return joint_index + body_index_offset;
 }
 
 void ModelTranslator::InitialiseSystemToStartState(mjData *d) {

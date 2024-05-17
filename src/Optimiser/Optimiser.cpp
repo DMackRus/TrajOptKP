@@ -138,6 +138,14 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     // TODO - remove this? It is used for WorkerComputeDerivatives function to compute derivatives in parallel
     keypointsGlobal = keyPoints;
 
+    // compute derivs serially
+//    for(int i = 0; i < horizon_length; i++){
+//        if(!keyPoints[i].empty()){
+//            activeDifferentiator->ComputeDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_u[i], l_xx[i], l_uu[i],
+//                                                     i, 0, false, activeYamlReader->costDerivsFD, true, 1e-6);
+//        }
+//    }
+
     // Setup all the required tasks
     for (int i = 0; i < keyPoints.size(); ++i) {
         tasks.push_back(&Differentiator::ComputeDerivatives);
@@ -153,14 +161,6 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     for (std::thread& thread : thread_pool) {
         thread.join();
     }
-
-    // compute derivs serially
-//    for(int i = 0; i < horizon_length; i++){
-//        if(!keyPoints[i].empty()){
-//            activeDifferentiator->ComputeDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_u[i], l_xx[i], l_uu[i],
-//                                                     i, 0, false, activeYamlReader->costDerivsFD, true, 1e-6);
-//        }
-//    }
       
     MuJoCo_helper->ResetModelAfterFiniteDifferencing();
 

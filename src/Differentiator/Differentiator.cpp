@@ -401,6 +401,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     // free the stack allocated variables
     mj_freeStack(MuJoCo_helper->fd_data[tid]);
 
+//    std::cout << "statedqvel: \n";
+//    std::cout << dstatedqvel << "\n";
+
     // ------------ A -----------------
     // dqposdqpos       dqposdqvel
     //

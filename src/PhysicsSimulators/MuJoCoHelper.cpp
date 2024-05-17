@@ -471,9 +471,9 @@ void MuJoCoHelper::SetSoftBodyVertexVel(const string& flex_name, int vertex_id, 
     const int joint_index = model->body_jntadr[body_id];
     const int qvel_index = model->jnt_dofadr[joint_index];
 
-    d->qpos[qvel_index + 0] = pose.position[0];
-    d->qpos[qvel_index + 1] = pose.position[1];
-    d->qpos[qvel_index + 2] = pose.position[2];
+    d->qvel[qvel_index + 0] = pose.position[0];
+    d->qvel[qvel_index + 1] = pose.position[1];
+    d->qvel[qvel_index + 2] = pose.position[2];
 }
 
 void MuJoCoHelper::GetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
@@ -517,9 +517,9 @@ void MuJoCoHelper::GetSoftBodyVertexVel(const string& flex_name, int vertex_id, 
     const int joint_index = model->body_jntadr[body_id];
     const int qpos_index = model->jnt_dofadr[joint_index];
 
-    pose.position[0] = d->qpos[qpos_index + 0];
-    pose.position[1] = d->qpos[qpos_index + 1];
-    pose.position[2] = d->qpos[qpos_index + 2];
+    pose.position[0] = d->qvel[qpos_index + 0];
+    pose.position[1] = d->qvel[qpos_index + 1];
+    pose.position[2] = d->qvel[qpos_index + 2];
 
     // Jus to initialise values to something, not used
     pose.orientation[0] = 0.0;
