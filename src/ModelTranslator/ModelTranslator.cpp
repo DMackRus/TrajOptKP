@@ -62,12 +62,17 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
 
     MuJoCo_helper = std::make_shared<MuJoCoHelper>(taskConfig.robots, bodyNames);
 
-    // Init simulator, make xml, make data, init plugins if required
-    MuJoCo_helper->InitSimulator(taskConfig.modelTimeStep, _modelPath);
-
     full_state_vector.robots = taskConfig.robots;
     full_state_vector.rigid_bodies = taskConfig.rigid_bodies;
     full_state_vector.soft_bodies = taskConfig.soft_bodies;
+
+    bool use_plugins = false;
+    if(!full_state_vector.soft_bodies.empty()){
+        use_plugins = true;
+    }
+
+    // Init simulator, make xml, make data, init plugins if required
+    MuJoCo_helper->InitSimulator(taskConfig.modelTimeStep, _modelPath, use_plugins);
 
     // Clear optimiser dof and num ctrl so matrices are properly sized
     ResetSVR();
@@ -97,7 +102,6 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
             ++it;
         }
     }
-
 
     // TODO (DMackRus) - This is an assumption but should be fine
     if(add_extra_states){
@@ -134,31 +138,71 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
         }
     }
 
-    // Remove or add elements for bodies in the state vector
-    for(auto & bodiesState : current_state_vector.rigid_bodies){
-        std::string body_name = bodiesState.name;
+    // Remove or add elements for rigid bodies in the state vector
+    for(auto & rigid_body : current_state_vector.rigid_bodies){
+        std::string body_name = rigid_body.name;
         for(auto & state_vector_name : state_vector_names){
             size_t found = state_vector_name.find(body_name);
 
             if (found != std::string::npos) {
                 state_vector_name.erase(found, body_name.length());
                 if(state_vector_name == "_x"){
-                    bodiesState.active_linear_dof[0] = add_extra_states;
+                    rigid_body.active_linear_dof[0] = add_extra_states;
                 }
                 else if(state_vector_name == "_y"){
-                    bodiesState.active_linear_dof[1] = add_extra_states;
+                    rigid_body.active_linear_dof[1] = add_extra_states;
                 }
                 else if(state_vector_name == "_z"){
-                    bodiesState.active_linear_dof[2] = add_extra_states;
+                    rigid_body.active_linear_dof[2] = add_extra_states;
                 }
                 else if(state_vector_name == "_roll"){
-                    bodiesState.active_angular_dof[0] = add_extra_states;
+                    rigid_body.active_angular_dof[0] = add_extra_states;
                 }
                 else if(state_vector_name == "_pitch"){
-                    bodiesState.active_angular_dof[1] = add_extra_states;
+                    rigid_body.active_angular_dof[1] = add_extra_states;
                 }
                 else if(state_vector_name == "_yaw"){
-                    bodiesState.active_angular_dof[2] = add_extra_states;
+                    rigid_body.active_angular_dof[2] = add_extra_states;
+                }
+            }
+        }
+    }
+
+    // Remove or add states for sodt bodies in the simulator
+    for( auto & soft_body : current_state_vector.soft_bodies){
+        std::string body_name = soft_body.name;
+        for(auto & state_vector_name : state_vector_names){
+            size_t found = state_vector_name.find(body_name);
+
+            if (found != std::string::npos) {
+                // Erases soft body name
+                state_vector_name.erase(found, body_name.length());
+
+                // String should now be in form "_{i}_{x, y, or z}
+                // we want number i as its the vertex number
+
+                // Find vertex number
+                int vertex_number;
+
+                size_t firstUnderscorePos = state_vector_name.find('_V');
+
+                // Find the position of the second underscore
+                size_t secondUnderscorePos = state_vector_name.find('_', firstUnderscorePos + 2);
+
+                std::string numberString = state_vector_name.substr(firstUnderscorePos + 1, secondUnderscorePos - (firstUnderscorePos + 1));
+                vertex_number = std::atoi(numberString.c_str());
+
+                // Find x, y or z suffix
+                state_vector_name.erase(firstUnderscorePos - 1, secondUnderscorePos - (firstUnderscorePos - 1));
+
+                if(state_vector_name == "_x"){
+                    soft_body.vertices[vertex_number].active_linear_dof[0] = add_extra_states;
+                }
+                else if(state_vector_name == "_y"){
+                    soft_body.vertices[vertex_number].active_linear_dof[1] = add_extra_states;
+                }
+                else if(state_vector_name == "_z"){
+                    soft_body.vertices[vertex_number].active_linear_dof[2] = add_extra_states;
                 }
             }
         }
@@ -167,7 +211,6 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
     // Update the number of dofs in the state vector
     current_state_vector.Update();
 
-    // TODO - decide if good idea or not
     // if readding dofs, dont update scene vis yet
     if(!add_extra_states){
         UpdateSceneVisualisation();

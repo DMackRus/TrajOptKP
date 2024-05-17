@@ -694,11 +694,13 @@ void MuJoCoHelper::Scroll(double yoffset){
 
 // --------------------------------- END OF VISUALIZATION FUNCTIONS ---------------------------------------
 
-void MuJoCoHelper::InitSimulator(double timestep, const char* file_name){
+void MuJoCoHelper::InitSimulator(double timestep, const char* file_name, bool use_plugins){
 
     // Should make this optional
-    InitialisePlugins();
-
+    if(use_plugins){
+        InitialisePlugins();
+    }
+    
     char error[1000];
     auto load_start = std::chrono::high_resolution_clock::now();
     model = mj_loadXML(file_name, nullptr, error, 1000);

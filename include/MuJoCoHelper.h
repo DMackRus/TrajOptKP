@@ -88,7 +88,7 @@ public:
     void MouseMove(double dx, double dy, bool button_left, bool button_right, GLFWwindow *window);
     void Scroll(double yoffset);
 
-    void InitSimulator(double timestep, const char* file_name);
+    void InitSimulator(double timestep, const char* file_name, bool use_plugins);
     bool ForwardSimulator(mjData *d) const;
     bool ForwardSimulatorWithSkip(mjData *d, int skip_stage, int skip_sensor) const;
 

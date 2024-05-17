@@ -167,6 +167,57 @@ struct stateVectorList{
             }
         }
     }
+
+    void PrintStateVector(){
+        for(auto & state_name : state_names){
+            std::cout << state_name << " ";
+        }
+        std::cout << "\n";
+    }
+
+    void PrintFormattedStateVector(){
+        std::string lin_suffixes[3] = {"_x", "_y", "_z"};
+        std::string ang_suffixes[3] = {"_roll", "_pitch", "_yaw"};
+
+        std::cout << "---- robots ----\n";
+        for(auto& robot : robots){
+            std::cout << robot.name << ": ";
+            for(auto& joint_name: robot.joint_names){
+                std::cout << joint_name << " ";
+            }
+            std::cout << "\n";
+        }
+
+        std::cout << "------ rigid bodies -----\n";
+        for(auto& rigid_body : rigid_bodies){
+            std::cout << rigid_body.name << ": ";
+            for(int i = 0; i < 3; i++) {
+                if(rigid_body.active_linear_dof[i]) {
+                    std::cout << lin_suffixes[i] << " ";
+                }
+            }
+
+            for(int i = 0; i < 3; i++){
+                if(rigid_body.active_angular_dof[i]){
+                    std::cout << ang_suffixes[i] << " ";
+                }
+            }
+            std::cout << "\n";
+        }
+
+        std::cout << "------ soft bodies -----\n";
+        for(auto& soft_body: soft_bodies){
+            std::cout << soft_body.name << ": ";
+            for(int i = 0; i < soft_body.num_vertices; i++){
+                for(int j = 0; j < 3; j++){
+                    if(soft_body.vertices[i].active_linear_dof[j]){
+                        std::cout << "_V" + std::to_string(i) + lin_suffixes[j] << " ";
+                    }
+                }
+            }
+            std::cout << "\n";
+        }
+    }
 };
 
 using namespace std;
