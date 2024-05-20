@@ -2,7 +2,7 @@ modelFile: "/mujoco_models/Franka_emika_scenes_V1/squish_soft.xml"
 modelName: "/push_ncl"
 timeStep: 0.004
 openloop_horizon: 2000
-mpc_horizon: 50
+mpc_horizon: 20
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
@@ -32,9 +32,10 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.6, 0, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [0.0, 0.0, 0]
+    linearPosCost: [1, 1, 0]
     # When iLQR once
-    terminalLinearPosCost: [1000, 1000, 0]
+#    terminalLinearPosCost: [1000, 1000, 0]
+    terminalLinearPosCost: [0, 0, 0]
     linearVelCost: [0.2, 0.2, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
@@ -48,7 +49,7 @@ bodies:
 soft_bodies:
   jelly:
     num_vertices: 36
-    activeLinearDOF: [ false, false, false ]
+    activeLinearDOF: [ true, true, true ]
     startLinearPos: [ 0.6, 0, 0.1 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.6, 0, 0.1 ]
