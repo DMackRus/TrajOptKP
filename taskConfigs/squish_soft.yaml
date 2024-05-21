@@ -49,8 +49,8 @@ bodies:
 soft_bodies:
   jelly:
     num_vertices: 36
-    activeLinearDOF: [ true, true, true ]
-    startLinearPos: [ 0.6, 0, 0.1 ]
+    activeLinearDOF: [ false, false, false ]
+    startLinearPos: [ 1.0, 0, 1.0 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.6, 0, 0.1 ]
     goalAngularPos: [ 0, 0, 0 ]

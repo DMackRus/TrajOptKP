@@ -202,6 +202,20 @@ public:
      * of the state vector is correct.
      *
      */
+    bool SetStateVectorQuat(MatrixXd state_vector_values, mjData* d, const struct stateVectorList &state_vector);
+
+    /**
+     * Sets the current state vector of the system in the specified data index, using quaternion representation
+     * for state vectors.
+     *
+     * @param state_vector_values The state vector values to set.
+     * @param data_index The data index of the state vector to set.
+     * @param state_vector The state vector object to use to create the state vector values.
+     *
+     * @return bool true if there were no issues setting the state vector. I.e the size
+     * of the state vector is correct.
+     *
+     */
     bool SetStateVector(MatrixXd state_vector_values, mjData* d, const struct stateVectorList &state_vector);
 
     /**
@@ -298,6 +312,19 @@ public:
      *
      */
     bool SetPositionVector(MatrixXd position_vector, mjData* d, const struct stateVectorList &state_vector);
+
+    /**
+     * Sets the position vector of the system at the specified data index using quaternion represntation.
+     *
+     * @param data_index The data index of the jerk vector to return.
+     * @param position_vector The position vector to set.
+     * @param state_vector The state vector object to use to create the state vector values.
+     *
+     * @return bool True if there no issues setting the position vector. I.e. the size of the
+     * position vector is correct.
+     *
+     */
+    bool SetPositionVectorQuat(MatrixXd position_vector, mjData* d, const struct stateVectorList &state_vector);
 
     /**
      * Sets the velocity vector of the system at the specified data index.

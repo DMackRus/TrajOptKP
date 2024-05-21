@@ -792,6 +792,24 @@ bool ModelTranslator::SetStateVector(MatrixXd state_vector_values, mjData* d, co
     return true;
 }
 
+bool ModelTranslator::SetStateVectorQuat(MatrixXd state_vector_values, mjData* d, const struct stateVectorList &state_vector){
+    if(state_vector_values.rows() != state_vector.dof_quat + state_vector.dof){
+        cout << "ERROR: state vector size does not match the size of the state vector in the model translator" << endl;
+        return false;
+    }
+
+    MatrixXd position_vector(state_vector.dof_quat, 1);
+    MatrixXd velocity_vector(state_vector.dof, 1);
+
+    position_vector = state_vector_values.block(0, 0, state_vector.dof_quat, 1);
+    velocity_vector = state_vector_values.block(state_vector.dof_quat, 0, state_vector.dof, 1);
+
+    SetPositionVectorQuat(position_vector, d, state_vector);
+    SetVelocityVector(velocity_vector, d, state_vector);
+
+    return true;
+}
+
 MatrixXd ModelTranslator::ReturnControlVector(mjData* d, const struct stateVectorList &state_vector){
     MatrixXd controlVector(state_vector.num_ctrl, 1);
     int current_control_index = 0;
@@ -1154,6 +1172,83 @@ bool ModelTranslator::SetPositionVector(MatrixXd position_vector, mjData* d, con
     return true;
 }
 
+bool ModelTranslator::SetPositionVectorQuat(MatrixXd position_vector, mjData* d, const struct stateVectorList &state_vector){
+    if(position_vector.rows() != state_vector.dof_quat){
+        cout << "ERROR: state vector size does not match the size of the state vector in the model translator" << endl;
+        return false;
+    }
+
+    int current_state_index = 0;
+
+    // Loop through all robots in the state vector
+    for(auto & robot : state_vector.robots){
+        vector<double> joint_positions;
+
+        for(int j = 0; j < robot.joint_names.size(); j++){
+            joint_positions.push_back(position_vector(j, 0));
+        }
+
+        MuJoCo_helper->SetRobotJointPositions(robot.name, joint_positions, d);
+
+        // Increment the current state index by the number of joints in the robot x 2 (for positions and velocities)
+        current_state_index += static_cast<int>(robot.joint_names.size());
+    }
+
+    // -------------------- rigid body position elements ---------------------------
+    for(auto & rigid_body : state_vector.rigid_bodies){
+        // Get the body's position and orientation
+        pose_7 body_pose;
+        MuJoCo_helper->GetBodyPoseQuat(rigid_body.name, body_pose, d);
+
+        for(int j = 0; j < 3; j++) {
+            // Linear positions
+            if (rigid_body.active_linear_dof[j]) {
+                body_pose.position[j] = position_vector(current_state_index, 0);
+                current_state_index++;
+            }
+        }
+
+        bool angular_dof_considered = false;
+        for(bool j : rigid_body.active_angular_dof) {
+            // angular positions
+            if(j){
+                angular_dof_considered = true;
+            }
+        }
+
+        if(angular_dof_considered){
+            body_pose.quat[0] = position_vector(current_state_index,     0);
+            body_pose.quat[1] = position_vector(current_state_index + 1, 0);
+            body_pose.quat[2] = position_vector(current_state_index + 2, 0);
+            body_pose.quat[3] = position_vector(current_state_index + 3, 0);
+        }
+
+        MuJoCo_helper->SetBodyPoseQuat(rigid_body.name, body_pose, d);
+    }
+
+    //  ------------------ Soft body position elements -----------------------------------
+    for(auto & soft_body : state_vector.soft_bodies){
+        // Get the body's position and orientation
+        pose_6 body_pose;
+
+
+        for(int i = 0; i < soft_body.num_vertices; i++){
+
+            MuJoCo_helper->GetSoftBodyVertexPos(soft_body.name, i, body_pose, d);
+            for(int j = 0; j < 3; j++){
+                if(soft_body.vertices[i].active_linear_dof[j]){
+                    body_pose.position[j] = position_vector(current_state_index, 0);
+                    current_state_index++;
+                }
+
+            }
+            MuJoCo_helper->SetSoftBodyVertexPos(soft_body.name, i, body_pose, d);
+        }
+    }
+
+    return true;
+}
+
 bool ModelTranslator::SetVelocityVector(MatrixXd velocity_vector, mjData* d, const struct stateVectorList &state_vector){
     if(velocity_vector.rows() != state_vector.dof){
         cout << "ERROR: state vector size does not match the size of the state vector in the model translator" << endl;
@@ -1347,8 +1442,19 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
     }
 
     // Initialise soft body poses to start configuration
-
-
+//    for(auto & soft_body : full_state_vector.soft_bodies){
+//        pose_6 body_pose;
+//
+//        for(int i = 0; i < 3; i++){
+//            body_pose.position[i] = soft_body.start_linear_pos[i];
+//            body_pose.orientation[i] = soft_body.start_angular_pos[i];
+//        }
+//
+//        // TODO - better way to do this where we use the spacing information and transforms
+//        for(int i = 0; i < soft_body.num_vertices; i++){
+//            MuJoCo_helper->SetSoftBodyVertexPos(soft_body.name, i, body_pose, d);
+//        }
+//    }
 
     // If we have a goal body in the model, lets set it to the goal pose
     // TODO - add this in task config yaml

@@ -9,9 +9,37 @@ SquishSoft::SquishSoft(): PushBaseClass("franka_gripper", "goal"){
 
 void SquishSoft::ReturnRandomStartState(){
 
+    // Randomyl generate a start and goal x and y position for cylinder
+    // Random generate a goal x and y position for cylinder
+
+
 }
 
 void SquishSoft::ReturnRandomGoalState(){
+
+    // Robot configuration doesnt matter for this task
+    for(int i = 0; i < full_state_vector.robots[0].joint_names.size(); i++){
+        full_state_vector.robots[0].goal_pos[i] = 0.0;
+        full_state_vector.robots[0].goal_vel[i] = 0.0;
+    }
+
+    // Goal object body
+    full_state_vector.rigid_bodies[0].goal_linear_pos[0] = randomGoalX;
+    full_state_vector.rigid_bodies[0].goal_linear_pos[1] = randomGoalY;
+    full_state_vector.rigid_bodies[0].goal_linear_pos[2] = 0.0;
+
+    full_state_vector.rigid_bodies[0].goal_angular_pos[0] = 0.0;
+    full_state_vector.rigid_bodies[0].goal_angular_pos[1] = 0.0;
+    full_state_vector.rigid_bodies[0].goal_angular_pos[2] = 0.0;
+
+    // Soft body distractor
+    full_state_vector.soft_bodies[0].goal_linear_pos[0] = 0.0;
+    full_state_vector.soft_bodies[0].goal_linear_pos[1] = 0.0;
+    full_state_vector.soft_bodies[0].goal_linear_pos[2] = 0.0;
+
+    full_state_vector.soft_bodies[0].goal_angular_pos[0] = 0.0;
+    full_state_vector.soft_bodies[0].goal_angular_pos[1] = 0.0;
+    full_state_vector.soft_bodies[0].goal_angular_pos[2] = 0.0;
 
 }
 

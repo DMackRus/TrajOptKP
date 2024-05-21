@@ -600,6 +600,12 @@ void AsyncMPC(){
     // Setup initial state vector for visualisation
     current_mpc_state_vector = activeModelTranslator->current_state_vector;
 
+    std::vector<MatrixXd> replay_states;
+    int nq = activeModelTranslator->MuJoCo_helper->model->nq;
+    int nv = activeModelTranslator->MuJoCo_helper->model->nv;
+    MatrixXd full_state(nq + nv, 1);
+    auto *_full_state = new double[nq+nv];
+
     while(task_time < MAX_TASK_TIME){
         begin = std::chrono::steady_clock::now();
 
@@ -636,7 +642,17 @@ void AsyncMPC(){
 
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
-            MatrixXd next_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector);
+
+            // TODO - bit hacky but works for now, use mj_getState for full sim state for replay
+            mj_getState(activeModelTranslator->MuJoCo_helper->model,
+                        activeModelTranslator->MuJoCo_helper->vis_data, _full_state, mjSTATE_PHYSICS);
+            for(int i = 0; i < nq+nv; i++){
+                full_state(i, 0) = _full_state[i];
+            }
+            replay_states.push_back(full_state);
+            // ----------------------------------------
+
+            MatrixXd next_state = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector);
             activeVisualiser->trajectory_states.push_back(next_state);
 
             // Set the latest control
@@ -699,8 +715,15 @@ void AsyncMPC(){
 
         activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
                                                 activeModelTranslator->full_state_vector);
-        activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
-                                              activeModelTranslator->full_state_vector);
+//        activeModelTranslator->SetStateVectorQuat(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
+//                                              activeModelTranslator->full_state_vector);
+
+        // TODO - bit hacky but maybe ok, using mj full state functions for vis replay
+        for(int j = 0; j < nq+nv; j++){
+            _full_state[j] = replay_states[i](j, 0);
+        }
+        mj_setState(activeModelTranslator->MuJoCo_helper->model,
+                    activeModelTranslator->MuJoCo_helper->vis_data, _full_state, mjSTATE_PHYSICS);
         activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
         cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, false);
         if(i % 5 == 0){

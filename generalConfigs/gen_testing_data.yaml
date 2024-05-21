@@ -24,10 +24,10 @@ task: "pushing_moderate_clutter"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
+optimiser: "iLQR_SVR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Generate_openloop_data"
+runMode: "Generate_asynchronus_mpc_data"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -50,3 +50,4 @@ minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
+record: false
