@@ -3,21 +3,21 @@
 TwoDPushing::TwoDPushing(int _clutterLevel): PushBaseClass("franka_gripper", "goal"){
 
     clutterLevel = _clutterLevel;
-    std::string yamlFilePath = "/taskConfigs/twoDPushingConfig.yaml";
+    std::string yamlFilePath = "/TaskConfigs/rigid_body_manipulation/twoD_push_no_clutter.yaml";
     if(clutterLevel == noClutter){
-        yamlFilePath = "/taskConfigs/twoDPushingConfig.yaml";
+        yamlFilePath = "/TaskConfigs/rigid_body_manipulation/twoD_push_no_clutter.yaml";
     }
     else if(clutterLevel == lowClutter){
-        yamlFilePath = "/taskConfigs/twoDPushingLowClutterConfig.yaml";
+        yamlFilePath = "/TaskConfigs/rigid_body_manipulation/twoD_push_light_clutter.yaml";
     }
     else if(clutterLevel == heavyClutter){
-        yamlFilePath = "/taskConfigs/twoDPushingHeavyClutterConfig.yaml";
+        yamlFilePath = "/TaskConfigs/rigid_body_manipulation/twoD_push_heavy_clutter.yaml";
     }
     else if(clutterLevel == constrainedClutter){
-        yamlFilePath = "/taskConfigs/twoDPushingConstrainedClutterConfig.yaml";
+        yamlFilePath = "/TaskConfigs/rigid_body_manipulation/twoD_push_constrained_clutter.yaml";
     }
     else if(clutterLevel == clutter_realWorld){
-        yamlFilePath = "/taskConfigs/twoDPushingRealWorldConfig.yaml";
+        yamlFilePath = "/TaskConfigs/rigid_body_manipulation/twoD_push_real_world.yaml";
     }
     else{
         cout << "ERROR: Invalid clutter level" << endl;

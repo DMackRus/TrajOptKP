@@ -1,7 +1,7 @@
 #include "ModelTranslator/PistonBlock.h"
 
 PistonBlock::PistonBlock(){
-    std::string task_config = "/taskConfigs/piston_box_config.yaml";
+    std::string task_config = "/TaskConfigs/toys/piston_box.yaml";
     InitModelTranslator(task_config);
 }
 

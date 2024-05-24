@@ -1,7 +1,7 @@
 #include "ModelTranslator/Pentabot.h"
 
 Pentabot::Pentabot(): ModelTranslator(){
-    std::string yamlFilePath = "/taskConfigs/pentabot_config.yaml";
+    std::string yamlFilePath = "/TaskConfigs/toys/pentabot.yaml";
     InitModelTranslator(yamlFilePath);
 }
 

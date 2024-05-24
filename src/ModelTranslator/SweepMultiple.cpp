@@ -2,7 +2,7 @@
 
 SweepMultiple::SweepMultiple(): PushBaseClass("franka_gripper", "scoop"){
 
-    std::string yamlFilePath = "/taskConfigs/Sweep_multiple.yaml";
+    std::string yamlFilePath = "/TaskConfigs/rigid_body_manipulation/Sweep_multiple.yaml";
 
     InitModelTranslator(yamlFilePath);
 }

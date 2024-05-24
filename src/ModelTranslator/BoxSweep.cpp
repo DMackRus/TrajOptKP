@@ -2,7 +2,7 @@
 
 BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "goal"){
 
-    std::string yamlFilePath = "/taskConfigs/boxSweep.yaml";
+    std::string yamlFilePath = "/TaskConfigs/rigid_body_manipulation/box_sweep.yaml";
 
     InitModelTranslator(yamlFilePath);
 }
@@ -10,23 +10,22 @@ BoxSweep::BoxSweep() : PushBaseClass("franka_gripper", "goal"){
 void BoxSweep::ReturnRandomStartState(){
     double robot_config[7] = {-0.178, 0.7, -0.0593, -1.73, 0, 0.722, -1.6};
 
-    // TODO - should this be current or full????
     // Franka Panda starting cofniguration
     for(int i = 0; i < 7; i++){
-        current_state_vector.robots[0].start_pos[i] = robot_config[i];
+        full_state_vector.robots[0].start_pos[i] = robot_config[i];
     }
 
     // Large box configuration
     for(int i = 0; i < 3; i++){
-        current_state_vector.rigid_bodies[0].start_linear_pos[i] = 0.0;
-        current_state_vector.rigid_bodies[0].start_angular_pos[i] = 0.0;
+        full_state_vector.rigid_bodies[0].start_linear_pos[i] = 0.0;
+        full_state_vector.rigid_bodies[0].start_angular_pos[i] = 0.0;
     }
 
     // Set X position for big box
-    current_state_vector.rigid_bodies[0].start_linear_pos[0] = 0.65;
+    full_state_vector.rigid_bodies[0].start_linear_pos[0] = 0.65;
 
     // Set Z position for big box
-    current_state_vector.rigid_bodies[0].start_linear_pos[2] = 0.16;
+    full_state_vector.rigid_bodies[0].start_linear_pos[2] = 0.16;
 
 }
 
@@ -41,19 +40,19 @@ void BoxSweep::ReturnRandomGoalState(){
 
     // Franka Panda goal configuration is unimportant
     for(int i = 0; i < 7; i++){
-        current_state_vector.robots[0].goal_pos[i] = 0.0;
-        current_state_vector.robots[0].goal_vel[i] = 0.0;
+        full_state_vector.robots[0].goal_pos[i] = 0.0;
+        full_state_vector.robots[0].goal_vel[i] = 0.0;
     }
 
     // Large box configuration
     for(int i = 0; i < 3; i++){
-        current_state_vector.rigid_bodies[0].goal_linear_pos[i] = 0.0;
-        current_state_vector.rigid_bodies[0].goal_angular_pos[i] = 0.0;
+        full_state_vector.rigid_bodies[0].goal_linear_pos[i] = 0.0;
+        full_state_vector.rigid_bodies[0].goal_angular_pos[i] = 0.0;
     }
 
     // Set goal location for big box
-    current_state_vector.rigid_bodies[0].goal_linear_pos[0] = randX;
-    current_state_vector.rigid_bodies[0].goal_linear_pos[1] = randY;
+    full_state_vector.rigid_bodies[0].goal_linear_pos[0] = randX;
+    full_state_vector.rigid_bodies[0].goal_linear_pos[1] = randY;
 
 }
 

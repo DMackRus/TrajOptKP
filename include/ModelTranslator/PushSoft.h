@@ -3,9 +3,9 @@
 #include "ModelTranslator/ModelTranslator.h"
 #include "ModelTranslator/PushBaseClass.h"
 
-class SquishSoft: virtual public ModelTranslator, public PushBaseClass{
+class PushSoft: virtual public ModelTranslator, public PushBaseClass{
 public:
-    SquishSoft();
+    PushSoft();
 
     void ReturnRandomStartState() override;
     void ReturnRandomGoalState() override;

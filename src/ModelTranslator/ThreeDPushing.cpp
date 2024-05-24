@@ -2,7 +2,7 @@
 
 ThreeDPushing::ThreeDPushing() : PushBaseClass("franka_gripper", "goal"){
 
-    std::string yamlFilePath = "/taskConfigs/pushThreeDConfig.yaml";
+    std::string yamlFilePath = "/TaskConfigs/rigid_body_manipulation/threeD_push.yaml";
 
     InitModelTranslator(yamlFilePath);
 }

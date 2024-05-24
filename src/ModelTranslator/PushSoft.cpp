@@ -1,13 +1,13 @@
-#include "ModelTranslator/SquishSoft.h"
+#include "ModelTranslator/PushSoft.h"
 
-SquishSoft::SquishSoft(): PushBaseClass("franka_gripper", "goal"){
+PushSoft::PushSoft(): PushBaseClass("franka_gripper", "goal"){
 
-    std::string yamlFilePath = "/taskConfigs/squish_soft.yaml";
+    std::string yamlFilePath = "/TaskConfigs/soft_body_manipulation/push_soft_into_rigid.yaml";
 
     InitModelTranslator(yamlFilePath);
 }
 
-void SquishSoft::ReturnRandomStartState(){
+void PushSoft::ReturnRandomStartState(){
 
     // Randomly generate a start and goal x and y position for cylinder
     // Random generate a goal x and y position for cylinder
@@ -71,7 +71,7 @@ void SquishSoft::ReturnRandomStartState(){
 
 }
 
-void SquishSoft::ReturnRandomGoalState(){
+void PushSoft::ReturnRandomGoalState(){
 
     // Robot configuration doesnt matter for this task
     for(int i = 0; i < full_state_vector.robots[0].joint_names.size(); i++){
@@ -99,7 +99,7 @@ void SquishSoft::ReturnRandomGoalState(){
 
 }
 
-//std::vector<MatrixXd> SquishSoft::CreateInitSetupControls(int horizonLength){
+//std::vector<MatrixXd> PushSoft::CreateInitSetupControls(int horizonLength){
 //    std::vector<MatrixXd> initSetupControls;
 //
 //    MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->master_reset_data);
@@ -127,7 +127,7 @@ void SquishSoft::ReturnRandomGoalState(){
 //    return initSetupControls;
 //}
 
-std::vector<MatrixXd> SquishSoft::CreateInitOptimisationControls(int horizonLength){
+std::vector<MatrixXd> PushSoft::CreateInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
 
     // Get EE current posi
@@ -158,7 +158,7 @@ std::vector<MatrixXd> SquishSoft::CreateInitOptimisationControls(int horizonLeng
     return initControls;
 }
 
-bool SquishSoft::TaskComplete(mjData *d, double &dist){
+bool PushSoft::TaskComplete(mjData *d, double &dist){
     bool taskComplete = false;
 
     pose_6 goal_pose;

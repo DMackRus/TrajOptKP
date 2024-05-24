@@ -1,4 +1,4 @@
-modelFile: "/mujoco_models/Franka_emika_scenes_V1/squish_soft.xml"
+modelFile: "/mujoco_models/Franka_emika_scenes_V1/push_soft_rigid.xml"
 modelName: "/squish_soft"
 timeStep: 0.004
 openloop_horizon: 2000

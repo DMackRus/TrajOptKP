@@ -12,13 +12,12 @@
 
 #include "ModelTranslator/TwoDPushing.h"
 #include "ModelTranslator/ThreeDPushing.h"
-#include "ModelTranslator/BoxFlick.h"
 #include "ModelTranslator/BoxSweep.h"
 #include "ModelTranslator/SweepMultiple.h"
 
 #include "ModelTranslator/Walker.h"
 
-#include "ModelTranslator/SquishSoft.h"
+#include "ModelTranslator/PushSoft.h"
 //#include "Hopper.h"
 //#include "humanoid.h"
 
@@ -896,18 +895,6 @@ int assign_task(){
         cout << "not implemented task yet " << endl;
         return EXIT_FAILURE;
     }
-    else if(task == "box_flick_no_clutter"){
-        std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(noClutter);
-        activeModelTranslator = myBoxFlick;
-    }
-    else if(task == "box_flick_low_clutter"){
-        std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(lowClutter);
-        activeModelTranslator = myBoxFlick;
-    }
-    else if(task == "box_flick_moderate_clutter"){
-        std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(heavyClutter);
-        activeModelTranslator = myBoxFlick;
-    }
     else if(task == "walker_walk"){
         std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(PLANE, WALK);
         activeModelTranslator = myLocomotion;
@@ -936,8 +923,8 @@ int assign_task(){
         std::shared_ptr<PistonBlock> my_piston_block = std::make_shared<PistonBlock>();
         activeModelTranslator = my_piston_block;
     }
-    else if(task == "squish_soft"){
-        std::shared_ptr<SquishSoft> my_squish_soft = std::make_shared<SquishSoft>();
+    else if(task == "push_soft"){
+        std::shared_ptr<PushSoft> my_squish_soft = std::make_shared<PushSoft>();
         activeModelTranslator = my_squish_soft;
     }
     else{

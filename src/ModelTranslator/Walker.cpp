@@ -10,22 +10,22 @@ walker::walker(int terrain, int locomotion_type): ModelTranslator(){
         low_bound_velocity = 0.1;
         high_bound_velocity = 0.6;
         if(terrain == PLANE)
-            yaml_file_path = "/taskConfigs/walk_plane_config.yaml";
+            yaml_file_path = "/TaskConfigs/locomotion/walk_plane.yaml";
         else if(terrain == UNEVEN)
-            yaml_file_path = "/taskConfigs/walk_uneven_config.yaml";
+            yaml_file_path = "/TaskConfigs/locomotion/walk_uneven.yaml";
 
     }
     else if(locomotion_type == RUN){
         low_bound_velocity = 0.9;
         high_bound_velocity = 1.3;
-        yaml_file_path = "/taskConfigs/run_plane_config.yaml";
+        yaml_file_path = "/TaskConfigs/locomotion/run_plane.yaml";
     }
 
     InitModelTranslator(yaml_file_path);
 }
 
 bool walker::TaskComplete(mjData *d, double &dist){
-    dist = 0.0f;
+    dist = 0.0;
     return false;
 }
 

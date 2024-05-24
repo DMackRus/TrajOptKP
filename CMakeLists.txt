@@ -66,7 +66,6 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/Optimiser/Optimiser.cpp
             src/Optimiser/iLQR.cpp
 #            src/Optimiser/PredictiveSampling.cpp
-            src/ModelTranslator/BoxFlick.cpp
             src/ModelTranslator/Walker.cpp
             src/FileHandler/FileHandler.cpp
 #            src/Optimiser/GradDescent.cpp
@@ -80,7 +79,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/Pentabot.cpp
             src/ModelTranslator/PistonBlock.cpp
             src/Optimiser/iLQR_SVR.cpp
-            src/ModelTranslator/SquishSoft.cpp src/ModelTranslator/SweepMultiple.cpp)
+            src/ModelTranslator/PushSoft.cpp
+            src/ModelTranslator/SweepMultiple.cpp)
 
 include_directories(
         include

@@ -1,7 +1,7 @@
 #include "ModelTranslator/Hopper.h"
 
 Hopper::Hopper(): ModelTranslator(){
-    std::string yamlFilePath = "/taskConfigs/hopperConfig.yaml";
+    std::string yamlFilePath = "/TaskConfigs/locomotion/hopper.yaml";
     InitModelTranslator(yamlFilePath);
 
 }

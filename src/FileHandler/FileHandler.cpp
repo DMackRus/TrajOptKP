@@ -501,7 +501,7 @@ void FileHandler::saveTrajecInfomation(std::vector<MatrixXd> A_matrices, std::ve
 
 void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stateVectorList &state_vector){
 
-    std::string rootPath = projectParentPath + "/testTasks/" + taskPrefix;
+    std::string rootPath = projectParentPath + "/TestTasks/" + taskPrefix;
     mkdir(rootPath.c_str(), 0777);
 
     std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
@@ -591,7 +591,7 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
 
 void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVectorList &state_vector){
 
-    std::string rootPath = projectParentPath + "/testTasks" + taskPrefix;
+    std::string rootPath = projectParentPath + "/TestTasks" + taskPrefix;
     mkdir(rootPath.c_str(), 0777);
     std::string filename = rootPath + "/" + std::to_string(fileNum) + ".csv";
 

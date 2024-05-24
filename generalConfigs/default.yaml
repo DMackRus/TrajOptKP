@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "squish_soft"
+task: "push_soft"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -15,8 +15,7 @@ task: "squish_soft"
 # -- Non-prehensile manipulation --
 # "pushing_no_clutter", "pushing_low_clutter", "pushing_moderate_clutter",
 # "pushing_moderate_clutter_constrained",
-# "box_flick_no_clutter", "box_flick_low_clutter", "box_flick_moderate_clutter",
-# "box_sweep", "3D_pushing", "squish_soft", "sweep_multiple"
+# "box_sweep", "3D_pushing", "push_soft", "sweep_multiple"
 #
 # ---- Locomotion ----
 # "walker_walk", "walker_run", "walker_uneven"
@@ -27,7 +26,7 @@ task: "squish_soft"
 optimiser: "iLQR_SVR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Generate_asynchronus_mpc_data"
+runMode: "MPC_until_completion"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.

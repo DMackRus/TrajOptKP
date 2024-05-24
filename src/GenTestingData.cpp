@@ -672,7 +672,7 @@ std::string GenTestingData::CreateTestName(const std::string& testing_method) {
 
     std::string optimiser_name = optimiser->ReturnName();
 
-    std::string root_path = project_parent_path + "/testingData/" + optimiser_name;
+    std::string root_path = project_parent_path + "/TestingData/" + optimiser_name;
 
     // Check if optimiser directory exists
     if (!filesystem::exists(root_path)) {

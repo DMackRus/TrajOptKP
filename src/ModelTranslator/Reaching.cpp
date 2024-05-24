@@ -1,7 +1,7 @@
 #include "ModelTranslator/Reaching.h"
 
 pandaReaching::pandaReaching(): ModelTranslator(){
-    std::string yamlFilePath = "/taskConfigs/reachingConfig.yaml";
+    std::string yamlFilePath = "/taskConfigs/free_motion.yaml";
 
     InitModelTranslator(yamlFilePath);
 }
