@@ -658,6 +658,18 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
             }
         }
     }
+
+    // TODO - better initialisation for soft bodies!
+    for(auto & soft_body : state_vector.soft_bodies){
+
+        // General centorid things
+        for(int i = 0; i < 3; i++){
+            soft_body.start_linear_pos[i] = 0.0;
+            soft_body.start_angular_pos[i] = 0.0;
+            soft_body.goal_linear_pos[i] = 0.0;
+            soft_body.goal_angular_pos[i] = 0.0;
+        }
+    }
 }
 
 void FileHandler::saveCostHistory(std::vector<double> costHistory, std::string filePrefix, int trajecNumber){

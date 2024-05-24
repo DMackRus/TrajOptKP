@@ -137,7 +137,7 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
 
-    TestingAsynchronusMPC(keypoint_method, 100, task_horizon, task_timeout);
+    TestingAsynchronusMPC(keypoint_method, 10, task_horizon, task_timeout);
 
 
 //    std::vector<int> minN = {1};
@@ -233,7 +233,7 @@ int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method
     // -----------------------------------------------------------------------------
 
     auto startTimer = std::chrono::high_resolution_clock::now();
-    optimiser->verbose_output = true;
+    optimiser->verbose_output = false;
 
     optimiser->SetCurrentKeypointMethod(keypoint_method);
 
@@ -244,6 +244,8 @@ int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method
 
         yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector);
         activeModelTranslator->ResetSVR();
+        std::cout << "current state vector: \n";
+        std::cout << activeModelTranslator->current_state_vector.dof << " " << activeModelTranslator->current_state_vector.num_ctrl << "\n";
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
 
@@ -450,26 +452,30 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
     MatrixXd current_state;
 
     // Create init optimisation controls and reset system state
+    std::cout << "before create init opt controls \n";
     init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(task_horizon);
+    std::cout << "after create init opt controls \n";
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
 
+    std::cout << "before first optimise \n";
     optimised_controls = optimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1, task_horizon);
+    std::cout << "optimised controls shape: " << optimised_controls[0].rows() << "\n";
+    std::cout << "after first optimise \n";
+
+    int bestMatchingStateIndex = 0;
 
     while(!stop_opt_thread){
 
         // Copy current state of system (vis data) to starting data object for optimisation
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->vis_data);
 
-        // Get the current control index
-        int current_control_index = activeVisualiser->current_control_index;
-
         // Delete all controls before control index
-        optimised_controls.erase(optimised_controls.begin(), optimised_controls.begin() + current_control_index);
+        optimised_controls.erase(optimised_controls.begin(), optimised_controls.begin() + bestMatchingStateIndex);
 
         // Copy last control to keep control trajectory the same size
         MatrixXd last_control = optimised_controls.back();
-        for (int i = 0; i < current_control_index; ++i) {
+        for (int i = 0; i < bestMatchingStateIndex; ++i) {
             optimised_controls.push_back(last_control);
         }
 
@@ -496,8 +502,8 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
 
         // Compute the best starting state
         double smallestError = 1000.00;
-        int bestMatchingStateIndex = opt_time_to_timestep;
 
+        bestMatchingStateIndex = opt_time_to_timestep;
         if(bestMatchingStateIndex >= task_horizon){
             bestMatchingStateIndex = task_horizon - 1;
         }

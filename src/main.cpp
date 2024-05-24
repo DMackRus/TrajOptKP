@@ -14,6 +14,7 @@
 #include "ModelTranslator/ThreeDPushing.h"
 #include "ModelTranslator/BoxFlick.h"
 #include "ModelTranslator/BoxSweep.h"
+#include "ModelTranslator/SweepMultiple.h"
 
 #include "ModelTranslator/Walker.h"
 
@@ -176,7 +177,7 @@ int main(int argc, char **argv) {
         GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
 
-        return myTestingObject.GenerateTestScenes(200);
+        return myTestingObject.GenerateTestScenes(100);
     }
 
     if(runMode == "Generate_openloop_data"){
@@ -265,44 +266,44 @@ int main(int argc, char **argv) {
 
 
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-
-        std::cout << "nq: " << activeModelTranslator->MuJoCo_helper->model->nq << "\n";
-        std::cout << "nv: " << activeModelTranslator->MuJoCo_helper->model->nv << "\n";
-        std::cout << "nbody: " << activeModelTranslator->MuJoCo_helper->model->nbody << "\n";
-
-        // Print state vector name and its associated q pos index
-        std::cout << "dof in current state vector: " << activeModelTranslator->current_state_vector.dof << "\n";
-        std::cout << "state vector names size: " << activeModelTranslator->current_state_vector.state_names.size() << "\n";
-        for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
-            std::cout << "i: " << i << "\n";
-            int q_index = activeModelTranslator->StateIndexToQposIndex(i, activeModelTranslator->current_state_vector);
-            std::cout << "state name: " << activeModelTranslator->current_state_vector.state_names[i] << ": " << q_index << "\n";
-        }
+//
+//        std::cout << "nq: " << activeModelTranslator->MuJoCo_helper->model->nq << "\n";
+//        std::cout << "nv: " << activeModelTranslator->MuJoCo_helper->model->nv << "\n";
+//        std::cout << "nbody: " << activeModelTranslator->MuJoCo_helper->model->nbody << "\n";
+//
+//        // Print state vector name and its associated q pos index
+//        std::cout << "dof in current state vector: " << activeModelTranslator->current_state_vector.dof << "\n";
+//        std::cout << "state vector names size: " << activeModelTranslator->current_state_vector.state_names.size() << "\n";
+//        for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
+//            std::cout << "i: " << i << "\n";
+//            int q_index = activeModelTranslator->StateIndexToQposIndex(i, activeModelTranslator->current_state_vector);
+//            std::cout << "state name: " << activeModelTranslator->current_state_vector.state_names[i] << ": " << q_index << "\n";
+//        }
 
         //
-        activeModelTranslator->current_state_vector.PrintFormattedStateVector();
+//        activeModelTranslator->current_state_vector.PrintFormattedStateVector();
+//
+//        // remove some vertices
+//        std::vector<std::string> remove = {"jelly_V1_x", "jelly_V2_y", "jelly_V11_z"};
+//        activeModelTranslator->UpdateCurrentStateVector(remove, false);
+//
+//        activeModelTranslator->current_state_vector.PrintFormattedStateVector();
 
-        // remove some vertices
-        std::vector<std::string> remove = {"jelly_V1_x", "jelly_V2_y", "jelly_V11_z"};
-        activeModelTranslator->UpdateCurrentStateVector(remove, false);
 
-        activeModelTranslator->current_state_vector.PrintFormattedStateVector();
-
-
-        std::string flex_name = "Jelly2";
-        int flexId = mj_name2id(activeModelTranslator->MuJoCo_helper->model, mjOBJ_FLEX, flex_name.c_str());
-        int firstVertadr = activeModelTranslator->MuJoCo_helper->model->flex_vertadr[flexId];
-        int numVertices = activeModelTranslator->MuJoCo_helper->model->flex_vertnum[flexId];
-
-        int body_id = activeModelTranslator->MuJoCo_helper->model->flex_vertbodyid[firstVertadr];
-        int geom_id = activeModelTranslator->MuJoCo_helper->model->body_geomadr[body_id];
-
-        std::cout << "flex id: " << flexId << " first vert adr: " << firstVertadr << "body is: " << body_id << "geom id: " << geom_id << "\n";
-
-        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4]     = 0; // Red
-        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 1] = 0; // Green
-        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 2] = 0; // Blue
-        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 3] = 0.5; // Alpha
+//        std::string flex_name = "Jelly2";
+//        int flexId = mj_name2id(activeModelTranslator->MuJoCo_helper->model, mjOBJ_FLEX, flex_name.c_str());
+//        int firstVertadr = activeModelTranslator->MuJoCo_helper->model->flex_vertadr[flexId];
+//        int numVertices = activeModelTranslator->MuJoCo_helper->model->flex_vertnum[flexId];
+//
+//        int body_id = activeModelTranslator->MuJoCo_helper->model->flex_vertbodyid[firstVertadr];
+//        int geom_id = activeModelTranslator->MuJoCo_helper->model->body_geomadr[body_id];
+//
+//        std::cout << "flex id: " << flexId << " first vert adr: " << firstVertadr << "body is: " << body_id << "geom id: " << geom_id << "\n";
+//
+//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4]     = 0; // Red
+//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 1] = 0; // Green
+//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 2] = 0; // Blue
+//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 3] = 0.5; // Alpha
 //
         while(activeVisualiser->windowOpen()){
 //            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
@@ -643,7 +644,7 @@ void AsyncMPC(){
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
 
-            // TODO - bit hacky but works for now, use mj_getState for full sim state for replay
+            // We store the full state for visualisation relay purposes
             mj_getState(activeModelTranslator->MuJoCo_helper->model,
                         activeModelTranslator->MuJoCo_helper->vis_data, _full_state, mjSTATE_PHYSICS);
             for(int i = 0; i < nq+nv; i++){
@@ -715,10 +716,9 @@ void AsyncMPC(){
 
         activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
                                                 activeModelTranslator->full_state_vector);
-//        activeModelTranslator->SetStateVectorQuat(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
-//                                              activeModelTranslator->full_state_vector);
 
-        // TODO - bit hacky but maybe ok, using mj full state functions for vis replay
+        // - complicated but works well, we use full mj_state for replay as we want to visualise all dofs and how they change
+        // - not just the ones in the state vector
         for(int j = 0; j < nq+nv; j++){
             _full_state[j] = replay_states[i](j, 0);
         }
@@ -731,6 +731,8 @@ void AsyncMPC(){
         }
     }
     activeVisualiser->StopRecording();
+
+    delete [] _full_state;
 
     std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
     std::cout << "avg opt time: " << avg_opt_time << " ms \n";
@@ -926,6 +928,10 @@ int assign_task(){
         std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
         activeModelTranslator = myBoxSweep;
     }
+    else if(task == "sweep_multiple"){
+        std::shared_ptr<SweepMultiple> my_sweep_multiple = std::make_shared<SweepMultiple>();
+        activeModelTranslator = my_sweep_multiple;
+    }
     else if(task == "piston_block"){
         std::shared_ptr<PistonBlock> my_piston_block = std::make_shared<PistonBlock>();
         activeModelTranslator = my_piston_block;
@@ -933,10 +939,9 @@ int assign_task(){
     else if(task == "squish_soft"){
         std::shared_ptr<SquishSoft> my_squish_soft = std::make_shared<SquishSoft>();
         activeModelTranslator = my_squish_soft;
-
     }
     else{
-        std::cout << "invalid scene selected, exiting" << std::endl;
+        std::cout << "invalid scene selected, " << task << " does not exist" << std::endl;
     }
     return EXIT_SUCCESS;
 }

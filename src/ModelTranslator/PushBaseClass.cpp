@@ -47,11 +47,13 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
+    std::cout << "EE_name: " << EE_name << "\n";
     MuJoCo_helper->GetBodyPoseAngleViaXpos(EE_name, EE_startPose, MuJoCo_helper->main_data);
     MuJoCo_helper->GetBodyPoseAngle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
+    std::cout << "x, y, z: " << mainWayPoint << "\n";
     mainWayPoint << EE_startPose.position(0), EE_startPose.position(1), EE_startPose.position(2);
     mainWayPoints.push_back(mainWayPoint);
     wayPointsTiming.push_back(0);

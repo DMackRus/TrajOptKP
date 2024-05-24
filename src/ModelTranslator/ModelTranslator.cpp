@@ -737,6 +737,7 @@ bool ModelTranslator::TaskComplete(mjData* d, double &dist){
 std::vector<MatrixXd> ModelTranslator::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> emptyInitSetupControls;
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->master_reset_data);
+    mj_forward(MuJoCo_helper->model, MuJoCo_helper->main_data);
     return emptyInitSetupControls;
 }
 
@@ -849,7 +850,8 @@ MatrixXd ModelTranslator::ReturnControlLimits(const struct stateVectorList &stat
 
 bool ModelTranslator::SetControlVector(MatrixXd control_vector, mjData* d, const struct stateVectorList &state_vector){
     if(control_vector.rows() != state_vector.num_ctrl){
-        cout << "ERROR: control vector size does not match the size of the control vector in the model translator" << endl;
+        cout << "ERROR: control vector size " << control_vector.rows() << " does not match the size of the control vector in the model translator: " << state_vector.num_ctrl << endl;
+        cout << "control vector: " << control_vector.transpose() << "\n";
         return false;
     }
 
@@ -1449,6 +1451,7 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 //            body_pose.position[i] = soft_body.start_linear_pos[i];
 //            body_pose.orientation[i] = soft_body.start_angular_pos[i];
 //        }
+//        std::cout << "soft body x: " << full_state_vector.soft_bodies[0].start_linear_pos[0] << " y: " << full_state_vector.soft_bodies[0].start_linear_pos[1] << "\n";
 //
 //        // TODO - better way to do this where we use the spacing information and transforms
 //        for(int i = 0; i < soft_body.num_vertices; i++){

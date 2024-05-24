@@ -276,6 +276,7 @@ std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initia
 
     auto time_start = high_resolution_clock::now();
     old_cost = RolloutTrajectory(d, true, initial_controls);
+    std::cout << "initial cost is: " << old_cost << "\n";
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
     if(verbose_output) {

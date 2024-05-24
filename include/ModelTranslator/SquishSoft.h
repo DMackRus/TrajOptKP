@@ -10,7 +10,7 @@ public:
     void ReturnRandomStartState() override;
     void ReturnRandomGoalState() override;
     std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
-    std::vector<MatrixXd> CreateInitSetupControls(int horizonLength) override;
+//    std::vector<MatrixXd> CreateInitSetupControls(int horizonLength) override;
 
 //    double CostFunction(mjData *d, bool terminal) override;
 

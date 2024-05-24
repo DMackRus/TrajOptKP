@@ -207,7 +207,7 @@ public:
 
     int sampling_k_interval = 1;
     int num_dofs_readd = 4;
-    double K_matrix_threshold = 0.2; // maybe 0.001 or 0.0001
+    double K_matrix_threshold = 0.6; // maybe 0.001 or 0.0001
     bool eigen_vector_method = true;
 //    double threshold_k_eigenvectors = 0.1;
 
