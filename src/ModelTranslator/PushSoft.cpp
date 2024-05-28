@@ -162,8 +162,10 @@ std::vector<MatrixXd> PushSoft::CreateInitOptimisationControls(int horizonLength
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
 
+    double angle_EE_push = 0.0;
+
     // Step 3 - follow the points via the jacobian
-    initControls = JacobianEEControl(goalPos, allWayPoints);
+    initControls = JacobianEEControl(allWayPoints, angle_EE_push);
 
     return initControls;
 }

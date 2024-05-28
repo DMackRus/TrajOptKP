@@ -17,10 +17,11 @@ public:
 
     std::vector<m_point> CreateAllEETransitPoints(const std::vector<m_point> &mainWayPoints, const std::vector<int> &wayPointsTiming);
 
-    std::vector<MatrixXd> JacobianEEControl(m_point goal_pos, const std::vector<m_point> &EE_path);
+    std::vector<MatrixXd> JacobianEEControl(const std::vector<m_point> &EE_path, double EE_angle);
 
-
-private:
+protected:
     std::string EE_name;
     std::string body_name;
+private:
+
 };

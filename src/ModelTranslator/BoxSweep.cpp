@@ -96,8 +96,15 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
 
+    // Compute angle of push based on goal - start
+    pose_7 goal_obj_start;
+    MuJoCo_helper->GetBodyPoseQuat(body_name, goal_obj_start, MuJoCo_helper->master_reset_data);
+    double diff_x = goal_pos(0) - goal_obj_start.position[0];
+    double diff_y =  goal_pos(1) - goal_obj_start.position[1];
+    double angle_EE_push = atan2(diff_y, diff_x);
+
     // Step 3 - follow the points via the jacobian
-    init_controls = JacobianEEControl(goal_pos, allWayPoints);
+    init_controls = JacobianEEControl(allWayPoints, angle_EE_push);
 
     return init_controls;
 }

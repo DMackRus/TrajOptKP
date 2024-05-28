@@ -209,22 +209,29 @@ std::vector<MatrixXd> SweepMultiple::CreateInitSetupControls(int horizonLength){
 
     // Pushing create init controls borken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
-    m_point goalPos;
+    m_point goal_pos;
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    goalPos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
-    goalPos(2) = 0.0;
-    EEWayPointsSetup(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
+    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    goal_pos(2) = 0.0;
+    EEWayPointsSetup(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
 //    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
 
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
 
+    // Compute angle of EE for push
+    pose_7 goal_obj_start;
+    MuJoCo_helper->GetBodyPoseQuat(body_name, goal_obj_start, MuJoCo_helper->master_reset_data);
+    double diff_x = goal_pos(0) - goal_obj_start.position[0];
+    double diff_y =  goal_pos(1) - goal_obj_start.position[1];
+    double angle_EE_push = atan2(diff_y, diff_x);
+
     // Step 3 - follow the points via the jacobian
-    initSetupControls = JacobianEEControl(goalPos, allWayPoints);
+    initSetupControls = JacobianEEControl(allWayPoints, angle_EE_push);
 
     return initSetupControls;
 }
@@ -243,13 +250,13 @@ std::vector<MatrixXd> SweepMultiple::CreateInitOptimisationControls(int horizonL
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
-    m_point goalPos;
+    m_point goal_pos;
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goalPos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    goalPos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
-    EEWayPointsPush(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
+    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    EEWayPointsPush(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << mainWayPoints.size() << " waypoints created" << endl;
 //    cout << "mainwaypoint 0: " << mainWayPoints[1] << endl;
 //    cout << "mainWayPoint 1: " << mainWayPoints[2] << endl;
@@ -257,8 +264,15 @@ std::vector<MatrixXd> SweepMultiple::CreateInitOptimisationControls(int horizonL
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
 
+    // Compute angle of EE for push
+    pose_7 goal_obj_start;
+    MuJoCo_helper->GetBodyPoseQuat(body_name, goal_obj_start, MuJoCo_helper->master_reset_data);
+    double diff_x = goal_pos(0) - goal_obj_start.position[0];
+    double diff_y =  goal_pos(1) - goal_obj_start.position[1];
+    double angle_EE_push = atan2(diff_y, diff_x);
+
     // Step 3 - follow the points via the jacobian
-    initControls = JacobianEEControl(goalPos, allWayPoints);
+    initControls = JacobianEEControl(allWayPoints, angle_EE_push);
 
     return initControls;
 }
