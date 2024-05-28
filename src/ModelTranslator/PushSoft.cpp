@@ -144,25 +144,38 @@ std::vector<MatrixXd> PushSoft::CreateInitOptimisationControls(int horizonLength
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
-    m_point goalPos;
+    m_point goal_pos;
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-//    goalPos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-//    goalPos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
-//    goalPos(2) = 0.3;
-    goalPos(0) = 0.6;
-    goalPos(1) = 0.0;
-    goalPos(2) = 0.3;
-    EEWayPointsPush(goalPos, mainWayPoints, mainWayPointsTimings, horizonLength);
+    double angle_EE_push = 0.0;
+
+    if(task_mode == PUSH_SOFT_RIGID){
+        goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+        goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+        goal_pos(2) = 0.3;
+
+        angle_EE_push = 0.0;
+    }
+    else{
+        goal_pos(0) = current_state_vector.soft_bodies[0].goal_linear_pos[0];
+        goal_pos(1) = current_state_vector.soft_bodies[0].goal_linear_pos[1];
+        goal_pos(2) = 0.3;
+
+        pose_6 goal_obj_start;
+        MuJoCo_helper->GetSoftBodyVertexPos(current_state_vector.soft_bodies[0].name, 0, goal_obj_start, MuJoCo_helper->master_reset_data);
+        double diff_x = goal_pos(0) - goal_obj_start.position[0];
+        double diff_y =  goal_pos(1) - goal_obj_start.position[1];
+
+        angle_EE_push = atan2(diff_y, diff_x);
+    }
+    EEWayPointsPush(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
     cout << mainWayPoints.size() << " waypoints created" << endl;
     cout << "mainwaypoint 0: " << mainWayPoints[0] << endl;
     cout << "mainWayPoint 1: " << mainWayPoints[1] << endl;
 
     // Step 2 - create all subwaypoints over the entire trajectory
     allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
-
-    double angle_EE_push = 0.0;
 
     // Step 3 - follow the points via the jacobian
     initControls = JacobianEEControl(allWayPoints, angle_EE_push);

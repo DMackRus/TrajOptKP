@@ -27,14 +27,14 @@ robots:
 soft_bodies:
   jelly:
     num_vertices: 36
-    activeLinearDOF: [ false, false, false ]
+    activeLinearDOF: [ true, true, true ]
     startLinearPos: [ 0.5, 1.0, 0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.6, 0, 0.1 ]
+    goalLinearPos: [ 0.65, 0, 0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [ 0.0, 0.0, 0 ]
+    linearPosCost: [ 0, 0, 0 ]
     # When iLQR once
-    terminalLinearPosCost: [ 0, 0, 0 ]
+    terminalLinearPosCost: [ 1, 1, 0 ]
     linearVelCost: [ 0, 0, 0 ]
     terminalLinearVelCost: [ 0, 0, 0 ]
     angularPosCost: [ 0, 0, 0 ]

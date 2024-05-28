@@ -47,21 +47,21 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
 
     pose_6 EE_startPose;
     pose_6 goalobj_startPose;
-    std::cout << "EE_name: " << EE_name << "\n";
     MuJoCo_helper->GetBodyPoseAngleViaXpos(EE_name, EE_startPose, MuJoCo_helper->main_data);
     MuJoCo_helper->GetBodyPoseAngle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
 
     m_point mainWayPoint;
     // First waypoint - where the end-effector is currently
-    std::cout << "x, y, z: " << mainWayPoint << "\n";
     mainWayPoint << EE_startPose.position(0), EE_startPose.position(1), EE_startPose.position(2);
     mainWayPoints.push_back(mainWayPoint);
     wayPointsTiming.push_back(0);
 
     // Calculate the angle of approach - from goal position to object start position
     double angle_EE_push;
-    double x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
-    double y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
+//    double x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
+//    double y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
+    double x_diff = desiredObjectEnd(0) - EE_startPose.position(0);
+    double y_diff = desiredObjectEnd(1) - EE_startPose.position(1);
     angle_EE_push = atan2(y_diff, x_diff);
 
     // TODO hard coded - get it programmatically?
@@ -81,8 +81,8 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
         desired_endPointY = desiredObjectEnd(1) - y_cylinder0ffset;
     }
 
-    double intermediatePointY = goalobj_startPose.position(1);
-    double intermediatePointX = goalobj_startPose.position(0);
+    double intermediatePointY = EE_startPose.position(1);
+    double intermediatePointX = EE_startPose.position(0);
 
     // Max speed could be a parameter
     double maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * MuJoCo_helper->ReturnModelTimeStep());
