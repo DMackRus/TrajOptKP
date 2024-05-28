@@ -3,19 +3,20 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "push_soft"
+task: "push_soft_into_rigid"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
 # "acrobot", "piston_block", "pentabot"
 #
-# -- Free robot arm motion ---
+# --- Free robot arm motion ---
 # "reaching"
 #
-# -- Non-prehensile manipulation --
+# --- Non-prehensile manipulation ---
 # "pushing_no_clutter", "pushing_low_clutter", "pushing_moderate_clutter",
 # "pushing_moderate_clutter_constrained",
-# "box_sweep", "3D_pushing", "push_soft", "sweep_multiple"
+# "box_sweep", "3D_pushing", "sweep_multiple"
+# "push_soft_into_rigid", "push_soft"
 #
 # ---- Locomotion ----
 # "walker_walk", "walker_run", "walker_uneven"
@@ -39,7 +40,7 @@ runMode: "MPC_until_completion"
 # "Generate_filtering_data"       - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 # "Generate_dynamics_data"        - Loop thorugh 100 CSV files and generate A, B, X, U data over a horizon and save to file.
 
-taskInitMode: "random"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+taskInitMode: "fromYAML"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 1                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.

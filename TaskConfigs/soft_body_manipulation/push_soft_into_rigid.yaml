@@ -30,13 +30,13 @@ bodies:
     activeAngularDOF: [false, false, false]
     startLinearPos: [ 0.5, 0, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.75, -0.1, 0.0 ]
+    goalLinearPos: [ 0.75, 0.1, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [3, 6, 0]
+    linearPosCost: [3, 6, 0]  # 3, 6, 0
     # When iLQR once
 #    terminalLinearPosCost: [1000, 1000, 0]
     terminalLinearPosCost: [0, 0, 0]
-    linearVelCost: [1, 1, 0]
+    linearVelCost: [0, 0, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
     terminalAngularPosCost: [0, 0, 0]
@@ -52,9 +52,9 @@ soft_bodies:
     activeLinearDOF: [ true, true, true ]
     startLinearPos: [ 0.5, 1.0, 0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.6, 0, 0.1 ]
+    goalLinearPos: [ 0.7, 0, 0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [ 0.0, 0.0, 0 ]
+    linearPosCost: [ 0, 0, 0 ]
     # When iLQR once
     terminalLinearPosCost: [ 0, 0, 0 ]
     linearVelCost: [ 0, 0, 0 ]

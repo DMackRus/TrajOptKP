@@ -3,9 +3,14 @@
 #include "ModelTranslator/ModelTranslator.h"
 #include "ModelTranslator/PushBaseClass.h"
 
+enum task_mode{
+    PUSH_SOFT,
+    PUSH_SOFT_RIGID
+};
+
 class PushSoft: virtual public ModelTranslator, public PushBaseClass{
 public:
-    PushSoft();
+    PushSoft(int _task_mode);
 
     void ReturnRandomStartState() override;
     void ReturnRandomGoalState() override;
@@ -19,7 +24,7 @@ public:
     bool TaskComplete(mjData *d, double &dist) override;
 
 private:
-    int clutterLevel = noClutter;
+    int task_mode = PUSH_SOFT;
     double randomGoalX = 0.0;
     double randomGoalY = 0.0;
 

@@ -110,6 +110,8 @@ public:
 
     double CostFunctionBody(const rigid_body& body, mjData *d, bool terminal);
 
+    double CostFuntionSoftBody(const soft_body& soft_body, mjData *d, bool terminal);
+
     /**
      * Returns the current cost derivatives (1st and 2nd order) of the system with respect to the
      * state and control vectors at the given data index.

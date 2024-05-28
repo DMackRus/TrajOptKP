@@ -1,8 +1,18 @@
 #include "ModelTranslator/PushSoft.h"
 
-PushSoft::PushSoft(): PushBaseClass("franka_gripper", "goal"){
+PushSoft::PushSoft(int _task_mode): PushBaseClass("franka_gripper", "goal"){
+    task_mode = _task_mode;
 
-    std::string yamlFilePath = "/TaskConfigs/soft_body_manipulation/push_soft_into_rigid.yaml";
+    std::string yamlFilePath;
+    if(task_mode == PUSH_SOFT){
+        yamlFilePath = "/TaskConfigs/soft_body_manipulation/push_soft.yaml";
+    }
+    else if(task_mode == PUSH_SOFT_RIGID){
+        yamlFilePath = "/TaskConfigs/soft_body_manipulation/push_soft_into_rigid.yaml";
+    }
+    else{
+        std::cerr << "Invalid task mode specified for push soft \n";
+    }
 
     InitModelTranslator(yamlFilePath);
 }
@@ -161,19 +171,36 @@ std::vector<MatrixXd> PushSoft::CreateInitOptimisationControls(int horizonLength
 bool PushSoft::TaskComplete(mjData *d, double &dist){
     bool taskComplete = false;
 
-    pose_6 goal_pose;
-    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
+    if(task_mode == PUSH_SOFT){
+        // Minimise the sum of all vertices from the goal position
+        dist = 0.0;
+        pose_6 vertex_pose;
+        for(int i = 0; i < full_state_vector.soft_bodies[0].num_vertices; i++){
+            MuJoCo_helper->GetSoftBodyVertexPos(full_state_vector.soft_bodies[0].name, i, vertex_pose, d);
+            double diffX = full_state_vector.soft_bodies[0].goal_linear_pos[0] - vertex_pose.position[0];
+            double diffY = full_state_vector.soft_bodies[0].goal_linear_pos[1] - vertex_pose.position[1];
+            dist += sqrt(pow(diffX, 2) + pow(diffY, 2));
+        }
 
-    double x_diff = goal_pose.position(0) - current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    double y_diff = goal_pose.position(1) - current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+        if(dist < 0.1){
+            taskComplete = true;
+        }
 
-    dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
+    }
+    else if(task_mode == PUSH_SOFT_RIGID){
+        pose_6 goal_pose;
+        MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
+
+        double x_diff = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+        double y_diff = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+
+        dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 
 //    std::cout << "dist: " << dist << "\n";
-    if(dist < 0.03){
-        taskComplete = true;
+        if(dist < 0.03){
+            taskComplete = true;
+        }
     }
-
 
     return taskComplete;
 }

@@ -293,7 +293,7 @@ void ModelTranslator::UpdateSceneVisualisation(){
 }
 
 double ModelTranslator::CostFunction(mjData* d, const struct stateVectorList &state_vector, bool terminal){
-    double cost = 0.0f;
+    double cost = 0.0;
 
     // Loop through robots in simulator
     for(auto & robot : state_vector.robots){
@@ -335,6 +335,11 @@ double ModelTranslator::CostFunction(mjData* d, const struct stateVectorList &st
     // Loop through the bodies in simulation
     for(const auto &body : state_vector.rigid_bodies){
         cost += CostFunctionBody(body, d, terminal);
+    }
+
+    // Loop through the soft bodies in simulation
+    for(const auto &soft_body : state_vector.soft_bodies){
+        cost += CostFuntionSoftBody(soft_body, d, terminal);
     }
 
     return cost;
@@ -479,6 +484,30 @@ double ModelTranslator::CostFunctionBody(const rigid_body& body, mjData *d, bool
         }
     }
 
+    return cost;
+}
+
+double ModelTranslator::CostFuntionSoftBody(const soft_body& soft_body, mjData *d, bool terminal){
+    // Loop through vertices of soft body
+    double cost = 0.0;
+    for(int i = 0; i < soft_body.num_vertices; i++){
+        pose_6 vertex_pose;
+        pose_6 vertex_vel;
+        MuJoCo_helper->GetSoftBodyVertexPos(soft_body.name, i, vertex_pose, d);
+        MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, vertex_vel, d);
+
+        for(int j = 0; j < 3; j++){
+            if(terminal){
+                cost += soft_body.terminal_linear_pos_cost[j] * pow((vertex_pose.position[j] - soft_body.goal_linear_pos[j]), 2);
+                cost += soft_body.terminal_linear_vel_cost[j] * pow(vertex_vel.position[j], 2);
+            }
+            else{
+                cost += soft_body.linearPosCost[j] * pow((vertex_pose.position[j] - soft_body.goal_linear_pos[j]), 2);
+                cost += soft_body.linear_vel_cost[j] * pow(vertex_vel.position[j], 2);
+            }
+        }
+
+    }
     return cost;
 }
 
@@ -726,9 +755,47 @@ void ModelTranslator::CostDerivatives(mjData* d, const struct stateVectorList &s
 //        }
     }
 
+    for(const auto& soft_body : state_vector.soft_bodies){
+        pose_6 vertex_pose;
+        pose_6 vertex_vel;
+
+        // Loop through soft body vertices
+        for(int i = 0; i < soft_body.num_vertices; i++){
+            MuJoCo_helper->GetSoftBodyVertexPos(soft_body.name, i, vertex_pose, d);
+            MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, vertex_vel, d);
+
+            // Linear cost derivatives
+            for(int j = 0; j < 3; j++) {
+                if (soft_body.vertices[i].active_linear_dof[j]) {
+
+                    if (terminal) {
+                        // Position cost derivatives
+                        l_x(Q_index) = 2 * soft_body.terminal_linear_pos_cost[j] * (vertex_pose.position[j] - soft_body.goal_linear_pos[j]);
+                        l_xx(Q_index, Q_index) = 2 * soft_body.terminal_linear_pos_cost[j];
+
+                        // Velocity cost derivatives
+                        l_x(Q_index + dof) = 2 * soft_body.terminal_linear_vel_cost[j] * (vertex_vel.position[j]);
+                        l_xx(Q_index + dof, Q_index + dof) = 2 * soft_body.terminal_linear_vel_cost[j];
+                    } else {
+                        // Position cost derivatives
+                        l_x(Q_index) = 2 * soft_body.linearPosCost[j] * (vertex_pose.position[j] - soft_body.goal_linear_pos[j]);
+                        l_xx(Q_index, Q_index) = 2 * soft_body.linearPosCost[j];
+
+                        // Velocity cost derivatives
+                        l_x(Q_index + dof) = 2 * soft_body.linear_vel_cost[j] * (vertex_vel.position[j]);
+                        l_xx(Q_index + dof, Q_index + dof) = 2 * soft_body.linear_vel_cost[j];
+                    }
+
+                    Q_index++;
+                }
+            }
+        }
+    }
+
 //    std::cout << "l_x \n" << l_x << std::endl;
 }
 
+// Default task complete function, task is never complete
 bool ModelTranslator::TaskComplete(mjData* d, double &dist){
     dist = 0.0;
     return false;
@@ -1465,17 +1532,34 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
     int body_id;
     if(MuJoCo_helper->BodyExists("display_goal",  body_id)){
         pose_7 goal_body;
-        goal_body.position[0] = full_state_vector.rigid_bodies[0].goal_linear_pos[0];
-        goal_body.position[1] = full_state_vector.rigid_bodies[0].goal_linear_pos[1];
-        goal_body.position[2] = full_state_vector.rigid_bodies[0].goal_linear_pos[2];
+        if(!full_state_vector.rigid_bodies.empty()){
+            goal_body.position[0] = full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+            goal_body.position[1] = full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+            goal_body.position[2] = full_state_vector.rigid_bodies[0].goal_linear_pos[2];
 
-        m_point desired_eul = {full_state_vector.rigid_bodies[0].goal_angular_pos[0],
-                               full_state_vector.rigid_bodies[0].goal_angular_pos[1],
-                               full_state_vector.rigid_bodies[0].goal_angular_pos[2]};
+            m_point desired_eul = {full_state_vector.rigid_bodies[0].goal_angular_pos[0],
+                                   full_state_vector.rigid_bodies[0].goal_angular_pos[1],
+                                   full_state_vector.rigid_bodies[0].goal_angular_pos[2]};
 
-        goal_body.quat = eul2Quat(desired_eul);
+            goal_body.quat = eul2Quat(desired_eul);
+
+        }
+        else{
+            goal_body.position[0] = full_state_vector.soft_bodies[0].goal_linear_pos[0];
+            goal_body.position[1] = full_state_vector.soft_bodies[0].goal_linear_pos[1];
+            goal_body.position[2] = full_state_vector.soft_bodies[0].goal_linear_pos[2];
+
+            m_point desired_eul = {full_state_vector.soft_bodies[0].goal_angular_pos[0],
+                                   full_state_vector.soft_bodies[0].goal_angular_pos[1],
+                                   full_state_vector.soft_bodies[0].goal_angular_pos[2]};
+
+            goal_body.quat = eul2Quat(desired_eul);
+        }
+
+
         std::cout << "goal body pos: " << goal_body.position[0] << " " << goal_body.position[1] << " " << goal_body.position[2] << "\n";
-
+        std::cout << "goal body pos: " << full_state_vector.soft_bodies[0].goal_linear_pos[0]
+        << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << "\n";
         MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
     }
 }

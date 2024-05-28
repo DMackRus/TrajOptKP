@@ -923,8 +923,12 @@ int assign_task(){
         std::shared_ptr<PistonBlock> my_piston_block = std::make_shared<PistonBlock>();
         activeModelTranslator = my_piston_block;
     }
+    else if(task == "push_soft_into_rigid"){
+        std::shared_ptr<PushSoft> my_squish_soft = std::make_shared<PushSoft>(PUSH_SOFT_RIGID);
+        activeModelTranslator = my_squish_soft;
+    }
     else if(task == "push_soft"){
-        std::shared_ptr<PushSoft> my_squish_soft = std::make_shared<PushSoft>();
+        std::shared_ptr<PushSoft> my_squish_soft = std::make_shared<PushSoft>(PUSH_SOFT);
         activeModelTranslator = my_squish_soft;
     }
     else{
