@@ -233,7 +233,7 @@ int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method
     // -----------------------------------------------------------------------------
 
     auto startTimer = std::chrono::high_resolution_clock::now();
-    optimiser->verbose_output = false;
+    optimiser->verbose_output = true;
 
     optimiser->SetCurrentKeypointMethod(keypoint_method);
 
@@ -397,7 +397,7 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
         int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-//            difference_ms = 10;
+            difference_ms = 20;
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
     }
@@ -410,7 +410,18 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
 
     MPC_controls_thread.join();
 
+    // NOTE - we change cost function of push soft to track how well we managed to push the soft body.
+    // These cost function elements dont work in normal traj opt for some reason, so we counte this
+    // by using a terminal position cost, however this then isnt trakced by our evaluation
+    if(1){
+        for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
+            activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+            activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+        }
+    }
+
     final_cost = 0.0;
+    bool terminal = false;
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
         activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
@@ -418,7 +429,13 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
         activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data,
                                               activeModelTranslator->full_state_vector);
         activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-        final_cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, false);
+
+        if(i == activeVisualiser->trajectory_states.size() - 1){
+            terminal = true;
+        }
+
+        final_cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                          activeModelTranslator->full_state_vector, terminal);
 
     }
 
@@ -458,10 +475,7 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-    std::cout << "before first optimise \n";
     optimised_controls = optimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1, task_horizon);
-    std::cout << "optimised controls shape: " << optimised_controls[0].rows() << "\n";
-    std::cout << "after first optimise \n";
 
     int bestMatchingStateIndex = 0;
 
@@ -482,7 +496,7 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
         optimised_controls = optimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
                                                  optimised_controls, 1, 1, task_horizon);
 
-        std::cout << "optimised controls: " << optimised_controls[0].transpose() << "\n";
+//        std::cout << "optimised controls: " << optimised_controls[0].transpose() << "\n";
 
         // Store last iteration timing results
         time_iteration.push_back(optimiser->opt_time_ms);
@@ -520,6 +534,7 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
                 bestMatchingStateIndex = i;
             }
         }
+        bestMatchingStateIndex = 1;
 
         // Mutex lock
         {
@@ -533,7 +548,7 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
             apply_next_control = true;
         }
 
-        std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
+//        std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
     }
 
     // Save specific trajectory data

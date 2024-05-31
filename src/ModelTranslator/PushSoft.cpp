@@ -62,13 +62,15 @@ void PushSoft::ReturnRandomStartState(){
         full_state_vector.robots[0].start_pos[i] = robot_start_config[i];
     }
 
-    full_state_vector.rigid_bodies[0].start_linear_pos[0] = startX;
-    full_state_vector.rigid_bodies[0].start_linear_pos[1] = startY;
-    full_state_vector.rigid_bodies[0].start_linear_pos[2] = 0.032;
+    if(task_mode == PUSH_SOFT_RIGID){
+        full_state_vector.rigid_bodies[0].start_linear_pos[0] = startX;
+        full_state_vector.rigid_bodies[0].start_linear_pos[1] = startY;
+        full_state_vector.rigid_bodies[0].start_linear_pos[2] = 0.032;
 
-    full_state_vector.rigid_bodies[0].start_angular_pos[0] = 0.0;
-    full_state_vector.rigid_bodies[0].start_angular_pos[1] = 0.0;
-    full_state_vector.rigid_bodies[0].start_angular_pos[2] = 0.0;
+        full_state_vector.rigid_bodies[0].start_angular_pos[0] = 0.0;
+        full_state_vector.rigid_bodies[0].start_angular_pos[1] = 0.0;
+        full_state_vector.rigid_bodies[0].start_angular_pos[2] = 0.0;
+    }
 
     // Soft body
     full_state_vector.soft_bodies[0].start_linear_pos[0] = -0.8;
@@ -89,23 +91,38 @@ void PushSoft::ReturnRandomGoalState(){
         full_state_vector.robots[0].goal_vel[i] = 0.0;
     }
 
-    // Goal object body
-    full_state_vector.rigid_bodies[0].goal_linear_pos[0] = randomGoalX;
-    full_state_vector.rigid_bodies[0].goal_linear_pos[1] = randomGoalY;
-    full_state_vector.rigid_bodies[0].goal_linear_pos[2] = 0.0;
+    if(task_mode == PUSH_SOFT){
 
-    full_state_vector.rigid_bodies[0].goal_angular_pos[0] = 0.0;
-    full_state_vector.rigid_bodies[0].goal_angular_pos[1] = 0.0;
-    full_state_vector.rigid_bodies[0].goal_angular_pos[2] = 0.0;
+        // Soft body distractor
+        full_state_vector.soft_bodies[0].goal_linear_pos[0] = randomGoalX;
+        full_state_vector.soft_bodies[0].goal_linear_pos[1] = randomGoalY;
+        full_state_vector.soft_bodies[0].goal_linear_pos[2] = 0.0;
 
-    // Soft body distractor
-    full_state_vector.soft_bodies[0].goal_linear_pos[0] = 0.0;
-    full_state_vector.soft_bodies[0].goal_linear_pos[1] = 0.0;
-    full_state_vector.soft_bodies[0].goal_linear_pos[2] = 0.0;
+        full_state_vector.soft_bodies[0].goal_angular_pos[0] = 0.0;
+        full_state_vector.soft_bodies[0].goal_angular_pos[1] = 0.0;
+        full_state_vector.soft_bodies[0].goal_angular_pos[2] = 0.0;
+    }
+    else if(task_mode == PUSH_SOFT_RIGID){
+        // Goal object body
+        full_state_vector.rigid_bodies[0].goal_linear_pos[0] = randomGoalX;
+        full_state_vector.rigid_bodies[0].goal_linear_pos[1] = randomGoalY;
+        full_state_vector.rigid_bodies[0].goal_linear_pos[2] = 0.0;
 
-    full_state_vector.soft_bodies[0].goal_angular_pos[0] = 0.0;
-    full_state_vector.soft_bodies[0].goal_angular_pos[1] = 0.0;
-    full_state_vector.soft_bodies[0].goal_angular_pos[2] = 0.0;
+        full_state_vector.rigid_bodies[0].goal_angular_pos[0] = 0.0;
+        full_state_vector.rigid_bodies[0].goal_angular_pos[1] = 0.0;
+        full_state_vector.rigid_bodies[0].goal_angular_pos[2] = 0.0;
+
+        // Soft body distractor
+        full_state_vector.soft_bodies[0].goal_linear_pos[0] = 0.0;
+        full_state_vector.soft_bodies[0].goal_linear_pos[1] = 0.0;
+        full_state_vector.soft_bodies[0].goal_linear_pos[2] = 0.0;
+
+        full_state_vector.soft_bodies[0].goal_angular_pos[0] = 0.0;
+        full_state_vector.soft_bodies[0].goal_angular_pos[1] = 0.0;
+        full_state_vector.soft_bodies[0].goal_angular_pos[2] = 0.0;
+    }
+
+
 
 }
 
@@ -197,7 +214,7 @@ bool PushSoft::TaskComplete(mjData *d, double &dist){
             dist += sqrt(pow(diffX, 2) + pow(diffY, 2));
         }
 
-        if(dist < 0.1){
+        if(dist < 15){
             taskComplete = true;
         }
 
@@ -214,6 +231,12 @@ bool PushSoft::TaskComplete(mjData *d, double &dist){
 //    std::cout << "dist: " << dist << "\n";
         if(dist < 0.03){
             taskComplete = true;
+        }
+
+        // if weve pushed too far in x direction, the task should stop
+        if(x_diff > 0.08){
+            taskComplete = true;
+            std::cout << "pushed too far \n";
         }
     }
 

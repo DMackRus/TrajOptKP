@@ -4,35 +4,48 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 cd ..
 
-# Asynchronus MPC squish soft
+# -------------------- Asyncronus MPC ------------------------------
+# ---------------- Push soft into rigid ----------------------------
+#./build/TrajOptKP gen_testing_data 20 2000 4 0.5
+#./build/TrajOptKP gen_testing_data 20 2000 4 0.2
+#./build/TrajOptKP gen_testing_data 20 2000 4 0.1
 
-./build/TrajOptKP gen_testing_data 20 2000 1 2
-./build/TrajOptKP gen_testing_data 20 2000 1 1
-./build/TrajOptKP gen_testing_data 20 2000 1 0.5
+#./build/TrajOptKP gen_testing_data 20 2000 2 0.5
+#./build/TrajOptKP gen_testing_data 20 2000 2 0.2
+#./build/TrajOptKP gen_testing_data 20 2000 2 0.1
+#
+#./build/TrajOptKP gen_testing_data 20 2000 1 0.5
+#./build/TrajOptKP gen_testing_data 20 2000 1 0.2
+#./build/TrajOptKP gen_testing_data 20 2000 1 0.1
 
-./build/TrajOptKP gen_testing_data 20 2000 2 2
-./build/TrajOptKP gen_testing_data 20 2000 2 1
-./build/TrajOptKP gen_testing_data 20 2000 2 0.5
-
-./build/TrajOptKP gen_testing_data 20 2000 4 2
-./build/TrajOptKP gen_testing_data 20 2000 4 1
+# -------------------- Push soft ----------------------------------
+./build/TrajOptKP gen_testing_data 20 2000 4 0.2
 ./build/TrajOptKP gen_testing_data 20 2000 4 0.5
 
-# Asyncronus MPC
-#./build/TrajOptKP gen_testing_data 60 2000 1 2
-#./build/TrajOptKP gen_testing_data 60 2000 1 1
-#./build/TrajOptKP gen_testing_data 60 2000 1 0.1
-#./build/TrajOptKP gen_testing_data 60 2000 1 0.01
-#
-#./build/TrajOptKP gen_testing_data 60 2000 2 2
-#./build/TrajOptKP gen_testing_data 60 2000 2 1
-#./build/TrajOptKP gen_testing_data 60 2000 2 0.1
-#./build/TrajOptKP gen_testing_data 60 2000 2 0.01
-#
-#./build/TrajOptKP gen_testing_data 60 2000 4 2
-#./build/TrajOptKP gen_testing_data 60 2000 4 1
+./build/TrajOptKP gen_testing_data 20 2000 4 0.1
+
+./build/TrajOptKP gen_testing_data 20 2000 2 0.5
+./build/TrajOptKP gen_testing_data 20 2000 2 0.2
+./build/TrajOptKP gen_testing_data 20 2000 2 0.1
+
+./build/TrajOptKP gen_testing_data 20 2000 1 0.5
+./build/TrajOptKP gen_testing_data 20 2000 1 0.2
+./build/TrajOptKP gen_testing_data 20 2000 1 0.1
+
+# -------------------- Push moderate clutter ---------------------
+#./build/TrajOptKP gen_testing_data 60 2000 4 0.5
+#./build/TrajOptKP gen_testing_data 60 2000 4 0.2
 #./build/TrajOptKP gen_testing_data 60 2000 4 0.1
-#./build/TrajOptKP gen_testing_data 60 2000 4 0.01
+
+#./build/TrajOptKP gen_testing_data 60 2000 2 0.5
+#./build/TrajOptKP gen_testing_data 60 2000 2 0.2
+#./build/TrajOptKP gen_testing_data 60 2000 2 0.1
+#
+#./build/TrajOptKP gen_testing_data 60 2000 1 0.5
+#./build/TrajOptKP gen_testing_data 60 2000 1 0.2
+#./build/TrajOptKP gen_testing_data 60 2000 1 0.1
+
+# -------------------- Open loop optimisation ------------------------------
 
 
 #./build/TrajOptKP gen_testing_data 20 2000 4 0.5

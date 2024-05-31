@@ -67,6 +67,8 @@ void MPCUntilComplete(int OPT_HORIZON);
 void AsyncMPC();
 void worker();
 
+void change_cost_func_push_soft();
+
 double avg_opt_time, avg_percent_derivs, avg_time_derivs, avg_time_bp, avg_time_fp;
 
 bool stop_mpc = false;
@@ -687,7 +689,7 @@ void AsyncMPC(){
         int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-//                difference_ms = 20;
+            difference_ms = 20;
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
     }
@@ -703,6 +705,13 @@ void AsyncMPC(){
 
     double cost = 0.0f;
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    bool terminal = false;
+    // Push soft chnge cost function to see how quikcly we are making it to the goal.
+    // NOTE - when linear pos costs were used, couldnt optimise, but could with a terminal,
+    if(task == "Push_soft"){
+        change_cost_func_push_soft();
+    }
 
     if(record_trajectory){
         activeVisualiser->StartRecording(task + "_MPC");
@@ -724,7 +733,10 @@ void AsyncMPC(){
         mj_setState(activeModelTranslator->MuJoCo_helper->model,
                     activeModelTranslator->MuJoCo_helper->vis_data, _full_state, mjSTATE_PHYSICS);
         activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-        cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, false);
+        if(i == activeVisualiser->trajectory_states.size() - 1){
+            terminal = true;
+        }
+        cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, terminal);
         if(i % 5 == 0){
             activeVisualiser->render("");
         }
@@ -818,6 +830,7 @@ void MPCUntilComplete(int OPT_HORIZON){
                 bestMatchingStateIndex = i;
             }
         }
+        bestMatchingStateIndex = 1;
 
         // Mutex lock
         {
@@ -935,4 +948,11 @@ int assign_task(){
         std::cout << "invalid scene selected, " << task << " does not exist" << std::endl;
     }
     return EXIT_SUCCESS;
+}
+
+void change_cost_func_push_soft(){
+    for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
+        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+    }
 }

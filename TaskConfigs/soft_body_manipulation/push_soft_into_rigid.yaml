@@ -1,8 +1,8 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/push_soft_rigid.xml"
-modelName: "/squish_soft"
+modelName: "/push_soft_into_rigid"
 timeStep: 0.004
 openloop_horizon: 2000
-mpc_horizon: 20
+mpc_horizon: 40
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
@@ -17,7 +17,7 @@ robots:
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
     goalPos: [ 0, 0, 0, 0, 0, 0, 0 ]
     jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
-    jointVelCosts: [0, 0.05, 0, 0, 0, 0.05, 0]
+    jointVelCosts: [0, 0, 0, 0, 0, 0, 0]
     #    jointVelCosts: [0, 0, 0, 0, 0, 0.1, 0]
     terminalJointPosCosts: [0, 0, 0, 0, 0, 0, 0]
     terminalJointVelCosts: [0, 0, 0, 0, 0, 0, 0]
@@ -32,11 +32,11 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.75, 0.1, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [3, 6, 0]  # 3, 6, 0
+    linearPosCost: [10, 10, 0]  # 3, 6, 0
     # When iLQR once
-#    terminalLinearPosCost: [1000, 1000, 0]
     terminalLinearPosCost: [0, 0, 0]
-    linearVelCost: [0, 0, 0]
+#    terminalLinearPosCost: [0, 0, 0]
+    linearVelCost: [0.1, 0.1, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]
     terminalAngularPosCost: [0, 0, 0]
@@ -48,7 +48,7 @@ bodies:
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
 soft_bodies:
   jelly:
-    num_vertices: 36
+    num_vertices: 48
     activeLinearDOF: [ true, true, true ]
     startLinearPos: [ 0.5, 1.0, 0 ]
     startAngularPos: [ 0, 0, 0 ]

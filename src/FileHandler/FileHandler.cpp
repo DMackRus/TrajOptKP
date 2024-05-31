@@ -519,13 +519,20 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
     }
 
     // Body poses
-    for( auto body : state_vector.rigid_bodies){
-        for(int i = 0; i < 3; i++){
-            fileOutput << body.start_linear_pos[i] << ",";
+    for( const auto& body : state_vector.rigid_bodies){
+        for(double start_linear_po : body.start_linear_pos){
+            fileOutput << start_linear_po << ",";
         }
 
-        for(int i = 0; i < 3; i++){
-            fileOutput << body.start_angular_pos[i] << ",";
+        for(double start_angular_po : body.start_angular_pos){
+            fileOutput << start_angular_po << ",";
+        }
+    }
+
+    // Soft body poses
+    for( const auto& soft_body : state_vector.soft_bodies){
+        for(double start_linear_po : soft_body.start_linear_pos){
+            fileOutput << start_linear_po << ",";
         }
     }
 
@@ -536,7 +543,7 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
         }
     }
 
-    // Body velocities
+    // Rigid body velocities
     for( auto body : state_vector.rigid_bodies){
         for(int i = 0; i < 3; i++){
             fileOutput << 0 << ",";
@@ -547,7 +554,16 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
         }
     }
 
+    // Soft body velocities
+    for( auto soft_body : state_vector.soft_bodies){
+        for(int i = 0; i < 3; i++){
+            fileOutput << 0 << ",";
+        }
+    }
+
     // ----------------- Goal values ---------------------------
+
+    // Robot joint positions
     for(auto & robot : state_vector.robots){
         for(int i = 0; i < robot.joint_names.size(); i++){
             fileOutput << robot.goal_pos[i] << ",";
@@ -555,13 +571,20 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
     }
 
     // Body poses
-    for( auto body : state_vector.rigid_bodies){
-        for(int i = 0; i < 3; i++){
-            fileOutput << body.goal_linear_pos[i] << ",";
+    for( const auto& body : state_vector.rigid_bodies){
+        for(double goal_linear_po : body.goal_linear_pos){
+            fileOutput << goal_linear_po << ",";
         }
 
-        for(int i = 0; i < 3; i++){
-            fileOutput << body.goal_angular_pos[i] << ",";
+        for(double goal_angular_po : body.goal_angular_pos){
+            fileOutput << goal_angular_po << ",";
+        }
+    }
+
+    // Soft body poses
+    for( const auto& soft_body : state_vector.soft_bodies){
+        for(double goal_linear_po : soft_body.goal_linear_pos){
+            fileOutput << goal_linear_po << ",";
         }
     }
 
@@ -581,6 +604,14 @@ void FileHandler::saveTaskToFile(std::string taskPrefix, int fileNum, const stat
         for(int i = 0; i < 3; i++){
             fileOutput << 0 << ",";
         }
+    }
+
+    // Soft body velocities
+    for( auto soft_body : state_vector.soft_bodies){
+        for(int i = 0; i < 3; i++){
+            fileOutput << 0 << ",";
+        }
+
     }
 
     fileOutput << std::endl;
@@ -612,6 +643,11 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
     for( auto body : state_vector.rigid_bodies){
         // x, y, z, r, p, y and *2 for velocities
         state_vector_size += 12;
+    }
+
+    for(auto soft_body : state_vector.soft_bodies){
+        // x, y, z and *2 for velocities
+        state_vector_size += 6;
     }
 
     // Only one row in this file so this while loop should only perform one iteration
@@ -657,19 +693,25 @@ void FileHandler::loadTaskFromFile(std::string taskPrefix, int fileNum, stateVec
                 counter++;
             }
         }
-    }
 
-    // TODO - better initialisation for soft bodies!
-    for(auto & soft_body : state_vector.soft_bodies){
+        for(auto & soft_body : state_vector.soft_bodies){
 
-        // General centorid things
-        for(int i = 0; i < 3; i++){
-            soft_body.start_linear_pos[i] = 0.0;
-            soft_body.start_angular_pos[i] = 0.0;
-            soft_body.goal_linear_pos[i] = 0.0;
-            soft_body.goal_angular_pos[i] = 0.0;
+            // General centorid things
+            for(int i = 0; i < 3; i++) {
+                soft_body.start_linear_pos[i] = stod(row[counter]);
+                soft_body.goal_linear_pos[i] = stod(row[counter + state_vector_size]);
+                counter++;
+            }
+
+            for(int i = 0; i < 3; i++){
+                soft_body.start_angular_pos[i] = stod(row[counter]);
+                soft_body.goal_angular_pos[i] = stod(row[counter + state_vector_size]);
+                counter++;
+            }
         }
     }
+
+
 }
 
 void FileHandler::saveCostHistory(std::vector<double> costHistory, std::string filePrefix, int trajecNumber){

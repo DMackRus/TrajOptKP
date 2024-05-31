@@ -334,12 +334,16 @@ double ModelTranslator::CostFunction(mjData* d, const struct stateVectorList &st
 
     // Loop through the bodies in simulation
     for(const auto &body : state_vector.rigid_bodies){
-        cost += CostFunctionBody(body, d, terminal);
+        double temp = CostFunctionBody(body, d, terminal);
+//        std::cout << "cost from rigid body " << body.name << " is: " << temp << "\n";
+        cost += temp;
     }
 
     // Loop through the soft bodies in simulation
     for(const auto &soft_body : state_vector.soft_bodies){
-        cost += CostFuntionSoftBody(soft_body, d, terminal);
+        double temp = CostFuntionSoftBody(soft_body, d, terminal);
+//        std::cout << "cost from soft body: " << temp << "\n";
+        cost += temp;
     }
 
     return cost;
@@ -1558,8 +1562,8 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 
 
         std::cout << "goal body pos: " << goal_body.position[0] << " " << goal_body.position[1] << " " << goal_body.position[2] << "\n";
-        std::cout << "goal body pos: " << full_state_vector.soft_bodies[0].goal_linear_pos[0]
-        << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << "\n";
+//        std::cout << "goal body pos: " << full_state_vector.soft_bodies[0].goal_linear_pos[0]
+//        << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << "\n";
         MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
     }
 }

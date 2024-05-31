@@ -893,17 +893,17 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
             K_dofs_sums[i] /= horizon_length;
         }
 
-        std::cout << "States: ";
-        for(int i = 0; i < dof; i++){
-            std::cout << state_vector_name[sorted_indices[i]] << " ";
-        }
-        std::cout << "\n";
-
-        std::cout << "K_sums in order: ";
-        for(int i = 0; i < dof; i++){
-            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-        }
-        std::cout << "\n";
+//        std::cout << "States: ";
+//        for(int i = 0; i < dof; i++){
+//            std::cout << state_vector_name[sorted_indices[i]] << " ";
+//        }
+//        std::cout << "\n";
+//
+//        std::cout << "K_sums in order: ";
+//        for(int i = 0; i < dof; i++){
+//            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+//        }
+//        std::cout << "\n";
 
 
         for(int i = 0; i < dof; i++) {
@@ -933,17 +933,17 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
         std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
         std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
 
-        std::cout << "States: ";
-        for(int i = 0; i < dof; i++){
-            std::cout << state_vector_name[sorted_indices[i]] << " ";
-        }
-        std::cout << "\n";
-
-        std::cout << "K_sums in order: ";
-        for(int i = 0; i < dof; i++){
-            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-        }
-        std::cout << "\n";
+//        std::cout << "States: ";
+//        for(int i = 0; i < dof; i++){
+//            std::cout << state_vector_name[sorted_indices[i]] << " ";
+//        }
+//        std::cout << "\n";
+//
+//        std::cout << "K_sums in order: ";
+//        for(int i = 0; i < dof; i++){
+//            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+//        }
+//        std::cout << "\n";
 
 
         for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++) {
