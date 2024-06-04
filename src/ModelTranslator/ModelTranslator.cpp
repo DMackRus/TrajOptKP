@@ -497,8 +497,11 @@ double ModelTranslator::CostFuntionSoftBody(const soft_body& soft_body, mjData *
     for(int i = 0; i < soft_body.num_vertices; i++){
         pose_6 vertex_pose;
         pose_6 vertex_vel;
-        MuJoCo_helper->GetSoftBodyVertexPos(soft_body.name, i, vertex_pose, d);
+        MuJoCo_helper->GetSoftBodyVertexPosGlobal(soft_body.name, i, vertex_pose, d);
         MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, vertex_vel, d);
+//        if(i == 0){
+//            std::cout << "vertex_pose, x: " << vertex_pose.position[0] << " y: " << vertex_pose.position[1] << "\n";
+//        }
 
         for(int j = 0; j < 3; j++){
             if(terminal){
@@ -765,7 +768,7 @@ void ModelTranslator::CostDerivatives(mjData* d, const struct stateVectorList &s
 
         // Loop through soft body vertices
         for(int i = 0; i < soft_body.num_vertices; i++){
-            MuJoCo_helper->GetSoftBodyVertexPos(soft_body.name, i, vertex_pose, d);
+            MuJoCo_helper->GetSoftBodyVertexPosGlobal(soft_body.name, i, vertex_pose, d);
             MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, vertex_vel, d);
 
             // Linear cost derivatives

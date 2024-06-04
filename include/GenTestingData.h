@@ -104,9 +104,12 @@ private:
 
     std::mutex mtx;
 
-    bool stop_opt_thread = false;
-    bool apply_next_control = false;
+    volatile bool stop_opt_thread = false;
+    volatile bool apply_next_control = false;
     bool async_mpc = true;
+
+    int num_controls_apply = 60;
+    volatile bool reoptimise = true;
 
     double final_cost = 0.0;
     double final_dist = 0.0;

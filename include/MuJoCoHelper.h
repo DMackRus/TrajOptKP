@@ -71,6 +71,7 @@ public:
     void SetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
 
     void GetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
+    void GetSoftBodyVertexPosGlobal(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
     void GetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
 
 

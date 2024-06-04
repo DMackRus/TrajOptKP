@@ -137,7 +137,7 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
 
-    TestingAsynchronusMPC(keypoint_method, 10, task_horizon, task_timeout);
+    return TestingAsynchronusMPC(keypoint_method, 10, task_horizon, task_timeout);
 
 
 //    std::vector<int> minN = {1};
@@ -211,8 +211,6 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
 //            }
 //        }
 //    }
-
-    return EXIT_SUCCESS;
 }
 
 int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method, int num_trials, int task_horzion, int task_timeout){
@@ -300,7 +298,7 @@ int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method
                         controls_noise, optimiser->ReturnName(),
                         method_directory);
 
-    return 1;
+    return EXIT_SUCCESS;
 }
 
 int GenTestingData::SingleAsynchronusRun(bool visualise,
@@ -314,6 +312,7 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
     activeVisualiser->current_control_index = 0;
     stop_opt_thread = false;
     apply_next_control = false;
+    reoptimise = true;
 
     std::thread MPC_controls_thread;
     // Start the thread running
@@ -337,7 +336,15 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
                 apply_next_control = false;
             }
 
-            if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
+            if(activeVisualiser->current_control_index >= num_steps_replan){
+                // Applied correct number of controls so lets replan
+                {
+                    std::unique_lock<std::mutex> lock(mtx);
+                    reoptimise = true;
+                }
+            }
+
+            if(activeVisualiser->current_control_index < num_controls_apply && activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
 
                 next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
                 // Increment the current control index
@@ -354,6 +361,7 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
                     empty_control(i) = grav_compensation[i];
                 }
                 next_control = empty_control;
+
             }
 
 //            for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
@@ -397,7 +405,7 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
         int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-            difference_ms = 20;
+//            difference_ms = 20;
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
     }
@@ -406,6 +414,7 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
     {
         std::unique_lock<std::mutex> lock(mtx);
         stop_opt_thread = true;
+        std::cout << "stop opt thread called \n";
     }
 
     MPC_controls_thread.join();
@@ -413,12 +422,12 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
     // NOTE - we change cost function of push soft to track how well we managed to push the soft body.
     // These cost function elements dont work in normal traj opt for some reason, so we counte this
     // by using a terminal position cost, however this then isnt trakced by our evaluation
-    if(1){
-        for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
-            activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-            activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-        }
-    }
+//    if(1){
+//        for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
+//            activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+//            activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+//        }
+//    }
 
     final_cost = 0.0;
     bool terminal = false;
@@ -470,85 +479,86 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
 
     // Create init optimisation controls and reset system state
     std::cout << "before create init opt controls \n";
-    init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(task_horizon);
+    optimised_controls = activeModelTranslator->CreateInitOptimisationControls(task_horizon);
     std::cout << "after create init opt controls \n";
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-    optimised_controls = optimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1, task_horizon);
+//    optimised_controls = optimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1, task_horizon);
 
     int bestMatchingStateIndex = 0;
 
     while(!stop_opt_thread){
+        if(reoptimise){
+            std::cout << "reoptimise called \n";
+            // Copy current state of system (vis data) to starting data object for optimisation
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->vis_data);
 
-        // Copy current state of system (vis data) to starting data object for optimisation
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->vis_data);
+            // Delete all controls before control index
+            optimised_controls.erase(optimised_controls.begin(), optimised_controls.begin() + bestMatchingStateIndex);
 
-        // Delete all controls before control index
-        optimised_controls.erase(optimised_controls.begin(), optimised_controls.begin() + bestMatchingStateIndex);
+            // Copy last control to keep control trajectory the same size
+            MatrixXd last_control = optimised_controls.back();
+            for (int i = 0; i < bestMatchingStateIndex; ++i) {
+                optimised_controls.push_back(last_control);
+            }
 
-        // Copy last control to keep control trajectory the same size
-        MatrixXd last_control = optimised_controls.back();
-        for (int i = 0; i < bestMatchingStateIndex; ++i) {
-            optimised_controls.push_back(last_control);
-        }
-
-        optimised_controls = optimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
-                                                 optimised_controls, 1, 1, task_horizon);
+            optimised_controls = optimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                     optimised_controls, 1, 1, task_horizon);
 
 //        std::cout << "optimised controls: " << optimised_controls[0].transpose() << "\n";
 
-        // Store last iteration timing results
-        time_iteration.push_back(optimiser->opt_time_ms);
-        num_dofs.push_back(activeModelTranslator->current_state_vector.dof);
-        time_get_derivs.push_back(optimiser->avg_time_get_derivs_ms);
-        time_bp.push_back(optimiser->avg_time_backwards_pass_ms);
-        time_fp.push_back(optimiser->avg_time_forwards_pass_ms);
-        percent_derivs_computed.push_back(optimiser->avg_percent_derivs);
-        surprise.push_back(0.0);
-        expected.push_back(0.0);
-        new_cost.push_back(0.0);
+            // Store last iteration timing results
+            time_iteration.push_back(optimiser->opt_time_ms);
+            num_dofs.push_back(activeModelTranslator->current_state_vector.dof);
+            time_get_derivs.push_back(optimiser->avg_time_get_derivs_ms);
+            time_bp.push_back(optimiser->avg_time_backwards_pass_ms);
+            time_fp.push_back(optimiser->avg_time_forwards_pass_ms);
+            percent_derivs_computed.push_back(optimiser->avg_percent_derivs);
+            surprise.push_back(0.0);
+            expected.push_back(0.0);
+            new_cost.push_back(0.0);
 
-        int opt_time_to_timestep = optimiser->opt_time_ms / (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000);
+//            int opt_time_to_timestep = optimiser->opt_time_ms / (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000);
+//
+//            current_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data,
+//                                                                     activeModelTranslator->current_state_vector);
+//
+//            // Compute the best starting state
+//            double smallestError = 1000.00;
 
-        current_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data,
-                                                                 activeModelTranslator->current_state_vector);
+//            bestMatchingStateIndex = opt_time_to_timestep;
+//            if(bestMatchingStateIndex >= task_horizon){
+//                bestMatchingStateIndex = task_horizon - 1;
+//            }
+//            for(int i = 0; i < task_horizon; i++){
+////                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
+////                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
+//                double currError = 0.0f;
+//                for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
+//                    // TODO - im not sure about this, should we use full state?
+//                    currError += abs(optimiser->X_old[i](j) - current_state(j));
+//                }
+//                if(currError < smallestError){
+//                    smallestError = currError;
+//                    bestMatchingStateIndex = i;
+//                }
+//            }
+            bestMatchingStateIndex = 1;
 
-        // Compute the best starting state
-        double smallestError = 1000.00;
+            // Mutex lock
+            {
+                std::unique_lock<std::mutex> lock(mtx);
 
-        bestMatchingStateIndex = opt_time_to_timestep;
-        if(bestMatchingStateIndex >= task_horizon){
-            bestMatchingStateIndex = task_horizon - 1;
-        }
-        for(int i = 0; i < task_horizon; i++){
-//                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
-//                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
-            double currError = 0.0f;
-            for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
-                // TODO - im not sure about this, should we use full state?
-                currError += abs(optimiser->X_old[i](j) - current_state(j));
+                activeVisualiser->controlBuffer = optimised_controls;
+
+                // Set the current control index to the best matching state index
+                activeVisualiser->current_control_index = bestMatchingStateIndex;
+
+                apply_next_control = true;
+                reoptimise = false;
             }
-            if(currError < smallestError){
-                smallestError = currError;
-                bestMatchingStateIndex = i;
-            }
         }
-        bestMatchingStateIndex = 1;
-
-        // Mutex lock
-        {
-            std::unique_lock<std::mutex> lock(mtx);
-
-            activeVisualiser->controlBuffer = optimised_controls;
-
-            // Set the current control index to the best matching state index
-            activeVisualiser->current_control_index = bestMatchingStateIndex;
-
-            apply_next_control = true;
-        }
-
-//        std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
     }
 
     // Save specific trajectory data

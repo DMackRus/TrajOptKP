@@ -24,8 +24,8 @@ void PushSoft::ReturnRandomStartState(){
     float startX = randFloat(0.5, 0.501);
     float startY = randFloat(0, 0.01);
 
-    float goalX = randFloat(0.7, 0.8);
-    float goalY = randFloat(-0.1, 0);
+    float goalX = randFloat(0.65, 0.75);
+    float goalY = randFloat(-0.1, 0.1);
 
     // Place rigid object at
     randomGoalX = goalX;
@@ -56,7 +56,7 @@ void PushSoft::ReturnRandomStartState(){
 
     // Set up the goal positions and velocities
     // Robot start configuration
-    double robot_start_config[7] = {0, -0.183, 0, -3.1, 0, 1.34, 0};
+    double robot_start_config[7] = {0, 0.1, 0, -3, 0, 1.34, 0};
 
     for(int i = 0; i < full_state_vector.robots[0].joint_names.size(); i++){
         full_state_vector.robots[0].start_pos[i] = robot_start_config[i];
@@ -208,13 +208,15 @@ bool PushSoft::TaskComplete(mjData *d, double &dist){
         dist = 0.0;
         pose_6 vertex_pose;
         for(int i = 0; i < full_state_vector.soft_bodies[0].num_vertices; i++){
-            MuJoCo_helper->GetSoftBodyVertexPos(full_state_vector.soft_bodies[0].name, i, vertex_pose, d);
+            MuJoCo_helper->GetSoftBodyVertexPosGlobal(full_state_vector.soft_bodies[0].name, i, vertex_pose, d);
             double diffX = full_state_vector.soft_bodies[0].goal_linear_pos[0] - vertex_pose.position[0];
             double diffY = full_state_vector.soft_bodies[0].goal_linear_pos[1] - vertex_pose.position[1];
             dist += sqrt(pow(diffX, 2) + pow(diffY, 2));
         }
 
-        if(dist < 15){
+        // dist = 15
+//        std::cout << "dist: " << dist << "\n";
+        if(dist < 3.0){
             taskComplete = true;
         }
 

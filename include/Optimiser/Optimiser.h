@@ -206,9 +206,11 @@ public:
     std::shared_ptr<KeypointGenerator> keypoint_generator;
 
     int sampling_k_interval = 1;
-    int num_dofs_readd = 5;
-    double K_matrix_threshold = 0.2; // maybe 0.001 or 0.0001
-    bool eigen_vector_method = true;
+    int num_dofs_readd = 10;
+    double K_matrix_threshold = 20; // maybe 0.001 or 0.0001
+    // When eigen vector 0.1, 0.2, 0.5
+    // WHen just summing numbers went from 1 -> 2000
+    bool eigen_vector_method = false;
 //    double threshold_k_eigenvectors = 0.1;
 
     keypoint_method activeKeyPointMethod;
