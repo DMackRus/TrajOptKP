@@ -73,12 +73,87 @@ double avg_opt_time, avg_percent_derivs, avg_time_derivs, avg_time_bp, avg_time_
 
 bool stop_mpc = false;
 
-int mpc_num_controls_apply = 50;
+int mpc_num_controls_apply = 80;
 int num_steps_replan = 1;
 
 volatile bool reoptimise = false;
 
+void analyzeKMatrices(const std::vector<Eigen::MatrixXd>& KMatrices, int numImportantElements) {
+    std::vector<Eigen::VectorXd> singularValuesList;
+    std::vector<Eigen::MatrixXd> VtMatricesList;
+
+    // Perform SVD on each K matrix
+    for (const auto& K : KMatrices) {
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K, Eigen::ComputeFullV | Eigen::ComputeFullU);
+        singularValuesList.push_back(svd.singularValues());
+        VtMatricesList.push_back(svd.matrixV().transpose());
+        std::cout << "singular values: " << svd.singularValues() << "\n";
+        std::cout << "V matrixes: " << svd.matrixV().transpose() << "\n";
+    }
+
+    // Sum the singular values across all K matrices
+    Eigen::VectorXd totalSingularValues = Eigen::VectorXd::Zero(singularValuesList[0].size());
+    for (const auto& singularValues : singularValuesList) {
+        totalSingularValues += singularValues;
+    }
+    std::cout << "total singular values: " << totalSingularValues << "\n";
+
+    // Find the indices of the most important singular values
+    std::vector<int> importantIndices(totalSingularValues.size());
+    std::iota(importantIndices.begin(), importantIndices.end(), 0); // Fill with 0, 1, ..., n-1
+
+    std::partial_sort(importantIndices.begin(), importantIndices.begin() + numImportantElements, importantIndices.end(),
+                      [&totalSingularValues](int i, int j) { return totalSingularValues[i] > totalSingularValues[j]; });
+
+    std::cout << "important index 0: " << importantIndices[0] << "\n";
+    std::cout << "important index 1: " << importantIndices[1] << "\n";
+
+    // Extract the most important directions
+    std::vector<Eigen::MatrixXd> importantDirections;
+    for (const auto& Vt : VtMatricesList) {
+        Eigen::MatrixXd importantVt = Eigen::MatrixXd::Zero(Vt.rows(), numImportantElements);
+        for (int i = 0; i < numImportantElements; ++i) {
+            importantVt.col(i) = Vt.row(importantIndices[i]).transpose();
+        }
+        importantDirections.push_back(importantVt);
+    }
+
+    std::cout << "important directions 0: " << importantDirections[0] << "\n";
+    std::cout << "important directions 1: " << importantDirections[1] << "\n";
+
+    // Aggregate the important directions (mean)
+    Eigen::MatrixXd aggregatedDirections = Eigen::MatrixXd::Zero(importantDirections[0].rows(), numImportantElements);
+    for (const auto& dir : importantDirections) {
+        aggregatedDirections += dir;
+    }
+    aggregatedDirections /= importantDirections.size();
+
+    // Print the results
+    std::cout << "Aggregated Important Directions:\n" << aggregatedDirections << std::endl;
+}
+
 int main(int argc, char **argv) {
+
+//    if(1){
+//
+//        // Function to compute the SVD and analyze the matrices
+//
+//        // Example K matrices
+//        std::vector<Eigen::MatrixXd> KMatrices;
+//        KMatrices.push_back((Eigen::MatrixXd(2, 3) << 10, 0, 100, 0, 0, 0).finished());
+//        KMatrices.push_back((Eigen::MatrixXd(2, 3) << 10, 5, 100, 0, 5, 0).finished());
+//
+//        std::cout << "------------ K matrices ----------- \n";
+//        for(int i = 0; i < KMatrices.size(); i++){
+//            std::cout << KMatrices[i] << "\n";
+//        }
+//
+//        int numImportantElements = 2;
+//        analyzeKMatrices(KMatrices, numImportantElements);
+//
+//        return 0;
+//
+//    }
 
     // Expected arguments
     // 1. Program name
@@ -607,7 +682,7 @@ void AsyncMPC(){
     std::chrono::steady_clock::time_point begin;
     std::chrono::steady_clock::time_point end;
 
-    int MAX_TASK_TIME = 5000;
+    int MAX_TASK_TIME = 2000;
     int task_time = 0;
 
     // Setup initial state vector for visualisation
@@ -645,6 +720,15 @@ void AsyncMPC(){
                 next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
                 // Increment the current control index
                 activeVisualiser->current_control_index++;
+
+                double controls_noise_percentage = 5;
+                MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
+                for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
+                    double control_noise = ((control_lims(i*2 + 1) - control_lims(i*2)) / 100) * controls_noise_percentage;
+
+                    double gauss_noise = GaussNoise(0, control_noise);
+                    next_control(i, 0) += gauss_noise;
+                }
             }
             else{
                 std::vector<double> grav_compensation;
@@ -708,7 +792,7 @@ void AsyncMPC(){
         int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-//            difference_ms = 200;
+//            difference_ms += 8;
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
     }
@@ -726,6 +810,13 @@ void AsyncMPC(){
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     bool terminal = false;
+
+    if(task == "pushing_moderate_clutter"){
+        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
+            rigid_body.terminal_linear_pos_cost[0] = 10000;
+            rigid_body.terminal_linear_pos_cost[1] = 10000;
+        }
+    }
 
     if(record_trajectory){
         activeVisualiser->StartRecording(task + "_MPC");
@@ -833,7 +924,7 @@ void MPCUntilComplete(int OPT_HORIZON){
             if(bestMatchingStateIndex >= OPT_HORIZON){
                 bestMatchingStateIndex = OPT_HORIZON - 1;
             }
-            for(int i = 0; i < OPT_HORIZON; i++){
+            for(int i = 0; i < OPT_HORIZON - 1; i++){
 //                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
 //                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
                 double currError = 0.0f;
@@ -846,7 +937,7 @@ void MPCUntilComplete(int OPT_HORIZON){
                     bestMatchingStateIndex = i;
                 }
             }
-            bestMatchingStateIndex = 1;
+//            bestMatchingStateIndex = 1;
 
             // Mutex lock
             {

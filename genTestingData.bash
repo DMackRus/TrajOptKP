@@ -7,7 +7,7 @@ run_program() {
 
     while true; do
         # Run your program with the argument
-        ./build/TrajOptKP gen_testing_data 200 10000 $dof $K
+        ./build/TrajOptKP gen_testing_data 80 2000 $dof $K
 
         # Check the exit status
         if [[ $? -eq 0 ]]; then
@@ -26,13 +26,42 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 cd ..
 
-#for i in {9..15}; do
-#  run_program $i 10
+array=(0 0.1 0.5 1 5 10 20 50 100 500 1000000)
+
+run_program 10 1
+run_program 10 500
+run_program 10 100
+run_program 5 1
+run_program 5 1000000000000000
+
+#for i in "${array[@]}"
+#do
+#   run_program 5 $i
+#done
+#
+#for i in "${array[@]}"
+#do
+#   run_program 10 $i
+#done
+#
+#for i in "${array[@]}"
+#do
+#   run_program 0 $i
 #done
 
-run_program 0 20
+#run_program 3 50
+#run_program 3 50
+#run_program 3 50
+#run_program 3 50
+#run_program 3 50
 
-#for i in {1..15}; do
+#for i in {0..15}; do
+#  run_program $i 10
+#done
+#
+##run_program 0 20
+#
+#for i in {0..15}; do
 #  run_program $i 20
 #done
 #

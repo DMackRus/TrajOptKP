@@ -2,7 +2,7 @@ modelFile: "/mujoco_models/Franka_emika_scenes_V1/push_soft_rigid.xml"
 modelName: "/push_soft_into_rigid"
 timeStep: 0.004
 openloop_horizon: 2000
-mpc_horizon: 200
+mpc_horizon: 100
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
@@ -32,7 +32,7 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.75, 0.1, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [1, 1, 0]  # 3, 6, 0
+    linearPosCost: [100, 100, 0]  # 3, 6, 0
     # When iLQR once
     terminalLinearPosCost: [0, 0, 0]
 #    terminalLinearPosCost: [0, 0, 0]

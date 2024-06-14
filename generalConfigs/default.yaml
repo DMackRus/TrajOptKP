@@ -3,11 +3,11 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "push_soft"
+task: "pushing_moderate_clutter"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
-# "acrobot", "piston_block", "pentabot"
+# "acrobot", "piston_block", "pentabot"push_soft
 #
 # --- Free robot arm motion ---
 # "reaching"
@@ -50,4 +50,4 @@ minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
-record: false
+record: true

@@ -377,6 +377,7 @@ void iLQR_SVR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 //    AdjustCurrentStateVector();
     ResampleNewDofs();
     num_dofs.push_back(activeModelTranslator->current_state_vector.dof);
+    dof_used_last_optimisation = activeModelTranslator->current_state_vector.dof;
 
     // STEP 1 - Generate dynamics derivatives and cost derivatives
     auto timer_start = high_resolution_clock::now();
@@ -868,7 +869,7 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
     // ---------------------------- Eigen vector method ---------------------------------------------
     if(eigen_vector_method){
         for(int t = 0; t < horizon_length; t += sampling_k_interval) {
-            Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeThinV);
+            Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeFullV);
             if (!svd.computeV()) {
                 std::cerr << "SVD decomposition failed!" << std::endl;
                 break;
@@ -877,12 +878,16 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
 //        std::cout << "The singular values of K are:\n" << svd.singularValues() << std::endl;
 //        std::cout << "The right singular vectors of K are:\n" << svd.matrixV() << std::endl;
 
-            for (int i = 0; i < num_ctrl; i++) {
-                for (int j = 0; j < dof; j++) {
-                    K_dofs_sums[j] += abs(svd.matrixV()(j, i));
-                    K_dofs_sums[j] += abs(svd.matrixV()(j + dof, i));
+            // Loop over controls
+//            for (int i = 0; i < num_ctrl; i++) {
+            for (int j = 0; j < dof; j++) {
+                // Loop over first N rows of SVD
+                for(int m = 0; m < 3; m++){
+                    K_dofs_sums[j] += abs(svd.matrixV()(j, m) * svd.singularValues()(m));
+                    K_dofs_sums[j] += abs(svd.matrixV()(j + dof, m) * svd.singularValues()(m));
                 }
             }
+//            }
         }
 
         std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
@@ -933,17 +938,17 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
         std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
         std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
 
-        std::cout << "States: ";
-        for(int i = 0; i < dof; i++){
-            std::cout << state_vector_name[sorted_indices[i]] << " ";
-        }
-        std::cout << "\n";
-
-        std::cout << "K_sums in order: ";
-        for(int i = 0; i < dof; i++){
-            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-        }
-        std::cout << "\n";
+//        std::cout << "States: ";
+//        for(int i = 0; i < dof; i++){
+//            std::cout << state_vector_name[sorted_indices[i]] << " ";
+//        }
+//        std::cout << "\n";
+//
+//        std::cout << "K_sums in order: ";
+//        for(int i = 0; i < dof; i++){
+//            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+//        }
+//        std::cout << "\n";
 
 
         for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++) {

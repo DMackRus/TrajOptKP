@@ -58,10 +58,10 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
 
     // Calculate the angle of approach - from goal position to object start position
     double angle_EE_push;
-//    double x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
-//    double y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
-    double x_diff = desiredObjectEnd(0) - EE_startPose.position(0);
-    double y_diff = desiredObjectEnd(1) - EE_startPose.position(1);
+    double x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
+    double y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
+//    double x_diff = desiredObjectEnd(0) - EE_startPose.position(0);
+//    double y_diff = desiredObjectEnd(1) - EE_startPose.position(1);
     angle_EE_push = atan2(y_diff, x_diff);
 
     // TODO hard coded - get it programmatically?
@@ -81,13 +81,13 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
         desired_endPointY = desiredObjectEnd(1) - y_cylinder0ffset;
     }
 
-//    double intermediatePointY = goalobj_startPose.position(1);
-//    double intermediatePointX = goalobj_startPose.position(0);
-    double intermediatePointY = EE_startPose.position(1);
-    double intermediatePointX = EE_startPose.position(0);
+    double intermediatePointY = goalobj_startPose.position(1);
+    double intermediatePointX = goalobj_startPose.position(0);
+//    double intermediatePointY = EE_startPose.position(1);
+//    double intermediatePointX = EE_startPose.position(0);
 
     // Max speed could be a parameter
-    double maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MuJoCo_helper->ReturnModelTimeStep());
+    double maxDistTravelled = 0.1 * ((5.0f/6.0f) * horizon * MuJoCo_helper->ReturnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     double desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));

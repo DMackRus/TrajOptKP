@@ -216,9 +216,9 @@ bool PushSoft::TaskComplete(mjData *d, double &dist){
 
         // dist = 15
 //        std::cout << "dist: " << dist << "\n";
-        if(dist < 3.0){
-            taskComplete = true;
-        }
+//        if(dist < 3.0){
+//            taskComplete = true;
+//        }
 
     }
     else if(task_mode == PUSH_SOFT_RIGID){

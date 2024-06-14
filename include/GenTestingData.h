@@ -100,7 +100,7 @@ private:
                              const std::string& optimiser_name,
                              const std::string& testing_directory);
 
-    double controls_noise = 0.0;
+    double controls_noise = 0.5;
 
     std::mutex mtx;
 
@@ -108,7 +108,8 @@ private:
     volatile bool apply_next_control = false;
     bool async_mpc = true;
 
-    int num_controls_apply = 60;
+    int num_controls_apply = 80;
+    int num_steps_replan = 1;
     volatile bool reoptimise = true;
 
     double final_cost = 0.0;
