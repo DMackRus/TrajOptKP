@@ -14,6 +14,7 @@
     <worldbody>
         <!-- Include the franka_panda robot arm model -->
         <include file="assets/chain0.xml"/>
+
         <body pos="0.7 0.02 0.041" name="goal">
             <joint type="free" />
             <geom type = "box" pos = "0 0 0" size = "0.04 0.06 0.085" mass="1" rgba = "0 1 0 1" solimp="0 0.99 0.005 0.5 2" solref = "0.06 0.8" condim="1" margin = "0.001" contype = "3" conaffinity = "3"/>
