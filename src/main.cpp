@@ -12,18 +12,20 @@
 
 #include "ModelTranslator/TwoDPushing.h"
 #include "ModelTranslator/ThreeDPushing.h"
-#include "ModelTranslator/BoxFlick.h"
 #include "ModelTranslator/BoxSweep.h"
+#include "ModelTranslator/SweepMultiple.h"
 
 #include "ModelTranslator/Walker.h"
+
+#include "ModelTranslator/PushSoft.h"
 //#include "Hopper.h"
 //#include "humanoid.h"
 
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
 #include "Optimiser/iLQR_SVR.h"
-#include "Optimiser/PredictiveSampling.h"
-#include "Optimiser/GradDescent.h"
+//#include "Optimiser/PredictiveSampling.h"
+//#include "Optimiser/GradDescent.h"
 
 //----------------------- Testing methods ---------------------------
 #include "GenTestingData.h"
@@ -31,39 +33,127 @@
 // --------------------- other -----------------------
 #include <mutex>
 
-// ------------ MODES OF OPERATION -------------------------------
-#define ASYNC_MPC   true
-
 // --------------------- Global class instances --------------------------------
 std::shared_ptr<ModelTranslator> activeModelTranslator;
 std::shared_ptr<Differentiator> activeDifferentiator;
 std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<iLQR> iLQROptimiser;
 std::shared_ptr<iLQR_SVR> iLQR_SVR_Optimiser;
-std::shared_ptr<PredictiveSampling> stompOptimiser;
-std::shared_ptr<GradDescent> gradDescentOptimiser;
+//std::shared_ptr<PredictiveSampling> stompOptimiser;
+//std::shared_ptr<GradDescent> gradDescentOptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
 
+bool record_trajectory = false;
+bool async_mpc = true;
 std::string task;
 bool mpc_visualise = true;
 bool playback = true;
+
+std::mutex mtx;
+std::condition_variable cv;
+
+std::vector<stateVectorList> tracking_state_vector;
+stateVectorList current_mpc_state_vector;
+
+bool apply_next_control = false;
 
 int assign_task();
 
 void InitControls();
 void OpenLoopOptimisation(int opt_horizon);
-void MPCUntilComplete(double &trajecCost, double &avgHz, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
-                      int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON);
+void MPCUntilComplete(int OPT_HORIZON);
 
 void AsyncMPC();
 void worker();
+
+void change_cost_func_push_soft();
 
 double avg_opt_time, avg_percent_derivs, avg_time_derivs, avg_time_bp, avg_time_fp;
 
 bool stop_mpc = false;
 
+int mpc_num_controls_apply = 80;
+int num_steps_replan = 1;
+
+volatile bool reoptimise = false;
+
+void analyzeKMatrices(const std::vector<Eigen::MatrixXd>& KMatrices, int numImportantElements) {
+    std::vector<Eigen::VectorXd> singularValuesList;
+    std::vector<Eigen::MatrixXd> VtMatricesList;
+
+    // Perform SVD on each K matrix
+    for (const auto& K : KMatrices) {
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K, Eigen::ComputeFullV | Eigen::ComputeFullU);
+        singularValuesList.push_back(svd.singularValues());
+        VtMatricesList.push_back(svd.matrixV().transpose());
+        std::cout << "singular values: " << svd.singularValues() << "\n";
+        std::cout << "V matrixes: " << svd.matrixV().transpose() << "\n";
+    }
+
+    // Sum the singular values across all K matrices
+    Eigen::VectorXd totalSingularValues = Eigen::VectorXd::Zero(singularValuesList[0].size());
+    for (const auto& singularValues : singularValuesList) {
+        totalSingularValues += singularValues;
+    }
+    std::cout << "total singular values: " << totalSingularValues << "\n";
+
+    // Find the indices of the most important singular values
+    std::vector<int> importantIndices(totalSingularValues.size());
+    std::iota(importantIndices.begin(), importantIndices.end(), 0); // Fill with 0, 1, ..., n-1
+
+    std::partial_sort(importantIndices.begin(), importantIndices.begin() + numImportantElements, importantIndices.end(),
+                      [&totalSingularValues](int i, int j) { return totalSingularValues[i] > totalSingularValues[j]; });
+
+    std::cout << "important index 0: " << importantIndices[0] << "\n";
+    std::cout << "important index 1: " << importantIndices[1] << "\n";
+
+    // Extract the most important directions
+    std::vector<Eigen::MatrixXd> importantDirections;
+    for (const auto& Vt : VtMatricesList) {
+        Eigen::MatrixXd importantVt = Eigen::MatrixXd::Zero(Vt.rows(), numImportantElements);
+        for (int i = 0; i < numImportantElements; ++i) {
+            importantVt.col(i) = Vt.row(importantIndices[i]).transpose();
+        }
+        importantDirections.push_back(importantVt);
+    }
+
+    std::cout << "important directions 0: " << importantDirections[0] << "\n";
+    std::cout << "important directions 1: " << importantDirections[1] << "\n";
+
+    // Aggregate the important directions (mean)
+    Eigen::MatrixXd aggregatedDirections = Eigen::MatrixXd::Zero(importantDirections[0].rows(), numImportantElements);
+    for (const auto& dir : importantDirections) {
+        aggregatedDirections += dir;
+    }
+    aggregatedDirections /= importantDirections.size();
+
+    // Print the results
+    std::cout << "Aggregated Important Directions:\n" << aggregatedDirections << std::endl;
+}
+
 int main(int argc, char **argv) {
+
+//    if(1){
+//
+//        // Function to compute the SVD and analyze the matrices
+//
+//        // Example K matrices
+//        std::vector<Eigen::MatrixXd> KMatrices;
+//        KMatrices.push_back((Eigen::MatrixXd(2, 3) << 10, 0, 100, 0, 0, 0).finished());
+//        KMatrices.push_back((Eigen::MatrixXd(2, 3) << 10, 5, 100, 0, 5, 0).finished());
+//
+//        std::cout << "------------ K matrices ----------- \n";
+//        for(int i = 0; i < KMatrices.size(); i++){
+//            std::cout << KMatrices[i] << "\n";
+//        }
+//
+//        int numImportantElements = 2;
+//        analyzeKMatrices(KMatrices, numImportantElements);
+//
+//        return 0;
+//
+//    }
 
     // Expected arguments
     // 1. Program name
@@ -96,33 +186,65 @@ int main(int argc, char **argv) {
     runMode = yamlReader->project_run_mode;
     task = yamlReader->taskName;
     taskInitMode = yamlReader->taskInitMode;
-
-
-    MatrixXd startStateVector(1, 1);
+    async_mpc = yamlReader->async_mpc;
+    record_trajectory = yamlReader->record_trajectory;
 
     // Instantiate model translator as specified by the config file.
     if(assign_task() == EXIT_FAILURE){
         return EXIT_FAILURE;
     }
 
-    // ---------- General Testing data run modes ---------
-    if(runMode == "Generate_testing_data"){
-        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
-                                       activeDifferentiator, activeVisualiser, yamlReader);
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
 
-        int task_horizon = 100;
-        int task_timeout = 2000;
+    for(int j = 0; j < 5; j++){
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    }
+    activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-        if(argc > 2){
-            task_horizon = std::atoi(argv[2]);
-        }
+    //Instantiate my visualiser
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
 
-        if(argc > 3){
-            task_timeout = std::atoi(argv[3]);
-        }
+    // Setup the initial horizon, based on open loop or mpc method
+    int opt_horizon = 0;
+    if(runMode == "MPC_Until_Complete"){
+        opt_horizon = activeModelTranslator->MPC_horizon;
+    }
+    else{
+        opt_horizon = activeModelTranslator->openloop_horizon;
+    }
 
-        return myTestingObject.gen_data_async_mpc(task_horizon, task_timeout);
-
+    // Choose an Optimiser
+    if(optimiser == "iLQR"){
+        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
+                                               activeModelTranslator->MuJoCo_helper,
+                                               activeDifferentiator,
+                                               opt_horizon, activeVisualiser, yamlReader);
+        activeOptimiser = iLQROptimiser;
+    }
+    else if(optimiser == "iLQR_SVR"){
+        iLQR_SVR_Optimiser = std::make_shared<iLQR_SVR>(activeModelTranslator,
+                                                        activeModelTranslator->MuJoCo_helper,
+                                                        activeDifferentiator,
+                                                        opt_horizon, activeVisualiser, yamlReader);
+        activeOptimiser = iLQR_SVR_Optimiser;
+    }
+//    else if(optimiser == "PredictiveSampling"){
+//        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator,
+//                                                              activeModelTranslator->MuJoCo_helper,
+//                                                              yamlReader, activeDifferentiator,
+//                                                              opt_horizon, 8);
+//        activeOptimiser = stompOptimiser;
+//    }
+//    else if(optimiser == "GradDescent"){
+//        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator,
+//                                                             activeModelTranslator->MuJoCo_helper,
+//                                                             activeDifferentiator, activeVisualiser,
+//                                                             opt_horizon, yamlReader);
+//        activeOptimiser = gradDescentOptimiser;
+//    }
+    else{
+        std::cerr << "invalid Optimiser selected, exiting" << endl;
+        return -1;
     }
 
     if(runMode == "Generate_dynamics_data"){
@@ -140,14 +262,55 @@ int main(int argc, char **argv) {
     }
 
     if(runMode == "Generate_openloop_data"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_horizon = activeModelTranslator->openloop_horizon;
+        int re_add_dofs;
+        double K_threshold;
+
+        if(argc > 2){
+            task_horizon = std::atoi(argv[2]);
+        }
+
+        if(argc > 3){
+            re_add_dofs = std::atoi(argv[3]);
+            K_threshold = std::atof(argv[4]);
+
+            myTestingObject.SetParamsiLQR_SVR(re_add_dofs, K_threshold);
+            std::cout << "set optimiser parameters \n";
+        }
+
+        return myTestingObject.GenDataOpenloopOptimisation(task_horizon);
 
     }
-
     if(runMode == "Generate_asynchronus_mpc_data"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
 
+        int task_horizon = 60;
+        int task_timeout = 2000;
+        int re_add_dofs;
+        double K_threshold;
+
+        if(argc > 2){
+            task_horizon = std::atoi(argv[2]);
+        }
+
+        if(argc > 3){
+            task_timeout = std::atoi(argv[3]);
+        }
+
+        if(argc > 4){
+            re_add_dofs = std::atoi(argv[4]);
+            K_threshold = std::atof(argv[5]);
+
+            myTestingObject.SetParamsiLQR_SVR(re_add_dofs, K_threshold);
+            std::cout << "set optimiser parameters \n";
+        }
+
+        return myTestingObject.GenDataAsyncMPC(task_horizon, task_timeout);
     }
-
-    startStateVector.resize(activeModelTranslator->state_vector_size, 1);
 
     // random start and goal state
     std::string taskPrefix = activeModelTranslator->model_name;
@@ -155,45 +318,15 @@ int main(int argc, char **argv) {
         activeModelTranslator->GenerateRandomGoalAndStartState();
     }
     else if(taskInitMode == "fromCSV"){
-        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->current_state_vector);
+        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->full_state_vector);
+        activeModelTranslator->full_state_vector.Update();
+        activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
+        activeModelTranslator->UpdateSceneVisualisation();
     }
 
     // Initialise the system state from desired mechanism
     // Set goal pose here maybe???
     activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
-
-    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
-
-    for(int j = 0; j < 5; j++){
-        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
-    }
-    activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
-
-    //Instantiate my visualiser
-    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
-
-    // Choose an Optimiser
-    int openloop_horizon = activeModelTranslator->openloop_horizon;
-    if(optimiser == "iLQR"){
-        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
-        activeOptimiser = iLQROptimiser;
-    }
-    else if(optimiser == "iLQR_SVR"){
-        iLQR_SVR_Optimiser = std::make_shared<iLQR_SVR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
-        activeOptimiser = iLQR_SVR_Optimiser;
-    }
-    else if(optimiser == "PredictiveSampling"){
-        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, yamlReader, activeDifferentiator, openloop_horizon, 8);
-        activeOptimiser = stompOptimiser;
-    }
-    else if(optimiser == "GradDescent"){
-        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, activeVisualiser, openloop_horizon, yamlReader);
-        activeOptimiser = gradDescentOptimiser;
-    }
-    else{
-        std::cerr << "invalid Optimiser selected, exiting" << endl;
-        return -1;
-    }
 
     // Methods of control / visualisation
     if(runMode == "Init_controls"){
@@ -212,137 +345,185 @@ int main(int argc, char **argv) {
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
 
-        // Testing code for rotating object around in mid air and testing ost function etc.
-//        pose_6 object;
-//        object.position[0] = 0.8;
-//        object.position[1] = 0.0;
-//        object.position[2] = 0.5;
+
+
+
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 //
-//        object.orientation[0] = 0.0;
-//        object.orientation[1] = 0.0;
-//        object.orientation[2] = 0.0;
+//        std::cout << "nq: " << activeModelTranslator->MuJoCo_helper->model->nq << "\n";
+//        std::cout << "nv: " << activeModelTranslator->MuJoCo_helper->model->nv << "\n";
+//        std::cout << "nbody: " << activeModelTranslator->MuJoCo_helper->model->nbody << "\n";
 //
-//        m_point axis_test = {0, 0.5, 0.1};
-//        m_quat test = axis2Quat(axis_test);
-//        axis_test = quat2Axis(test);
-//        std::cout << "quat: " << test << std::endl;
-//        std::cout << "axis test: " << axis_test << "\n";
-//
-//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        activeModelTranslator->MuJoCo_helper->SetBodyPoseAngle("goal", object, activeModelTranslator->MuJoCo_helper->vis_data);
-//
-//        while(activeVisualiser->windowOpen()){
-//            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-//            activeVisualiser->render("Test");
+//        // Print state vector name and its associated q pos index
+//        std::cout << "dof in current state vector: " << activeModelTranslator->current_state_vector.dof << "\n";
+//        std::cout << "state vector names size: " << activeModelTranslator->current_state_vector.state_names.size() << "\n";
+//        for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
+//            std::cout << "i: " << i << "\n";
+//            int q_index = activeModelTranslator->StateIndexToQposIndex(i, activeModelTranslator->current_state_vector);
+//            std::cout << "state name: " << activeModelTranslator->current_state_vector.state_names[i] << ": " << q_index << "\n";
 //        }
+
+        //
+//        activeModelTranslator->current_state_vector.PrintFormattedStateVector();
+//
+//        // remove some vertices
+//        std::vector<std::string> remove = {"jelly_V1_x", "jelly_V2_y", "jelly_V11_z"};
+//        activeModelTranslator->UpdateCurrentStateVector(remove, false);
+//
+//        activeModelTranslator->current_state_vector.PrintFormattedStateVector();
+
+
+//        std::string flex_name = "Jelly2";
+//        int flexId = mj_name2id(activeModelTranslator->MuJoCo_helper->model, mjOBJ_FLEX, flex_name.c_str());
+//        int firstVertadr = activeModelTranslator->MuJoCo_helper->model->flex_vertadr[flexId];
+//        int numVertices = activeModelTranslator->MuJoCo_helper->model->flex_vertnum[flexId];
+//
+//        int body_id = activeModelTranslator->MuJoCo_helper->model->flex_vertbodyid[firstVertadr];
+//        int geom_id = activeModelTranslator->MuJoCo_helper->model->body_geomadr[body_id];
+//
+//        std::cout << "flex id: " << flexId << " first vert adr: " << firstVertadr << "body is: " << body_id << "geom id: " << geom_id << "\n";
+//
+//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4]     = 0; // Red
+//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 1] = 0; // Green
+//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 2] = 0; // Blue
+//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 3] = 0.5; // Alpha
+//
+        while(activeVisualiser->windowOpen()){
+//            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+            activeVisualiser->render("Test");
+            double cost = activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, false);
+            std::cout << "cost: " << cost << "\n";
+        }
         // --------------------------------------------------------------------------------------------------------------
 
-        std::vector<double> time_derivs_full;
-        std::vector<double> time_bp_full;
-        std::vector<double> time_derivs_reduced;
-        std::vector<double> time_bp_reduced;
+//        std::vector<double> time_derivs_full;
+//        std::vector<double> time_bp_full;
+//        std::vector<double> time_derivs_reduced;
+//        std::vector<double> time_bp_reduced;
 
-        int dofs_full, dofs_reduced;
-        int N = 10;
+//        int dofs_full, dofs_reduced;
+//        int N = 10;
+//
+//        dofs_full = activeModelTranslator->full_state_vector.dof;
+//
+//        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
 
-        dofs_full = activeModelTranslator->dof;
+//        MatrixXd state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data);
+//        std::cout << "size of state vector quaternion: " << state_vector.rows() << std::endl;
+//        activeModelTranslator->current_state_vector.Update();
+//        std::cout << "num dofs: " << activeModelTranslator->current_state_vector.dof << " num dofs quat: " << activeModelTranslator->current_state_vector.dof_quat << std::endl;
 
-        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, openloop_horizon, activeVisualiser, yamlReader);
-
-        // Can we do some timing tests???
-        // Rollout a trajectory
-
-        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
-
-        std::vector<MatrixXd> U_init;
-        U_init = activeModelTranslator->CreateInitOptimisationControls(openloop_horizon);
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-
-
-        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
-        std::cout << "rollout done \n";
-
-        // Compute derivatives
-        auto timer_start = std::chrono::high_resolution_clock::now();
-
-        for(int i = 0; i < N; i++){
-            timer_start = std::chrono::high_resolution_clock::now();
-            iLQROptimiser->GenerateDerivatives();
-            time_derivs_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::high_resolution_clock::now() - timer_start).count());
-        }
-
-        for(int i = 0; i < N; i++){
-            timer_start = std::chrono::high_resolution_clock::now();
-            iLQROptimiser->BackwardsPassQuuRegularisation();
-            time_bp_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::high_resolution_clock::now() - timer_start).count());
-        }
+//        std::cout << "state vector: ";
+//        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
+//            std::cout << state_name << " ";
+//        }
+//        std::cout << "\n";
+//        std::cout << "size of state vector before: " << activeModelTranslator->current_state_vector.dof << " \n";
+//
+//        // remove elements
+//        std::vector<std::string> remove = {"panda0_joint1", "goal_x", "obstacle_1_x"};
+//        activeModelTranslator->UpdateCurrentStateVector(remove, false);
+//
+//        std::cout << "state vector: ";
+//        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
+//            std::cout << state_name << " ";
+//        }
+//        std::cout << "\n";
+//        std::cout << "size of state vector after: " << activeModelTranslator->current_state_vector.dof << " \n";
 
 
-        // Remove elements from task
-        std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw",
-                                                    "mediumCylinder_y", "mediumCylinder_pitch", "mediumCylinder_roll", "mediumCylinder_yaw",
-                                                    "bigBox_y", "bigBox_pitch", "bigBox_roll", "bigBox_yaw",
-                                                    "obstacle1_y", "obstacle1_pitch", "obstacle1_roll", "obstacle1_yaw",
-                                                    "obstacle2_y", "obstacle2_pitch", "obstacle2_roll", "obstacle2_yaw",
-                                                    "obstacle3_y", "obstacle3_pitch", "obstacle3_roll", "obstacle3_yaw",
-                                                    "obstacle4_y", "obstacle4_pitch", "obstacle4_roll", "obstacle4_yaw",
-                                                    "obstacle5_y", "obstacle5_pitch", "obstacle5_roll", "obstacle5_yaw",};
-        activeModelTranslator->UpdateStateVector(remove_elements, false);
-        dofs_reduced = activeModelTranslator->dof;
-
-        // resize optimiser state
-        iLQROptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, iLQROptimiser->horizon_length);
-
-        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
-        std::cout << "2nd rollout done \n";
-
-        // Compute derivatives
-        for(int i = 0; i < N; i++){
-            timer_start = std::chrono::high_resolution_clock::now();
-            iLQROptimiser->GenerateDerivatives();
-            time_derivs_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::high_resolution_clock::now() - timer_start).count());
-        }
-
-        // Compute backwards pass
-        for(int i = 0; i < N; i++){
-            timer_start = std::chrono::high_resolution_clock::now();
-            iLQROptimiser->BackwardsPassQuuRegularisation();
-            time_bp_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-                    std::chrono::high_resolution_clock::now() - timer_start).count());
-        }
-
-        double avg_time_derivs_full, avg_time_derivs_reduced, avg_time_bp_full, avg_time_bp_reduced;
-
-        for(int i = 0; i < N; i++){
-            avg_time_derivs_full += time_derivs_full[i];
-            avg_time_derivs_reduced += time_derivs_reduced[i];
-            avg_time_bp_full += time_bp_full[i];
-            avg_time_bp_reduced += time_bp_reduced[i];
-        }
-
-        avg_time_derivs_full /= N;
-        avg_time_derivs_reduced /= N;
-        avg_time_bp_full /= N;
-        avg_time_bp_reduced /= N;
-
-        std::cout << "-------- Results of state vector dimensionality reduction ----------- \n";
-        std::cout << "num dofs in full state vector: " << dofs_full << "\n";
-        std::cout << "time of derivs for full state vector: " << avg_time_derivs_full << " ms \n";
-        std::cout << "time of bp for full state vector: " << avg_time_bp_full << " ms \n";
-        std::cout << "num dofs in reduced state vector: " << dofs_reduced << "\n";
-        std::cout << "time of derivs for reduced state vector: " << avg_time_derivs_reduced << " ms\n";
-        std::cout << "time of bp for reduced state vector: " << avg_time_bp_reduced << " ms\n";
-
-        double percentage_decrease_derivs = (1 - (avg_time_derivs_reduced / avg_time_derivs_full)) * 100.0;
-        double percentage_decrease_bp = (1 - (avg_time_bp_reduced / avg_time_bp_full)) * 100.0;
-        double dof_percentage_decrease = (1 - ((double)dofs_reduced / (double)dofs_full)) * 100.0;
-        std::cout << "percent decrease of derivatives: " << percentage_decrease_derivs << "\n";
-        std::cout << "percent decrease of backwards pass: " << percentage_decrease_bp << "\n";
-        std::cout << "expected percentage decrease: " << dof_percentage_decrease << "\n";
+//        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+//
+//        std::vector<MatrixXd> U_init;
+//        U_init = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+//
+//
+//        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
+//        std::cout << "rollout done \n";
+//
+//        // Compute derivatives
+//        auto timer_start = std::chrono::high_resolution_clock::now();
+//
+//        for(int i = 0; i < N; i++){
+//            timer_start = std::chrono::high_resolution_clock::now();
+//            iLQROptimiser->GenerateDerivatives();
+//            time_derivs_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+//                    std::chrono::high_resolution_clock::now() - timer_start).count());
+//        }
+//
+//        for(int i = 0; i < N; i++){
+//            timer_start = std::chrono::high_resolution_clock::now();
+//            iLQROptimiser->BackwardsPassQuuRegularisation();
+//            time_bp_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+//                    std::chrono::high_resolution_clock::now() - timer_start).count());
+//        }
+//
+//
+//        // Remove elements from task
+//        std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw",
+//                                                    "mediumCylinder_y", "mediumCylinder_pitch", "mediumCylinder_roll", "mediumCylinder_yaw",
+//                                                    "bigBox_y", "bigBox_pitch", "bigBox_roll", "bigBox_yaw",
+//                                                    "obstacle1_y", "obstacle1_pitch", "obstacle1_roll", "obstacle1_yaw",
+//                                                    "obstacle2_y", "obstacle2_pitch", "obstacle2_roll", "obstacle2_yaw",
+//                                                    "obstacle3_y", "obstacle3_pitch", "obstacle3_roll", "obstacle3_yaw",
+//                                                    "obstacle4_y", "obstacle4_pitch", "obstacle4_roll", "obstacle4_yaw",
+//                                                    "obstacle5_y", "obstacle5_pitch", "obstacle5_roll", "obstacle5_yaw",};
+//        activeModelTranslator->UpdateCurrentStateVector(remove_elements, false);
+//        dofs_reduced = activeModelTranslator->dof;
+//
+//        // resize optimiser state
+//        iLQROptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, iLQROptimiser->horizon_length);
+//
+//        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
+//        std::cout << "2nd rollout done \n";
+//
+//        // Compute derivatives
+//        for(int i = 0; i < N; i++){
+//            timer_start = std::chrono::high_resolution_clock::now();
+//            iLQROptimiser->GenerateDerivatives();
+//            time_derivs_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+//                    std::chrono::high_resolution_clock::now() - timer_start).count());
+//        }
+//
+//        // Compute backwards pass
+//        for(int i = 0; i < N; i++){
+//            timer_start = std::chrono::high_resolution_clock::now();
+//            iLQROptimiser->BackwardsPassQuuRegularisation();
+//            time_bp_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
+//                    std::chrono::high_resolution_clock::now() - timer_start).count());
+//        }
+//
+//        double avg_time_derivs_full, avg_time_derivs_reduced, avg_time_bp_full, avg_time_bp_reduced;
+//
+//        for(int i = 0; i < N; i++){
+//            avg_time_derivs_full += time_derivs_full[i];
+//            avg_time_derivs_reduced += time_derivs_reduced[i];
+//            avg_time_bp_full += time_bp_full[i];
+//            avg_time_bp_reduced += time_bp_reduced[i];
+//        }
+//
+//        avg_time_derivs_full /= N;
+//        avg_time_derivs_reduced /= N;
+//        avg_time_bp_full /= N;
+//        avg_time_bp_reduced /= N;
+//
+//        std::cout << "-------- Results of state vector dimensionality reduction ----------- \n";
+//        std::cout << "num dofs in full state vector: " << dofs_full << "\n";
+//        std::cout << "time of derivs for full state vector: " << avg_time_derivs_full << " ms \n";
+//        std::cout << "time of bp for full state vector: " << avg_time_bp_full << " ms \n";
+//        std::cout << "num dofs in reduced state vector: " << dofs_reduced << "\n";
+//        std::cout << "time of derivs for reduced state vector: " << avg_time_derivs_reduced << " ms\n";
+//        std::cout << "time of bp for reduced state vector: " << avg_time_bp_reduced << " ms\n";
+//
+//        double percentage_decrease_derivs = (1 - (avg_time_derivs_reduced / avg_time_derivs_full)) * 100.0;
+//        double percentage_decrease_bp = (1 - (avg_time_bp_reduced / avg_time_bp_full)) * 100.0;
+//        double dof_percentage_decrease = (1 - ((double)dofs_reduced / (double)dofs_full)) * 100.0;
+//        std::cout << "percent decrease of derivatives: " << percentage_decrease_derivs << "\n";
+//        std::cout << "percent decrease of backwards pass: " << percentage_decrease_bp << "\n";
+//        std::cout << "expected percentage decrease: " << dof_percentage_decrease << "\n";
 
         return EXIT_FAILURE;
     }
@@ -366,9 +547,15 @@ void InitControls(){
     //Stitch setup and optimisation controls together
     initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
 
+
+    if(record_trajectory){
+        activeVisualiser->StartRecording(task + "_init_controls");
+    }
+
     while(activeVisualiser->windowOpen()){
 
-        activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data);
+        activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data,
+                                                activeModelTranslator->current_state_vector);
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->main_data);
 
 
@@ -378,75 +565,87 @@ void InitControls(){
         if(controlCounter >= initControls.size()){
             controlCounter = 0;
             activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+            activeVisualiser->StopRecording();
         }
 
         if(visualCounter > 5){
             visualCounter = 0;
             activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
             activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-            activeVisualiser->render("show init controls");
+            if(record_trajectory){
+                activeVisualiser->render("");
+            }
+            else{
+                activeVisualiser->render("show init controls");
+            }
+
         }
     }
 }
 
 void OpenLoopOptimisation(int opt_horizon){
-    int controlCounter = 0;
-    int visualCounter = 0;
-    bool showFinalControls = true;
+    int control_counter = 0;
+    int visual_counter = 0;
+    bool show_opt_controls = true;
     const char* label = "Final trajectory after optimisation";
 
-    std::cout << "opt horizon is" << opt_horizon << std::endl;
+    std::vector<MatrixXd> init_controls;
+    std::vector<MatrixXd> optimised_controls;
 
-    std::vector<MatrixXd> initControls;
-    std::vector<MatrixXd> finalControls;
-
-    std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+    std::vector<MatrixXd> init_setup_controls = activeModelTranslator->CreateInitSetupControls(1000);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
 
-    std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+    std::vector<MatrixXd> init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-    auto start = high_resolution_clock::now();
-    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, yamlReader->maxIter, yamlReader->minIter, opt_horizon);
-    auto stop = high_resolution_clock::now();
-    auto linDuration = duration_cast<microseconds>(stop - start);
+    std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                                        init_opt_controls, yamlReader->maxIter,
+                                                                        yamlReader->minIter, opt_horizon);
 
     // Stitch together setup controls with init control + optimised controls
-    initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
-    finalControls.insert(finalControls.end(), optimisedControls.begin(), optimisedControls.end());
+    init_controls.insert(init_controls.end(), init_opt_controls.begin(), init_opt_controls.end());
+    optimised_controls.insert(optimised_controls.end(), optimisedControls.begin(), optimisedControls.end());
 
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
+    if(record_trajectory){
+        activeVisualiser->StartRecording(task + "_optimised_controls");
+        label = "";
+    }
     while(activeVisualiser->windowOpen()){
 
-        if(showFinalControls){
-            activeModelTranslator->SetControlVector(finalControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data);
+        if(show_opt_controls){
+            activeModelTranslator->SetControlVector(optimised_controls[control_counter], activeModelTranslator->MuJoCo_helper->main_data,
+                                                    activeModelTranslator->current_state_vector);
         }
         else{
-            activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data);
+            activeModelTranslator->SetControlVector(init_controls[control_counter], activeModelTranslator->MuJoCo_helper->main_data,
+                                                    activeModelTranslator->current_state_vector);
         }
 
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->main_data);
 
-        controlCounter++;
-        visualCounter++;
+        control_counter++;
+        visual_counter++;
 
-        if(controlCounter >= finalControls.size()){
-            controlCounter = 0;
+        if(control_counter >= optimised_controls.size()){
+            control_counter = 0;
             activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-            showFinalControls = !showFinalControls;
-            if(showFinalControls){
+            show_opt_controls = !show_opt_controls;
+            if(show_opt_controls){
                 label = "Final trajectory after optimisation";
             }
             else{
                 label = "Initial trajectory before optimisation";
             }
+
+            activeVisualiser->StopRecording();
         }
 
-        if(visualCounter >= 5){
-            visualCounter = 0;
+        if(visual_counter >= 5){
+            visual_counter = 0;
             activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
             activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             activeVisualiser->render(label);
@@ -455,57 +654,119 @@ void OpenLoopOptimisation(int opt_horizon){
 }
 
 void worker(){
-    double trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
-    MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 3000, 1, activeModelTranslator->MPC_horizon);
+    MPCUntilComplete(activeModelTranslator->MPC_horizon);
 }
 
 void AsyncMPC(){
 
+    // Setup the task
     std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
 
     // Whether Optimiser will output useful information
     activeOptimiser->verbose_output = true;
     // Visualise MPC trajectory live
     mpc_visualise = true;
+    reoptimise = true;
 
-    if(ASYNC_MPC){
-        std::thread MPC_controls_thread;
-        MPC_controls_thread = std::thread(&worker);
-        int vis_counter = 0;
-        MatrixXd next_control;
-        // timer variables
-        std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-        std::chrono::steady_clock::time_point end;
+    // Start the optimisation thread
+    std::thread MPC_controls_thread;
+    MPC_controls_thread = std::thread(&worker);
 
-        int MAX_TASK_TIME = 2500;
-        int task_time = 0;
+    int vis_counter = 0;
+    MatrixXd next_control;
 
-        while(task_time++ < MAX_TASK_TIME){
-            begin = std::chrono::steady_clock::now();
+    // timer variables
+    std::chrono::steady_clock::time_point begin;
+    std::chrono::steady_clock::time_point end;
 
-            if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
+    int MAX_TASK_TIME = 2000;
+    int task_time = 0;
+
+    // Setup initial state vector for visualisation
+    current_mpc_state_vector = activeModelTranslator->current_state_vector;
+
+    std::vector<MatrixXd> replay_states;
+    int nq = activeModelTranslator->MuJoCo_helper->model->nq;
+    int nv = activeModelTranslator->MuJoCo_helper->model->nv;
+    MatrixXd full_state(nq + nv, 1);
+    auto *_full_state = new double[nq+nv];
+
+    while(task_time < MAX_TASK_TIME){
+        begin = std::chrono::steady_clock::now();
+
+        if(async_mpc || (!async_mpc && apply_next_control)){
+
+            tracking_state_vector.push_back(current_mpc_state_vector);
+
+            if(!async_mpc){
+                apply_next_control = false;
+            }
+
+            // if correct number of controls applies, trigger reoptimise
+
+            // if control buffer exhausted, apply
+            if(activeVisualiser->current_control_index >= num_steps_replan){
+                // Applied correct number of controls so lets replan
+                reoptimise = true;
+            }
+
+            // if control index > numapplycontrols
+            if(activeVisualiser->current_control_index < mpc_num_controls_apply && activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
+//            if(activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
 
                 next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
                 // Increment the current control index
                 activeVisualiser->current_control_index++;
+
+                double controls_noise_percentage = 5;
+                MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
+                for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
+                    double control_noise = ((control_lims(i*2 + 1) - control_lims(i*2)) / 100) * controls_noise_percentage;
+
+                    double gauss_noise = GaussNoise(0, control_noise);
+                    next_control(i, 0) += gauss_noise;
+                }
             }
             else{
-                MatrixXd empty_control(activeModelTranslator->num_ctrl, 1);
-                empty_control.setZero();
+                std::vector<double> grav_compensation;
+                std::string robot_name = activeModelTranslator->current_state_vector.robots[0].name;
+                activeModelTranslator->MuJoCo_helper->GetRobotJointsGravityCompensationControls(robot_name, grav_compensation,
+                                                                                                activeModelTranslator->MuJoCo_helper->vis_data);
+                MatrixXd empty_control(activeModelTranslator->current_state_vector.num_ctrl, 1);
+//                empty_control.setZero();
+                for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
+                    empty_control(i) = grav_compensation[i];
+                }
                 next_control = empty_control;
             }
 
+//            std::cout << "next control is: " << next_control.transpose() << "\n";
+
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
-            activeVisualiser->trajectory_states.push_back(activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data));
+
+            // We store the full state for visualisation relay purposes
+            mj_getState(activeModelTranslator->MuJoCo_helper->model,
+                        activeModelTranslator->MuJoCo_helper->vis_data, _full_state, mjSTATE_PHYSICS);
+            for(int i = 0; i < nq+nv; i++){
+                full_state(i, 0) = _full_state[i];
+            }
+            replay_states.push_back(full_state);
+            // ----------------------------------------
+
+            MatrixXd next_state = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector);
+            activeVisualiser->trajectory_states.push_back(next_state);
 
             // Set the latest control
-            activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data);
+            activeModelTranslator->SetControlVector(next_control, activeModelTranslator->MuJoCo_helper->vis_data,
+                                                    activeModelTranslator->current_state_vector);
 
             // Update the simulation
             mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+            task_time++;
 
             // Check if task complete
             double dist;
@@ -513,276 +774,206 @@ void AsyncMPC(){
                 cout << "task complete - dist: " << dist  << endl;
                 break;
             }
-
-            // Update the visualisation
-            // Unsure why rendering every time causes it to lag so much more???
-            vis_counter++;
-            if(vis_counter > 5){
-                activeVisualiser->render("live-MPC");
-                vis_counter = 0;
-            }
-
-            end = std::chrono::steady_clock::now();
-            // time taken
-            auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
-
-            // compare how long we took versus the timestep of the model
-            int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
-
-            if(difference_ms > 0) {
-//                difference_ms = 20;
-                std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
-            }
         }
 
-        std::mutex mtx;
-        mtx.lock();
+        // Update the visualisation
+        // Unsure why rendering every time causes it to lag so much more???
+        vis_counter++;
+        if(vis_counter > 5){
+            activeVisualiser->render("live-MPC");
+            vis_counter = 0;
+        }
+
+        end = std::chrono::steady_clock::now();
+        // time taken
+        auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
+
+        // compare how long we took versus the timestep of the model
+        int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
+
+        if(difference_ms > 0) {
+//            difference_ms += 8;
+            std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
+        }
+    }
+
+
+    // Stop MPC thread
+    {
+        std::unique_lock<std::mutex> lock(mtx);
         stop_mpc = true;
-        mtx.unlock();
-        MPC_controls_thread.join();
+    }
 
-        double cost = 0.0f;
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-        for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
-            activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data);
-            activeModelTranslator->SetStateVector(activeVisualiser->trajectory_states[i], activeModelTranslator->MuJoCo_helper->vis_data);
-            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-            cost += (activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false) * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep());
+    MPC_controls_thread.join();
 
-//            activeVisualiser->render("live-MPC");
+    double cost = 0.0f;
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
+    bool terminal = false;
+
+    if(task == "pushing_moderate_clutter"){
+        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
+            rigid_body.terminal_linear_pos_cost[0] = 10000;
+            rigid_body.terminal_linear_pos_cost[1] = 10000;
         }
-
-        std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
-        std::cout << "avg opt time: " << avg_opt_time << " ms \n";
-        std::cout << "avg percent derivs: " << avg_percent_derivs << " % \n";
-        std::cout << "avg time derivs: " << avg_time_derivs << " ms \n";
-        std::cout << "avg time BP: " << avg_time_bp << " ms \n";
-        std::cout << "avg time FP: " << avg_time_fp << " ms \n";
-
     }
-    else{
-        double trajecCost, avgHz;
-        double avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP;
-        MPCUntilComplete(trajecCost, avgHz, avgPercentDerivs, avgTimeDerivs, avgTimeBP, avgTimeFP, 2500, 1, 100);
+
+    if(record_trajectory){
+        activeVisualiser->StartRecording(task + "_MPC");
     }
+    for(int i = 0; i < activeVisualiser->trajectory_states.size(); i++){
+
+        // Update current state vector for visualising what was being consider at this point
+        activeModelTranslator->current_state_vector = tracking_state_vector[i];
+        activeModelTranslator->UpdateSceneVisualisation();
+
+        activeModelTranslator->SetControlVector(activeVisualiser->trajectory_controls[i], activeModelTranslator->MuJoCo_helper->vis_data,
+                                                activeModelTranslator->full_state_vector);
+
+        // - complicated but works well, we use full mj_state for replay as we want to visualise all dofs and how they change
+        // - not just the ones in the state vector
+        for(int j = 0; j < nq+nv; j++){
+            _full_state[j] = replay_states[i](j, 0);
+        }
+        mj_setState(activeModelTranslator->MuJoCo_helper->model,
+                    activeModelTranslator->MuJoCo_helper->vis_data, _full_state, mjSTATE_PHYSICS);
+        activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+        if(i == activeVisualiser->trajectory_states.size() - 1){
+            terminal = true;
+        }
+        cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, terminal);
+        if(i % 5 == 0){
+            activeVisualiser->render("");
+        }
+    }
+    activeVisualiser->StopRecording();
+
+    delete [] _full_state;
+
+    std::cout << "final cost of entire MPC trajectory was: " << cost << "\n";
+    std::cout << "avg opt time: " << avg_opt_time << " ms \n";
+    std::cout << "avg percent derivs: " << avg_percent_derivs << " % \n";
+    std::cout << "avg time derivs: " << avg_time_derivs << " ms \n";
+    std::cout << "avg time BP: " << avg_time_bp << " ms \n";
+    std::cout << "avg time FP: " << avg_time_fp << " ms \n";
 }
 
 // Before calling this function, we should setup the activeModelTranslator with the correct initial state and the
 // Optimiser settings. This function can then return necessary testing data for us to store
-void MPCUntilComplete(double &trajecCost, double &avgHZ, double &avgTimeGettingDerivs, double &avgPercentDerivs, double &avgTimeBP, double &avgTimeFP,
-                      int MAX_TASK_TIME, int REPLAN_TIME, int OPT_HORIZON){
+void MPCUntilComplete(int OPT_HORIZON){
 
-    int visualCounter = 0;
-    int overallTaskCounter = 0;
-    int reInitialiseCounter = 0;
-    const char* label = "MPC until complete";
+    std::vector<double> time_get_derivs;
+    std::vector<double> time_bp;
+    std::vector<double> time_fp;
+    std::vector<double> percent_derivs_computed;
 
-    activeVisualiser->replayControls.clear();
-
-    std::vector<double> timeGettingDerivs;
-    std::vector<double> timeBackwardsPass;
-    std::vector<double> timeForwardsPass;
-    std::vector<double> percentagesDerivsCalculated;
-
-    std::vector<MatrixXd> optimisedControls;
+    std::vector<MatrixXd> optimised_controls;
 
     // Instantiate init controls
-    std::vector<MatrixXd> initOptimisationControls;
+    std::vector<MatrixXd> init_opt_controls;
 
-    initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(OPT_HORIZON);
+    // Create init optimisation controls and reset system state
+    optimised_controls = activeModelTranslator->CreateInitOptimisationControls(OPT_HORIZON);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-    optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], initOptimisationControls, 1, 1, OPT_HORIZON);
+//    optimised_controls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1, OPT_HORIZON);
+    current_mpc_state_vector = activeModelTranslator->current_state_vector;
 
-    MatrixXd currState;
-    activeOptimiser->verbose_output = true;
+    MatrixXd current_state;
 
     while(!stop_mpc){
 
-        if(!ASYNC_MPC){
-//            currState = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->main_data);
+        if(reoptimise){
+            std::cout << "reoptimise called \n";
+            // Copy current state of system (vis data) to starting data object for optimisation
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->vis_data);
 
-            MatrixXd nextControl = optimisedControls[0].replicate(1, 1);
-            activeVisualiser->replayControls.push_back(nextControl.replicate(1, 1));
+            // Get the current control index
+            int current_control_index = activeVisualiser->current_control_index;
 
-            optimisedControls.erase(optimisedControls.begin());
+            // Delete all controls before control index
+            optimised_controls.erase(optimised_controls.begin(), optimised_controls.begin() + current_control_index);
 
-            optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
-
-            activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
-            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
-        }
-
-        reInitialiseCounter++;
-        visualCounter++;
-
-        // Re-Optimise evert REPLAN_TIME steps
-        if(reInitialiseCounter >= REPLAN_TIME){
-            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->vis_data);
-            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->main_data);
-
-            if(ASYNC_MPC){
-                int current_control_index = activeVisualiser->current_control_index;
-
-                // Slice the optimised controls to get the current control
-                for(int i = 0; i < current_control_index; i++){
-                    optimisedControls.erase(optimisedControls.begin());
-                    optimisedControls.push_back(optimisedControls.at(optimisedControls.size() - 1));
-                }
+            // Copy last control to keep control trajectory the same size
+            MatrixXd last_control = optimised_controls.back();
+            for (int i = 0; i < current_control_index; ++i) {
+                optimised_controls.push_back(last_control);
             }
-            optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], optimisedControls, 1, 1, OPT_HORIZON);
-            reInitialiseCounter = 0;
 
-            timeGettingDerivs.push_back(activeOptimiser->avg_time_get_derivs_ms);
-            timeBackwardsPass.push_back(activeOptimiser->avg_time_backwards_pass_ms);
-            timeForwardsPass.push_back(activeOptimiser->avg_time_forwards_pass_ms);
-            percentagesDerivsCalculated.push_back(activeOptimiser->avg_percent_derivs);
+            optimised_controls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], optimised_controls, 1, 1, OPT_HORIZON);
+            current_mpc_state_vector = activeModelTranslator->current_state_vector;
 
-        }
-
-        if(!ASYNC_MPC){
-            if(mpc_visualise){
-                if(visualCounter > 10){
-//                    activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
-//                    activeModelTranslator->MuJoCo_helper->forwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-                    activeVisualiser->render(label);
-                    visualCounter = 0;
-                }
-            }
-        }
-        else{
-            // If we are use Async visualisation, need to copy our control vector to internal control vector for
-            // visualisation class
-            std::mutex mtx;
-            mtx.lock();
+            // Store last iteration timing results
+            time_get_derivs.push_back(activeOptimiser->avg_time_get_derivs_ms);
+            time_bp.push_back(activeOptimiser->avg_time_backwards_pass_ms);
+            time_fp.push_back(activeOptimiser->avg_time_forwards_pass_ms);
+            percent_derivs_computed.push_back(activeOptimiser->avg_percent_derivs);
 
             int optTimeToTimeSteps = activeOptimiser->opt_time_ms / (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000);
 
-            int low_bound = optTimeToTimeSteps - 3;
-            if (low_bound < 0) low_bound = 0;
-
-            int high_bound = optTimeToTimeSteps + 3;
-
             // By the time we have computed optimal controls, main visualisation will be some number
             // of time-steps ahead. We need to find the correct control to apply.
+            current_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                                     activeModelTranslator->current_state_vector);
 
-            MatrixXd current_vis_state = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data);
-
+            // Compute the best starting state
             double smallestError = 1000.00;
-            int bestMatchingStateIndex = 0;
-            // TODO - possible issue if optimisation time > horizon
-            for(int i = low_bound; i < high_bound; i++){
+            int bestMatchingStateIndex = optTimeToTimeSteps;
+
+            if(bestMatchingStateIndex >= OPT_HORIZON){
+                bestMatchingStateIndex = OPT_HORIZON - 1;
+            }
+            for(int i = 0; i < OPT_HORIZON - 1; i++){
 //                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
 //                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
                 double currError = 0.0f;
-                for(int j = 0; j < activeModelTranslator->state_vector_size; j++){
-                    currError += abs(activeOptimiser->X_old[i](j) - current_vis_state(j));
+                for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
+                    // TODO - im not sure about this, should we use full state?
+                    currError += abs(activeOptimiser->X_old[i](j) - current_state(j));
                 }
-
                 if(currError < smallestError){
                     smallestError = currError;
                     bestMatchingStateIndex = i;
                 }
             }
+//            bestMatchingStateIndex = 1;
 
-            activeVisualiser->controlBuffer = optimisedControls;
+            // Mutex lock
+            {
+                std::unique_lock<std::mutex> lock(mtx);
 
-            // Set the current control index to the best matching state index
-            activeVisualiser->current_control_index = bestMatchingStateIndex;
+                activeVisualiser->controlBuffer = optimised_controls;
+
+                // Set the current control index to the best matching state index
+                activeVisualiser->current_control_index = bestMatchingStateIndex;
+
+                apply_next_control = true;
+                reoptimise = false;
+            }
+
             std::cout << "best matching state index: " << bestMatchingStateIndex << std::endl;
-
-            activeVisualiser->new_controls_flag = true;
-
-            mtx.unlock();
-        }
-
-        if(!ASYNC_MPC){
-            overallTaskCounter++;
-
-            if(overallTaskCounter >= MAX_TASK_TIME){
-                cout << "task time out" << endl;
-                stop_mpc = true;
-            }
         }
     }
 
-    if(!ASYNC_MPC){
-        trajecCost = 0.0f;
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    avg_time_derivs = 0.0;
+    avg_time_bp = 0.0;
+    avg_time_fp = 0.0;
+    avg_percent_derivs = 0.0;
 
-        for(int i = 0; i < activeVisualiser->replayControls.size(); i++){
-            MatrixXd startState = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->vis_data);
-            MatrixXd nextControl = activeVisualiser->replayControls[i].replicate(1, 1);
-            double stateCost = activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, false);
-            trajecCost += stateCost  * activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep();
-
-            activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
-            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
-        }
+    for(int i = 0; i < time_get_derivs.size(); i++){
+        avg_time_derivs += time_get_derivs[i];
+        avg_time_bp += time_bp[i];
+        avg_time_fp += time_fp[i];
+        avg_percent_derivs += percent_derivs_computed[i];
     }
 
+    avg_time_derivs /= time_get_derivs.size();
+    avg_time_bp /= time_bp.size();
+    avg_time_fp /= time_fp.size();
+    avg_percent_derivs /= percent_derivs_computed.size();
 
-    //cout << "trajec cost: " << trajecCost << endl;
-    avgTimeGettingDerivs = 0.0f;
-    avgTimeBP = 0.0f;
-    avgTimeFP = 0.0f;
-    avgPercentDerivs = 0.0f;
-
-    for(int i = 0; i < timeGettingDerivs.size(); i++){
-        avgTimeGettingDerivs += timeGettingDerivs[i];
-        avgTimeBP += timeBackwardsPass[i];
-        avgTimeFP += timeForwardsPass[i];
-        avgPercentDerivs += percentagesDerivsCalculated[i];
-    }
-
-    avgTimeGettingDerivs /= timeGettingDerivs.size();
-    avgTimeBP /= timeBackwardsPass.size();
-    avgTimeFP /= timeForwardsPass.size();
-    avgPercentDerivs /= percentagesDerivsCalculated.size();
-
-    avgHZ = 1000.0f / (avgTimeGettingDerivs + avgTimeBP + avgTimeFP);
-
-    cout << "| Avg percentage of derivatives calculated: " << avgPercentDerivs << "\n";
-    cout << "| avg time derivs: " << avgTimeGettingDerivs << " bp: " << avgTimeBP << " fp: " << avgTimeFP << " ms |\n";
-    cout << "average control frequency is: " << avgHZ << endl;
-
-    if(playback && !ASYNC_MPC){
-        while(activeVisualiser->windowOpen()){
-
-            if(activeVisualiser->replayTriggered){
-                activeVisualiser->replayTriggered = false;
-
-                activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-                int controlCounter = 0;
-                while(controlCounter < activeVisualiser->replayControls.size()){
-                    MatrixXd nextControl = activeVisualiser->replayControls[controlCounter].replicate(1, 1);
-
-                    activeModelTranslator->SetControlVector(nextControl, activeModelTranslator->MuJoCo_helper->vis_data);
-
-                    mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
-
-                    controlCounter++;
-
-                    if(controlCounter % 5 == 0){
-
-                        activeVisualiser->render("replaying");
-                    }
-                }
-            }
-            activeVisualiser->render("replay_mode - (PRESS BACKSPACE)");
-        }
-    }
-    else{
-        activeVisualiser->task_finished = true;
-    }
-
-    avg_opt_time = avgTimeGettingDerivs + avgTimeBP + avgTimeFP;
-    avg_time_bp = avgTimeBP;
-    avg_time_fp = avgTimeFP;
-    avg_time_derivs = avgTimeGettingDerivs;
-    avg_percent_derivs = avgPercentDerivs;
+    avg_opt_time = avg_time_derivs + avg_time_bp + avg_time_fp;
 }
 
 int assign_task(){
@@ -826,18 +1017,6 @@ int assign_task(){
         cout << "not implemented task yet " << endl;
         return EXIT_FAILURE;
     }
-    else if(task == "box_flick_no_clutter"){
-        std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(noClutter);
-        activeModelTranslator = myBoxFlick;
-    }
-    else if(task == "box_flick_low_clutter"){
-        std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(lowClutter);
-        activeModelTranslator = myBoxFlick;
-    }
-    else if(task == "box_flick_moderate_clutter"){
-        std::shared_ptr<BoxFlick> myBoxFlick = std::make_shared<BoxFlick>(heavyClutter);
-        activeModelTranslator = myBoxFlick;
-    }
     else if(task == "walker_walk"){
         std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(PLANE, WALK);
         activeModelTranslator = myLocomotion;
@@ -858,588 +1037,31 @@ int assign_task(){
         std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
         activeModelTranslator = myBoxSweep;
     }
+    else if(task == "sweep_multiple"){
+        std::shared_ptr<SweepMultiple> my_sweep_multiple = std::make_shared<SweepMultiple>();
+        activeModelTranslator = my_sweep_multiple;
+    }
     else if(task == "piston_block"){
         std::shared_ptr<PistonBlock> my_piston_block = std::make_shared<PistonBlock>();
         activeModelTranslator = my_piston_block;
     }
+    else if(task == "push_soft_into_rigid"){
+        std::shared_ptr<PushSoft> my_squish_soft = std::make_shared<PushSoft>(PUSH_SOFT_RIGID);
+        activeModelTranslator = my_squish_soft;
+    }
+    else if(task == "push_soft"){
+        std::shared_ptr<PushSoft> my_squish_soft = std::make_shared<PushSoft>(PUSH_SOFT);
+        activeModelTranslator = my_squish_soft;
+    }
     else{
-        std::cout << "invalid scene selected, exiting" << std::endl;
+        std::cout << "invalid scene selected, " << task << " does not exist" << std::endl;
     }
     return EXIT_SUCCESS;
 }
 
-
-//int generateTestingData_MPCHorizons(){
-//    playback = false;
-//    mpcVisualise = false;
-//
-//    // start timer here
-//    auto startTime = std::chrono::high_resolution_clock::now();
-//
-//    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
-//
-//    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
-//    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper,
-//                                           activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
-//                                           yamlReader);
-//    activeOptimiser = iLQROptimiser;
-//
-//    // ------------------------- data storage -------------------------------------
-//    std::vector<std::vector<double>> finalCosts;
-//    std::vector<double> finalCostsRow;
-//
-//    std::vector<std::vector<double>> avgHzs;
-//    std::vector<double> avgHZRow;
-//
-//    std::vector<std::vector<double>> avgTimeForDerivs;
-//    std::vector<double> avgTimeForDerivsRow;
-//
-//    std::vector<std::vector<double>> avgTimeBP;
-//    std::vector<double> avgTimeBPRow;
-//
-//    std::vector<std::vector<double>> avgTimeFP;
-//    std::vector<double> avgTimeFPRow;
-//
-//    std::vector<std::vector<double>> avgPercentDerivs;
-//    std::vector<double> avgPercentDerivsRow;
-//
-//    std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
-//    std::vector<std::string> horizonNames;
-//    int numHorizons = horizons.size();
-//
-//    for(int i = 0; i < horizons.size(); i++){
-//        horizonNames.push_back(std::to_string(horizons[i]));
-//    }
-//
-//    if(testingMethods.empty()){
-//        return 0;
-//    }
-//
-//    std::vector<std::string> methodNames = {"baseline", "SI5", "SI10", "SI20", "adaptive_jerk2", "iterative_error", "magvel_change2"};
-//    std::vector<int> testIndices;
-//    bool anyMatch = false;
-//    for(const auto & testingMethod : testingMethods){
-//        for(int j = 0; j < methodNames.size(); j++){
-//            if(testingMethod == methodNames[j]){
-//                anyMatch = true;
-//                testIndices.push_back(j);
-//            }
-//        }
-//
-//    }
-//
-//    if(!anyMatch){
-//        cout << "passed testing arguments didnt match any allowed methods \n";
-//        return 0;
-//    }
-//
-//    std::vector<int> minN = {1, 5, 10, 20, 2, 2, 2};
-//    std::vector<int> maxN = {1, 5, 10, 20, 20, 5, 10};
-//    std::vector<std::string> keypoint_method = {"setInterval", "setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
-//
-//    std::vector<double> targetVelocities;
-//    double minTarget = 0.1;
-//    double maxTarget = 0.3;
-//    int numTests = 100;
-//    double currentVel = minTarget;
-//
-//    for(int i = 0; i < numTests; i++){
-//        targetVelocities.push_back(currentVel);
-//        currentVel += (maxTarget - minTarget) / (numTests - 1);
-//    }
-//
-//    auto startTimer = std::chrono::high_resolution_clock::now();
-//    activeOptimiser->verbose_output = false;
-//
-//    for(int testIndex : testIndices) {
-//        cout << "---------- current method " << methodNames[testIndex] << " ----------------" << endl;
-//
-//        struct keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
-//        currentInterpolator.min_N = minN[testIndex];
-//        currentInterpolator.max_N = maxN[testIndex];
-//        currentInterpolator.name = keypoint_method[testIndex];
-//        activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
-//
-//        finalCosts.clear();
-//        avgHzs.clear();
-//        avgTimeForDerivs.clear();
-//        avgTimeBP.clear();
-//        avgTimeFP.clear();
-//        avgPercentDerivs.clear();
-//
-//        for (int i = 0; i < targetVelocities.size(); i++) {
-//            cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
-//
-//            // Loop through our interpolating derivatives methods
-//            finalCostsRow.clear();
-//            avgHZRow.clear();
-//            avgTimeForDerivsRow.clear();
-//            avgTimeBPRow.clear();
-//            avgTimeFPRow.clear();
-//            avgPercentDerivsRow.clear();
-//
-//            MatrixXd startStateVector;
-//            startStateVector.resize(activeModelTranslator->state_vector_size, 1);
-//
-//            yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, startStateVector,
-//                                         activeModelTranslator->X_desired);
-//
-//            // Walker model where were trying to match a velocity
-//            if(task == "walker"){
-//                activeModelTranslator->X_desired(10) = targetVelocities[i];
-//            }
-//
-//            activeModelTranslator->X_start = startStateVector;
-//            activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            for(int j = 0; j < 5; j++){
-//                mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            }
-//
-//            if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
-//                activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            }
-//
-//            // Move the end-effector to a decent starting position
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            std::vector<MatrixXd> setupControls = activeModelTranslator->CreateInitSetupControls(1000);
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
-//
-//            for (int j = 0; j < numHorizons; j++) {
-//                double avgHz = 0.0f;
-//                double finalCost = 0.0f;
-//                double avgPercentageDerivs = 0.0f;
-//                double avgTimeForDerivs = 0.0f;
-//                double avgTimeBP = 0.0f;
-//                double avgTimeFP = 0.0f;
-//
-//                cout << "--------------------------------------------------------------------------------\n";
-//                cout << "current horizon: " << horizonNames[j] << "\n";
-//
-//                activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1500, 1, horizons[j]);
-//
-//                finalCostsRow.push_back(finalCost);
-//                avgHZRow.push_back(avgHz);
-//                avgTimeForDerivsRow.push_back(avgTimeForDerivs);
-//                avgTimeBPRow.push_back(avgTimeBP);
-//                avgTimeFPRow.push_back(avgTimeFP);
-//                avgPercentDerivsRow.push_back(avgPercentageDerivs);
-//            }
-//
-//            // New row of data added
-//            finalCosts.push_back(finalCostsRow);
-//            avgHzs.push_back(avgHZRow);
-//            avgTimeForDerivs.push_back(avgTimeForDerivsRow);
-//            avgTimeBP.push_back(avgTimeBPRow);
-//            avgTimeFP.push_back(avgTimeFPRow);
-//            avgPercentDerivs.push_back(avgPercentDerivsRow);
-//
-//            auto currentTime = std::chrono::high_resolution_clock::now();
-//            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTimer).count();
-//
-//            cout << "Time taken so far: " << duration/ 1000.0f << " s" << endl;
-//        }
-//        // Save data to csv
-//        cout << "save data to file for " << methodNames[testIndex] << endl;
-//        std::string taskPrefix = activeModelTranslator->model_name + "_" + methodNames[testIndex];
-//        yamlReader->saveResultsData_MPC(taskPrefix, horizonNames, finalCosts, avgHzs,
-//                                        avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
-//    }
-//
-//    cout << "tests exited correctly \n";
-//    return 1;
-//}
-
-//void generateTestingData_MPC(){
-//    playback = false;
-//    mpcVisualise = false;
-//
-//    // start timer here
-//    auto startTime = std::chrono::high_resolution_clock::now();
-//
-//    for(int k = 0; k < 1; k ++) {
-//        activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
-//
-//        activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
-//        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper,
-//                                               activeDifferentiator, yamlReader->maxHorizon, activeVisualiser,
-//                                               yamlReader);
-//        activeOptimiser = iLQROptimiser;
-//
-//        // ------------------------- data storage -------------------------------------
-//        std::vector<std::vector<double>> finalCosts;
-//        std::vector<double> finalCostsRow;
-//
-//        std::vector<std::vector<double>> avgHzs;
-//        std::vector<double> avgHZRow;
-//
-//        std::vector<std::vector<double>> avgTimeForDerivs;
-//        std::vector<double> avgTimeForDerivsRow;
-//
-//        std::vector<std::vector<double>> avgTimeBP;
-//        std::vector<double> avgTimeBPRow;
-//
-//        std::vector<std::vector<double>> avgTimeFP;
-//        std::vector<double> avgTimeFPRow;
-//
-//        std::vector<std::vector<double>> avgPercentDerivs;
-//        std::vector<double> avgPercentDerivsRow;
-//
-////        std::vector<std::string> methodNames = {"baseline", "SI5", "SI20", "adapJerk", "iter_error", "magvel"};
-////        int numMethods = methodNames.size();
-////        std::vector<string> keypointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
-////        std::vector<int> min_N = {1, 5, 20, 1, 1, 1};
-////        std::vector<int> max_N = {1, 2, 5, 5, 5, 5};
-//
-//        std::vector<std::string> methodNames = {"magvel", "iter_error"};
-//        int numMethods = methodNames.size();
-//        std::vector<string> keypointMethods = {"magvel_change", "iterative_error"};
-//        std::vector<int> minN = {1, 1};
-//        std::vector<int> maxN = {5, 5};
-//
-//        std::vector<double> targetVelocities;
-//        double minTarget = 0.1;
-//        double maxTarget = 0.3;
-//        int numTests = 100;
-//        double currentVel = minTarget;
-//
-//        for(int i = 0; i < numTests; i++){
-//            targetVelocities.push_back(currentVel);
-//            currentVel += (maxTarget - minTarget) / (numTests - 1);
-//        }
-//
-//        auto startTimer = std::chrono::high_resolution_clock::now();
-//        activeOptimiser->verbose_output = false;
-//
-//        for (int i = 0; i < targetVelocities.size(); i++) {
-//            cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
-//
-//            // Loop through our interpolating derivatives methods
-//            finalCostsRow.clear();
-//            avgHZRow.clear();
-//            avgTimeForDerivsRow.clear();
-//            avgTimeBPRow.clear();
-//            avgTimeFPRow.clear();
-//            avgPercentDerivsRow.clear();
-//
-//            MatrixXd startStateVector;
-//            startStateVector.resize(activeModelTranslator->state_vector_size, 1);
-//
-//            yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, startStateVector,
-//                                         activeModelTranslator->X_desired);
-//
-//            // Walker model where were trying to match a velocity
-//            if(task == "walker"){
-//                activeModelTranslator->X_desired(10) = targetVelocities[i];
-//            }
-//
-//
-//            activeModelTranslator->X_start = startStateVector;
-//            activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            for(int j = 0; j < 5; j++){
-//                mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            }
-//
-//            if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
-//                activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            }
-//
-//            // Move the end-effector to a decent starting position
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            std::vector<MatrixXd> setupControls = activeModelTranslator->CreateInitSetupControls(1000);
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
-//
-//
-////            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-////            activeModelTranslator->MuJoCo_helper->copySystemState(0, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//
-//            for (int j = 0; j < numMethods; j++) {
-//                double avgHz = 0.0f;
-//                double finalCost = 0.0f;
-//                double avgPercentageDerivs = 0.0f;
-//                double avgTimeForDerivs = 0.0f;
-//                double avgTimeBP = 0.0f;
-//                double avgTimeFP = 0.0f;
-//
-//                cout << "--------------------------------------------------------------------------------\n";
-//                cout << "current method: " << methodNames[j] << "\n";
-//
-//                // Setup the keypoint method
-//                keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
-//                currentInterpolator.min_N = minN[j];
-//                currentInterpolator.max_N = maxN[j];
-//                currentInterpolator.name = keypointMethods[j];
-//                activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
-//
-//                activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//                MPCUntilComplete(finalCost, avgHz, avgTimeForDerivs, avgPercentageDerivs, avgTimeBP, avgTimeFP, 1000, 1, 50);
-//
-//                finalCostsRow.push_back(finalCost);
-//                avgHZRow.push_back(avgHz);
-//                avgTimeForDerivsRow.push_back(avgTimeForDerivs);
-//                avgTimeBPRow.push_back(avgTimeBP);
-//                avgTimeFPRow.push_back(avgTimeFP);
-//                avgPercentDerivsRow.push_back(avgPercentageDerivs);
-//            }
-//
-//            // New row of data added
-//            finalCosts.push_back(finalCostsRow);
-//            avgHzs.push_back(avgHZRow);
-//            avgTimeForDerivs.push_back(avgTimeForDerivsRow);
-//            avgTimeBP.push_back(avgTimeBPRow);
-//            avgTimeFP.push_back(avgTimeFPRow);
-//            avgPercentDerivs.push_back(avgPercentDerivsRow);
-//
-//            auto currentTime = std::chrono::high_resolution_clock::now();
-//            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTimer).count();
-//
-//
-//            cout << "Time taken so far: " << duration/ 1000.0f << " s" << endl;
-//        }
-//        // Save data to csv
-//        cout << "save data to file\n";
-//        yamlReader->saveResultsData_MPC(activeModelTranslator->model_name, methodNames, finalCosts, avgHzs,
-//                                        avgTimeForDerivs, avgTimeBP, avgTimeFP, avgPercentDerivs);
-//    }
-//}
-
-//void generateFilteringData(){
-//    int setupHorizon = 1000;
-//    int optHorizon = 2200;
-//    int numTests = 100;
-//
-//    MatrixXd startStateVector;
-//    startStateVector.resize(activeModelTranslator->state_vector_size, 1);
-//
-//    std::vector<double> lowPassTests = {0.05, 0.1, 0.15, 0.2, 0.25, 0.3};
-//    std::vector<std::vector<double>> FIRTests;
-//    FIRTests.push_back({0.25, 0.5, 0.25});
-//    FIRTests.push_back({0.1, 0.15, 0.5, 0.15, 0.1});
-//    FIRTests.push_back({0.05, 0.1, 0.15, 0.3, 0.15, 0.1, 0.05});
-//    FIRTests.push_back({0.05, 0.05, 0.15, 0.2, 0.2, 0.2, 0.15, 0.05, 0.05});
-//    FIRTests.push_back({0.05, 0.1, 0.15, 0.2, 0.2, 0.15, 0.1, 0.05});
-//
-//    keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
-//    currentInterpolator.name = "setInterval";
-//    currentInterpolator.min_N = 1;
-//    activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
-//
-//    for (int i = 0; i < numTests; i++) {
-//        yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, startStateVector,
-//                                     activeModelTranslator->X_desired);
-//        activeModelTranslator->X_start = startStateVector;
-//        activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//
-//        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(setupHorizon);
-//        activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
-//
-//        std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(optHorizon);
-//
-//        // Initialise task for optimisation by here
-//
-//        // ---------------- unfiltered tests ------------------------------
-//        activeOptimiser->filteringMethod = "none";
-//        // Load a task from saved tasks
-//
-//        activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-//
-//        std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0],
-//                                                                            initOptimisationControls,
-//                                                                            yamlReader->maxIter,
-//                                                                            yamlReader->minIter,
-//                                                                            optHorizon);
-//        // Save cost history to file
-//        std::string filePrefix;
-//        filePrefix = activeModelTranslator->model_name + "/none/";
-//
-//        yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
-//
-//        // ---------------------- Low pass filter tests ----------------------
-//
-//        for(double lowPassTest : lowPassTests){
-//            activeOptimiser->filteringMethod = "low_pass";
-//            activeOptimiser->lowPassACoefficient = lowPassTest;
-//            // Load a task from saved tasks
-//
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-//
-//            std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0],
-//                                                                                initOptimisationControls,
-//                                                                                yamlReader->maxIter,
-//                                                                                yamlReader->minIter,
-//                                                                                optHorizon);
-//            // Save cost history to file
-//            std::string filePrefix;
-//
-//            filePrefix = activeModelTranslator->model_name + "/lowPass" + std::to_string(lowPassTest) + "/";
-//
-//            yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
-//        }
-//
-//        // ---------------------- FIR filter tests ----------------------
-//        for(int j = 0; j < FIRTests.size(); j++){
-//            activeOptimiser->filteringMethod = "FIR";
-//            activeOptimiser->setFIRFilter(FIRTests[j]);
-//            // Load a task from saved tasks
-//
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-//
-//            std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0],
-//                                                                                initOptimisationControls,
-//                                                                                yamlReader->maxIter,
-//                                                                                yamlReader->minIter,
-//                                                                                optHorizon);
-//            // Save cost history to file
-//            std::string filePrefix;
-//
-//            filePrefix = activeModelTranslator->model_name + "/FIR_" + std::to_string(j) + "/";
-//
-//            yamlReader->saveCostHistory(activeOptimiser->costHistory, filePrefix, i);
-//        }
-//
-//
-//    }
-//}
-
-//void onetaskGenerateTestingData(){
-//    int setupHorizon = 1000;
-//    int optHorizon = 2800;
-//
-//    MatrixXd startStateVector;
-//    startStateVector.resize(activeModelTranslator->state_vector_size, 1);
-//
-//    std::vector<std::vector<double>> optTimes;
-//    std::vector<double> optTimesRow;
-//
-//    std::vector<std::vector<double>> costReductions;
-//    std::vector<double> costReductionsRow;
-//
-//    std::vector<std::vector<double>> avgPercentageDerivs;
-//    std::vector<double> avgPercentageDerivsRow;
-//
-//    std::vector<std::vector<double>> avgTimeForDerivs;
-//    std::vector<double> avgTimeForDerivsRow;
-//
-//    std::vector<std::vector<int>> numIterations;
-//    std::vector<int> numIterationsRow;
-//
-//    // Object manipulation?
-////    std::vector<std::string> methodNames = {"baseline", "SI5", "SI1000", "adaptive_jerk_5", "iterative_error_5", "magvel_change_5"};
-////    int numMethods = methodNames.size();
-////    std::vector<string> keyPointMethods = {"setInterval", "setInterval", "setInterval", "adaptive_jerk", "iterative_error", "magvel_change"};
-////    std::vector<int> min_N = {1, 5, 1000, 5, 5, 5};
-////    std::vector<int> max_N = {1, 5, 1000, 100, 100, 100};
-//
-//    std::vector<std::string> methodNames = {"baseline", "SI5", "SI1000", "adaptive_jerk_5", "iterative_error_5", "magvel_change_5"};
-//    int numMethods = methodNames.size();
-//    std::vector<string> keyPointMethods = {"set_interval", "set_interval", "set_interval", "adaptive_jerk", "iterative_error", "magvel_change"};
-//    std::vector<int> minN = {1, 5, 1000, 2, 2, 2};
-//    std::vector<int> maxN = {1, 5, 1000, 10, 10, 10};
-//
-////    std::vector<std::string> methodNames = {"iterative_error"};
-////    int numMethods = methodNames.size();
-////    std::vector<std::string> keyPointMethods = {"iterative_error"};
-////    std::vector<int> min_N = {5};
-////    std::vector<int> max_N = {20};
-//
-//    // Loop through saved trajectories
-//    for(int i = 0; i < 100; i++){
-//        cout << "------------------------------------ Trajec " << i << " ------------------------------------\n";
-//        cout << "dof: " << activeModelTranslator->dof << endl;
-//
-//        // Loop through our interpolating derivatives methods
-//        optTimesRow.clear();
-//        costReductionsRow.clear();
-//        avgPercentageDerivsRow.clear();
-//        avgTimeForDerivsRow.clear();
-//        numIterationsRow.clear();
-//
-//        yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, startStateVector, activeModelTranslator->X_desired);
-//        activeModelTranslator->X_start = startStateVector;
-//        activeModelTranslator->SetStateVector(startStateVector, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        for(int j = 0; j < 5; j++){
-//            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        }
-//
-//
-//        if(!activeModelTranslator->MuJoCo_helper->checkIfDataIndexExists(0)){
-//            activeModelTranslator->MuJoCo_helper->appendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        }
-//
-//        // Move the end-effector to a decent starting position
-//        activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        std::vector<MatrixXd> setupControls = activeModelTranslator->CreateInitSetupControls(1000);
-//        activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
-//
-//        std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(optHorizon);
-//
-//        for(int j = 0; j < numMethods; j++){
-//            double optTime;
-//            double costReduction;
-//            double avgPercentageDerivs;
-//            double avgTimeForDerivs;
-//            int numIterationsForConvergence;
-//
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-//
-//            // Setup interpolation method
-//            keypoint_method currentInterpolator = activeOptimiser->ReturnCurrentKeypointMethod();
-//            currentInterpolator.name = keyPointMethods[j];
-//            currentInterpolator.min_N = minN[j];
-//            currentInterpolator.max_N = maxN[j];
-//            activeOptimiser->SetCurrentKeypointMethod(currentInterpolator);
-//
-//            std::vector<MatrixXd> optimisedControls = activeOptimiser->Optimise(activeModelTranslator->MuJoCo_helper->savedSystemStatesList[0], initOptimisationControls, 8, 2, optHorizon);
-//
-////            yamlReader->save_trajec_information(activeOptimiser->A, activeOptimiser->B, activeOptimiser->X_old, activeOptimiser->U_old, activeModelTranslator->model_name, i, optHorizon);
-//
-//            // Return testing data and append appropriately
-//            activeOptimiser->ReturnOptimisationData(optTime, costReduction, avgPercentageDerivs, avgTimeForDerivs, numIterationsForConvergence);
-//            optTimesRow.push_back(optTime);
-//            costReductionsRow.push_back(costReduction);
-//            avgPercentageDerivsRow.push_back(avgPercentageDerivs);
-//            avgTimeForDerivsRow.push_back(avgTimeForDerivs);
-//            numIterationsRow.push_back(numIterationsForConvergence);
-//
-////            activeModelTranslator->MuJoCo_helper->copySystemState(activeModelTranslator->MuJoCo_helper->main_data, 0);
-//
-////            int controlCounter = 0;
-////            int visualCounter = 0;
-////            cout << "final controls size: " << optimisedControls.size() << endl;
-////
-////            while(controlCounter < initOptimisationControls.size()){
-////
-////                activeModelTranslator->SetControlVector(initOptimisationControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data);
-////
-////                activeModelTranslator->MuJoCo_helper->stepSimulator(1, activeModelTranslator->MuJoCo_helper->main_data);
-////
-////                controlCounter++;
-////                visualCounter++;
-////
-////                if(visualCounter > 5){
-////
-////                    activeVisualiser->render("show init controls");
-////                    visualCounter = 0;
-////                }
-////            }
-//
-//        }
-//        optTimes.push_back(optTimesRow);
-//        costReductions.push_back(costReductionsRow);
-//        avgPercentageDerivs.push_back(avgPercentageDerivsRow);
-//        avgTimeForDerivs.push_back(avgTimeForDerivsRow);
-//        numIterations.push_back(numIterationsRow);
-//
-//        cout << "average percent derivs: " << avgPercentageDerivsRow[0] << endl;
-//        cout << "row " << i << " done \n";
-//    }
-//
-//    // Save data to file
-//    cout << "save data to file \n";
-//    yamlReader->saveResultsDataForMethods(activeModelTranslator->model_name, methodNames, optTimes, costReductions, avgPercentageDerivs, avgTimeForDerivs, numIterations);
-//}
+void change_cost_func_push_soft(){
+    for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
+        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+    }
+}

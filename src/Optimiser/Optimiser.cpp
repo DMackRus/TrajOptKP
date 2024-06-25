@@ -7,9 +7,6 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
     activeYamlReader = _yamlReader;
     activeDifferentiator = _differentiator;
 
-    dof = activeModelTranslator->dof;
-    num_ctrl = activeModelTranslator->num_ctrl;
-
     // Set up the derivative interpolator from YAML settings
     activeKeyPointMethod.name = activeModelTranslator->keypoint_method;
     activeKeyPointMethod.auto_adjust = activeModelTranslator->auto_adjust;
@@ -23,11 +20,11 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
 
     keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
                                                              MuJoCo_helper,
-                                                             activeModelTranslator->dof,
+                                                             activeModelTranslator->current_state_vector.dof,
                                                              0);
 
     keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
-    keypoint_generator->PrintKeypointMethod();
+//    keypoint_generator->PrintKeypointMethod();
 }
 
 bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
@@ -41,40 +38,15 @@ bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
 
 void Optimiser::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
-//    dof = new_num_dofs;
-//    int state_vector_size = new_num_dofs * 2;
-//
-//    for(int t = 0; t < horizonLength; t++){
-//
-//        // State vectors
-//        X_new[t].resize(state_vector_size, 1);
-//        X_old[t].resize(state_vector_size, 1);
-//
-//        // Cost derivatives
-//        l_x[t].resize(state_vector_size, 1);
-//        l_xx[t].resize(state_vector_size, state_vector_size);
-//
-//        // Dynamics derivatives
-//        A[t].resize(state_vector_size, state_vector_size);
-//        A[t].block(0, 0, dof, dof).setIdentity();
-//        A[t].block(0, dof, dof, dof).setIdentity();
-//        A[t].block(0, dof, dof, dof) *= MuJoCo_helper->ReturnModelTimeStep();
-//        B[t].resize(state_vector_size, num_ctrl);
-//
-//    }
-}
-
-void Optimiser::SetTrajecNumber(int trajec_number) {
-    currentTrajecNumber = trajec_number;
 }
 
 void Optimiser::ReturnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
 
     _optTime = opt_time_ms;
-    _costReduction = costReduction;
+    _costReduction = cost_reduction;
     _avgPercentageDerivs = avg_percent_derivs;
     _avgTimeGettingDerivs = avg_time_get_derivs_ms;
-    _numIterations = numIterationsForConvergence;
+    _numIterations = num_iterations;
 }
 
 keypoint_method Optimiser::ReturnCurrentKeypointMethod(){
@@ -108,17 +80,16 @@ void Optimiser::GenerateDerivatives(){
     }
 
     auto start_interp_time = high_resolution_clock::now();
-//    InterpolateDerivatives(keypoint_generator->keypoints, activeYamlReader->costDerivsFD);
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, horizon_length,
                                                A, B, l_x, l_u, l_xx, l_uu, activeYamlReader->costDerivsFD,
-                                               num_ctrl);
+                                               activeModelTranslator->current_state_vector.num_ctrl);
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
-    double average_percent_derivs = 0.0f;
-    for(int i = 0; i < dof; i++){
+    double average_percent_derivs = 0.0;
+    for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
         average_percent_derivs += keypoint_generator->last_percentages[i];
     }
-    average_percent_derivs /= dof;
+    average_percent_derivs /= activeModelTranslator->current_state_vector.dof;
 
     percentage_derivs_per_iteration.push_back(average_percent_derivs);
 
@@ -130,11 +101,15 @@ void Optimiser::GenerateDerivatives(){
 void Optimiser::ComputeCostDerivatives(){
     #pragma omp parallel for
     for(int i = 0; i < horizon_length; i++){
-        activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+        activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
+                                               activeModelTranslator->current_state_vector,
+                                               l_x[i], l_xx[i], l_u[i], l_uu[i], false);
     }
 
     activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizon_length - 1],
-                                           l_x[horizon_length - 1], l_xx[horizon_length - 1], l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
+                                           activeModelTranslator->current_state_vector,
+                                           l_x[horizon_length - 1], l_xx[horizon_length - 1],
+                                           l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
 }
 
 void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
@@ -143,25 +118,33 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
 
     std::vector<int> timeIndices;
     for(int i = 0; i < keyPoints.size(); i++){
-        if(keyPoints[i].size() != 0){
+        if(!keyPoints[i].empty()){
             timeIndices.push_back(i);
         }
     }
 
     // Loop through keypoints and delete any entries that have no keypoints
     for(int i = 0; i < keyPoints.size(); i++){
-        if(keyPoints[i].size() == 0){
+        if(keyPoints[i].empty()){
             keyPoints.erase(keyPoints.begin() + i);
             i--;
         }
     }
 
     current_iteration = 0;
-    num_threads_iterations = keyPoints.size();
+    num_threads_iterations = static_cast<int>(keyPoints.size());
     timeIndicesGlobal = timeIndices;
 
     // TODO - remove this? It is used for WorkerComputeDerivatives function to compute derivatives in parallel
     keypointsGlobal = keyPoints;
+
+    // compute derivs serially
+//    for(int i = 0; i < horizon_length; i++){
+//        if(!keyPoints[i].empty()){
+//            activeDifferentiator->ComputeDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_u[i], l_xx[i], l_uu[i],
+//                                                     i, 0, false, activeYamlReader->costDerivsFD, true, 1e-6);
+//        }
+//    }
 
     // Setup all the required tasks
     for (int i = 0; i < keyPoints.size(); ++i) {
@@ -178,13 +161,6 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     for (std::thread& thread : thread_pool) {
         thread.join();
     }
-
-    // compute derivs serially
-//    for(int i = 0; i < horizonLength; i++){
-//        if(keyPoints[i].size() != 0){
-//            activeDifferentiator->ComputeDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_xx[i], l_u[i], l_uu[i], false, i, false, 0);
-//        }
-//    }
       
     MuJoCo_helper->ResetModelAfterFiniteDifferencing();
 
@@ -192,17 +168,14 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
 
     if(!activeYamlReader->costDerivsFD){
         for(int i = 0; i < horizon_length; i++){
-            if(i == 0){
-                activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
-                                                       l_x[i], l_xx[i], l_u[i], l_uu[i], false);
-            }
-            else{
-                activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
-                                                       l_x[i], l_xx[i], l_u[i], l_uu[i], false);
-            }
+            activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
+                                                   activeModelTranslator->current_state_vector,
+                                                   l_x[i], l_xx[i], l_u[i], l_uu[i], false);
         }
         activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizon_length - 1],
-                                               l_x[horizon_length - 1], l_xx[horizon_length - 1], l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
+                                               activeModelTranslator->current_state_vector,
+                                               l_x[horizon_length - 1], l_xx[horizon_length - 1],
+                                               l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
     }
 
 //    std::cout << "time cost derivs: " << duration_cast<microseconds>(high_resolution_clock::now() - time_cost_start).count() / 1000.0f << " ms\n";
@@ -228,116 +201,10 @@ void Optimiser::WorkerComputeDerivatives(int threadId) {
     }
 }
 
-//void Optimiser::InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, bool costDerivs){
-//    MatrixXd startB;
-//    MatrixXd endB;
-//    MatrixXd addB;
-//
-//    MatrixXd startACol1;
-//    MatrixXd endACol1;
-//    MatrixXd addACol1;
-//
-//    MatrixXd startACol2;
-//    MatrixXd endACol2;
-//    MatrixXd addACol2;
-//
-//    double start_l_x_col1;
-//    double end_l_x_col1;
-//    double add_l_x_col1;
-//    double start_l_x_col2;
-//    double end_l_x_col2;
-//    double add_l_x_col2;
-//
-//    MatrixXd start_l_xx_col1;
-//    MatrixXd end_l_xx_col1;
-//    MatrixXd add_l_xx_col1;
-//    MatrixXd start_l_xx_col2;
-//    MatrixXd end_l_xx_col2;
-//    MatrixXd add_l_xx_col2;
-//
-//    // Create an array to track startIndices of next interpolation for each dof
-//    int startIndices[dof];
-//    for(int i = 0; i < dof; i++){
-//        startIndices[i] = 0;
-//    }
-//
-//    // Loop through all the time indices - can skip the first
-//    // index as we preload the first index as the start index for all dofs.
-//    for(int t = 1; t < horizonLength; t++){
-//        // Loop through all the dofs
-//        for(int i = 0; i < dof; i++){
-//            // Check the current vector at that time segment for the current dof
-//            std::vector<int> columns = keyPoints[t];
-//
-//            // If there are no keypoints, continue onto second run of the loop
-//            if(columns.empty()){
-//                continue;
-//            }
-//
-//            for(int j = 0; j < columns.size(); j++){
-//
-//                // If there is a match, interpolate between the start index and the current index
-//                // For the given columns
-//                if(i == columns[j]){
-////                    cout << "dof: " << i << " end index: " << t << " start index: " << startIndices[i] << "\n";
-//                    startACol1 = A[startIndices[i]].block(0, i, 2*dof, 1);
-//                    endACol1 = A[t].block(0, i, 2*dof, 1);
-//                    addACol1 = (endACol1 - startACol1) / (t - startIndices[i]);
-//
-//                    // Same again for column 2 which is dof + i
-//                    startACol2 = A[startIndices[i]].block(0, i + dof, 2*dof, 1);
-//                    endACol2 = A[t].block(0, i + dof, 2*dof, 1);
-//                    addACol2 = (endACol2 - startACol2) / (t - startIndices[i]);
-//
-//                    if(costDerivs){
-//                        start_l_x_col1 = l_x[startIndices[i]](i, 0);
-//                        end_l_x_col1 = l_x[t](i, 0);
-//                        add_l_x_col1 = (end_l_x_col1 - start_l_x_col1) / (t - startIndices[i]);
-//
-//                        start_l_x_col2 = l_x[startIndices[i]](i + dof, 0);
-//                        end_l_x_col2 = l_x[t](i + dof, 0);
-//                        add_l_x_col2 = (end_l_x_col2 - start_l_x_col2) / (t - startIndices[i]);
-//
-//                        start_l_xx_col1 = l_xx[startIndices[i]].block(i, 0, 1, dof);
-//                        end_l_xx_col1 = l_xx[t].block(i, 0, 1, dof);
-//                        add_l_xx_col1 = (end_l_xx_col1 - start_l_xx_col1) / (t - startIndices[i]);
-//
-//                        start_l_xx_col2 = l_xx[startIndices[i]].block(i + dof, 0, 1, dof);
-//                        end_l_xx_col2 = l_xx[t].block(i + dof, 0, 1, dof);
-//                        add_l_xx_col2 = (end_l_xx_col2 - start_l_xx_col2) / (t - startIndices[i]);
-//                    }
-//
-//                    if(i < num_ctrl){
-//                        startB = B[startIndices[i]].block(0, i, 2*dof, 1);
-//                        endB = B[t].block(0, i, 2*dof, 1);
-//                        addB = (endB - startB) / (t - startIndices[i]);
-//                    }
-//
-//                    for(int k = startIndices[i]; k < t; k++){
-//                        A[k].block(0, i, 2*dof, 1) = startACol1 + ((k - startIndices[i]) * addACol1);
-//
-//                        A[k].block(0, i + dof, 2*dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
-//
-//                        if(costDerivs){
-//                            l_x[k](i) = start_l_x_col1 + ((k - startIndices[i]) * add_l_x_col1);
-//                            l_x[k](i + dof) = start_l_x_col2 + ((k - startIndices[i]) * add_l_x_col2);
-//
-//                            l_xx[k].block(i, 0, 1, dof) = start_l_xx_col1 + ((k - startIndices[i]) * add_l_xx_col1);
-//                            l_xx[k].block(i + dof, 0, 1, dof) = start_l_xx_col2 + ((k - startIndices[i]) * add_l_xx_col2);
-//                        }
-//
-//                        if(i < num_ctrl){
-//                            B[k].block(0, i, 2*dof, 1) = startB + ((k - startIndices[i]) * addB);
-//                        }
-//                    }
-//                    startIndices[i] = t;
-//                }
-//            }
-//        }
-//    }
-//}
-
 void Optimiser::FilterDynamicsMatrices() {
+
+    // Aliases
+    int dof = activeModelTranslator->current_state_vector.dof;
 
     for(int i = dof; i < 2 * dof; i++){
         for(int j = 0; j < 2 * dof; j++){
@@ -410,3 +277,52 @@ void Optimiser::setFIRFilter(std::vector<double> _FIRCoefficients){
     }
 }
 
+void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index){
+
+    rollout_data[thread_id][data_index].time = d->time;
+
+    for(int i = 0; i < MuJoCo_helper->model->nq; i++){
+        rollout_data[thread_id][data_index].q_pos[i] = d->qpos[i];
+    }
+
+    for(int i = 0; i < MuJoCo_helper->model->nv; i++){
+        rollout_data[thread_id][data_index].q_vel[i] = d->qvel[i];
+        rollout_data[thread_id][data_index].q_acc[i] = d->qacc[i];
+        rollout_data[thread_id][data_index].q_acc_warmstart[i] = d->qacc_warmstart[i];
+        rollout_data[thread_id][data_index].qfrc_applied[i] = d->qfrc_applied[i];
+    }
+
+    for(int i = 0; i < MuJoCo_helper->model->nu; i++){
+        rollout_data[thread_id][data_index].ctrl[i] = d->ctrl[i];
+    }
+
+    for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
+        rollout_data[thread_id][data_index].xfrc_applied[i] = d->xfrc_applied[i];
+    }
+}
+
+void Optimiser::SaveBestRollout(int thread_id){
+    for(int t = 0; t < horizon_length; t++){
+
+        MuJoCo_helper->saved_systems_state_list[t+1]->time = rollout_data[thread_id][t].time;
+
+        for(int i = 0; i < MuJoCo_helper->model->nq; i++){
+            MuJoCo_helper->saved_systems_state_list[t+1]->qpos[i] = rollout_data[thread_id][t].q_pos[i];
+        }
+
+        for(int i = 0; i < MuJoCo_helper->model->nv; i++){
+            MuJoCo_helper->saved_systems_state_list[t+1]->qvel[i]           = rollout_data[thread_id][t].q_vel[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qacc[i]           = rollout_data[thread_id][t].q_acc[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qacc_warmstart[i] = rollout_data[thread_id][t].q_acc_warmstart[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qfrc_applied[i]   = rollout_data[thread_id][t].qfrc_applied[i];
+        }
+
+        for(int i = 0; i < MuJoCo_helper->model->nu; i++){
+            MuJoCo_helper->saved_systems_state_list[t+1]->ctrl[i] = rollout_data[thread_id][t].ctrl[i];
+        }
+
+        for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
+            MuJoCo_helper->saved_systems_state_list[t+1]->xfrc_applied[i] = rollout_data[thread_id][t].xfrc_applied[i];
+        }
+    }
+}

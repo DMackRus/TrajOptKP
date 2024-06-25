@@ -1,7 +1,3 @@
-//
-// Created by davidrussell on 1/17/24.
-//
-
 #pragma once
 
 #include "StdInclude.h"
@@ -9,13 +5,12 @@
 #include <thread>
 #include <mutex>
 #include <filesystem>
-
-#define APPLY_NOISE 0
+#include <yaml-cpp/yaml.h>
 
 class GenTestingData{
 
 public:
-    GenTestingData(std::shared_ptr<iLQR> iLQROptimiser_,
+    GenTestingData(std::shared_ptr<Optimiser> optimiser,
                    std::shared_ptr<ModelTranslator> activeModelTranslator_,
                    std::shared_ptr<Differentiator> activeDifferentiator_,
                    std::shared_ptr<Visualiser> activeVisualiser_,
@@ -31,7 +26,7 @@ public:
      *
      * @Return: 1 if successful, 0 if not
      */
-    int testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size);
+//    int testing_different_minN_asynchronus_mpc(int lowest_minN, int higherst_minN, int step_size);
 
     /**
      * Tests different parametrisations of velocity change methods (different minN, maxN
@@ -39,7 +34,9 @@ public:
      *
      * @return 1 if successful, 0 if not
      */
-    int gen_data_async_mpc(int task_horizon, int task_timeout);
+    int GenDataAsyncMPC(int task_horizon, int task_timeout);
+
+    int GenDataOpenloopOptimisation(int task_horizon);
 
     /**
      * This function tests a particular keypoint method for a static number
@@ -52,7 +49,7 @@ public:
      *
      * @Return: 1 if successful, 0 if not
      */
-    int testing_asynchronus_mpc(keypoint_method keypoint_method, int num_trials, int task_horzion, int task_timeout);
+    int TestingAsynchronusMPC(const keypoint_method& keypoint_method, int num_trials, int task_horzion, int task_timeout);
 
     /**
      * This function performs an asynchronus MPC optimisation for a set number of time-steps
@@ -65,7 +62,7 @@ public:
      *
      * @Return: 1 if successful, 0 if not
      */
-    int single_asynchronus_run(bool visualise, const std::string method_directory, int task_number, int task_horizon, const int TASK_TIMEOUT);
+    int SingleAsynchronusRun(bool visualise, const std::string& method_directory, int task_number, int task_horizon, int TASK_TIMEOUT);
 
     /**
      * This function performs an asynchronus MPC optimisation with another thread doing simulation
@@ -76,31 +73,52 @@ public:
      * @Param task_number: The task number to be performed
      *
      */
-    void asynchronus_optimiser_worker(std::string method_directory, int task_number, int task_horizon);
+    void AsyncronusMPCWorker(const std::string& method_directory, int task_number, int task_horizon);
 
     int GenerateDynamicsDerivsData(int num_trajecs, int num_iters_per_task);
 
     int GenerateTestScenes(int num_scenes);
 
+    void SetParamsiLQR_SVR(int re_add_dofs, double threshold){
+        optimiser->num_dofs_readd = re_add_dofs;
+        optimiser->K_matrix_threshold = threshold;
+    }
 
-    std::shared_ptr<iLQR> iLQROptimiser;
+    std::shared_ptr<Optimiser> optimiser;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<Differentiator> activeDifferentiator;
     std::shared_ptr<Visualiser> activeVisualiser;
     std::shared_ptr<FileHandler> yamlReader;
 
-
 private:
 
-    bool stop_opt_thread = false;
+    std::string CreateTestName(const std::string& testing_method);
 
-    double final_cost = 0.0f;
-    double final_dist = 0.0f;
-    double average_opt_time_ms = 0.0f;
-    double average_percent_derivs = 0.0f;
-    double average_time_derivs_ms = 0.0f;
-    double average_time_fp_ms = 0.0f;
-    double average_time_bp_ms = 0.0f;
-    double average_surprise = 0.0f;
+    void SaveTestSummaryData(keypoint_method keypoint_method,
+                             int opt_horizon,
+                             double control_noise,
+                             const std::string& optimiser_name,
+                             const std::string& testing_directory);
 
+    double controls_noise = 0.5;
+
+    std::mutex mtx;
+
+    volatile bool stop_opt_thread = false;
+    volatile bool apply_next_control = false;
+    bool async_mpc = true;
+
+    int num_controls_apply = 80;
+    int num_steps_replan = 1;
+    volatile bool reoptimise = true;
+
+    double final_cost = 0.0;
+    double final_dist = 0.0;
+    double average_dof = 0.0;
+    double average_opt_time_ms = 0.0;
+    double average_percent_derivs = 0.0;
+    double average_time_derivs_ms = 0.0;
+    double average_time_fp_ms = 0.0;
+    double average_time_bp_ms = 0.0;
+    double average_surprise = 0.0;
 };

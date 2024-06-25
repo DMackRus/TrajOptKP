@@ -1,12 +1,8 @@
-//
-// Created by dave on 07/03/23.
-//
-
-#ifndef PHYSICSSIMSWITCHING_VISUALIZER_H
-#define PHYSICSSIMSWITCHING_VISUALIZER_H
+#pragma once
 
 #include "MuJoCoHelper.h"
 #include <GLFW/glfw3.h>
+#include <pngwriter.h>
 #include "StdInclude.h"
 #include "ModelTranslator/ModelTranslator.h"
 #include "Differentiator.h"
@@ -15,10 +11,7 @@
 class Visualiser {
 public:
     Visualiser(std::shared_ptr<ModelTranslator> _modelTranslator);
-    void init();
     void update();
-    void draw();
-    void close();
 
     // ------------------------------- Variables -----------------------------------------
     // Screen variables
@@ -51,7 +44,8 @@ public:
     bool windowOpen();
     void render(const char* label);
 
-    float testVel = 0;
+    void StartRecording(std::string file_name);
+    void StopRecording();
 
     std::vector<MatrixXd> replayControls;
     bool replayTriggered = false;
@@ -59,14 +53,18 @@ public:
     // Asynchronus control variables
     std::vector<MatrixXd> controlBuffer;
     int current_control_index = 0;
-    bool new_controls_flag = false;
+
     std::vector<MatrixXd> trajectory_states;
     std::vector<MatrixXd> trajectory_controls;
     bool task_finished = false;
 
 private:
+    std::string video_filename = "";
+    bool record_render_frames = false;
+    int width = 1200;
+    int height = 900;
+    int frame_count = 0;
+
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
     std::shared_ptr<ModelTranslator> activeModelTranslator;
 };
-
-#endif //PHYSICSSIMSWITCHING_VISUALIZER_H

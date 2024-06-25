@@ -35,6 +35,7 @@
 #include "Visualiser.h"
 #include "FileHandler.h"
 #include <algorithm>
+#include <future>
 
 class iLQR_SVR: public Optimiser{
 public:
@@ -78,13 +79,17 @@ public:
 
     void Iteration(int iteration_num, bool &converged, bool &lambda_exit);
 
-    void PrintBanner(double time_rollout);
+    static void PrintBanner(double time_rollout);
 
-    void PrintBannerIteration(int iteration, double new_cost, double old_cost, double eps,
-                              double lambda, double percent_derivatives, double time_derivs, double time_bp,
-                              double time_fp, int num_linesearches);
+    void PrintBannerIteration(int iteration, double _new_cost, double _old_cost, double eps,
+                              double _lambda, int num_dofs, double percent_derivatives, double time_derivs, double time_bp,
+                              double time_fp, double best_alpha);
 
     void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
+
+    std::string ReturnName() override{
+        return "iLQR_SVR";
+    }
 
     /**
      * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
@@ -97,7 +102,7 @@ public:
     double avg_expected = 0.0;
     double new_cost = 0.0;
     double old_cost = 0.0;
-    double cost_reduced_last_iter = true;
+    bool cost_reduced_last_iter = true;
 
 
 private:
@@ -111,20 +116,13 @@ private:
     int last_iter_num_linesearches = 0;
     double last_alpha = 0.0f;
 
-    // Max horizon of optimisation.
-    int maxHorizon = 0;
-
     // Feedback gains matrices
     // open loop feedback gains
     vector<MatrixXd> k;
     // State dependant feedback matrices
     vector<MatrixXd> K;
 
-    int sampling_k_interval = 1;
-
     double eps_acceptable_diff = 0.02;
-//    double threshold_k_eignenvectors = 1.0;
-    double threshold_k_eignenvectors = 0.0;
 
     double delta_J = 0.0f;
 
@@ -132,8 +130,6 @@ private:
     double surprise = 0.0f;
     std::vector<double> surprises;
     std::vector<double> expecteds;
-
-
 
     /**
      * Checks whether the supplied matrix is positive defeinite.
@@ -146,23 +142,24 @@ private:
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
      * sequentially over different alpha values to try find a new optimal sequence of controls.
      *
-     * @param old_cost - Previous cost of the old trajectory.
+     * @param _old_cost - Previous cost of the old trajectory.
      *
      * @return double - The cost of the new trajectory.
      */
-    double ForwardsPass(double old_cost);
+    double ForwardsPass(double _old_cost);
 
     /**
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
      * in parallel over different alpha values to try find a new optimal sequence of controls.
      *
-     * @param old_cost - Previous cost of the old trajectory.
+     * @param thread_id - id of the thread
+     * @param alpha - Linesearch parameter between 0 and 1 ofr openloop feedback
      *
      * @return double - The cost of the new trajectory.
      */
-    double ForwardsPassParallel(double old_cost);
+    double ForwardsPassParallel(int thread_id, double alpha);
 
-    std::vector<int> checkKMatrices();
+    std::vector<std::string> LeastImportantDofs();
 
     /**
      * Perform a rollout with the previously computed k and K matrices but nullify feedback rows for the specified
@@ -182,9 +179,10 @@ private:
 
     void UpdateNominal();
 
+    void ResampleNewDofs();
+    void RemoveDofs();
+    void AdjustCurrentStateVector();
+
     // Visualiser object
     std::shared_ptr<Visualiser> active_visualiser;
-
-    // Control vector for parallel forwards pass rollout.
-    vector<vector<MatrixXd>> U_alpha;
 };

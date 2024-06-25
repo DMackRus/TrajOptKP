@@ -1,20 +1,19 @@
 #include "ModelTranslator/Acrobot.h"
 
 Acrobot::Acrobot(): ModelTranslator(){
-    std::string yamlFilePath = "/taskConfigs/acrobotConfig.yaml";
+    std::string yamlFilePath = "/TaskConfigs/toys/acrobot.yaml";
     InitModelTranslator(yamlFilePath);
 }
 
-// TODO fix
 bool Acrobot::TaskComplete(mjData *d, double &dist){
 
     dist = 0.0;
     std::vector<double> acrobot_joints;
     MuJoCo_helper->GetRobotJointsPositions("acrobot", acrobot_joints, d);
 
-    for(int i = 0; i < dof; i++){
+    for(int i = 0; i < full_state_vector.dof; i++){
         std::cout << "joint pos " << acrobot_joints[i] << "\n";
-        dist += abs(current_state_vector.robots[0].goalPos[i] - acrobot_joints[i]);
+        dist += abs(current_state_vector.robots[0].goal_pos[i] - acrobot_joints[i]);
     }
 
     if(dist < 0.01){

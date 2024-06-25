@@ -250,16 +250,26 @@ double GaussNoise(double mean, double stddev) {
     return dist(gen);
 }
 
-bool compare(const std::pair<double, int>& a, const std::pair<double, int>& b) {
+bool CompareDescend(const std::pair<double, int>& a, const std::pair<double, int>& b) {
     return a.first > b.first; // Sort in descending order
 }
 
-std::vector<int> sortIndices(const std::vector<double>& values) {
+bool CompareAscend(const std::pair<double, int>& a, const std::pair<double, int>& b){
+    return b.first > a.first; // Sort in ascending order
+}
+
+std::vector<int> SortIndices(const std::vector<double>& values, bool ascending) {
     std::vector<std::pair<double, int>> indexedValues;
     for (int i = 0; i < values.size(); ++i) {
         indexedValues.push_back({values[i], i});
     }
-    std::sort(indexedValues.begin(), indexedValues.end(), compare);
+    if(ascending){
+        std::sort(indexedValues.begin(), indexedValues.end(), CompareAscend);
+    }
+    else{
+        std::sort(indexedValues.begin(), indexedValues.end(), CompareDescend);
+    }
+
     std::vector<int> sortedIndices;
     for (const auto& pair : indexedValues) {
         sortedIndices.push_back(pair.second);

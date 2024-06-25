@@ -32,10 +32,12 @@
 
 TrajOptKP
 
-/testingData
+/TestingData
 /savedTrajecInfo
 /cmake-build-debug
 /cmake-build-release
 /build
 /.vscode
 /.idea
+/media
+

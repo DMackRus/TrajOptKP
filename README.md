@@ -25,7 +25,7 @@ cd mujoco_temp
 mkdir build
 cd build
 cmake ..
-make --build .
+cmake --build .
 cmake .. -DCMAKE_INSTALL_PREFIX="~/mujoco"
 cmake --install .
 echo export MJ_HOME='"'$(pwd)/mujoco'"' >> ~/.bashrc
@@ -96,8 +96,8 @@ There are some high level settings, as follows:
 - **max_N**: Maximum interval between key-points
 - **iterative_error_threshold**: Error threshold for iterative error method
 
-As well as these high level settings, there is the task description. Every task is specified by a collection of **robots** amd **bodies**.
-**Robots** are actuated whereas **bodies** are not. This list of robots and bodies instantiates the trajectory 
+As well as these high level settings, there is the task description. Every task is specified by a collection of **robots** amd **rigid_bodies**.
+**Robots** are actuated whereas **rigid_bodies** are not. This list of robots and rigid_bodies instantiates the trajectory 
 optimisation problem, by defining starting and desired states, as well as cost attributes. Finally, there are also settings
 for each DoF that relate to key-point methods, Please see the [Key-points](#Key-points) section for additional details.
 
@@ -200,15 +200,14 @@ This iterative process is repeated until all segments satisfy the error requirem
 interval is reached.
 
 ## To-Do
-- [ ] Overhaul method of loading and saving tasks. 
-Store all dofs rather than just defualt state vector. This will be easier in the long run.
-- [ ] Fix all random state task generation after deletion of X_desired vector.
-- [ ] Rework main.cpp so that all tasks are their own executable instead.
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.
 - [ ] Add more examples
 - [ ] starting camera variables in model file
 - [ ] improved parallelisation on iterative error method
+- [ ] Fix unit tests.
+- [ ] Add png writer as a requirement for this repo (https://github.com/pngwriter/pngwriter)
+- [ ] Fix issue with custom MuJoCo fork, and need for plugins.
 
 ## Citing
 Coming soon.

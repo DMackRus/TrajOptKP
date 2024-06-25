@@ -60,6 +60,8 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
     double angle_EE_push;
     double x_diff = desiredObjectEnd(0) - goalobj_startPose.position(0);
     double y_diff = desiredObjectEnd(1) - goalobj_startPose.position(1);
+//    double x_diff = desiredObjectEnd(0) - EE_startPose.position(0);
+//    double y_diff = desiredObjectEnd(1) - EE_startPose.position(1);
     angle_EE_push = atan2(y_diff, x_diff);
 
     // TODO hard coded - get it programmatically?
@@ -81,9 +83,11 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
 
     double intermediatePointY = goalobj_startPose.position(1);
     double intermediatePointX = goalobj_startPose.position(0);
+//    double intermediatePointY = EE_startPose.position(1);
+//    double intermediatePointX = EE_startPose.position(0);
 
     // Max speed could be a parameter
-    double maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * MuJoCo_helper->ReturnModelTimeStep());
+    double maxDistTravelled = 0.1 * ((5.0f/6.0f) * horizon * MuJoCo_helper->ReturnModelTimeStep());
     // float maxDistTravelled = 0.05 * ((5.0f/6.0f) * horizon * MUJOCO_DT);
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     double desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
@@ -132,28 +136,22 @@ std::vector<m_point> PushBaseClass::CreateAllEETransitPoints(const std::vector<m
     return EE_path;
 }
 
-std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const std::vector<m_point> &EE_path){
+std::vector<MatrixXd> PushBaseClass::JacobianEEControl(const std::vector<m_point> &EE_path, double EE_angle){
     std::vector<MatrixXd> init_controls;
 
+    // Aliases
+    int num_ctrl = current_state_vector.num_ctrl;
+
     pose_7 EE_start_pose;
-    pose_6 goalobj_startPose;
     MuJoCo_helper->GetBodyPoseQuatViaXpos(EE_name, EE_start_pose, MuJoCo_helper->main_data);
-    MuJoCo_helper->GetBodyPoseAngle(body_name, goalobj_startPose, MuJoCo_helper->main_data);
 
-    // TODO - this shouldnt be here, this function should take a fixed axis rotation of the end-effector
-    // as an input.
-    double angle_EE_push;
-    double x_diff = goal_pos(0) - goalobj_startPose.position(0);
-    double y_diff = goal_pos(1) - goalobj_startPose.position(1);
-    angle_EE_push = atan2(y_diff, x_diff);
+    EE_angle -= (PI / 4);
 
-    angle_EE_push -= (PI / 4);
-
-    if(angle_EE_push < -(PI/2)){
-        angle_EE_push = (2 * PI) + angle_EE_push;
+    if(EE_angle < -(PI/2)){
+        EE_angle = (2 * PI) + EE_angle;
     }
 
-    double convertedAngle = angle_EE_push;
+    double convertedAngle = EE_angle;
 
     // Setup the desired rotation matrix for the end-effector
     m_point xAxis, yAxis, zAxis;
@@ -224,7 +222,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
         MatrixXd desiredEEForce(6, 1);
         MatrixXd desiredControls(num_ctrl, 1);
 
-        if(current_state_vector.robots[0].torqueControlled){
+        if(current_state_vector.robots[0].torque_controlled){
             for(int j = 0; j < 6; j++) {
                 desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
             }
@@ -248,7 +246,7 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(m_point goal_pos, const s
 
         init_controls.push_back(desiredControls);
 
-        SetControlVector(desiredControls, MuJoCo_helper->main_data);
+        SetControlVector(desiredControls, MuJoCo_helper->main_data, current_state_vector);
         mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
     }

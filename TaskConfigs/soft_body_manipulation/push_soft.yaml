@@ -1,0 +1,49 @@
+modelFile: "/mujoco_models/Franka_emika_scenes_V1/push_soft.xml"
+modelName: "/push_soft"
+timeStep: 0.004
+openloop_horizon: 2000
+mpc_horizon: 100
+keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+auto_adjust: false
+minN: 1
+maxN: 10
+iterativeErrorThreshold: 0.00001
+robots:
+  panda:
+    jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
+    actuatorNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
+    torqueControl: true
+    torqueLimits: [87, 87, 87, 87, 12, 12, 12]
+#    startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
+    startPos: [0, 0.1, 0, -3, 0, 1.34, 0]
+    goalPos: [ 0, 0, 0, 0, 0, 0, 0 ]
+    jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
+#    jointVelCosts: [0.01, 0.01, 0.01, 0.01, 0.01, 0.05, 0.01]
+#    jointVelCosts: [0, 0, 0, 0, 0, 0.5, 0]
+    jointVelCosts: [0, 0, 0, 0, 0, 0.1, 0]
+    terminalJointPosCosts: [0, 0, 0, 0, 0, 0, 0]
+    terminalJointVelCosts: [0, 0, 0, 0, 0, 0, 0]
+    jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
+    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
+    magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+soft_bodies:
+  jelly:
+    num_vertices: 36
+    activeLinearDOF: [ true, true, true ]
+    startLinearPos: [ 0.5, 1.0, 0 ]
+    startAngularPos: [ 0, 0, 0 ]
+    goalLinearPos: [ 0.65, 0.1, 0 ]
+    goalAngularPos: [ 0, 0, 0 ]
+    linearPosCost: [ 0.1, 0.1, 0 ]
+    # When iLQR once
+    terminalLinearPosCost: [ 10, 10, 0 ]
+    linearVelCost: [ 0.1, 0.1, 0 ]
+    terminalLinearVelCost: [ 0, 0, 0 ]
+    angularPosCost: [ 0, 0, 0 ]
+    terminalAngularPosCost: [ 0, 0, 0 ]
+    angularVelCost: [ 0, 0, 0 ]
+    terminalAngularVelCost: [ 0, 0, 0 ]
+    linearJerkThreshold: [ 0.0005, 0.0005, 0.0005 ]
+    angularJerkThreshold: [ 0.003, 0.003, 0.003 ]
+    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]

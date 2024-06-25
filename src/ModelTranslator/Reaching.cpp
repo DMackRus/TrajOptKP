@@ -1,23 +1,25 @@
 #include "ModelTranslator/Reaching.h"
 
 pandaReaching::pandaReaching(): ModelTranslator(){
-    std::string yamlFilePath = "/taskConfigs/reachingConfig.yaml";
+    std::string yamlFilePath = "/taskConfigs/free_motion.yaml";
 
     InitModelTranslator(yamlFilePath);
 }
 
 bool pandaReaching::TaskComplete(mjData *d, double &dist){
-    double cumError = 0.0f;
-    MatrixXd X = ReturnStateVector(d);
+    double cum_error = 0.0f;
 
-    for(int i = 0; i < dof; i++){
-        double diff = current_state_vector.robots[0].goalPos[i] - X(i);
-        cumError += diff;
+    std::vector<double> robot_joints;
+    MuJoCo_helper->GetRobotJointsPositions("panda", robot_joints, d);
+
+    for(int i = 0; i < full_state_vector.dof; i++){
+        double diff = full_state_vector.robots[0].goal_pos[i] - robot_joints[i];
+        cum_error += diff;
     }
 
-    dist = cumError;
+    dist = cum_error;
 
-    if(cumError < 0.05){
+    if(cum_error < 0.05){
         return true;
     }
     else{
@@ -142,8 +144,9 @@ void pandaReaching::ReturnRandomStartState(){
         }
     }
 
-    for(int i = 0; i < dof; i++){
-        current_state_vector.robots[0].startPos[i] = joint_positions[i];
+    // TODO - shouldnt this be full state vector?
+    for(int i = 0; i < full_state_vector.dof; i++){
+        current_state_vector.robots[0].start_pos[i] = joint_positions[i];
     }
 
 }
@@ -165,11 +168,11 @@ void pandaReaching::ReturnRandomGoalState(){
         std::string robotName = "panda";
         for(int i = 0; i < 7; i++){
             double target_joint_val;
-            if(current_state_vector.robots[0].startPos[i] - jointOffsets[i] > jointLimsMin[i]){
-                target_joint_val = current_state_vector.robots[0].startPos[i] - jointOffsets[i];
+            if(current_state_vector.robots[0].start_pos[i] - jointOffsets[i] > jointLimsMin[i]){
+                target_joint_val = current_state_vector.robots[0].start_pos[i] - jointOffsets[i];
             }
             else{
-                target_joint_val = current_state_vector.robots[0].startPos[i] + jointOffsets[i];
+                target_joint_val = current_state_vector.robots[0].start_pos[i] + jointOffsets[i];
             }
 
             double randomJoint = randFloat(target_joint_val - jointOffsetNoise[i], target_joint_val + jointOffsetNoise[i]);
@@ -188,26 +191,27 @@ void pandaReaching::ReturnRandomGoalState(){
 
     }
 
-    for(int i = 0; i < dof; i++){
-        current_state_vector.robots[0].goalPos[i] = joints_positions[i];
-        current_state_vector.robots[0].goalVel[i] = 0.0;
+    for(int i = 0; i < full_state_vector.dof; i++){
+        current_state_vector.robots[0].goal_pos[i] = joints_positions[i];
+        current_state_vector.robots[0].goal_vel[i] = 0.0;
     }
 }
 
 std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonLength){
-    std::vector<MatrixXd> initControls;
+    std::vector<MatrixXd> init_controls;
+    int num_ctrl = current_state_vector.num_ctrl;
 
-    if(current_state_vector.robots[0].torqueControlled){
+    if(current_state_vector.robots[0].torque_controlled){
 
         MatrixXd control(num_ctrl, 1);
         double gains[7] = {10, 10, 10, 10, 5, 5, 5};
-        MatrixXd Xt;
+//        MatrixXd Xt;
         vector<double> gravCompensation;
         for(int i = 0; i < horizonLength; i++){
 
             MuJoCo_helper->GetRobotJointsGravityCompensationControls(current_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
 
-            Xt = ReturnStateVector(MuJoCo_helper->main_data);
+//            Xt = ReturnStateVector(MuJoCo_helper->main_data);
 
             for(int j = 0; j < num_ctrl; j++){
                 control(j) = gravCompensation[j];
@@ -215,9 +219,9 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
 //                control(j) += diff * gains[j];
             }
 
-            SetControlVector(control, MuJoCo_helper->main_data);
+            SetControlVector(control, MuJoCo_helper->main_data, full_state_vector);
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
-            initControls.push_back(control);
+            init_controls.push_back(control);
         }
     }
     else{
@@ -226,5 +230,5 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
 
     
 
-    return initControls;
+    return init_controls;
 }

@@ -19,6 +19,18 @@ struct pose_6{
     m_point orientation;
 };
 
+struct mujoco_data_min{
+    double time;
+    std::vector<double> q_pos;
+    std::vector<double> q_vel;
+    std::vector<double> q_acc;
+    std::vector<double> q_acc_warmstart;
+    std::vector<double> qfrc_applied;
+    std::vector<double> xfrc_applied;
+    std::vector<double> ctrl;
+
+};
+
 class MuJoCoHelper {
 public:
     // Constructor
@@ -38,8 +50,10 @@ public:
     void GetRobotControlLimits(const string& robot_name, vector<double> &control_limits);
     void GetRobotJointLimits(const string& robot_name, vector<double> &joint_limits, mjData *d);
 
-    // Utility functions -- bodies
-//    bool isValidBodyName(const string& bodyName, int &bodyIndex);
+    // Utility functions -- rigid bodies
+    bool BodyExists(const string& body_name, int &body_index);
+    void SetBodyColor(const string& body_name, const float color[4]) const;
+
     void SetBodyPoseQuat(const string& body_name, pose_7 pose, mjData *d) const;
     void SetBodyPoseAngle(const string& body_name, pose_6 pose, mjData *d) const;
     void SetBodyVelocity(const string& body_name, pose_6 velocity, mjData *d) const;
@@ -52,6 +66,16 @@ public:
     void GetBodyPoseQuatViaXpos(const string& body_name, pose_7 &pose, mjData *d) const;
     void GetBodyPoseAngleViaXpos(const string& body_name, pose_6 &pose, mjData *d) const;
 
+    // Utility functions -- soft bodies
+    void SetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
+    void SetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
+
+    void GetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
+    void GetSoftBodyVertexPosGlobal(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
+    void GetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const;
+
+
+
     // Extras
     Eigen::MatrixXd GetJacobian(const std::string& body_name, mjData *d) const;
     int CheckSystemForCollisions(mjData *d) const;
@@ -63,8 +87,6 @@ public:
     bool CopySystemState(mjData *d_dest, mjData *d_src) const;
     bool DeleteSystemStateFromIndex(int list_index);
     bool ClearSystemStateList();
-    void SaveDataToRolloutBuffer(mjData *d, int rollout_index);
-    void CopyRolloutBufferToSavedSystemStatesList();
 
     static void CpMjData(const mjModel* m, mjData* d_dest, mjData* d_src);
 
@@ -74,7 +96,7 @@ public:
     void MouseMove(double dx, double dy, bool button_left, bool button_right, GLFWwindow *window);
     void Scroll(double yoffset);
 
-    void InitSimulator(double timestep, const char* file_name);
+    void InitSimulator(double timestep, const char* file_name, bool use_plugins);
     bool ForwardSimulator(mjData *d) const;
     bool ForwardSimulatorWithSkip(mjData *d, int skip_stage, int skip_sensor) const;
 
@@ -87,8 +109,9 @@ public:
 
     double* SensorState(mjData *d, const std::string& sensor_name);
 
+    void InitialisePlugins();
+
     vector<mjData*> saved_systems_state_list;       // List of saved system states
-    vector<mjData*> fp_rollout_data;                // forwards pass rollout data
     mjData* master_reset_data{};                    // Master reset mujoco data
     mjData* main_data{};                            // main MuJoCo data
     mjData* vis_data{};                             // Visualisation MuJoCo data

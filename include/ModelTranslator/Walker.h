@@ -20,8 +20,6 @@ public:
     void ReturnRandomStartState() override;
     void ReturnRandomGoalState() override;
 
-    std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
-
 private:
     float low_bound_velocity;
     float high_bound_velocity;

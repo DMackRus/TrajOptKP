@@ -8,18 +8,19 @@
 std::shared_ptr<ModelTranslator> model_translator;
 
 void AssertKeypoints(std::vector<std::vector<int>> keypoints, int T, int max_N){
+
     // Assert all keypoints at time index 0
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         ASSERT_EQ(i, keypoints[0][i]);
     }
 
     // Assert all keypoints at time index T - 1
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         ASSERT_EQ(i, keypoints[T-1][i]);
     }
 
     // Assert that keypoints arent located more than maxN apart?
-    std::vector<int> last_time_indices(model_translator->dof, 0);
+    std::vector<int> last_time_indices(model_translator->current_state_vector.dof, 0);
     for(int t = 0; t < T; t++){
 
         for(int i : keypoints[t]){
@@ -29,13 +30,13 @@ void AssertKeypoints(std::vector<std::vector<int>> keypoints, int T, int max_N){
             last_time_indices[i] = t;
         }
     }
-
 }
 
 void CreateTrajectory(std::vector<MatrixXd> &trajectory_states, int T, bool save_mj_data){
 
     for(int t = 0; t < T; t++){
-        MatrixXd current_state = model_translator->ReturnStateVector(model_translator->MuJoCo_helper->master_reset_data);
+        MatrixXd current_state = model_translator->ReturnStateVector(model_translator->MuJoCo_helper->master_reset_data,
+                                                                     model_translator->current_state_vector);
 
         trajectory_states.push_back(current_state);
 
@@ -47,7 +48,6 @@ void CreateTrajectory(std::vector<MatrixXd> &trajectory_states, int T, bool save
             }
         }
     }
-
 }
 
 TEST(keypoints, set_interval){
@@ -63,7 +63,7 @@ TEST(keypoints, set_interval){
     std::shared_ptr<KeypointGenerator> keypoint_generator =
             std::make_shared<KeypointGenerator>(differentiator,
                                                 model_translator->MuJoCo_helper,
-                                                model_translator->dof, T);
+                                                model_translator->current_state_vector.dof, T);
 
     keypoint_method keypoint_method;
     keypoint_method.name = "set_interval";
@@ -79,17 +79,17 @@ TEST(keypoints, set_interval){
     keypoint_generator->GenerateKeyPoints(trajectory_states, A, B);
 
     // Test time index 0
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         ASSERT_EQ(i, keypoint_generator->keypoints[0][i]);
     }
 
     // Test time index n
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         ASSERT_EQ(i, keypoint_generator->keypoints[keypoint_method.min_N][i]);
     }
 
     // Test time index T
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         ASSERT_EQ(i, keypoint_generator->keypoints[T-1][i]);
     }
 
@@ -99,20 +99,19 @@ TEST(keypoints, set_interval){
     keypoint_generator->GenerateKeyPoints(trajectory_states, A, B);
 
     // Test time index 0
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         ASSERT_EQ(i, keypoint_generator->keypoints[0][i]);
     }
 
     // Test time index n
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         ASSERT_EQ(i, keypoint_generator->keypoints[keypoint_method.min_N][i]);
     }
 
     // Test time index T
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         ASSERT_EQ(i, keypoint_generator->keypoints[T-1][i]);
     }
-
 }
 
 TEST(keypoints, adaptive_jerk){
@@ -128,18 +127,19 @@ TEST(keypoints, adaptive_jerk){
     std::shared_ptr<KeypointGenerator> keypoint_generator =
             std::make_shared<KeypointGenerator>(differentiator,
                                                 model_translator->MuJoCo_helper,
-                                                model_translator->dof, T);
+                                                model_translator->current_state_vector.dof, T);
 
-    MatrixXd start_state(model_translator->state_vector_size, 1);
+    MatrixXd start_state(model_translator->current_state_vector.dof*2, 1);
     start_state << 0.5, 0.1, 0, 0;
-    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
+    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data,
+                                     model_translator->current_state_vector);
 
     keypoint_method keypoint_method;
     keypoint_method.name = "adaptive_jerk";
     keypoint_method.min_N = 1;
     keypoint_method.max_N = 5;
     double jerk_threshold = 0.0005;
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         keypoint_method.jerk_thresholds.push_back(jerk_threshold);
     }
     keypoint_method.auto_adjust = false;
@@ -156,7 +156,6 @@ TEST(keypoints, adaptive_jerk){
     keypoint_generator->GenerateKeyPoints(trajectory_states, A, B);
 
     AssertKeypoints(keypoint_generator->keypoints, T, keypoint_method.max_N);
-
 }
 
 TEST(keypoints, velocity_change){
@@ -171,18 +170,19 @@ TEST(keypoints, velocity_change){
     std::shared_ptr<KeypointGenerator> keypoint_generator =
             std::make_shared<KeypointGenerator>(differentiator,
                                                 model_translator->MuJoCo_helper,
-                                                model_translator->dof, T);
+                                                model_translator->current_state_vector.dof, T);
 
-    MatrixXd start_state(model_translator->state_vector_size, 1);
+    MatrixXd start_state(model_translator->current_state_vector.dof*2, 1);
     start_state << 0.5, 0.1, 0, 0;
-    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
+    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data,
+                                     model_translator->current_state_vector);
 
     keypoint_method keypoint_method;
     keypoint_method.name = "velocity_change";
     keypoint_method.min_N = 1;
     keypoint_method.max_N = 5;
     double velocity_change_threshold = 0.1;
-    for(int i = 0; i < model_translator->dof; i++){
+    for(int i = 0; i < model_translator->current_state_vector.dof; i++){
         keypoint_method.velocity_change_thresholds.push_back(velocity_change_threshold);
     }
     keypoint_method.auto_adjust = false;
@@ -213,11 +213,12 @@ TEST(Interpolate, basic_interpolation){
     std::shared_ptr<KeypointGenerator> keypoint_generator =
             std::make_shared<KeypointGenerator>(differentiator,
                                                 model_translator->MuJoCo_helper,
-                                                model_translator->dof, T);
+                                                model_translator->current_state_vector.dof, T);
 
-    MatrixXd start_state(model_translator->state_vector_size, 1);
+    MatrixXd start_state(model_translator->current_state_vector.dof*2, 1);
     start_state << 0.5, 0.1, 0, 0;
-    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data);
+    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data,
+                                     model_translator->current_state_vector);
 
     keypoint_method keypoint_method;
     keypoint_method.name = "set_interval";
@@ -236,8 +237,10 @@ TEST(Interpolate, basic_interpolation){
 
     // Allocate heap memory
     for(int t = 0; t < T; t++){
-        A.push_back(MatrixXd(model_translator->state_vector_size, model_translator->state_vector_size));
-        B.push_back(MatrixXd(model_translator->state_vector_size, model_translator->num_ctrl));
+        A.push_back(MatrixXd(model_translator->current_state_vector.dof*2,
+                             model_translator->current_state_vector.dof*2));
+        B.push_back(MatrixXd(model_translator->current_state_vector.dof*2,
+                             model_translator->current_state_vector.num_ctrl));
     }
 
     CreateTrajectory(trajectory_states, T, true);
@@ -259,7 +262,8 @@ TEST(Interpolate, basic_interpolation){
 
     // Call Interpolate derivatives
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, T, A, B,
-                                               l_x, l_u, l_xx, l_uu, false, model_translator->num_ctrl);
+                                               l_x, l_u, l_xx, l_uu, false,
+                                               model_translator->current_state_vector.num_ctrl);
 
 
     // Assert that t = 1 is interpolated correctly
@@ -268,8 +272,8 @@ TEST(Interpolate, basic_interpolation){
 //    std::cout << "A[1] \n" << A[1] << "\n";
 //    std::cout << "A[2] \n" << A[2] << "\n";
     int minN = keypoint_method.min_N;
-    for(int i = 0; i < model_translator->state_vector_size; i++){
-        for(int j = 0; j < model_translator->state_vector_size; j++){
+    for(int i = 0; i < model_translator->current_state_vector.dof*2; i++){
+        for(int j = 0; j < model_translator->current_state_vector.dof*2; j++){
             double diff = (A[minN](i, j) - A[0](i, j)) / (double)minN;
             double desired = A[0](i, j) + diff;
             ASSERT_EQ(A[1](i, j), desired);
@@ -277,8 +281,8 @@ TEST(Interpolate, basic_interpolation){
         }
     }
 
-    for(int i = 0; i < model_translator->state_vector_size; i++){
-        for(int j = 0; j < model_translator->num_ctrl; j++){
+    for(int i = 0; i < model_translator->current_state_vector.dof*2; i++){
+        for(int j = 0; j < model_translator->current_state_vector.num_ctrl; j++){
             double diff = (B[minN](i, j) - B[0](i, j)) / (double)minN;
             double desired = B[0](i, j) + diff;
             ASSERT_EQ(B[1](i, j), desired);
@@ -287,23 +291,22 @@ TEST(Interpolate, basic_interpolation){
     }
 
     // Asser that t = T - 1 is interpolated correctly
-    for(int i = 0; i < model_translator->state_vector_size; i++){
-        for(int j = 0; j < model_translator->state_vector_size; j++){
+    for(int i = 0; i < model_translator->current_state_vector.dof*2; i++){
+        for(int j = 0; j < model_translator->current_state_vector.dof*2; j++){
             double diff = (A[99](i, j) - A[96](i, j)) / (double)minN;
             double desired = A[96](i, j) + diff + diff;
             ASSERT_NEAR(A[98](i, j), desired, 1.0e-6);
         }
     }
 
-    for(int i = 0; i < model_translator->state_vector_size; i++){
-        for(int j = 0; j < model_translator->num_ctrl; j++){
+    for(int i = 0; i < model_translator->current_state_vector.dof*2; i++){
+        for(int j = 0; j < model_translator->current_state_vector.num_ctrl; j++){
             double diff = (B[99](i, j) - B[96](i, j)) / (double)minN;
             double desired = B[96](i, j) + diff + diff;
             ASSERT_NEAR(B[98](i, j), desired, 1.0e-6);
 
         }
     }
-
 }
 
 // TODO - Write a test for auto adjust keypoint methods.

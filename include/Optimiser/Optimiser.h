@@ -79,14 +79,9 @@ public:
      */
     virtual bool CheckForConvergence(double old_cost, double new_cost);
 
-    /**
-     * This function assigns the current trajectory optimisation a number which can be used for saving any data
-     * required by the user to uniquely identify the trajectory.
-     *
-     * @param optimised_controls - The optimised control sequence.
-     * @param cost_history - The cost history of the optimisation.
-     */
-    void SetTrajecNumber(int trajec_number);
+    virtual std::string ReturnName(){
+        return "general";
+    }
 
     /**
      * Returns optimisation data about the last optimisation performed from function "Optimise". The data it returns
@@ -154,22 +149,17 @@ public:
                                         int dataIndex, int threadId, bool terminal, bool costDerivs,
                                         bool central_diff, double eps)> tasks;
 
-    // current_iteration used for parallelisation.
+    // current_iteration used for parallelisation of dynamics derivatives
     std::atomic<int> current_iteration;
     int num_threads_iterations;
     std::vector<int> timeIndicesGlobal;
 
-
-    int currentTrajecNumber = 0;
-
-    double initialCost;
-    double costReduction = 1.0f;
+    double initial_cost = 0.0;
+    double cost_reduction = 0.0;
 
     int numberOfTotalDerivs = 0;
 
-    std::vector<double> timeDerivsPerIter;
-
-    int numIterationsForConvergence;
+    int num_iterations;
 
     std::string filteringMethod = "none";
 
@@ -177,13 +167,15 @@ public:
     // ------- Timing variables --------------
     double opt_time_ms;
     std::vector<double> time_get_derivs_ms;
-    double avg_time_get_derivs_ms = 0.0f;
+    double avg_time_get_derivs_ms = 0.0;
     std::vector<double> time_backwards_pass_ms;
-    double avg_time_backwards_pass_ms = 0.0f;
+    double avg_time_backwards_pass_ms = 0.0;
     std::vector<double> time_forwardsPass_ms;
-    double avg_time_forwards_pass_ms = 0.0f;
+    double avg_time_forwards_pass_ms = 0.0;
     std::vector<double> percentage_derivs_per_iteration;
-    double avg_percent_derivs;
+    double avg_percent_derivs = 0.0;
+    std::vector<int> num_dofs;
+    double avg_dofs = 0.0;
     bool verbose_output = true;
 
     // - Top level function - ensures all derivatives are calculated over an entire trajectory by some method
@@ -200,7 +192,7 @@ public:
     vector<MatrixXd> l_uu;
 
     // Saved states and controls
-    vector<MatrixXd> U_new;
+//    vector<MatrixXd> U_new;
     vector<MatrixXd> U_old;
     vector<MatrixXd> X_new;
     vector<MatrixXd> X_old;
@@ -213,18 +205,31 @@ public:
 
     std::shared_ptr<KeypointGenerator> keypoint_generator;
 
+    int sampling_k_interval = 1;
+    int num_dofs_readd = 10;
+    double K_matrix_threshold = 50; // maybe 0.001 or 0.0001
+    // When eigen vector 0.1, 0.2, 0.5
+    // WHen just summing numbers went from 1 -> 2000
+    bool eigen_vector_method = false;
+//    double threshold_k_eigenvectors = 0.1;
+
+    keypoint_method activeKeyPointMethod;
+
+    int dof = 0;
+    int num_ctrl = 0;
+    int dof_used_last_optimisation = 0;
+
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
 
-    int dof;
-    int num_ctrl;
-
-    keypoint_method activeKeyPointMethod;
     std::vector<std::vector<int>> keypointsGlobal;
 
     std::shared_ptr<FileHandler> activeYamlReader;
     std::shared_ptr<Differentiator> activeDifferentiator;
+
+    std::vector<std::vector<mujoco_data_min>> rollout_data;
+    int num_parallel_rollouts = 6;
 
     /**
      * Computes the dynamics derivatives at the specified indices. This function is used after computing a set of keypoints
@@ -263,6 +268,9 @@ protected:
      * @return filtered - The filtered values.
      */
     std::vector<double> FilterIndValLowPass(std::vector<double> unfiltered);
+
+    void SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index);
+    void SaveBestRollout(int thread_id);
 
 private:
     double epsConverge = 0.02;

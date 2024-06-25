@@ -82,6 +82,10 @@ public:
 
     void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
 
+    std::string ReturnName() override{
+        return "iLQR";
+    }
+
     /**
      * Compute the new optimal control feedback law K and k from the end of the trajectory to the beginning.
      *
@@ -89,9 +93,11 @@ public:
      */
     bool BackwardsPassQuuRegularisation();
 
-    double avg_surprise = 0.0f;
-    double avg_expected = 0.0f;
-    double new_cost = 0.0f;
+    double avg_surprise = 0.0;
+    double avg_expected = 0.0;
+    double new_cost = 0.0;
+    double old_cost = 0.0;
+    double cost_reduced_last_iter = true;
 
 
 private:
@@ -105,20 +111,11 @@ private:
     int last_iter_num_linesearches = 0;
     double last_alpha = 0.0f;
 
-    // Max horizon of optimisation.
-    int maxHorizon = 0;
-
     // Feedback gains matrices
     // open loop feedback gains
     vector<MatrixXd> k;
     // State dependant feedback matrices
     vector<MatrixXd> K;
-
-    int sampling_k_interval = 1;
-
-    double eps_acceptable_diff = 0.02;
-//    double threshold_k_eignenvectors = 1.0;
-    double threshold_k_eignenvectors = 0.0;
 
     double delta_J = 0.0f;
 
@@ -126,8 +123,6 @@ private:
     double surprise = 0.0f;
     std::vector<double> surprises;
     std::vector<double> expecteds;
-
-
 
     /**
      * Checks whether the supplied matrix is positive defeinite.
@@ -140,11 +135,11 @@ private:
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
      * sequentially over different alpha values to try find a new optimal sequence of controls.
      *
-     * @param old_cost - Previous cost of the old trajectory.
+     * @param _old_cost - Previous cost of the old trajectory.
      *
      * @return double - The cost of the new trajectory.
      */
-    double ForwardsPass(double old_cost);
+    double ForwardsPass(double _old_cost);
 
     /**
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
@@ -171,6 +166,12 @@ private:
      * @return bool - true if the cost was similar, false otherwise.
      */
     bool RolloutWithKMatricesReduction(std::vector<int> dof_indices, double old_cost, double new_cost, double alpha);
+
+    void Iteration(int iteration_num, bool &converged, bool &lambda_exit);
+
+    bool UpdateLambda(bool valid_backwards_pass);
+
+    void UpdateNominal();
 
     // Visualiser object
     std::shared_ptr<Visualiser> active_visualiser;

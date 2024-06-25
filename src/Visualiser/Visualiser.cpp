@@ -137,7 +137,8 @@ void Visualiser::keyboard(GLFWwindow* window, int key, int scancode, int act, in
         MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_quat, MuJoCo_helper->vis_data);
 
         std::cout << "body orientation " << body_eul.orientation(0) << " " << body_eul.orientation(1) << " " << body_eul.orientation(2) << "\n";
-        double cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data, false);
+        double cost = activeModelTranslator->CostFunction(MuJoCo_helper->vis_data,
+                                                          activeModelTranslator->full_state_vector, false);
         std::cout << "cost: " << cost << std::endl;
 
         MatrixXd l_x, l_u, l_xx, l_uu;
@@ -215,7 +216,6 @@ void Visualiser::windowCloseCallback(GLFWwindow * /*window*/) {
     // Use this flag if you wish not to terminate now.
     // glfwSetWindowShouldClose(window, GLFW_FALSE);
 
-
 //    mjv_freeScene(&scn);
 //    mjr_freeContext(&con);
 //
@@ -235,4 +235,64 @@ void Visualiser::render(const char* label) {
     MuJoCo_helper->UpdateScene(window, label);
     glfwSwapBuffers(window);
     glfwPollEvents();
+
+    // If we are recording for a video
+    if(record_render_frames){
+//        glfwGetFramebufferSize(window, &width, &height);
+
+        unsigned char* pixels = new unsigned char[3 * width * height]; // assuming RGB channels
+        auto timer_start = std::chrono::steady_clock::now();
+        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+//        std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - timer_start).count() << std::endl;
+
+//        glPixelStorei(GL_PACK_ALIGNMENT, 1); // Ensure byte alignment
+//        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
+
+        // Write pixel data to a file
+        std::string filename = video_filename + "/frame_" + std::to_string(frame_count) + ".png";
+        pngwriter png(width,height,0,filename.c_str());
+
+        int index = 0;
+        for(int i = 0; i < height; i++){
+            for(int j = 0; j < width ; j++){
+                index += 3;
+                double r = pixels[index] / 255.0;
+                double g = pixels[index + 1] / 255.0;
+                double b = pixels[index + 2] / 255.0;
+                png.plot(j,i, r, g, b);
+            }
+        }
+        png.close();
+
+        delete[] pixels;
+
+        frame_count++;
+    }
+}
+
+void Visualiser::StartRecording(std::string file_name){
+    record_render_frames = true;
+
+    glfwGetFramebufferSize(window, &width, &height);
+    frame_count = 0;
+
+    std::string project_parent_path = __FILE__;
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+
+
+    video_filename = project_parent_path + "/media/videos/" + file_name;
+    std::cout << "video filename: " << video_filename << "\n";
+    // Create a directory in media/video/file_name/0.rgb ...
+    if (!filesystem::exists(video_filename)) {
+        if (!filesystem::create_directories(video_filename)) {
+            std::cerr << "Failed to create directory: " << video_filename << std::endl;
+        }
+    }
+
+}
+
+void Visualiser::StopRecording() {
+    record_render_frames = false;
 }

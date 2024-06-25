@@ -44,6 +44,14 @@ endif (TARGET yaml-cpp::yaml-cpp)
 set(PROJECT_INCLUDE_DIR ${PARENT_DIR}/${PROJECT_NAME}/include)
 message(STATUS "project include directory: " ${PROJECT_INCLUDE_DIR})
 
+# PNG writer
+find_package(PNGwriter 0.7.0)
+
+if(PNGwriter_FOUND)
+#    target_link_libraries(YourTarget PRIVATE PNGwriter::PNGwriter)
+    message(STATUS "PNG writer library found")
+endif(PNGwriter_FOUND)
+
 # Create libraries
 #add_library(MuJoCo_helper STATIC src/PhysicsSimulators/MuJoCoHelper.cpp )
 
@@ -57,11 +65,10 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/Differentiator/Differentiator.cpp
             src/Optimiser/Optimiser.cpp
             src/Optimiser/iLQR.cpp
-            src/Optimiser/PredictiveSampling.cpp
-            src/ModelTranslator/BoxFlick.cpp
+#            src/Optimiser/PredictiveSampling.cpp
             src/ModelTranslator/Walker.cpp
             src/FileHandler/FileHandler.cpp
-            src/Optimiser/GradDescent.cpp
+#            src/Optimiser/GradDescent.cpp
             src/ModelTranslator/BoxSweep.cpp
             src/ModelTranslator/Acrobot.cpp
             src/ModelTranslator/Hopper.cpp
@@ -70,7 +77,10 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/ThreeDPushing.cpp
             src/ModelTranslator/PushBaseClass.cpp
             src/ModelTranslator/Pentabot.cpp
-            src/ModelTranslator/PistonBlock.cpp src/Optimiser/iLQR_SVR.cpp include/Optimiser/iLQR_SVR.h)
+            src/ModelTranslator/PistonBlock.cpp
+            src/Optimiser/iLQR_SVR.cpp
+            src/ModelTranslator/PushSoft.cpp
+            src/ModelTranslator/SweepMultiple.cpp)
 
 include_directories(
         include
@@ -79,7 +89,7 @@ include_directories(
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
 enable_testing()
 

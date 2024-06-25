@@ -18,7 +18,7 @@ bool MuJoCoHelper::IsValidRobotName(const string& robot_name, int &robot_index, 
     for(int i = 0; i < robots.size(); i++){
         if(robots[i].name == robot_name){
             valid_robot = true;
-            robot_base_joint_name = robots[i].jointNames[0];
+            robot_base_joint_name = robots[i].joint_names[0];
             robot_index = i;
         }
     }
@@ -33,7 +33,7 @@ void MuJoCoHelper::SetRobotJointPositions(const string& robot_name, vector<doubl
     int robot_index;
     string robot_base_joint_name;
     if(IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
-        if(joint_positions.size() != robots[robot_index].jointNames.size()){
+        if(joint_positions.size() != robots[robot_index].joint_names.size()){
             std::cerr << "Invalid number of joint positions\n";
             exit(1);
         }
@@ -45,9 +45,9 @@ void MuJoCoHelper::SetRobotJointPositions(const string& robot_name, vector<doubl
 
 
     for(int i = 0; i < joint_positions.size(); i++){
-        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].jointNames[i].c_str());
+        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].joint_names[i].c_str());
         if(joint_id == -1){
-            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].jointNames[i].c_str() << "\n";
+            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].joint_names[i].c_str() << "\n";
             exit(1);
         }
         int q_pos_index = model->jnt_qposadr[joint_id];
@@ -62,7 +62,7 @@ void MuJoCoHelper::SetRobotJointsVelocities(const string& robot_name, vector<dou
     int robot_index;
     string robot_base_joint_name;
     if(IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
-        if(joint_velocities.size() != robots[robot_index].jointNames.size()){
+        if(joint_velocities.size() != robots[robot_index].joint_names.size()){
             std::cerr << "Invalid number of joint positions\n";
             exit(1);
         }
@@ -73,9 +73,9 @@ void MuJoCoHelper::SetRobotJointsVelocities(const string& robot_name, vector<dou
     }
 
     for(int i = 0; i < joint_velocities.size(); i++){
-        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].jointNames[i].c_str());
+        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].joint_names[i].c_str());
         if(joint_id == -1){
-            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].jointNames[i].c_str() << "\n";
+            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].joint_names[i].c_str() << "\n";
             exit(1);
         }
         int q_pos_index = model->jnt_qposadr[joint_id];
@@ -89,7 +89,7 @@ void MuJoCoHelper::SetRobotJointsControls(const string& robot_name, vector<doubl
     int robot_index;
     string robot_base_joint_name;
     if(IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
-        if(joint_controls.size() != robots[robot_index].actuatorNames.size()){
+        if(joint_controls.size() != robots[robot_index].actuator_names.size()){
             std::cerr << "Invalid number of joint positions\n";
             exit(1);
         }
@@ -100,7 +100,7 @@ void MuJoCoHelper::SetRobotJointsControls(const string& robot_name, vector<doubl
     }
 
     for(int i = 0; i < joint_controls.size(); i++){
-        int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, robots[robot_index].actuatorNames[i].c_str());
+        int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, robots[robot_index].actuator_names[i].c_str());
         int q_pos_index = model->jnt_dofadr[actuator_id];
         d->ctrl[q_pos_index] = joint_controls[i];
     }
@@ -115,12 +115,12 @@ void MuJoCoHelper::GetRobotJointsPositions(const string& robot_name, vector<doub
         exit(1);
     }
 
-    joint_positions.resize(robots[robot_index].jointNames.size());
+    joint_positions.resize(robots[robot_index].joint_names.size());
 
-    for(int i = 0; i < robots[robot_index].jointNames.size(); i++){
-        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].jointNames[i].c_str());
+    for(int i = 0; i < robots[robot_index].joint_names.size(); i++){
+        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].joint_names[i].c_str());
         if(joint_id == -1){
-            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].jointNames[i].c_str() << "\n";
+            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].joint_names[i].c_str() << "\n";
             exit(1);
         }
         int qpos_index = model->jnt_qposadr[joint_id];
@@ -137,12 +137,12 @@ void MuJoCoHelper::GetRobotJointsVelocities(const string& robot_name, vector<dou
         exit(1);
     }
 
-    joint_velocities.resize(robots[robot_index].jointNames.size());
+    joint_velocities.resize(robots[robot_index].joint_names.size());
 
-    for(int i = 0; i < robots[robot_index].jointNames.size(); i++){
-        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].jointNames[i].c_str());
+    for(int i = 0; i < robots[robot_index].joint_names.size(); i++){
+        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].joint_names[i].c_str());
         if(joint_id == -1){
-            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].jointNames[i].c_str() << "\n";
+            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].joint_names[i].c_str() << "\n";
             exit(1);
         }
         int qpos_index = model->jnt_qposadr[joint_id];
@@ -159,7 +159,7 @@ void MuJoCoHelper::GetRobotJointsAccelerations(const string& robot_name, vector<
         exit(1);
     }
 
-    joint_accelerations.resize(robots[robot_index].jointNames.size());
+    joint_accelerations.resize(robots[robot_index].joint_names.size());
 
     // Get the body id of the base link of the robot
     int jointId = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
@@ -175,7 +175,7 @@ void MuJoCoHelper::GetRobotJointsAccelerations(const string& robot_name, vector<
         exit(1);
     }
 
-    for(int i = 0; i < robots[robot_index].jointNames.size(); i++){
+    for(int i = 0; i < robots[robot_index].joint_names.size(); i++){
         joint_accelerations[i] = d->qacc[startIndex + i];
     }
 }
@@ -185,10 +185,10 @@ void MuJoCoHelper::GetRobotJointsControls(const string& robot_name, vector<doubl
     // Check if the robot exists in the simulation
     int robot_index = 0;
 
-    joint_controls.resize(robots[robot_index].actuatorNames.size());
+    joint_controls.resize(robots[robot_index].actuator_names.size());
 
-    for(int i = 0; i < robots[robot_index].actuatorNames.size(); i++){
-        int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, robots[robot_index].actuatorNames[i].c_str());
+    for(int i = 0; i < robots[robot_index].actuator_names.size(); i++){
+        int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, robots[robot_index].actuator_names[i].c_str());
         int ctrl_index = model->jnt_dofadr[actuator_id];
         joint_controls[i] = (d->ctrl[ctrl_index]);
     }
@@ -206,7 +206,7 @@ void MuJoCoHelper::GetRobotJointsGravityCompensationControls(const string& robot
     // Get the body id of the base link of the robot
     int joint_id = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
 
-    joint_controls.resize(robots[robot_index].jointNames.size());
+    joint_controls.resize(robots[robot_index].joint_names.size());
 
     if(joint_id == -1){
         std::cerr << "Base link of robot not found\n";
@@ -223,7 +223,7 @@ void MuJoCoHelper::GetRobotJointsGravityCompensationControls(const string& robot
     // TODO (DMackRus) - Check if this is needed?
     mj_forward(model, d);
 
-    for(int i = 0; i < robots[robot_index].jointNames.size(); i++){
+    for(int i = 0; i < robots[robot_index].joint_names.size(); i++){
         joint_controls[i] = d->qfrc_bias[start_index + i];
     }
 }
@@ -241,7 +241,7 @@ void MuJoCoHelper::GetRobotControlLimits(const string& robot_name, vector<double
     // Get the body id of the base link of the robot
     int joint_id = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
 
-    control_limits.resize(2 * robots[robot_index].actuatorNames.size());
+    control_limits.resize(2 * robots[robot_index].actuator_names.size());
 
     if(joint_id == -1){
         std::cerr << "Base link of robot not found\n";
@@ -255,7 +255,7 @@ void MuJoCoHelper::GetRobotControlLimits(const string& robot_name, vector<double
         exit(1);
     }
 
-    for(int i = 0; i < 2 * robots[robot_index].actuatorNames.size(); i++){
+    for(int i = 0; i < 2 * robots[robot_index].actuator_names.size(); i++){
         control_limits[i] = model->actuator_ctrlrange[i];
     }
 }
@@ -267,6 +267,28 @@ void MuJoCoHelper::GetRobotJointLimits(const string& robot_name, vector<double> 
 // --------------------------------- END OF ROBOT UTILITY ---------------------------------------
 
 // ------------------------------------- BODY UTILITY -------------------------------------------
+
+bool MuJoCoHelper::BodyExists(const string& body_name, int &body_index){
+    bool body_exists = false;
+
+    body_index = mj_name2id(model, mjOBJ_BODY, body_name.c_str());
+    if(body_index != -1){
+        body_exists = true;
+    }
+
+    return body_exists;
+}
+
+void MuJoCoHelper::SetBodyColor(const string& body_name, const float color[4]) const{
+    int body_id = mj_name2id(model, mjOBJ_BODY, body_name.c_str());
+    int geom_id = model->body_geomadr[body_id];
+
+    model->geom_rgba[geom_id * 4]     = color[0]; // Red
+    model->geom_rgba[geom_id * 4 + 1] = color[1]; // Green
+    model->geom_rgba[geom_id * 4 + 2] = color[2]; // Blue
+    model->geom_rgba[geom_id * 4 + 3] = color[3]; // Alpha
+}
+
 void MuJoCoHelper::SetBodyPoseQuat(const string& body_name, pose_7 pose, mjData *d) const{
     int body_id = mj_name2id(model, mjOBJ_BODY, body_name.c_str());
     const int joint_index = model->body_jntadr[body_id];
@@ -412,6 +434,126 @@ void MuJoCoHelper::GetBodyAcceleration(const string& body_name, pose_6 &accelera
 }
 // --------------------------------- END OF BODY UTILITY ---------------------------------------
 
+// ---------------------------------- SOFT BODY UTILITY ----------------------------------------
+
+void MuJoCoHelper::SetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
+    int flex_id = mj_name2id(model, mjOBJ_FLEX, flex_name.c_str());
+    int first_vert_address = model->flex_vertadr[flex_id];
+    int num_vertices = model->flex_vertnum[flex_id];
+
+    // Safety check to make sure vertex_id < num_vertices inside flex object
+    if(vertex_id > num_vertices){
+        std::cerr << "Vertex id in set soft body pos, vertex id: " << vertex_id << "num vertices: " << num_vertices << "\n";
+        exit(1);
+    }
+
+    int body_id = model->flex_vertbodyid[first_vert_address + vertex_id];
+    const int joint_index = model->body_jntadr[body_id];
+    const int qpos_index = model->jnt_qposadr[joint_index];
+
+    d->qpos[qpos_index + 0] = pose.position[0];
+    d->qpos[qpos_index + 1] = pose.position[1];
+    d->qpos[qpos_index + 2] = pose.position[2];
+}
+
+void MuJoCoHelper::SetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
+    int flex_id = mj_name2id(model, mjOBJ_FLEX, flex_name.c_str());
+    int first_vert_address = model->flex_vertadr[flex_id];
+    int num_vertices = model->flex_vertnum[flex_id];
+
+    // Safety check to make sure vertex_id < num_vertices inside flex object
+    if(vertex_id > num_vertices){
+        std::cerr << "Vertex id in set soft body vel, vertex id: " << vertex_id << "num vertices: " << num_vertices << "\n";
+        exit(1);
+    }
+
+    int body_id = model->flex_vertbodyid[first_vert_address + vertex_id];
+    const int joint_index = model->body_jntadr[body_id];
+    const int qvel_index = model->jnt_dofadr[joint_index];
+
+    d->qvel[qvel_index + 0] = pose.position[0];
+    d->qvel[qvel_index + 1] = pose.position[1];
+    d->qvel[qvel_index + 2] = pose.position[2];
+}
+
+void MuJoCoHelper::GetSoftBodyVertexPos(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
+
+    int flex_id = mj_name2id(model, mjOBJ_FLEX, flex_name.c_str());
+    int first_vertex_adr = model->flex_vertadr[flex_id];
+    int num_vertices = model->flex_vertnum[flex_id];
+
+    // Safety check to make sure vertex_id < num_vertices inside flex object
+    if(vertex_id > num_vertices){
+        std::cerr << "Vertex id in get soft body pos, vertex id: " << vertex_id << "num vertices: " << num_vertices << "\n";
+        exit(1);
+    }
+
+    int body_id = model->flex_vertbodyid[first_vertex_adr + vertex_id];
+    const int joint_index = model->body_jntadr[body_id];
+    const int qpos_index = model->jnt_qposadr[joint_index];
+
+    pose.position[0] = d->qpos[qpos_index + 0];
+    pose.position[1] = d->qpos[qpos_index + 1];
+    pose.position[2] = d->qpos[qpos_index + 2];
+
+    // Jus to initialise values to something, not used
+    pose.orientation[0] = 0.0;
+    pose.orientation[1] = 0.0;
+    pose.orientation[2] = 0.0;
+}
+
+void MuJoCoHelper::GetSoftBodyVertexPosGlobal(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
+    int flex_id = mj_name2id(model, mjOBJ_FLEX, flex_name.c_str());
+    int first_vertex_adr = model->flex_vertadr[flex_id];
+    int num_vertices = model->flex_vertnum[flex_id];
+
+    // Safety check to make sure vertex_id < num_vertices inside flex object
+    if(vertex_id > num_vertices){
+        std::cerr << "Vertex id in get soft body pos, vertex id: " << vertex_id << "num vertices: " << num_vertices << "\n";
+        exit(1);
+    }
+
+    int body_id = model->flex_vertbodyid[first_vertex_adr + vertex_id];
+    const int joint_index = model->body_jntadr[body_id];
+    const int qpos_index = model->jnt_qposadr[joint_index];
+
+    pose.position[0] = d->xpos[(3 *body_id) + 0];
+    pose.position[1] = d->xpos[(3 * body_id) + 1];
+    pose.position[2] = d->xpos[(3 * body_id) + 2];
+
+    // Jus to initialise values to something, not used
+    pose.orientation[0] = 0.0;
+    pose.orientation[1] = 0.0;
+    pose.orientation[2] = 0.0;
+}
+
+void MuJoCoHelper::GetSoftBodyVertexVel(const string& flex_name, int vertex_id, pose_6 &pose, mjData *d) const{
+    int flex_id = mj_name2id(model, mjOBJ_FLEX, flex_name.c_str());
+    int first_vertex_adr = model->flex_vertadr[flex_id];
+    int num_vertices = model->flex_vertnum[flex_id];
+
+    // Safety check to make sure vertex_id < num_vertices inside flex object
+    if(vertex_id > num_vertices){
+        std::cerr << "Vertex id in get soft body vel, vertex id: " << vertex_id << "num vertices: " << num_vertices << "\n";
+        exit(1);
+    }
+
+    int body_id = model->flex_vertbodyid[first_vertex_adr + vertex_id];
+    const int joint_index = model->body_jntadr[body_id];
+    const int qpos_index = model->jnt_dofadr[joint_index];
+
+    pose.position[0] = d->qvel[qpos_index + 0];
+    pose.position[1] = d->qvel[qpos_index + 1];
+    pose.position[2] = d->qvel[qpos_index + 2];
+
+    // Jus to initialise values to something, not used
+    pose.orientation[0] = 0.0;
+    pose.orientation[1] = 0.0;
+    pose.orientation[2] = 0.0;
+}
+
+// -------------------------------END OF SOFT BODY UTILITY -------------------------------------
+
 // - TODO create jacobian dynamically for the robot
 Eigen::MatrixXd MuJoCoHelper::GetJacobian(const std::string& body_name, mjData *d) const{
     Eigen::MatrixXd jacobian(6, 7);
@@ -504,10 +646,8 @@ bool MuJoCoHelper::CheckBodyForCollisions(const string& body_name, mjData *d) co
 bool MuJoCoHelper::AppendSystemStateToEnd(mjData *d){
 
     saved_systems_state_list.push_back(mj_makeData(model));
-    fp_rollout_data.push_back(mj_makeData(model));
 
     CpMjData(model, saved_systems_state_list.back(), d);
-    CpMjData(model, fp_rollout_data.back(), d);
 
     return true;
 }
@@ -548,17 +688,6 @@ void MuJoCoHelper::CpMjData(const mjModel* m, mjData* d_dest, mjData* d_src){
     mju_copy(d_dest->qfrc_applied, d_src->qfrc_applied, m->nv);
     mju_copy(d_dest->xfrc_applied, d_src->xfrc_applied, 6*m->nbody);
     mju_copy(d_dest->ctrl, d_src->ctrl, m->nu);
-}
-
-void MuJoCoHelper::SaveDataToRolloutBuffer(mjData *d, int rollout_index){
-
-    CpMjData(model, fp_rollout_data[rollout_index], d);
-}
-
-void MuJoCoHelper::CopyRolloutBufferToSavedSystemStatesList(){
-    for(int i = 1; i < fp_rollout_data.size(); i++){
-        CpMjData(model, saved_systems_state_list[i], fp_rollout_data[i]);
-    }
 }
 
 // ------------------------------- END OF SYSTEM STATE FUNCTIONS ----------------------------------------
@@ -638,7 +767,9 @@ void MuJoCoHelper::UpdateScene(GLFWwindow *window, const char* label){
     mjrRect viewport = {0, 0, 0, 0};
     glfwGetFramebufferSize(window, &viewport.width, &viewport.height);
 //    opt.flags[mjVIS_JOINT] = true;
-    opt.frame = mjFRAME_BODY;
+    opt.flags[mjVIS_FLEXFACE] = false;
+    opt.flags[mjVIS_FLEXVERT] = true;
+//    opt.frame = mjFRAME_BODY;
     mjv_updateScene(model, vis_data, &opt, nullptr, &cam, mjCAT_ALL, &scn);
 
     mjr_render(viewport, &scn, &con);
@@ -685,7 +816,13 @@ void MuJoCoHelper::Scroll(double yoffset){
 
 // --------------------------------- END OF VISUALIZATION FUNCTIONS ---------------------------------------
 
-void MuJoCoHelper::InitSimulator(double timestep, const char* file_name){
+void MuJoCoHelper::InitSimulator(double timestep, const char* file_name, bool use_plugins){
+
+    // Should make this optional
+    if(use_plugins){
+        InitialisePlugins();
+    }
+    
     char error[1000];
     auto load_start = std::chrono::high_resolution_clock::now();
     model = mj_loadXML(file_name, nullptr, error, 1000);
@@ -752,4 +889,30 @@ double* MuJoCoHelper::SensorState(mjData *d, const std::string& sensor_name){
     } else {
         return d->sensordata + model->sensor_adr[id];
     }
+}
+
+void MuJoCoHelper::InitialisePlugins(){
+    std::cout << "initialise plugins \n";
+    int nplugin = mjp_pluginCount();
+    if (nplugin) {
+        std::printf("Built-in plugins:\n");
+        for (int i = 0; i < nplugin; ++i) {
+            std::printf("    %s\n", mjp_getPluginAtSlot(i)->name);
+        }
+    }
+
+    std::string path = __FILE__;
+    path = path.substr(0, path.find_last_of("/\\"));
+    path = path.substr(0, path.find_last_of("/\\"));
+    path = path.substr(0, path.find_last_of("/\\"));
+
+    const std::string plugin_dir = path + "/mujoco_plugins";
+    std::cout << "plugin dir: " << plugin_dir << "\n";
+    mj_loadAllPluginLibraries(
+            plugin_dir.c_str(), +[](const char* filename, int first, int count) {
+                std::printf("Plugins registered by library '%s':\n", filename);
+                for (int i = first; i < first + count; ++i) {
+                    std::printf("    %s\n", mjp_getPluginAtSlot(i)->name);
+                }
+            });
 }
