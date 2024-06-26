@@ -32,12 +32,20 @@
 
 TrajOptKP
 
-/TestingData
-/savedTrajecInfo
 /cmake-build-debug
 /cmake-build-release
 /build
 /.vscode
 /.idea
 /media
+
+# Ignore everything in the TestingData directory
+TestingData/*
+
+# Except for the scripts directory
+!TestingData/scripts/
+
+# Include all contents of the scripts directory
+!TestingData/scripts/**
+
 
