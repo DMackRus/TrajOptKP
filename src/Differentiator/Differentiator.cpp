@@ -437,8 +437,6 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         l_xx = l_x.transpose() * l_x;
     }
 
-    A(0, 0) = 1000;
-
 //    std::cout << "time of sim integration: " << time_mj_forwards / 1000.0f << "\n";
 //    std::cout << "num of sim integration: " << count_integrations << "\n";
 //    std::cout << "diff time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - diff_start).count() / 1000.0 << std::endl;
