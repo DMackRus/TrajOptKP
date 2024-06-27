@@ -123,6 +123,14 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //    }
 
     UpdateLastPercentageDerivatives(keypoints);
+
+
+    // Print the dof percentages
+//    std::cout << "dof percent derivs: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << last_percentages[i] << " ";
+//    }
+//    std::cout << "\n";
 }
 
 void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,
@@ -735,20 +743,38 @@ void KeypointGenerator::GenerateJerkProfile(const std::vector<MatrixXd> &traject
     MatrixXd state2(trajectory_states[0].rows(), 1);
     MatrixXd state3(trajectory_states[0].rows(), 1);
 
+    MatrixXd accell1(dof*2, 1);
+    MatrixXd accell2(dof*2, 1);
+
     for(int t = 0; t < horizon - 2; t++){
         state1 = trajectory_states[t];
         state2 = trajectory_states[t + 1];
         state3 = trajectory_states[t + 2];
 
-        MatrixXd accell1 = state2 - state1;
-        MatrixXd accell2 = state3 - state2;
+        accell1 = (state2 - state1) / physics_simulator->ReturnModelTimeStep();
+        accell2 = (state3 - state2) / physics_simulator->ReturnModelTimeStep();
 
         for(int j = 0; j < dof; j++){
-            jerk(j, 0) = abs(accell2(j+dof, 0) - accell1(j+dof, 0));
+            jerk(j, 0) = abs((accell2(j+dof, 0) - accell1(j+dof, 0)) / physics_simulator->ReturnModelTimeStep());
         }
 
         jerk_profile[t] = jerk;
     }
+
+    // Set last two time-steps to zero
+    for(int i = 0; i < dof; i++){
+        jerk_profile[horizon - 2](i, 0) = 0;
+        jerk_profile[horizon - 1](i, 0) = 0;
+    }
+
+    // Temp print jerk values
+//    for(int t = 0; t < jerk_profile.size(); t++){
+//        std::cout << "timestep " << t << ": ";
+//        for(int i = 0; i < dof; i++){
+//            std::cout << jerk_profile[t](i, 0) << " ";
+//        }
+//        std::cout << "\n";
+//    }
 }
 
 std::vector<MatrixXd> KeypointGenerator::GenerateAccellerationProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
@@ -908,7 +934,7 @@ void KeypointGenerator::InterpolateDerivatives(const std::vector<std::vector<int
                         addB = (endB - startB) / (t - startIndices[i]);
                     }
 
-                    for(int k = startIndices[i]; k < t; k++){
+                    for(int k = startIndices[i] + 1; k < t; k++){
                         A[k].block(0, i, 2*dof, 1) = startACol1 + ((k - startIndices[i]) * addACol1);
 
                         A[k].block(0, i + dof, 2*dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);

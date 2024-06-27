@@ -378,6 +378,8 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     if(cost_reduced_last_iter){
         GenerateDerivatives();
 //        std::cout << "A[0] \n" << A[0] << "\n";
+//        std::cout << "A[1] \n" << A[1] << "\n";
+//        std::cout << "A[2] \n" << A[2] << "\n";
 //        std::cout << "B[0] \n" << B[0] << "\n";
 //        std::cout << "l_x[0] \n" << l_x[0] << "\n";
 //        std::cout << "l_xx[0] \n" << l_xx[0] << "\n";
@@ -500,8 +502,15 @@ bool iLQR::BackwardsPassQuuRegularisation(){
     MatrixXd Q_uu(num_ctrl, num_ctrl);
     MatrixXd Q_ux(num_ctrl, 2*dof);
 
+    MatrixXd Q_uu_reg(num_ctrl, num_ctrl);
+
+    MatrixXd A_t(2*dof, 2*dof);
+    MatrixXd B_t(2*dof, num_ctrl);
+
     // Reset delta J
     delta_J = 0.0f;
+    double temp_time = 0.0;
+    auto time_start = high_resolution_clock::now();
 
     // TODO check if this should start at -2 or -1 and end at 0 or 1?
     for(int t = horizon_length - 1; t >= 0; t--){
@@ -511,21 +520,26 @@ bool iLQR::BackwardsPassQuuRegularisation(){
 
         Quu_pd_check_counter++;
 
-        Q_x = l_x[t] + (A[t].transpose() * V_x);
+        A_t = A[t].transpose();
+        B_t = B[t].transpose();
 
-        Q_u = l_u[t] + (B[t].transpose() * V_x);
+        Q_x = l_x[t] + (A_t * V_x);
 
-        Q_xx = l_xx[t] + (A[t].transpose() * (V_xx * A[t]));
+        Q_u = l_u[t] + (B_t * V_x);
 
-        Q_uu = l_uu[t] + (B[t].transpose() * (V_xx * B[t]));
+        // This is the line that takes the most time in the backwards pass.
+        Q_xx = l_xx[t] + (A_t * V_xx * A[t]);
 
-        Q_ux = (B[t].transpose() * (V_xx * A[t]));
+        Q_uu = l_uu[t] + (B_t * V_xx * B[t]);
 
-        MatrixXd Q_uu_reg = Q_uu.replicate(1, 1);
+        Q_ux = (B_t * V_xx * A[t]);
+
+        Q_uu_reg = Q_uu.replicate(1, 1);
 
         for(int i = 0; i < Q_uu.rows(); i++){
             Q_uu_reg(i, i) += lambda;
         }
+
 
         if(Quu_pd_check_counter >= number_steps_between_pd_checks){
             if(!CheckMatrixPD(Q_uu_reg)){
@@ -537,10 +551,12 @@ bool iLQR::BackwardsPassQuuRegularisation(){
             Quu_pd_check_counter = 0;
         }
 
+
         auto temp = (Q_uu_reg).ldlt();
         MatrixXd I(num_ctrl, num_ctrl);
         I.setIdentity();
         MatrixXd Q_uu_inv = temp.solve(I);
+
 
         // control update law, open loop and feedback
         k[t] = -Q_uu_inv * Q_u;
@@ -572,6 +588,7 @@ bool iLQR::BackwardsPassQuuRegularisation(){
 
 //        cout << "----- K[t] ----- \n " << K[t] << endl;
     }
+//    std::cout << "time spent on Q comps: " << temp_time << "ms \n";
     return true;
 }
 

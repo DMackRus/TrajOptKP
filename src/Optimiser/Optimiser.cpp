@@ -24,7 +24,7 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::sha
                                                              0);
 
     keypoint_generator->SetKeypointMethod(activeKeyPointMethod);
-//    keypoint_generator->PrintKeypointMethod();
+    keypoint_generator->PrintKeypointMethod();
 }
 
 bool Optimiser::CheckForConvergence(double old_cost, double new_cost){

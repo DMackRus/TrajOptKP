@@ -3,10 +3,10 @@ modelName: "/push_ncl"
 timeStep: 0.008
 openloop_horizon: 1000
 mpc_horizon: 50
-keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+keypointMethod: "adaptive_jerk"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
-maxN: 10
+maxN: 1000
 iterativeErrorThreshold: 0.00001
 robots:
   panda:
@@ -22,7 +22,8 @@ robots:
     terminalJointPosCosts: [0, 0, 0, 0, 0, 0, 0]
     terminalJointVelCosts: [0, 0, 0, 0, 0, 0, 0]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
-    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
+#    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
+    jointJerkThresholds: [10, 10, 10, 10, 10, 10, 10]
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   goal:
@@ -41,7 +42,7 @@ bodies:
     terminalAngularPosCost: [0, 0, 0]
     angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]
-    linearJerkThreshold: [ 0.0005, 0.0005, 0.0005 ]
-    angularJerkThreshold: [ 0.003, 0.003, 0.003 ]
+    linearJerkThreshold: [ 1, 1, 1 ]
+    angularJerkThreshold: [ 1, 1, 1 ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
