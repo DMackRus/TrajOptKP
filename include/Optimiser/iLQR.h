@@ -33,6 +33,7 @@
 #include "Visualiser.h"
 #include "FileHandler.h"
 #include <algorithm>
+#include <future>
 
 class iLQR: public Optimiser{
 public:
@@ -78,7 +79,7 @@ public:
 
     void PrintBannerIteration(int iteration, double new_cost, double old_cost, double eps,
                               double lambda, double percent_derivatives, double time_derivs, double time_bp,
-                              double time_fp, int num_linesearches);
+                              double time_fp, double best_alpha);
 
     void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
 
@@ -109,7 +110,7 @@ private:
 
     // Last number of linesearches performed for print banner
     int last_iter_num_linesearches = 0;
-    double last_alpha = 0.0f;
+    double last_alpha = 0.0;
 
     // Feedback gains matrices
     // open loop feedback gains
@@ -145,11 +146,12 @@ private:
      * Rollout the new feedback law from the starting state of optimisation. This function performs a line search
      * in parallel over different alpha values to try find a new optimal sequence of controls.
      *
-     * @param old_cost - Previous cost of the old trajectory.
+     * @param thread_id - Thread id.
+     * @param alpha - The alpha value to use for the rollout.
      *
      * @return double - The cost of the new trajectory.
      */
-    double ForwardsPassParallel(double old_cost);
+    double ForwardsPassParallel(int thread_id, double alpha);
 
     std::vector<int> checkKMatrices();
 

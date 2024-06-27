@@ -131,7 +131,7 @@ void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,
 
 
     // If we are not in auto-adjust mode, then return
-    if(current_keypoint_method.auto_adjust == false){
+    if(!current_keypoint_method.auto_adjust){
         return;
     }
 
@@ -556,16 +556,16 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
     bool mid_index_computed = false;
     bool end_index_computed = false;
 
-    for(int i = 0; i < computed_keypoints[dof_index].size(); i++){
-        if(computed_keypoints[dof_index][i] == indices.start_index){
+    for(int i : computed_keypoints[dof_index]){
+        if(i == indices.start_index){
             start_index_computed = true;
         }
 
-        if(computed_keypoints[dof_index][i] == mid_index){
+        if(i == mid_index){
             mid_index_computed = true;
         }
 
-        if(computed_keypoints[dof_index][i] == indices.end_index){
+        if(i == indices.end_index){
             end_index_computed = true;
         }
     }
