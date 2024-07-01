@@ -1,8 +1,8 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/boxSweep.xml"
 modelName: "/box_sweep"
 timeStep: 0.008
-openloop_horizon: 1500
-keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+openloop_horizon: 1000
+keypointMethod: "velocity_change"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 minN: 1
 maxN: 50
 iterativeErrorThreshold: 0.00001
@@ -19,7 +19,7 @@ robots:
     terminalJointPosCosts: [ 0, 0, 0, 0, 0, 0, 0 ]
     terminalJointVelCosts: [ 0, 0, 0, 0, 0, 0, 0 ]
     jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
-    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.005]
+    jointJerkThresholds: [0, 0.1, 0.1, 0, 0, 0, 0]
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   goal:
@@ -37,7 +37,7 @@ bodies:
     terminalAngularPosCost: [ 0, 0, 0 ]
     angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.0005, 0.0005, 0.0005 ]
-    angularJerkThreshold: [ 0.003, 0.003, 0.003 ]
+    linearJerkThreshold: [ 0.1, 0.1, 0.1 ]
+    angularJerkThreshold: [ 0, 0, 0 ]
     linearMagVelThreshold: [ 0.005, 0.005, 0 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]

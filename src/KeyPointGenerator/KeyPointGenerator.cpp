@@ -126,11 +126,11 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 
 
     // Print the dof percentages
-//    std::cout << "dof percent derivs: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << last_percentages[i] << " ";
-//    }
-//    std::cout << "\n";
+    std::cout << "dof percent derivs: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << last_percentages[i] << " ";
+    }
+    std::cout << "\n";
 }
 
 void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,
