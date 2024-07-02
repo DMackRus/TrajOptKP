@@ -3,11 +3,10 @@
 Differentiator::Differentiator(std::shared_ptr<ModelTranslator> model_translator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper){
     this->model_translator = model_translator;
     this->MuJoCo_helper = MuJoCo_helper;
-
 }
 
 void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
-                                        MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
+                                        vector<MatrixXd> &r_x, vector<MatrixXd> &r_u,
                                         int data_index, int tid, bool terminal, bool cost_derivs,
                                         bool central_diff, double eps){
 
@@ -50,13 +49,17 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     MatrixXd dstatedctrl(dim_state, num_ctrl);
 
     // How the cost changes
-    MatrixXd dcostdctrl(num_ctrl, 1);
-    MatrixXd dcostdpos(dof, 1);
-    MatrixXd dcostdvel(dof, 1);
+//    MatrixXd dcostdctrl(num_ctrl, 1);
+//    MatrixXd dcostdpos(dof, 1);
+//    MatrixXd dcostdvel(dof, 1);
 
-    double cost;
-    double cost_inc = 0.0f;
-    double cost_dec = 0.0f;
+//    double cost;
+//    double cost_inc = 0.0f;
+//    double cost_dec = 0.0f;
+
+    MatrixXd residuals(2*dof + num_ctrl, 1);
+    MatrixXd residuals_inc(2*dof + num_ctrl, 1);
+    MatrixXd residuals_dec(2*dof + num_ctrl, 1);
 
     // Mark stack for stack allocation of some dynamic variables
     mj_markStack(MuJoCo_helper->fd_data[tid]);
@@ -74,12 +77,12 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     // Copy data we wish to finite-difference into finite differencing data (for multi threading)
     MuJoCo_helper->CpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
 
-    // TODO (DMackRus) We could in theory use the information from the rollout here instead, except for t = T - 1
     // Compute next state with no perturbations
     mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
     next_state = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
     mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state, mjSTATE_PHYSICS);
-    cost = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
+//    cost = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
+    residuals = model_translator->Residuals(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector);
 
     // Reset the simulator to the initial state
     MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
@@ -124,13 +127,13 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
-            // return the new state vector
-            next_state_plus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
-
             // If computing cost derivatives
             if(cost_derivs){
-                cost_inc = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
+                residuals_inc = model_translator->Residuals(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector);
             }
+
+            // return the new state vector
+            next_state_plus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
             // Undo the perturbation
             MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
@@ -160,13 +163,14 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
+            // If calculating cost derivatives via finite-differencing
+            // TODO - I am unsure whether we should compute residuals before or after the integration
+            if(cost_derivs){
+                residuals_dec = model_translator->Residuals(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector);
+            }
+
             // return the new state vector
             next_state_minus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
-
-            // If calculating cost derivatives via finite-differencing
-            if(cost_derivs){
-                cost_dec = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
-            }
 
             // Undo perturbation
             MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
@@ -179,7 +183,10 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
             if(cost_derivs){
-                dcostdctrl(i, 0) = (cost_inc - cost_dec) / (2 * eps);
+                // Loop through number of residuals, compute dr0/dx, dr1/dx ... drn/dx
+                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                    r_u[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
+                }
             }
         }
         else if(nudge_forward){
@@ -187,9 +194,10 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedctrl(j, i) = (next_state_plus(j) - next_state(j))/(eps);
             }
 
-            // TODO(DMackRus) this is wrong
             if(cost_derivs){
-                dcostdctrl(i, 0) = (cost_inc - cost_dec) / (2 * eps);
+                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                    r_u[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
+                }
             }
         }
         else if(nudge_back){
@@ -197,9 +205,10 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedctrl(j, i) = (next_state(j) - next_state_minus(j))/(eps);
             }
 
-            // TODO(DMackRus) this is wrong
             if(cost_derivs){
-                dcostdctrl(i, 0) = (cost_inc - cost_dec) / (2 * eps);
+                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                    r_u[j](i, 0) = (residuals(j) - residuals_dec(j)) / (eps);
+                }
             }
         }
     }
@@ -236,7 +245,8 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
         // If calculating cost derivs via finite-differencing
         if(cost_derivs){
-            cost_inc = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
+//            cost_inc = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
+            residuals_inc = model_translator->Residuals(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector);
         }
 
         if(central_diff){
@@ -259,7 +269,8 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
             // If calculating cost derivs via finite-differencing
             if(cost_derivs){
-                cost_dec = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
+//                cost_dec = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
+                residuals_dec = model_translator->Residuals(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector);
             }
 
         }
@@ -278,8 +289,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
             if(cost_derivs) {
-                dcostdvel(i, 0) = (cost_inc - cost_dec) / (2 * eps);
+                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                    r_x[j](i + dof, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
+                }
             }
+
         }
         else{
             mj_differentiatePos(MuJoCo_helper->model, vel_diff, eps, next_full_state, next_full_state_pos);
@@ -292,8 +306,10 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedqvel(j, i) = (next_state_plus(j) - next_state(j))/(eps);
             }
 
-            if(cost_derivs){
-                dcostdvel(i, 0) = (cost_inc - cost) / (eps);
+            if(cost_derivs) {
+                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                    r_x[j](i + dof, 0) = (residuals_inc(j) - residuals(j)) / (eps);
+                }
             }
         }
 
@@ -335,7 +351,8 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         next_state_plus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
         if(cost_derivs){
-            cost_inc = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector,  terminal);
+//            cost_inc = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector,  terminal);
+            residuals_inc = model_translator->Residuals(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector);
         }
 
         if(central_diff){
@@ -355,7 +372,8 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             next_state_minus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
             if(cost_derivs){
-                cost_dec = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
+//                cost_dec = model_translator->CostFunction(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector, terminal);
+                residuals_dec = model_translator->Residuals(MuJoCo_helper->fd_data[tid], model_translator->full_state_vector);
             }
         }
 
@@ -372,8 +390,10 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedqpos(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
             }
 
-            if(cost_derivs){
-                dcostdpos(i, 0) = (cost_inc - cost_dec) / (2 * eps);
+            if(cost_derivs) {
+                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                    r_x[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
+                }
             }
         }
         else{
@@ -388,8 +408,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedqpos(j, i) = (next_state_plus(j) - next_state(j))/eps;
             }
 
-            if(cost_derivs){
-                dcostdpos(i, 0) = (cost_inc - cost) / eps;
+
+            if(cost_derivs) {
+                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                    r_x[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
+                }
             }
         }
 
@@ -427,15 +450,15 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         }
     }
 
-    if(cost_derivs){
-        std::cout << "warning - fd for cost derivatives is currently untested \n";
-        l_x.block(0, 0, dof, 1) = dcostdpos;
-        l_x.block(dof, 0, dof, 1) = dcostdvel;
-        l_u.block(0, 0, num_ctrl, 1) = dcostdctrl;
-
-        l_uu = l_u.transpose() * l_u;
-        l_xx = l_x.transpose() * l_x;
-    }
+//    if(cost_derivs){
+//        std::cout << "warning - fd for cost derivatives is currently untested \n";
+//        l_x.block(0, 0, dof, 1) = dcostdpos;
+//        l_x.block(dof, 0, dof, 1) = dcostdvel;
+//        l_u.block(0, 0, num_ctrl, 1) = dcostdctrl;
+//
+//        l_uu = l_u.transpose() * l_u;
+//        l_xx = l_x.transpose() * l_x;
+//    }
 
 //    std::cout << "time of sim integration: " << time_mj_forwards / 1000.0f << "\n";
 //    std::cout << "num of sim integration: " << count_integrations << "\n";

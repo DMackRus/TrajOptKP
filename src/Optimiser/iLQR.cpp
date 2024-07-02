@@ -58,24 +58,38 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
     // Clear old matrices
     if(update_ctrl){
-        std::cout << "clearing contrl things \n";
+        // Cost derivatives with respect to control
         l_u.clear();
         l_uu.clear();
 
+        // Residual derivatives with respect to control
+        r_u.clear();
+
+        // Old control trajectory
         U_old.clear();
 
+        // Open-loop feedback control law
         k.clear();
     }
 
     if(update_dof){
+        // Cost derivatives with respect to state
         l_x.clear();
         l_xx.clear();
 
+        // Residual derivatives with respect to state
+        r_x.clear();
+
+        // Dynamics derivatives with respect to state
         A.clear();
 
+        // New and old state trajectories
         X_old.clear();
         X_new.clear();
+    }
 
+    if(update_horizon){
+        residuals.clear();
     }
 
     // dependant on both dofs and num_ctrl
@@ -97,6 +111,13 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
             X_old.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
             X_new.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
 
+
+            vector<MatrixXd> r_x_;
+            for(int i = 0; i < activeModelTranslator->num_residual_terms; i++) {
+                r_x_.emplace_back(MatrixXd(2*dof, 1));
+            }
+
+            r_x.emplace_back(r_x_);
         }
 
         if(update_ctrl){
@@ -106,6 +127,13 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
             k.emplace_back(MatrixXd(num_ctrl, 1));
 
             U_old.emplace_back(MatrixXd(num_ctrl, 1));
+
+            vector<MatrixXd> r_u_;
+            for(int i = 0; i < activeModelTranslator->num_residual_terms; i++) {
+                r_u_.emplace_back(MatrixXd(num_ctrl, 1));
+            }
+
+            r_u.emplace_back(r_u_);
         }
 
         B.emplace_back(MatrixXd(2*dof, num_ctrl));
@@ -148,6 +176,11 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
             rollout_data[i].resize(horizon_length);
             rollout_data[i] = data_horizon;
         }
+
+        for(int t = 0; t < horizon_length; t++){
+            residuals.push_back(MatrixXd(activeModelTranslator->num_residual_terms, 1));
+        }
+
     }
 
     // Resize Keypoint generator class
@@ -184,11 +217,12 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
 
         // return cost for this state
         double state_cost;
+        residuals[i] = activeModelTranslator->Residuals(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
         if(i == horizon_length - 1){
-            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector, true);
+            state_cost = activeModelTranslator->CostFunction(residuals[i], activeModelTranslator->full_state_vector, true);
         }
         else{
-            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector, false);
+            state_cost = activeModelTranslator->CostFunction(residuals[i], activeModelTranslator->full_state_vector, false);
         }
 
         // If required to save states to trajectory tracking, then save state
@@ -273,6 +307,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     auto time_start = high_resolution_clock::now();
     old_cost = RolloutTrajectory(d, true, initial_controls);
+    std::cout << "cost from rollout: " << old_cost << "\n";
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
     if(verbose_output) {
@@ -449,6 +484,8 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
             // Update saved systems state list
             SaveBestRollout(static_cast<int>(min_index));
+
+
         }
         else{
             new_cost = old_cost;
@@ -540,7 +577,6 @@ bool iLQR::BackwardsPassQuuRegularisation(){
             Q_uu_reg(i, i) += lambda;
         }
 
-
         if(Quu_pd_check_counter >= number_steps_between_pd_checks){
             if(!CheckMatrixPD(Q_uu_reg)){
                 if(verbose_output){
@@ -551,12 +587,10 @@ bool iLQR::BackwardsPassQuuRegularisation(){
             Quu_pd_check_counter = 0;
         }
 
-
         auto temp = (Q_uu_reg).ldlt();
         MatrixXd I(num_ctrl, num_ctrl);
         I.setIdentity();
         MatrixXd Q_uu_inv = temp.solve(I);
-
 
         // control update law, open loop and feedback
         k[t] = -Q_uu_inv * Q_u;
@@ -706,13 +740,14 @@ double iLQR::ForwardsPass(double _old_cost){
                                                     activeModelTranslator->current_state_vector);
 
             double newStateCost;
-            // Terminal state
+            residuals[t] = activeModelTranslator->Residuals(MuJoCo_helper->main_data,
+                                                            activeModelTranslator->full_state_vector);
             if(t == horizon_length - 1){
-                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data,
+                newStateCost = activeModelTranslator->CostFunction(residuals[t],
                                                                    activeModelTranslator->full_state_vector, true);
             }
             else{
-                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data,
+                newStateCost = activeModelTranslator->CostFunction(residuals[t],
                                                                    activeModelTranslator->full_state_vector, false);
             }
 
@@ -852,12 +887,14 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
 
         double new_state_cost;
         // Terminal state
+        MatrixXd residuals_t = activeModelTranslator->Residuals(MuJoCo_helper->fd_data[thread_id],
+                                                                activeModelTranslator->full_state_vector);
         if(t == horizon_length - 1){
-            new_state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[thread_id],
+            new_state_cost = activeModelTranslator->CostFunction(residuals_t,
                                                                  activeModelTranslator->full_state_vector, true);
         }
         else{
-            new_state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[thread_id],
+            new_state_cost = activeModelTranslator->CostFunction(residuals_t,
                                                                  activeModelTranslator->full_state_vector, false);
         }
 

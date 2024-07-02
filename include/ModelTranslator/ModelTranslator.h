@@ -95,16 +95,18 @@ public:
     // Virtual functions that can be overwritten by the child class
     //--------------------------------------------------------------------------------
 
+    virtual MatrixXd Residuals(mjData *d, const struct stateVectorList &state_vector);
+
     /**
      * Returns the current cost of the system at the given data index.
      *
-     * @param data_index The data index of the system to calculate the cost for.
+     * @param residuals The residuals of the system.
      * @param state_vector The state vector object to use for cost function computations
      * @param terminal Whether or not this is the terminal state or not.
      *
      * @return double The cost of the system at the given data index.
      */
-    virtual double CostFunction(mjData* d, const struct stateVectorList &state_vector, bool terminal);
+    virtual double CostFunction(const MatrixXd &residuals, const struct stateVectorList &state_vector, bool terminal);
 
     virtual void UpdateSceneVisualisation();
 
@@ -127,6 +129,27 @@ public:
      */
     virtual void CostDerivatives(mjData* d, const struct stateVectorList &state_vector,
             MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
+
+    /**
+     * Returns the current cost derivatives (1st and 2nd order) of the system with respect to the
+     * state and control vectors at the given data index. For the given state vector representation.
+     * Uses the Gauss newton approximation to compute second order derivatives. I.e ignoring
+     * Hessian of the residuals.
+     *
+     * @param state_vector The state vector object to use to get cost elements
+     * @param l_x The first order cost derivative with respect to the state vector. Passed by reference.
+     * @param l_xx The second order cost derivative with respect to the state vector. Passed by reference.
+     * @param l_u The first order cost derivative with respect to the control vector. Passed by reference.
+     * @param l_uu The second order cost derivative with respect to the control vector. Passed by reference.
+     * @param residuals The residuals of the system at the given data index. Passed by reference.
+     * @param r_x The first order residual derivative with respect to the state vector. Passed by reference.
+     * @param r_u The first order residual derivative with respect to the control vector. Passed by reference.
+     * @param terminal Whether or not this is the terminal state or not.
+     *
+     */
+    void CostDerivativesFromResiduals(const struct stateVectorList &state_vector,
+                                        MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu,
+                                        const MatrixXd &residuals, const vector<MatrixXd> r_x, const vector<MatrixXd> r_u, bool terminal);
 
     /**
      * Returns whether the task has been completed yet. Distance is sometimes useful depending on the task. E.g. for
@@ -400,6 +423,10 @@ public:
 
     // MPC horizon
     int MPC_horizon;
+
+    int num_residual_terms;
+    vector<double> residual_weights;
+    vector<double> residual_weights_terminal;
 
     // num of dofs considered between 0 and 6
 //    color distractor_colors[7] = {{0.4, 0,    0, 1},

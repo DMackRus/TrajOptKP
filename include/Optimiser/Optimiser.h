@@ -145,7 +145,7 @@ public:
 
     // List of differentiator function callbacks, for parallelisation.
     std::vector<void (Differentiator::*)(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
-                                        MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
+                                        vector<MatrixXd> &r_x, vector<MatrixXd> &r_u,
                                         int dataIndex, int threadId, bool terminal, bool costDerivs,
                                         bool central_diff, double eps)> tasks;
 
@@ -190,6 +190,10 @@ public:
     vector<MatrixXd> l_xx;
     vector<MatrixXd> l_u;
     vector<MatrixXd> l_uu;
+
+    vector<MatrixXd> residuals;
+    vector<vector<MatrixXd>> r_x;
+    vector<vector<MatrixXd>> r_u;
 
     // Saved states and controls
 //    vector<MatrixXd> U_new;

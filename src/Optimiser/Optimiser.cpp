@@ -85,6 +85,80 @@ void Optimiser::GenerateDerivatives(){
                                                activeModelTranslator->current_state_vector.num_ctrl);
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
+    std::cout << "------------- residual derivatives wrt State -------------------" << std::endl;
+    for(int i = 0; i < activeModelTranslator->num_residual_terms; i++){
+        std::cout << "r_x[" << i << "]: " << std::endl;
+        std:: cout << r_x[0][i] << std::endl;
+    }
+
+    std::cout << "-------------- residual derivatives wrt State ------------------" << std::endl;
+    for(int i = 0; i < activeModelTranslator->num_residual_terms; i++){
+        std::cout << "r_u[" << i << "]: " << std::endl;
+        std:: cout << r_u[0][i] << std::endl;
+    }
+
+
+
+    // If finite differencing is used for cost derivatives, compute cost derivs from residual derivatives
+    if(activeYamlReader->costDerivsFD){
+        for(int t = 0; t < horizon_length; t++){
+            activeModelTranslator->CostDerivativesFromResiduals(activeModelTranslator->current_state_vector,
+                                                                l_x[t], l_xx[t], l_u[t], l_uu[t],
+                                                                residuals[t], r_x[t], r_u[t], false);
+        }
+
+        activeModelTranslator->CostDerivativesFromResiduals(activeModelTranslator->current_state_vector,
+                                                            l_x[horizon_length - 1], l_xx[horizon_length - 1],
+                                                            l_u[horizon_length - 1], l_uu[horizon_length - 1],
+                                                            residuals[horizon_length - 1], r_x[horizon_length - 1], r_u[horizon_length - 1], true);
+    }
+
+    std::cout << "------------------ cost derivatives from residuals ------------------------- \n";
+    std::cout << "reisduals[0]: " << residuals[0] << "\n";
+    std::cout << "l_x[0]: " << std::endl;
+    std:: cout << l_x[0] << std::endl;
+    std::cout << "l_xx[0]: " << std::endl;
+    std:: cout << l_xx[0] << std::endl;
+    std::cout << "l_u[0]: " << std::endl;
+    std:: cout << l_u[0] << std::endl;
+    std::cout << "l_uu[0]: " << std::endl;
+    std:: cout << l_uu[0] << std::endl;
+
+    std::cout << "residuals[horizon_length - 1]: " << residuals[horizon_length - 1] << "\n";
+    std::cout << "l_x[horizon-1]: " << std::endl;
+    std:: cout << l_x[horizon_length-1] << std::endl;
+    std::cout << "l_xx[horizon-1]: " << std::endl;
+    std:: cout << l_xx[horizon_length-1] << std::endl;
+    std::cout << "l_u[horizon-1]: " << std::endl;
+    std:: cout << l_u[horizon_length-1] << std::endl;
+    std::cout << "l_uu[horizon-1]: " << std::endl;
+    std:: cout << l_uu[horizon_length-1] << std::endl;
+    std::cout << "--------------------- Cost derivatives from analytical ------------------------------ \n";
+
+//    ComputeCostDerivatives();
+//
+//    std::cout << "l_x[0]: " << std::endl;
+//    std:: cout << l_x[0] << std::endl;
+//    std::cout << "l_xx[0]: " << std::endl;
+//    std:: cout << l_xx[0] << std::endl;
+//    std::cout << "l_u[0]: " << std::endl;
+//    std:: cout << l_u[0] << std::endl;
+//    std::cout << "l_uu[0]: " << std::endl;
+//    std:: cout << l_uu[0] << std::endl;
+//
+//    std::cout << "l_x[horizon-1]: " << std::endl;
+//    std:: cout << l_x[horizon_length-1] << std::endl;
+//    std::cout << "l_xx[horizon-1]: " << std::endl;
+//    std:: cout << l_xx[horizon_length-1] << std::endl;
+//    std::cout << "l_u[horizon-1]: " << std::endl;
+//    std:: cout << l_u[horizon_length-1] << std::endl;
+//    std::cout << "l_uu[horizon-1]: " << std::endl;
+//    std:: cout << l_uu[horizon_length-1] << std::endl;
+
+
+
+
+
     double average_percent_derivs = 0.0;
     for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
         average_percent_derivs += keypoint_generator->last_percentages[i];
@@ -166,17 +240,17 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
 
     auto time_cost_start = std::chrono::high_resolution_clock::now();
 
-    if(!activeYamlReader->costDerivsFD){
-        for(int i = 0; i < horizon_length; i++){
-            activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
-                                                   activeModelTranslator->current_state_vector,
-                                                   l_x[i], l_xx[i], l_u[i], l_uu[i], false);
-        }
-        activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizon_length - 1],
-                                               activeModelTranslator->current_state_vector,
-                                               l_x[horizon_length - 1], l_xx[horizon_length - 1],
-                                               l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
-    }
+//    if(!activeYamlReader->costDerivsFD){
+//        for(int i = 0; i < horizon_length; i++){
+//            activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
+//                                                   activeModelTranslator->current_state_vector,
+//                                                   l_x[i], l_xx[i], l_u[i], l_uu[i], false);
+//        }
+//        activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizon_length - 1],
+//                                               activeModelTranslator->current_state_vector,
+//                                               l_x[horizon_length - 1], l_xx[horizon_length - 1],
+//                                               l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
+//    }
 
 //    std::cout << "time cost derivs: " << duration_cast<microseconds>(high_resolution_clock::now() - time_cost_start).count() / 1000.0f << " ms\n";
 }
@@ -196,7 +270,7 @@ void Optimiser::WorkerComputeDerivatives(int threadId) {
 
         std::vector<int> keyPoints;
         (activeDifferentiator.get()->*(tasks[iteration]))(A[timeIndex], B[timeIndex],
-                                        keypointsGlobal[iteration], l_x[timeIndex], l_u[timeIndex], l_xx[timeIndex], l_uu[timeIndex],
+                                        keypointsGlobal[iteration], r_x[timeIndex], r_u[timeIndex],
                                         timeIndex, threadId, terminal, activeYamlReader->costDerivsFD, true, 1e-6);
     }
 }
@@ -324,5 +398,8 @@ void Optimiser::SaveBestRollout(int thread_id){
         for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
             MuJoCo_helper->saved_systems_state_list[t+1]->xfrc_applied[i] = rollout_data[thread_id][t].xfrc_applied[i];
         }
+
+        // Update the residuals of the nominal trajectory
+        residuals[t] = activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t+1], activeModelTranslator->current_state_vector);
     }
 }

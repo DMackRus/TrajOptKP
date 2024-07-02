@@ -459,7 +459,8 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
             terminal = true;
         }
 
-        final_cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data,
+        MatrixXd residuals = activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector);
+        final_cost += activeModelTranslator->CostFunction(residuals,
                                                           activeModelTranslator->full_state_vector, terminal);
 
     }

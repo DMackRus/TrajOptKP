@@ -584,20 +584,20 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
     // Gets thread id so we can make sure we use different data structure for F.D computations
     int tid = omp_get_thread_num();
 
-    if(!start_index_computed){
-        differentiator->ComputeDerivatives(A[indices.start_index], B[indices.start_index], cols, blank1, blank2, blank3, blank4, false, indices.start_index, false, tid, true, 1e-6);
-        computed_keypoints[dof_index].push_back(indices.start_index);
-    }
-
-    if(!mid_index_computed){
-        differentiator->ComputeDerivatives(A[mid_index], B[mid_index], cols, blank1, blank2, blank3, blank4, false, mid_index, false, tid, true, 1e-6);
-        computed_keypoints[dof_index].push_back(mid_index);
-    }
-
-    if(!end_index_computed){
-        differentiator->ComputeDerivatives(A[indices.end_index], B[indices.end_index], cols, blank1, blank2, blank3, blank4, false, indices.end_index, false, tid, true, 1e-6);
-        computed_keypoints[dof_index].push_back(indices.end_index);
-    }
+//    if(!start_index_computed){
+//        differentiator->ComputeDerivatives(A[indices.start_index], B[indices.start_index], cols, blank1, blank2, blank3, blank4, false, indices.start_index, false, tid, true, 1e-6);
+//        computed_keypoints[dof_index].push_back(indices.start_index);
+//    }
+//
+//    if(!mid_index_computed){
+//        differentiator->ComputeDerivatives(A[mid_index], B[mid_index], cols, blank1, blank2, blank3, blank4, false, mid_index, false, tid, true, 1e-6);
+//        computed_keypoints[dof_index].push_back(mid_index);
+//    }
+//
+//    if(!end_index_computed){
+//        differentiator->ComputeDerivatives(A[indices.end_index], B[indices.end_index], cols, blank1, blank2, blank3, blank4, false, indices.end_index, false, tid, true, 1e-6);
+//        computed_keypoints[dof_index].push_back(indices.end_index);
+//    }
 
     mid_columns_approximated[0] = (A[indices.start_index].block(0, dof_index, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index, num_dofs * 2, 1)) / 2;
     mid_columns_approximated[1] = (A[indices.start_index].block(0, dof_index + num_dofs, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index + num_dofs, num_dofs * 2, 1)) / 2;

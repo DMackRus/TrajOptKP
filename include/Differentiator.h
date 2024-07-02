@@ -17,7 +17,7 @@ public:
     Differentiator(std::shared_ptr<ModelTranslator> model_translator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper);
 
     void ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
-                            MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
+                            vector<MatrixXd> &r_x, vector<MatrixXd> &r_u,
                             int data_index, int thread_id, bool terminal, bool cost_derivs,
                             bool central_diff, double eps);
 

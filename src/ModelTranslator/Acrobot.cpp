@@ -23,6 +23,26 @@ bool Acrobot::TaskComplete(mjData *d, double &dist){
     return false;
 }
 
+MatrixXd Acrobot::Residuals(mjData *d, const struct stateVectorList &state_vector){
+    MatrixXd residuals(2*state_vector.dof + state_vector.num_ctrl, 1);
+
+    std::vector<double> acrobot_joints;
+    std::vector<double> acrobot_velocities;
+    std::vector<double> acrobot_control;
+    MuJoCo_helper->GetRobotJointsPositions("acrobot", acrobot_joints, d);
+    MuJoCo_helper->GetRobotJointsVelocities("acrobot", acrobot_velocities, d);
+    MuJoCo_helper->GetRobotJointsControls("acrobot", acrobot_control, d);
+
+    for(int i = 0; i < state_vector.dof; i++){
+        residuals(i, 0) = acrobot_joints[i] - state_vector.robots[0].goal_pos[i];
+        residuals(i+state_vector.dof, 0) = acrobot_velocities[i] - state_vector.robots[0].goal_vel[i];
+    }
+
+    residuals(4, 0) = acrobot_control[0];
+
+    return residuals;
+}
+
 //MatrixXd Acrobot::ReturnRandomStartState(){
 //    MatrixXd randomStartState(state_vector_size, 1);
 //

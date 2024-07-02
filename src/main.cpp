@@ -392,7 +392,8 @@ int main(int argc, char **argv) {
 //            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
             activeVisualiser->render("Test");
-            double cost = activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, false);
+            MatrixXd residuals = activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->current_state_vector);
+            double cost = activeModelTranslator->CostFunction(residuals, activeModelTranslator->full_state_vector, false);
             std::cout << "cost: " << cost << "\n";
         }
         // --------------------------------------------------------------------------------------------------------------
@@ -841,7 +842,9 @@ void AsyncMPC(){
         if(i == activeVisualiser->trajectory_states.size() - 1){
             terminal = true;
         }
-        cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, terminal);
+
+        MatrixXd residuals = activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector);
+        cost += activeModelTranslator->CostFunction(residuals, activeModelTranslator->full_state_vector, terminal);
         if(i % 5 == 0){
             activeVisualiser->render("");
         }

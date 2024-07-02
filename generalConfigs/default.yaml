@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "box_sweep"
+task: "acrobot"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -44,7 +44,7 @@ taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML
 csvRow: 2                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
-costDerivsFD: false       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
+costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
 minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for

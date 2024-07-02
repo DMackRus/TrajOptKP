@@ -43,6 +43,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
             accel_thresholds.push_back(robot.jerk_thresholds[j]);
             velocity_change_thresholds.push_back(robot.vel_change_thresholds[j]);
         }
+
     }
 
     for(auto & bodiesState : taskConfig.rigid_bodies){
@@ -82,6 +83,93 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
         std::cout << state_vector_name << " ";
     }
     std::cout << "\n";
+
+    // Setup residual weights
+    // Loop through robot joints first, then bodies, then soft bodies, then robot controls
+
+    // ---------------------- Position costs -------------------------------
+    for(auto & robot : full_state_vector.robots){
+        for(int j = 0; j < robot.joint_names.size(); j++){
+            residual_weights.push_back(robot.joint_pos_costs[j]);
+            residual_weights_terminal.push_back(robot.terminal_joint_pos_costs[j]);
+            num_residual_terms++;
+        }
+    }
+
+    for(auto & body : full_state_vector.rigid_bodies){
+        for(int j = 0; j < 3; j++){
+            if(body.active_linear_dof[j]){
+                residual_weights.push_back(body.linearPosCost[j]);
+                residual_weights_terminal.push_back(body.terminal_linear_pos_cost[j]);
+                num_residual_terms++;
+            }
+        }
+
+        for(int j = 0; j < 3; j++){
+            if(body.active_angular_dof[j]){
+                residual_weights.push_back(body.angular_pos_cost[j]);
+                residual_weights_terminal.push_back(body.terminal_angular_pos_cost[j]);
+                num_residual_terms++;
+            }
+        }
+    }
+
+    for(auto & soft_body : full_state_vector.soft_bodies){
+        for(int j = 0; j < 3; j++){
+            if(soft_body.vertices[j].active_linear_dof[j]){
+                residual_weights.push_back(soft_body.linearPosCost[j]);
+                residual_weights_terminal.push_back(soft_body.terminal_linear_pos_cost[j]);
+                num_residual_terms++;
+            }
+        }
+    }
+
+    // ---------------------- Velocity costs -------------------------------
+    for(auto & robot : full_state_vector.robots){
+        for(int j = 0; j < robot.joint_names.size(); j++){
+            residual_weights.push_back(robot.jointVelCosts[j]);
+            residual_weights_terminal.push_back(robot.terminal_joint_vel_costs[j]);
+            num_residual_terms++;
+        }
+    }
+
+    for(auto & body : full_state_vector.rigid_bodies){
+        for(int j = 0; j < 3; j++){
+            if(body.active_linear_dof[j]){
+                residual_weights.push_back(body.linear_vel_cost[j]);
+                residual_weights_terminal.push_back(body.terminal_linear_vel_cost[j]);
+                num_residual_terms++;
+            }
+        }
+
+        for(int j = 0; j < 3; j++){
+            if(body.active_angular_dof[j]){
+                residual_weights.push_back(body.angular_vel_cost[j]);
+                residual_weights_terminal.push_back(body.terminal_angular_vel_cost[j]);
+                num_residual_terms++;
+            }
+        }
+    }
+
+    for(auto & soft_body : full_state_vector.soft_bodies){
+        for(int j = 0; j < 3; j++){
+            if(soft_body.vertices[j].active_linear_dof[j]){
+                residual_weights.push_back(soft_body.linear_vel_cost[j]);
+                residual_weights_terminal.push_back(soft_body.terminal_linear_vel_cost[j]);
+                num_residual_terms++;
+            }
+        }
+    }
+
+    // ---------------------- Control costs -------------------------------
+    for(auto & robot : full_state_vector.robots){
+        for(int j = 0; j < robot.actuator_names.size(); j++){
+            // Residual weight for control is same in terminal case as running cost case
+            residual_weights.push_back(robot.joint_controls_costs[j]);
+            residual_weights_terminal.push_back(robot.joint_controls_costs[j]);
+            num_residual_terms++;
+        }
+    }
 }
 
 void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_vector_names, bool add_extra_states){
@@ -292,61 +380,78 @@ void ModelTranslator::UpdateSceneVisualisation(){
     }
 }
 
-double ModelTranslator::CostFunction(mjData* d, const struct stateVectorList &state_vector, bool terminal){
+MatrixXd ModelTranslator::Residuals(mjData *d, const struct stateVectorList &state_vector) {
+    std::cerr << "residuals not implemented for this model, exiting \n";
+    exit(1);
+}
+
+double ModelTranslator::CostFunction(const MatrixXd &residuals, const struct stateVectorList &state_vector, bool terminal){
     double cost = 0.0;
 
-    // Loop through robots in simulator
-    for(auto & robot : state_vector.robots){
-        int robot_num_joints = static_cast<int>(robot.joint_names.size());
-
-        std::vector<double> joint_positions;
-        std::vector<double> joint_velocities;
-        std::vector<double> joint_controls;
-
-        MuJoCo_helper->GetRobotJointsPositions(robot.name, joint_positions, d);
-        MuJoCo_helper->GetRobotJointsVelocities(robot.name, joint_velocities, d);
-        MuJoCo_helper->GetRobotJointsControls(robot.name, joint_controls, d);
-
-        // Loop through the robot joints
-        for(int j = 0; j < robot_num_joints; j++) {
-
-            double cost_pos, cost_vel;
-
-            if(terminal){
-                cost_pos = robot.terminal_joint_pos_costs[j];
-                cost_vel = robot.terminal_joint_vel_costs[j];
-            }
-            else{
-                cost_pos = robot.joint_pos_costs[j];
-                cost_vel = robot.jointVelCosts[j];
-            }
-
-            // Position costs
-            cost += cost_pos * pow((joint_positions[j] - robot.goal_pos[j]), 2);
-
-            // Velocity costs
-            cost += cost_vel * pow(joint_velocities[j] - robot.goal_vel[j], 2);
-
-            // Control costs
-            cost += robot.joint_controls_costs[j] * pow(joint_controls[j], 2);
+    for(int i = 0; i < num_residual_terms; i++){
+        // Hardcoded norm function is pow(r, 2)
+        if(terminal){
+            cost += residual_weights_terminal[i] * pow(residuals(i), 2);
+        }
+        else{
+            cost += residual_weights[i] * pow(residuals(i), 2);
         }
     }
 
-    // Loop through the bodies in simulation
-    for(const auto &body : state_vector.rigid_bodies){
-        double temp = CostFunctionBody(body, d, terminal);
-//        std::cout << "cost from rigid body " << body.name << " is: " << temp << "\n";
-        cost += temp;
-    }
-
-    // Loop through the soft bodies in simulation
-    for(const auto &soft_body : state_vector.soft_bodies){
-        double temp = CostFuntionSoftBody(soft_body, d, terminal);
-//        std::cout << "cost from soft body: " << temp << "\n";
-        cost += temp;
-    }
-
     return cost;
+
+    // Loop through robots in simulator
+//    for(auto & robot : state_vector.robots){
+//        int robot_num_joints = static_cast<int>(robot.joint_names.size());
+//
+//        std::vector<double> joint_positions;
+//        std::vector<double> joint_velocities;
+//        std::vector<double> joint_controls;
+//
+//        MuJoCo_helper->GetRobotJointsPositions(robot.name, joint_positions, d);
+//        MuJoCo_helper->GetRobotJointsVelocities(robot.name, joint_velocities, d);
+//        MuJoCo_helper->GetRobotJointsControls(robot.name, joint_controls, d);
+//
+//        // Loop through the robot joints
+//        for(int j = 0; j < robot_num_joints; j++) {
+//
+//            double cost_pos, cost_vel;
+//
+//            if(terminal){
+//                cost_pos = robot.terminal_joint_pos_costs[j];
+//                cost_vel = robot.terminal_joint_vel_costs[j];
+//            }
+//            else{
+//                cost_pos = robot.joint_pos_costs[j];
+//                cost_vel = robot.jointVelCosts[j];
+//            }
+//
+//            // Position costs
+//            cost += cost_pos * pow((joint_positions[j] - robot.goal_pos[j]), 2);
+//
+//            // Velocity costs
+//            cost += cost_vel * pow(joint_velocities[j] - robot.goal_vel[j], 2);
+//
+//            // Control costs
+//            cost += robot.joint_controls_costs[j] * pow(joint_controls[j], 2);
+//        }
+//    }
+//
+//    // Loop through the bodies in simulation
+//    for(const auto &body : state_vector.rigid_bodies){
+//        double temp = CostFunctionBody(body, d, terminal);
+////        std::cout << "cost from rigid body " << body.name << " is: " << temp << "\n";
+//        cost += temp;
+//    }
+//
+//    // Loop through the soft bodies in simulation
+//    for(const auto &soft_body : state_vector.soft_bodies){
+//        double temp = CostFuntionSoftBody(soft_body, d, terminal);
+////        std::cout << "cost from soft body: " << temp << "\n";
+//        cost += temp;
+//    }
+//
+//    return cost;
 }
 
 double ModelTranslator::CostFunctionBody(const rigid_body& body, mjData *d, bool terminal){
@@ -516,6 +621,43 @@ double ModelTranslator::CostFuntionSoftBody(const soft_body& soft_body, mjData *
 
     }
     return cost;
+}
+
+void ModelTranslator::CostDerivativesFromResiduals(const struct stateVectorList &state_vector,
+                                  MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu,
+                                  const MatrixXd &residuals, const vector<MatrixXd> r_x, const vector<MatrixXd> r_u, bool terminal){
+    l_x.setZero();
+    l_xx.setZero();
+    l_u.setZero();
+    l_uu.setZero();
+
+    double weight_term;
+
+    for(int i = 0; i < num_residual_terms; i++){
+
+        if(terminal){
+            weight_term = residual_weights_terminal[i];
+        }
+        else{
+            weight_term = residual_weights[i];
+        }
+
+        // Hardcoded norm function is pow(r, 2)
+        // l_x = w_i * dn/dr * dr/dx (dn/dr = 2r, as n = r^2)
+        l_x += weight_term * 2 * residuals(i) * r_x[i];
+
+        // l_xx = w_i * dn2/dr2 * dr2/dx2 (dr/dx * dr/dx^T) Gauss newton approximation
+        l_xx += weight_term * 2 * r_x[i] * r_x[i].transpose();
+
+//        std::cout << "residual weight: " << weight_term << "\n";
+//        std::cout << "r_x[" << i << "]: " << r_x[i] << "\n";
+//        std::cout << "l_xx: " << l_xx << "\n";
+
+        // l_u = w_i * dn/dr * dr/du
+        l_u += weight_term * 2 * residuals(i) * r_u[i];
+        // l_uu = w_i * dn2/dr2 * dr2/du2( dr/du * dr/du^T) Gauss newton approximation
+        l_uu += 2 * weight_term * r_u[i] * r_u[i].transpose();
+    }
 }
 
 void ModelTranslator::CostDerivatives(mjData* d, const struct stateVectorList &state_vector,
