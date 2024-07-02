@@ -22,7 +22,7 @@ struct robot{
     std::vector<double> goal_pos;
     std::vector<double> goal_vel;
     std::vector<double> joint_pos_costs;
-    std::vector<double> jointVelCosts;
+    std::vector<double> joint_vel_costs;
     std::vector<double> terminal_joint_pos_costs;
     std::vector<double> terminal_joint_vel_costs;
     std::vector<double> joint_controls_costs;

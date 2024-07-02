@@ -94,8 +94,9 @@ public:
     //--------------------------------------------------------------------------------
     // Virtual functions that can be overwritten by the child class
     //--------------------------------------------------------------------------------
+    virtual void InstantiateResiduals();
 
-    virtual MatrixXd Residuals(mjData *d, const struct stateVectorList &state_vector);
+    virtual MatrixXd Residuals(mjData *d);
 
     /**
      * Returns the current cost of the system at the given data index.

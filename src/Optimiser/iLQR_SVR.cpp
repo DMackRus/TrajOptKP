@@ -189,7 +189,7 @@ double iLQR_SVR::RolloutTrajectory(mjData* d, bool save_states, std::vector<Matr
 
         // return cost for this state
         double state_cost;
-        residuals[i] = activeModelTranslator->Residuals(MuJoCo_helper->main_data, activeModelTranslator->current_state_vector);
+        residuals[i] = activeModelTranslator->Residuals(MuJoCo_helper->main_data);
         if(i == horizon_length - 1){
             state_cost = activeModelTranslator->CostFunction(residuals[i],
                                                              activeModelTranslator->full_state_vector, true);
@@ -685,7 +685,7 @@ double iLQR_SVR::ForwardsPass(double _old_cost){
                                                     activeModelTranslator->current_state_vector);
 
             double newStateCost;
-            residuals[t] = activeModelTranslator->Residuals(MuJoCo_helper->main_data, activeModelTranslator->current_state_vector);
+            residuals[t] = activeModelTranslator->Residuals(MuJoCo_helper->main_data);
             // Terminal state
             if(t == horizon_length - 1){
                 newStateCost = activeModelTranslator->CostFunction(residuals[t],
@@ -833,8 +833,7 @@ double iLQR_SVR::ForwardsPassParallel(int thread_id, double alpha){
 
         double new_state_cost;
         // Terminal state
-        MatrixXd residuals = activeModelTranslator->Residuals(MuJoCo_helper->fd_data[thread_id],
-                                                             activeModelTranslator->current_state_vector);
+        MatrixXd residuals = activeModelTranslator->Residuals(MuJoCo_helper->fd_data[thread_id]);
         if(t == horizon_length - 1){
             new_state_cost = activeModelTranslator->CostFunction(residuals,
                                                                activeModelTranslator->full_state_vector, true);

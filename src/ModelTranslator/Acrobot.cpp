@@ -23,8 +23,8 @@ bool Acrobot::TaskComplete(mjData *d, double &dist){
     return false;
 }
 
-MatrixXd Acrobot::Residuals(mjData *d, const struct stateVectorList &state_vector){
-    MatrixXd residuals(2*state_vector.dof + state_vector.num_ctrl, 1);
+MatrixXd Acrobot::Residuals(mjData *d){
+    MatrixXd residuals(5, 1);
 
     std::vector<double> acrobot_joints;
     std::vector<double> acrobot_velocities;
@@ -33,11 +33,19 @@ MatrixXd Acrobot::Residuals(mjData *d, const struct stateVectorList &state_vecto
     MuJoCo_helper->GetRobotJointsVelocities("acrobot", acrobot_velocities, d);
     MuJoCo_helper->GetRobotJointsControls("acrobot", acrobot_control, d);
 
-    for(int i = 0; i < state_vector.dof; i++){
-        residuals(i, 0) = acrobot_joints[i] - state_vector.robots[0].goal_pos[i];
-        residuals(i+state_vector.dof, 0) = acrobot_velocities[i] - state_vector.robots[0].goal_vel[i];
-    }
+    // --------------- Residual 0: Joint 0 position -----------------
+    residuals(0, 0) = acrobot_joints[0];
 
+    // --------------- Residual 1: Joint 1 position -----------------
+    residuals(1, 0) = acrobot_joints[1];
+
+    // --------------- Residual 2: Joint 0 velocity -----------------
+    residuals(2, 0) = acrobot_velocities[0];
+
+    // --------------- Residual 3: Joint 1 velocity -----------------
+    residuals(3, 0) = acrobot_velocities[1];
+
+    // --------------- Residual 4: Joint 0 control -----------------
     residuals(4, 0) = acrobot_control[0];
 
     return residuals;

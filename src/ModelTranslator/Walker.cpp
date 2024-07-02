@@ -49,6 +49,65 @@ void walker::ReturnRandomGoalState(){
     current_state_vector.robots[0].goal_vel[1] = rand_body_vel;
 }
 
+void walker::InstantiateResiduals(){
+    num_residual_terms = 9;
+    residual_weights.resize(num_residual_terms);
+    residual_weights_terminal.resize(num_residual_terms);
+
+    residual_weights[0] = 1.0;
+    residual_weights[1] = 0.1;
+    residual_weights[2] = 0.1;
+
+    residual_weights[3] = 0.001;
+    residual_weights[4] = 0.001;
+    residual_weights[5] = 0.001;
+    residual_weights[6] = 0.001;
+    residual_weights[7] = 0.001;
+    residual_weights[8] = 0.001;
+
+    residual_weights_terminal[0] = 100.0;
+    residual_weights_terminal[1] = 0.0;
+    residual_weights_terminal[2] = 0.0;
+
+    residual_weights_terminal[3] = 0.001;
+    residual_weights_terminal[4] = 0.001;
+    residual_weights_terminal[5] = 0.001;
+    residual_weights_terminal[6] = 0.001;
+    residual_weights_terminal[7] = 0.001;
+    residual_weights_terminal[8] = 0.001;
+}
+
+MatrixXd walker::Residuals(mjData *d){
+    MatrixXd residuals(9, 1);
+
+    std::vector<double> walker_joints;
+    std::vector<double> walker_velocities;
+    std::vector<double> walker_controls;
+    MuJoCo_helper->GetRobotJointsPositions("walker", walker_joints, d);
+    MuJoCo_helper->GetRobotJointsVelocities("walker", walker_velocities, d);
+    MuJoCo_helper->GetRobotJointsControls("walker", walker_controls, d);
+
+    // --------------- Residual 0: Body height -----------------
+    residuals(0, 0) = walker_joints[0];
+
+    // --------------- Residual 1: Body rotation ---------------
+    residuals(1, 0) = walker_joints[2];
+
+    // --------------- Residual 2: Body velocity ---------------
+    residuals(2, 0) = walker_velocities[1];
+
+    // --------------- Residual 3: Joints controls -------------
+    for(int i = 0; i < walker_controls.size(); i++){
+        residuals(3+i, 0) = walker_controls[i];
+    }
+//    residuals(3, 0) = 0.0;
+//    for(double walker_control : walker_controls){
+//        residuals(3, 0) += walker_control;
+//    }
+
+    return residuals;
+}
+
 //double walker::CostFunction(mjData *d, bool terminal){
 //    double cost;
 //    MatrixXd Xt = ReturnStateVector(d);

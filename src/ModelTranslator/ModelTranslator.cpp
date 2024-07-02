@@ -84,9 +84,12 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     }
     std::cout << "\n";
 
+    InstantiateResiduals();
+}
+
+void ModelTranslator::InstantiateResiduals(){
     // Setup residual weights
     // Loop through robot joints first, then bodies, then soft bodies, then robot controls
-
     // ---------------------- Position costs -------------------------------
     for(auto & robot : full_state_vector.robots){
         for(int j = 0; j < robot.joint_names.size(); j++){
@@ -127,7 +130,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     // ---------------------- Velocity costs -------------------------------
     for(auto & robot : full_state_vector.robots){
         for(int j = 0; j < robot.joint_names.size(); j++){
-            residual_weights.push_back(robot.jointVelCosts[j]);
+            residual_weights.push_back(robot.joint_vel_costs[j]);
             residual_weights_terminal.push_back(robot.terminal_joint_vel_costs[j]);
             num_residual_terms++;
         }
@@ -380,7 +383,7 @@ void ModelTranslator::UpdateSceneVisualisation(){
     }
 }
 
-MatrixXd ModelTranslator::Residuals(mjData *d, const struct stateVectorList &state_vector) {
+MatrixXd ModelTranslator::Residuals(mjData *d) {
     std::cerr << "residuals not implemented for this model, exiting \n";
     exit(1);
 }
@@ -423,7 +426,7 @@ double ModelTranslator::CostFunction(const MatrixXd &residuals, const struct sta
 //            }
 //            else{
 //                cost_pos = robot.joint_pos_costs[j];
-//                cost_vel = robot.jointVelCosts[j];
+//                cost_vel = robot.joint_vel_costs[j];
 //            }
 //
 //            // Position costs
@@ -709,7 +712,7 @@ void ModelTranslator::CostDerivatives(mjData* d, const struct stateVectorList &s
             }
             else{
                 cost_pos = robot.joint_pos_costs[i];
-                cost_vel = robot.jointVelCosts[i];
+                cost_vel = robot.joint_vel_costs[i];
             }
 
             // l_x = 2 * cost * diff

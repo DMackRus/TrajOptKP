@@ -7,8 +7,7 @@ public:
 
     bool TaskComplete(mjData *d, double &dist) override;
 
-    MatrixXd Residuals(mjData *d, const struct stateVectorList &state_vector) override;
-//    double CostFunction(mjData* d, const struct stateVectorList &state_vector, bool terminal) override;
+    MatrixXd Residuals(mjData *d) override;
 
 //    void ReturnRandomStartState() override;
 //    void ReturnRandomGoalState() override;

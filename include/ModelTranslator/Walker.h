@@ -20,6 +20,9 @@ public:
     void ReturnRandomStartState() override;
     void ReturnRandomGoalState() override;
 
+    void InstantiateResiduals() override;
+    MatrixXd Residuals(mjData *d) override;
+
 private:
     float low_bound_velocity;
     float high_bound_velocity;

@@ -155,10 +155,6 @@ void Optimiser::GenerateDerivatives(){
 //    std::cout << "l_uu[horizon-1]: " << std::endl;
 //    std:: cout << l_uu[horizon_length-1] << std::endl;
 
-
-
-
-
     double average_percent_derivs = 0.0;
     for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
         average_percent_derivs += keypoint_generator->last_percentages[i];
@@ -400,6 +396,6 @@ void Optimiser::SaveBestRollout(int thread_id){
         }
 
         // Update the residuals of the nominal trajectory
-        residuals[t] = activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t+1], activeModelTranslator->current_state_vector);
+        residuals[t] = activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t+1]);
     }
 }

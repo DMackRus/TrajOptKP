@@ -170,7 +170,7 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
         tempRobot.goal_pos = goalPos;
         tempRobot.goal_vel = goalVel;
         tempRobot.joint_pos_costs = jointPosCosts;
-        tempRobot.jointVelCosts = jointVelCosts;
+        tempRobot.joint_vel_costs = jointVelCosts;
         tempRobot.terminal_joint_pos_costs = terminalJointPosCosts;
         tempRobot.terminal_joint_vel_costs = terminalJointVelCosts;
         tempRobot.joint_controls_costs = jointControlCosts;
