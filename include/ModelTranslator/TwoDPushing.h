@@ -22,6 +22,4 @@ private:
     double randomGoalX = 0.0;
     double randomGoalY = 0.0;
 
-    Matrix<double, 6, 6> cost_reach;
-
 };

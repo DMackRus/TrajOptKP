@@ -50,31 +50,31 @@ void walker::ReturnRandomGoalState(){
 }
 
 void walker::InstantiateResiduals(){
-    num_residual_terms = 9;
-    residual_weights.resize(num_residual_terms);
-    residual_weights_terminal.resize(num_residual_terms);
-
-    residual_weights[0] = 1.0;
-    residual_weights[1] = 0.1;
-    residual_weights[2] = 0.1;
-
-    residual_weights[3] = 0.001;
-    residual_weights[4] = 0.001;
-    residual_weights[5] = 0.001;
-    residual_weights[6] = 0.001;
-    residual_weights[7] = 0.001;
-    residual_weights[8] = 0.001;
-
-    residual_weights_terminal[0] = 100.0;
-    residual_weights_terminal[1] = 0.0;
-    residual_weights_terminal[2] = 0.0;
-
-    residual_weights_terminal[3] = 0.001;
-    residual_weights_terminal[4] = 0.001;
-    residual_weights_terminal[5] = 0.001;
-    residual_weights_terminal[6] = 0.001;
-    residual_weights_terminal[7] = 0.001;
-    residual_weights_terminal[8] = 0.001;
+//    num_residual_terms = 9;
+//    residual_weights.resize(num_residual_terms);
+//    residual_weights_terminal.resize(num_residual_terms);
+//
+//    residual_weights[0] = 1.0;
+//    residual_weights[1] = 0.1;
+//    residual_weights[2] = 0.1;
+//
+//    residual_weights[3] = 0.001;
+//    residual_weights[4] = 0.001;
+//    residual_weights[5] = 0.001;
+//    residual_weights[6] = 0.001;
+//    residual_weights[7] = 0.001;
+//    residual_weights[8] = 0.001;
+//
+//    residual_weights_terminal[0] = 100.0;
+//    residual_weights_terminal[1] = 0.0;
+//    residual_weights_terminal[2] = 0.0;
+//
+//    residual_weights_terminal[3] = 0.001;
+//    residual_weights_terminal[4] = 0.001;
+//    residual_weights_terminal[5] = 0.001;
+//    residual_weights_terminal[6] = 0.001;
+//    residual_weights_terminal[7] = 0.001;
+//    residual_weights_terminal[8] = 0.001;
 }
 
 MatrixXd walker::Residuals(mjData *d){

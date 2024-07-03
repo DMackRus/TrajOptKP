@@ -425,9 +425,11 @@ public:
     // MPC horizon
     int MPC_horizon;
 
-    int num_residual_terms;
-    vector<double> residual_weights;
-    vector<double> residual_weights_terminal;
+    vector<residual> residual_list;
+
+//    int num_residual_terms;
+//    vector<double> residual_weights;
+//    vector<double> residual_weights_terminal;
 
     // num of dofs considered between 0 and 6
 //    color distractor_colors[7] = {{0.4, 0,    0, 1},

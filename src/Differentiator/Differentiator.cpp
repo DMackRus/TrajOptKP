@@ -185,7 +185,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
             if(cost_derivs){
                 // Loop through number of residuals, compute dr0/dx, dr1/dx ... drn/dx
-                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                for(int j = 0; j < model_translator->residual_list.size(); j++){
                     r_u[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
                 }
             }
@@ -196,7 +196,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
             if(cost_derivs){
-                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                for(int j = 0; j < model_translator->residual_list.size(); j++){
                     r_u[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
                 }
             }
@@ -207,7 +207,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
             if(cost_derivs){
-                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                for(int j = 0; j < model_translator->residual_list.size(); j++){
                     r_u[j](i, 0) = (residuals(j) - residuals_dec(j)) / (eps);
                 }
             }
@@ -288,7 +288,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
             if(cost_derivs) {
-                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                for(int j = 0; j < model_translator->residual_list.size(); j++){
                     r_x[j](i + dof, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
                 }
             }
@@ -306,7 +306,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
             if(cost_derivs) {
-                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                for(int j = 0; j < model_translator->residual_list.size(); j++){
                     r_x[j](i + dof, 0) = (residuals_inc(j) - residuals(j)) / (eps);
                 }
             }
@@ -389,7 +389,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
             if(cost_derivs) {
-                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                for(int j = 0; j < model_translator->residual_list.size(); j++){
                     r_x[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
                 }
             }
@@ -408,7 +408,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
 
             if(cost_derivs) {
-                for(int j = 0; j < model_translator->num_residual_terms; j++){
+                for(int j = 0; j < model_translator->residual_list.size(); j++){
                     r_x[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
                 }
             }

@@ -132,26 +132,25 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
             }
         }
 
-
-        for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
-            jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
-        }
-
-        for(int i = 0; i < robot_it->second["jointVelCosts"].size(); i++){
-            jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
-        }
-
-        for(int i = 0; i < robot_it->second["terminalJointPosCosts"].size(); i++){
-            terminalJointPosCosts.push_back(robot_it->second["terminalJointPosCosts"][i].as<double>());
-        }
-
-        for(int i = 0; i < robot_it->second["terminalJointVelCosts"].size(); i++){
-            terminalJointVelCosts.push_back(robot_it->second["terminalJointVelCosts"][i].as<double>());
-        }
-
-        for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
-            jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
-        }
+//        for(int i = 0; i < robot_it->second["jointPosCosts"].size(); i++){
+//            jointPosCosts.push_back(robot_it->second["jointPosCosts"][i].as<double>());
+//        }
+//
+//        for(int i = 0; i < robot_it->second["jointVelCosts"].size(); i++){
+//            jointVelCosts.push_back(robot_it->second["jointVelCosts"][i].as<double>());
+//        }
+//
+//        for(int i = 0; i < robot_it->second["terminalJointPosCosts"].size(); i++){
+//            terminalJointPosCosts.push_back(robot_it->second["terminalJointPosCosts"][i].as<double>());
+//        }
+//
+//        for(int i = 0; i < robot_it->second["terminalJointVelCosts"].size(); i++){
+//            terminalJointVelCosts.push_back(robot_it->second["terminalJointVelCosts"][i].as<double>());
+//        }
+//
+//        for(int i = 0; i < robot_it->second["jointControlCosts"].size(); i++){
+//            jointControlCosts.push_back(robot_it->second["jointControlCosts"][i].as<double>());
+//        }
 
         for(int i = 0; i < robot_it->second["jointJerkThresholds"].size(); i++){
             jointJerkThresholds.push_back(robot_it->second["jointJerkThresholds"][i].as<double>());
@@ -169,11 +168,11 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
         tempRobot.start_pos = startPos;
         tempRobot.goal_pos = goalPos;
         tempRobot.goal_vel = goalVel;
-        tempRobot.joint_pos_costs = jointPosCosts;
-        tempRobot.joint_vel_costs = jointVelCosts;
-        tempRobot.terminal_joint_pos_costs = terminalJointPosCosts;
-        tempRobot.terminal_joint_vel_costs = terminalJointVelCosts;
-        tempRobot.joint_controls_costs = jointControlCosts;
+//        tempRobot.joint_pos_costs = jointPosCosts;
+//        tempRobot.joint_vel_costs = jointVelCosts;
+//        tempRobot.terminal_joint_pos_costs = terminalJointPosCosts;
+//        tempRobot.terminal_joint_vel_costs = terminalJointVelCosts;
+//        tempRobot.joint_controls_costs = jointControlCosts;
         tempRobot.jerk_thresholds = jointJerkThresholds;
         tempRobot.vel_change_thresholds = magVelThresholds;
 
@@ -408,6 +407,18 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
         }
 
         _taskConfig.soft_bodies.push_back(_soft_body);
+    }
+
+    // Loop through residuals
+    for(YAML::const_iterator residual_it=node["residuals"].begin(); residual_it!=node["residuals"].end(); ++residual_it) {
+        residual _residual;
+
+        _residual.name = residual_it->first.as<string>();
+        _residual.target = residual_it->second["target"].as<double>();
+        _residual.weight = residual_it->second["weight"].as<double>();
+        _residual.weight_terminal = residual_it->second["weight_terminal"].as<double>();
+
+        _taskConfig.residuals.push_back(_residual);
     }
 }
 

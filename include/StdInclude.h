@@ -21,11 +21,11 @@ struct robot{
     std::vector<double> start_pos;
     std::vector<double> goal_pos;
     std::vector<double> goal_vel;
-    std::vector<double> joint_pos_costs;
-    std::vector<double> joint_vel_costs;
-    std::vector<double> terminal_joint_pos_costs;
-    std::vector<double> terminal_joint_vel_costs;
-    std::vector<double> joint_controls_costs;
+//    std::vector<double> joint_pos_costs;
+//    std::vector<double> joint_vel_costs;
+//    std::vector<double> terminal_joint_pos_costs;
+//    std::vector<double> terminal_joint_vel_costs;
+//    std::vector<double> joint_controls_costs;
     std::vector<double> jerk_thresholds;
     std::vector<double> vel_change_thresholds;
 };
@@ -83,6 +83,13 @@ struct soft_body{
 //    std::vector<double> linear_vel_change_threshold;
 };
 
+struct residual{
+    std::string name;
+    double target;
+    double weight;
+    double weight_terminal;
+};
+
 struct task{
     std::vector<robot> robots;
     std::vector<rigid_body> rigid_bodies;
@@ -100,6 +107,7 @@ struct task{
     std::vector<double> acellThresholds;
     double iterativeErrorThreshold;
     std::vector<double> magVelThresholds;
+    std::vector<residual> residuals;
 };
 
 struct stateVectorList{

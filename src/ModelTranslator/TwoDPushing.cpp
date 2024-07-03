@@ -23,10 +23,6 @@ TwoDPushing::TwoDPushing(int _clutterLevel): PushBaseClass("franka_gripper", "go
         cout << "ERROR: Invalid clutter level" << endl;
     }
 
-    cost_reach.setZero();
-    cost_reach(0, 0) = 1;
-    cost_reach(1, 1) = 1;
-
     InitModelTranslator(yamlFilePath);
 }
 
@@ -300,27 +296,27 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
 }
 
 void TwoDPushing::InstantiateResiduals(){
-    num_residual_terms = 3;
-    residual_weights.resize(num_residual_terms);
-    residual_weights_terminal.resize(num_residual_terms);
-
+//    num_residual_terms = 3;
+//    residual_weights.resize(num_residual_terms);
+//    residual_weights_terminal.resize(num_residual_terms);
+//
+////    residual_weights[0] = 0.0;
+////    residual_weights_terminal[0] = 1000.0;
 //    residual_weights[0] = 0.0;
-//    residual_weights_terminal[0] = 1000.0;
-    residual_weights[0] = 0.0;
-    residual_weights_terminal[0] = 0.0;
-
-//    residual_weights[1] = 0.2;
-//    residual_weights_terminal[1] = 0.2;
-    residual_weights[1] = 0.0;
-    residual_weights_terminal[1] = 0.0;
-
-    // EE position towards goal object
-    residual_weights[2] = 0.1;
-    residual_weights_terminal[2] = 100.0;
+//    residual_weights_terminal[0] = 0.0;
+//
+////    residual_weights[1] = 0.2;
+////    residual_weights_terminal[1] = 0.2;
+//    residual_weights[1] = 0.0;
+//    residual_weights_terminal[1] = 0.0;
+//
+//    // EE position towards goal object
+//    residual_weights[2] = 0.1;
+//    residual_weights_terminal[2] = 100.0;
 }
 
 MatrixXd TwoDPushing::Residuals(mjData *d){
-    MatrixXd residual(num_residual_terms, 1);
+    MatrixXd residual(residual_list.size(), 1);
 
     // Compute kinematics chain to compute site poses
     mj_kinematics(MuJoCo_helper->model, d);

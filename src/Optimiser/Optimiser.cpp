@@ -86,7 +86,7 @@ void Optimiser::GenerateDerivatives(){
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
     std::cout << "------------- residual derivatives wrt State -------------------" << std::endl;
-    for(int i = 0; i < activeModelTranslator->num_residual_terms; i++){
+    for(int i = 0; i < activeModelTranslator->residual_list.size(); i++){
         std::cout << "r_x[" << i << "]: " << std::endl;
         std:: cout << r_x[0][i] << std::endl;
     }
@@ -113,27 +113,27 @@ void Optimiser::GenerateDerivatives(){
                                                             residuals[horizon_length - 1], r_x[horizon_length - 1], r_u[horizon_length - 1], true);
     }
 
-//    std::cout << "------------------ cost derivatives from residuals ------------------------- \n";
-//    std::cout << "reisduals[0]: " << residuals[0] << "\n";
-//    std::cout << "l_x[0]: " << std::endl;
-//    std:: cout << l_x[0] << std::endl;
-//    std::cout << "l_xx[0]: " << std::endl;
-//    std:: cout << l_xx[0] << std::endl;
-//    std::cout << "l_u[0]: " << std::endl;
-//    std:: cout << l_u[0] << std::endl;
-//    std::cout << "l_uu[0]: " << std::endl;
-//    std:: cout << l_uu[0] << std::endl;
-//
-//    std::cout << "residuals[horizon_length - 1]: " << residuals[horizon_length - 1] << "\n";
-//    std::cout << "l_x[horizon-1]: " << std::endl;
-//    std:: cout << l_x[horizon_length-1] << std::endl;
-//    std::cout << "l_xx[horizon-1]: " << std::endl;
-//    std:: cout << l_xx[horizon_length-1] << std::endl;
-//    std::cout << "l_u[horizon-1]: " << std::endl;
-//    std:: cout << l_u[horizon_length-1] << std::endl;
-//    std::cout << "l_uu[horizon-1]: " << std::endl;
-//    std:: cout << l_uu[horizon_length-1] << std::endl;
-//    std::cout << "--------------------- Cost derivatives from analytical ------------------------------ \n";
+    std::cout << "------------------ cost derivatives from residuals ------------------------- \n";
+    std::cout << "reisduals[0]: " << residuals[0] << "\n";
+    std::cout << "l_x[0]: " << std::endl;
+    std:: cout << l_x[0] << std::endl;
+    std::cout << "l_xx[0]: " << std::endl;
+    std:: cout << l_xx[0] << std::endl;
+    std::cout << "l_u[0]: " << std::endl;
+    std:: cout << l_u[0] << std::endl;
+    std::cout << "l_uu[0]: " << std::endl;
+    std:: cout << l_uu[0] << std::endl;
+
+    std::cout << "residuals[horizon_length - 1]: " << residuals[horizon_length - 1] << "\n";
+    std::cout << "l_x[horizon-1]: " << std::endl;
+    std:: cout << l_x[horizon_length-1] << std::endl;
+    std::cout << "l_xx[horizon-1]: " << std::endl;
+    std:: cout << l_xx[horizon_length-1] << std::endl;
+    std::cout << "l_u[horizon-1]: " << std::endl;
+    std:: cout << l_u[horizon_length-1] << std::endl;
+    std::cout << "l_uu[horizon-1]: " << std::endl;
+    std:: cout << l_uu[horizon_length-1] << std::endl;
+    std::cout << "--------------------- Cost derivatives from analytical ------------------------------ \n";
 
 //    ComputeCostDerivatives();
 //

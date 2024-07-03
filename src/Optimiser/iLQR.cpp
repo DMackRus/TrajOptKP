@@ -113,7 +113,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
 
             vector<MatrixXd> r_x_;
-            for(int i = 0; i < activeModelTranslator->num_residual_terms; i++) {
+            for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
                 r_x_.emplace_back(MatrixXd(2*dof, 1));
             }
 
@@ -129,7 +129,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
             U_old.emplace_back(MatrixXd(num_ctrl, 1));
 
             vector<MatrixXd> r_u_;
-            for(int i = 0; i < activeModelTranslator->num_residual_terms; i++) {
+            for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
                 r_u_.emplace_back(MatrixXd(num_ctrl, 1));
             }
 
@@ -178,7 +178,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         }
 
         for(int t = 0; t < horizon_length; t++){
-            residuals.push_back(MatrixXd(activeModelTranslator->num_residual_terms, 1));
+            residuals.push_back(MatrixXd(activeModelTranslator->residual_list.size(), 1));
         }
 
     }

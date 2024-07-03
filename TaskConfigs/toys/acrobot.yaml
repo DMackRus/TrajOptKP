@@ -16,10 +16,33 @@ robots:
     torqueLimits: [100]
     startPos: [3.1415, 0.3]
     goalPos: [0, 0]
-    jointPosCosts: [0, 0]
-    jointVelCosts: [0.001, 0.001]
-    terminalJointPosCosts: [100, 100]
-    terminalJointVelCosts: [1, 1]
-    jointControlCosts: [1]
+#    jointPosCosts: [0, 0]
+#    jointVelCosts: [0.001, 0.001]
+#    terminalJointPosCosts: [100, 100]
+#    terminalJointVelCosts: [1, 1]
+#    jointControlCosts: [1]
     jointJerkThresholds: [50, 50]
     magVelThresholds: [0.2, 0.2]
+
+residuals:
+  joint_0:
+    target: 0
+    weight: 0
+    weight_terminal: 100
+  joint_1:
+    target: 0
+    weight: 0
+    weight_terminal: 100
+  joint_0_vel:
+    target: 0
+    weight: 0.001
+    weight_terminal: 1
+  joint_1_vel:
+    target: 0
+    weight: 0.001
+    weight_terminal: 1
+  joint_0_torque:
+    target: 0
+    weight: 1
+    weight_terminal: 1
+

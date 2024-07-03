@@ -33,6 +33,9 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     openloop_horizon = taskConfig.openloop_horizon;
     MPC_horizon = taskConfig.mpc_horizon;
 
+    // Residuals
+    residual_list = taskConfig.residuals;
+
     // Initialise physics simulator
     vector<string> bodyNames;
     for(auto & robot : taskConfig.robots){
@@ -88,91 +91,92 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
 }
 
 void ModelTranslator::InstantiateResiduals(){
+
     // Setup residual weights
     // Loop through robot joints first, then bodies, then soft bodies, then robot controls
     // ---------------------- Position costs -------------------------------
-    for(auto & robot : full_state_vector.robots){
-        for(int j = 0; j < robot.joint_names.size(); j++){
-            residual_weights.push_back(robot.joint_pos_costs[j]);
-            residual_weights_terminal.push_back(robot.terminal_joint_pos_costs[j]);
-            num_residual_terms++;
-        }
-    }
-
-    for(auto & body : full_state_vector.rigid_bodies){
-        for(int j = 0; j < 3; j++){
-            if(body.active_linear_dof[j]){
-                residual_weights.push_back(body.linearPosCost[j]);
-                residual_weights_terminal.push_back(body.terminal_linear_pos_cost[j]);
-                num_residual_terms++;
-            }
-        }
-
-        for(int j = 0; j < 3; j++){
-            if(body.active_angular_dof[j]){
-                residual_weights.push_back(body.angular_pos_cost[j]);
-                residual_weights_terminal.push_back(body.terminal_angular_pos_cost[j]);
-                num_residual_terms++;
-            }
-        }
-    }
-
-    for(auto & soft_body : full_state_vector.soft_bodies){
-        for(int j = 0; j < 3; j++){
-            if(soft_body.vertices[j].active_linear_dof[j]){
-                residual_weights.push_back(soft_body.linearPosCost[j]);
-                residual_weights_terminal.push_back(soft_body.terminal_linear_pos_cost[j]);
-                num_residual_terms++;
-            }
-        }
-    }
-
-    // ---------------------- Velocity costs -------------------------------
-    for(auto & robot : full_state_vector.robots){
-        for(int j = 0; j < robot.joint_names.size(); j++){
-            residual_weights.push_back(robot.joint_vel_costs[j]);
-            residual_weights_terminal.push_back(robot.terminal_joint_vel_costs[j]);
-            num_residual_terms++;
-        }
-    }
-
-    for(auto & body : full_state_vector.rigid_bodies){
-        for(int j = 0; j < 3; j++){
-            if(body.active_linear_dof[j]){
-                residual_weights.push_back(body.linear_vel_cost[j]);
-                residual_weights_terminal.push_back(body.terminal_linear_vel_cost[j]);
-                num_residual_terms++;
-            }
-        }
-
-        for(int j = 0; j < 3; j++){
-            if(body.active_angular_dof[j]){
-                residual_weights.push_back(body.angular_vel_cost[j]);
-                residual_weights_terminal.push_back(body.terminal_angular_vel_cost[j]);
-                num_residual_terms++;
-            }
-        }
-    }
-
-    for(auto & soft_body : full_state_vector.soft_bodies){
-        for(int j = 0; j < 3; j++){
-            if(soft_body.vertices[j].active_linear_dof[j]){
-                residual_weights.push_back(soft_body.linear_vel_cost[j]);
-                residual_weights_terminal.push_back(soft_body.terminal_linear_vel_cost[j]);
-                num_residual_terms++;
-            }
-        }
-    }
-
-    // ---------------------- Control costs -------------------------------
-    for(auto & robot : full_state_vector.robots){
-        for(int j = 0; j < robot.actuator_names.size(); j++){
-            // Residual weight for control is same in terminal case as running cost case
-            residual_weights.push_back(robot.joint_controls_costs[j]);
-            residual_weights_terminal.push_back(robot.joint_controls_costs[j]);
-            num_residual_terms++;
-        }
-    }
+//    for(auto & robot : full_state_vector.robots){
+//        for(int j = 0; j < robot.joint_names.size(); j++){
+//            residual_weights.push_back(robot.joint_pos_costs[j]);
+//            residual_weights_terminal.push_back(robot.terminal_joint_pos_costs[j]);
+//            num_residual_terms++;
+//        }
+//    }
+//
+//    for(auto & body : full_state_vector.rigid_bodies){
+//        for(int j = 0; j < 3; j++){
+//            if(body.active_linear_dof[j]){
+//                residual_weights.push_back(body.linearPosCost[j]);
+//                residual_weights_terminal.push_back(body.terminal_linear_pos_cost[j]);
+//                num_residual_terms++;
+//            }
+//        }
+//
+//        for(int j = 0; j < 3; j++){
+//            if(body.active_angular_dof[j]){
+//                residual_weights.push_back(body.angular_pos_cost[j]);
+//                residual_weights_terminal.push_back(body.terminal_angular_pos_cost[j]);
+//                num_residual_terms++;
+//            }
+//        }
+//    }
+//
+//    for(auto & soft_body : full_state_vector.soft_bodies){
+//        for(int j = 0; j < 3; j++){
+//            if(soft_body.vertices[j].active_linear_dof[j]){
+//                residual_weights.push_back(soft_body.linearPosCost[j]);
+//                residual_weights_terminal.push_back(soft_body.terminal_linear_pos_cost[j]);
+//                num_residual_terms++;
+//            }
+//        }
+//    }
+//
+//    // ---------------------- Velocity costs -------------------------------
+//    for(auto & robot : full_state_vector.robots){
+//        for(int j = 0; j < robot.joint_names.size(); j++){
+//            residual_weights.push_back(robot.joint_vel_costs[j]);
+//            residual_weights_terminal.push_back(robot.terminal_joint_vel_costs[j]);
+//            num_residual_terms++;
+//        }
+//    }
+//
+//    for(auto & body : full_state_vector.rigid_bodies){
+//        for(int j = 0; j < 3; j++){
+//            if(body.active_linear_dof[j]){
+//                residual_weights.push_back(body.linear_vel_cost[j]);
+//                residual_weights_terminal.push_back(body.terminal_linear_vel_cost[j]);
+//                num_residual_terms++;
+//            }
+//        }
+//
+//        for(int j = 0; j < 3; j++){
+//            if(body.active_angular_dof[j]){
+//                residual_weights.push_back(body.angular_vel_cost[j]);
+//                residual_weights_terminal.push_back(body.terminal_angular_vel_cost[j]);
+//                num_residual_terms++;
+//            }
+//        }
+//    }
+//
+//    for(auto & soft_body : full_state_vector.soft_bodies){
+//        for(int j = 0; j < 3; j++){
+//            if(soft_body.vertices[j].active_linear_dof[j]){
+//                residual_weights.push_back(soft_body.linear_vel_cost[j]);
+//                residual_weights_terminal.push_back(soft_body.terminal_linear_vel_cost[j]);
+//                num_residual_terms++;
+//            }
+//        }
+//    }
+//
+//    // ---------------------- Control costs -------------------------------
+//    for(auto & robot : full_state_vector.robots){
+//        for(int j = 0; j < robot.actuator_names.size(); j++){
+//            // Residual weight for control is same in terminal case as running cost case
+//            residual_weights.push_back(robot.joint_controls_costs[j]);
+//            residual_weights_terminal.push_back(robot.joint_controls_costs[j]);
+//            num_residual_terms++;
+//        }
+//    }
 }
 
 void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_vector_names, bool add_extra_states){
@@ -391,13 +395,13 @@ MatrixXd ModelTranslator::Residuals(mjData *d) {
 double ModelTranslator::CostFunction(const MatrixXd &residuals, const struct stateVectorList &state_vector, bool terminal){
     double cost = 0.0;
 
-    for(int i = 0; i < num_residual_terms; i++){
+    for(int i = 0; i < residual_list.size(); i++){
         // Hardcoded norm function is pow(r, 2)
         if(terminal){
-            cost += residual_weights_terminal[i] * pow(residuals(i), 2);
+            cost += residual_list[i].weight_terminal * pow(residuals(i), 2);
         }
         else{
-            cost += residual_weights[i] * pow(residuals(i), 2);
+            cost += residual_list[i].weight * pow(residuals(i), 2);
         }
     }
 
@@ -636,13 +640,13 @@ void ModelTranslator::CostDerivativesFromResiduals(const struct stateVectorList 
 
     double weight_term;
 
-    for(int i = 0; i < num_residual_terms; i++){
+    for(int i = 0; i < residual_list.size(); i++){
 
         if(terminal){
-            weight_term = residual_weights_terminal[i];
+            weight_term = residual_list[i].weight_terminal;
         }
         else{
-            weight_term = residual_weights[i];
+            weight_term = residual_list[i].weight;
         }
 
         // Hardcoded norm function is pow(r, 2)
@@ -651,10 +655,6 @@ void ModelTranslator::CostDerivativesFromResiduals(const struct stateVectorList 
 
         // l_xx = w_i * dn2/dr2 * dr2/dx2 (dr/dx * dr/dx^T) Gauss newton approximation
         l_xx += weight_term * 2 * r_x[i] * r_x[i].transpose();
-
-//        std::cout << "residual weight: " << weight_term << "\n";
-//        std::cout << "r_x[" << i << "]: " << r_x[i] << "\n";
-//        std::cout << "l_xx: " << l_xx << "\n";
 
         // l_u = w_i * dn/dr * dr/du
         l_u += weight_term * 2 * residuals(i) * r_u[i];
@@ -666,283 +666,283 @@ void ModelTranslator::CostDerivativesFromResiduals(const struct stateVectorList 
 void ModelTranslator::CostDerivatives(mjData* d, const struct stateVectorList &state_vector,
                                         MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
 
-    // Sanity check that size of matrices are correct for this state vector
-    if(l_u.rows() != state_vector.num_ctrl){
-        std::cerr << "mismatch in ctrl size between cost derivatives and passed state vector, exiting \n";
-        exit(1);
-    }
-
-    if(l_x.rows() != state_vector.dof * 2){
-        std::cerr << "mismatch in dof size between cost derivatives and passed state vector, exiting \n";
-        exit(1);
-    }
-
-    // Aliases
-    int dof = state_vector.dof;
-    int num_ctrl = state_vector.num_ctrl;
-
-    // Set matrices to zero as these matrices should mostly be sparse.
-    l_u.setZero();
-    l_uu.setZero();
-    l_x.setZero();
-    l_xx.setZero();
-
-    int Q_index = 0;
-    int R_index = 0;
-    for(auto & robot : state_vector.robots){
-        int robot_num_joints = static_cast<int>(robot.joint_names.size());
-        int robot_num_actuators = static_cast<int>(robot.actuator_names.size());
-
-        std::vector<double> joint_positions;
-        std::vector<double> joint_velocities;
-        std::vector<double> joint_controls;
-
-        MuJoCo_helper->GetRobotJointsPositions(robot.name, joint_positions, d);
-        MuJoCo_helper->GetRobotJointsVelocities(robot.name, joint_velocities, d);
-        MuJoCo_helper->GetRobotJointsControls(robot.name, joint_controls, d);
-
-        // Loop through the robot joints (position and velocity)
-        for(int i = 0; i < robot_num_joints; i++) {
-
-            double cost_pos, cost_vel;
-
-            if(terminal){
-                cost_pos = robot.terminal_joint_pos_costs[i];
-                cost_vel = robot.terminal_joint_vel_costs[i];
-            }
-            else{
-                cost_pos = robot.joint_pos_costs[i];
-                cost_vel = robot.joint_vel_costs[i];
-            }
-
-            // l_x = 2 * cost * diff
-            // position and velocity
-            l_x(Q_index + i) = 2 * cost_pos * (joint_positions[i] - robot.goal_pos[i]);
-            l_x(Q_index + i + dof) = 2 * cost_vel * (joint_velocities[i] - robot.goal_vel[i]);
-
-            // l_xx = 2 * cost
-            l_xx(Q_index + i, Q_index + i) = 2 * cost_pos;
-            l_xx(Q_index + i + dof, Q_index + i + dof) = 2 * cost_vel;
-
-        }
-
-        for(int i = 0; i < robot_num_actuators; i++){
-            // l_u = 2 * cost * diff
-            l_u(R_index + i) = 2 * robot.joint_controls_costs[i] * joint_controls[i];
-
-            // l_uu = 2 * cost
-            l_uu(R_index, R_index) = 2 * robot.joint_controls_costs[i];
-        }
-
-        // Increment index of Q and R (inside state vector and control vector repsectively)
-        Q_index += robot_num_joints;
-        R_index += robot_num_actuators;
-    }
-
-    for(const auto& body : state_vector.rigid_bodies){
-        pose_6 body_pose;
-        pose_6 body_vel;
-        MuJoCo_helper->GetBodyPoseAngle(body.name, body_pose, d);
-        MuJoCo_helper->GetBodyVelocity(body.name, body_vel, d);
-
-        // Linear cost derivatives
-        for(int j = 0; j < 3; j++) {
-            if (body.active_linear_dof[j]) {
-
-                if (terminal) {
-                    // Position cost derivatives
-                    l_x(Q_index) = 2 * body.terminal_linear_pos_cost[j] * (body_pose.position[j] - body.goal_linear_pos[j]);
-                    l_xx(Q_index, Q_index) = 2 * body.terminal_linear_pos_cost[j];
-
-                    // Velocity cost derivatives
-                    l_x(Q_index + dof) = 2 * body.terminal_linear_vel_cost[j] * (body_vel.position[j]);
-                    l_xx(Q_index + dof, Q_index + dof) = 2 * body.terminal_linear_vel_cost[j];
-                } else {
-                    // Position cost derivatives
-                    l_x(Q_index) = 2 * body.linearPosCost[j] * (body_pose.position[j] - body.goal_linear_pos[j]);
-                    l_xx(Q_index, Q_index) = 2 * body.linearPosCost[j];
-
-                    // Velocity cost derivatives
-                    l_x(Q_index + dof) = 2 * body.linear_vel_cost[j] * (body_vel.position[j]);
-                    l_xx(Q_index + dof, Q_index + dof) = 2 * body.linear_vel_cost[j];
-                }
-
-                Q_index++;
-            }
-        }
-
-        // TODO - if cost is 0,  we should also probbaly skip computation
-        // If no angular dofs active for this body, skip!
-        if(!body.active_angular_dof[0] && !body.active_angular_dof[1] && !body.active_angular_dof[2]){
-            continue;
-        }
-
-        // Angular cost derivatives
-        // Angular pos cost = w1*acos(dot_x) + w2*acos(dot_y) + w3*acos(dot_z)
-
-        //Compute 3D rotation matrix of current body orientation as well as the desired orientation
-//        Eigen::Matrix3d current_rot_mat = eul2RotMat(body_pose.orientation);
+//    // Sanity check that size of matrices are correct for this state vector
+//    if(l_u.rows() != state_vector.num_ctrl){
+//        std::cerr << "mismatch in ctrl size between cost derivatives and passed state vector, exiting \n";
+//        exit(1);
+//    }
 //
-//        // Convert desired orientation to rotation matrix
-//        m_point desired;
-//        desired(0) = body.goalAngularPos[0];
-//        desired(1) = body.goalAngularPos[1];
-//        desired(2) = body.goalAngularPos[2];
-//        Eigen::Matrix3d desired_rot_mat = eul2RotMat(desired);
+//    if(l_x.rows() != state_vector.dof * 2){
+//        std::cerr << "mismatch in dof size between cost derivatives and passed state vector, exiting \n";
+//        exit(1);
+//    }
 //
-//        double dot_prods[3];
-//        for(int j = 0; j < 3; j++){
-//            dot_prods[j] = current_rot_mat(0, j) * desired_rot_mat(0, j) +
-//                    current_rot_mat(1, j) * desired_rot_mat(1, j) +
-//                    current_rot_mat(2, j) * desired_rot_mat(2, j);
+//    // Aliases
+//    int dof = state_vector.dof;
+//    int num_ctrl = state_vector.num_ctrl;
+//
+//    // Set matrices to zero as these matrices should mostly be sparse.
+//    l_u.setZero();
+//    l_uu.setZero();
+//    l_x.setZero();
+//    l_xx.setZero();
+//
+//    int Q_index = 0;
+//    int R_index = 0;
+//    for(auto & robot : state_vector.robots){
+//        int robot_num_joints = static_cast<int>(robot.joint_names.size());
+//        int robot_num_actuators = static_cast<int>(robot.actuator_names.size());
+//
+//        std::vector<double> joint_positions;
+//        std::vector<double> joint_velocities;
+//        std::vector<double> joint_controls;
+//
+//        MuJoCo_helper->GetRobotJointsPositions(robot.name, joint_positions, d);
+//        MuJoCo_helper->GetRobotJointsVelocities(robot.name, joint_velocities, d);
+//        MuJoCo_helper->GetRobotJointsControls(robot.name, joint_controls, d);
+//
+//        // Loop through the robot joints (position and velocity)
+//        for(int i = 0; i < robot_num_joints; i++) {
+//
+//            double cost_pos, cost_vel;
+//
+//            if(terminal){
+//                cost_pos = robot.terminal_joint_pos_costs[i];
+//                cost_vel = robot.terminal_joint_vel_costs[i];
+//            }
+//            else{
+//                cost_pos = robot.joint_pos_costs[i];
+//                cost_vel = robot.joint_vel_costs[i];
+//            }
+//
+//            // l_x = 2 * cost * diff
+//            // position and velocity
+//            l_x(Q_index + i) = 2 * cost_pos * (joint_positions[i] - robot.goal_pos[i]);
+//            l_x(Q_index + i + dof) = 2 * cost_vel * (joint_velocities[i] - robot.goal_vel[i]);
+//
+//            // l_xx = 2 * cost
+//            l_xx(Q_index + i, Q_index + i) = 2 * cost_pos;
+//            l_xx(Q_index + i + dof, Q_index + i + dof) = 2 * cost_vel;
+//
 //        }
 //
-//        double dot_x, dot_y, dot_z;
-//        dot_x = dot_prods[0];
-//        dot_y = dot_prods[1];
-//        dot_z = dot_prods[2];
+//        for(int i = 0; i < robot_num_actuators; i++){
+//            // l_u = 2 * cost * diff
+//            l_u(R_index + i) = 2 * robot.joint_controls_costs[i] * joint_controls[i];
 //
-//        // Compute and store sin and cosine values for
-//        // object roll, pitch, yaw (r, p, y)
-//        // as well as goal roll, pitch and yaw (gr, gp, gy)
-//        double sr, sp, sy, cr, cp, cy;
-//        double sgr, sgp, sgy, cgr, cgp, cgy;
-//
-//        sr = sin(body_pose.orientation[0]);
-//        sp = sin(body_pose.orientation[1]);
-//        sy = sin(body_pose.orientation[2]);
-//        cr = cos(body_pose.orientation[0]);
-//        cp = cos(body_pose.orientation[1]);
-//        cy = cos(body_pose.orientation[2]);
-//
-//        sgr = sin(body.goalAngularPos[0]);
-//        sgp = sin(body.goalAngularPos[1]);
-//        sgy = sin(body.goalAngularPos[2]);
-//        cgr = cos(body.goalAngularPos[0]);
-//        cgp = cos(body.goalAngularPos[1]);
-//        cgy = cos(body.goalAngularPos[2]);
-//
-//        // first order deriv for dot_z, w.r.t roll, pitch, yaw
-//        double ddot_z_dr, ddot_z_dp, ddot_z_dy;
-//        // Storing values from computation of derivative dependant on desired goal angles
-//        double F, G, H;
-//
-//        F = cgy*sgp*cgr + sgy*sgr;
-//        G = sgy*sgp*cgr + sgy*sgr;
-//        H = cgp*cgr;
-//
-//        ddot_z_dr = F*(-cy*sp*cr + sy*cr) + G*(-sy*sp*cr + sy*cr) + H*(-cp*sr);
-//        ddot_z_dy = F*(-sy*sp*cr + cy*sr) + G*(cy*sp*cr + cy*sr);
-//        ddot_z_dp = F*(cy*cp*cr) + G*(sy*cp*cr) + H*(-sp*cr);
-//
-////        std::cout << "ddot_z_dy: " << ddot_z_dy << std::endl;
-//
-//
-//        double dacos_dot_z;
-//        double dl_dr, dl_dp, dl_dy;
-//
-//        // This comes from deriv of acos(u)
-//        dacos_dot_z = -1 / (sqrt(1 - pow(dot_z, 2)));
-//
-//        // TODO - is this the correct cost weighting???
-//        if(terminal){
-//            dl_dr = body.terminalAngularPosCost[2] * dacos_dot_z * ddot_z_dr;
-//            dl_dp = body.terminalAngularPosCost[2] * dacos_dot_z * ddot_z_dp;
-//            dl_dy = body.terminalAngularPosCost[2] * dacos_dot_z * ddot_z_dy;
-//        }
-//        else{
-//            dl_dr = body.angularPosCost[2] * dacos_dot_z * ddot_z_dr;
-//            dl_dp = body.angularPosCost[2] * dacos_dot_z * ddot_z_dp;
-//            dl_dy = body.angularPosCost[2] * dacos_dot_z * ddot_z_dy;
+//            // l_uu = 2 * cost
+//            l_uu(R_index, R_index) = 2 * robot.joint_controls_costs[i];
 //        }
 //
-//        // Use these values to plug into l_x
+//        // Increment index of Q and R (inside state vector and control vector repsectively)
+//        Q_index += robot_num_joints;
+//        R_index += robot_num_actuators;
+//    }
 //
-//        // TODO Q indexing code????
-////        std::cout << "dl_dr" << dl_dr << " dl_dp: " << dl_dp << " dl_dy: " << dl_dy << std::endl;
-//        l_x(Q_index) = dl_dr;
-//        l_x(Q_index + 1) = dl_dp;
-//        l_x(Q_index + 2) = dl_dy;
+//    for(const auto& body : state_vector.rigid_bodies){
+//        pose_6 body_pose;
+//        pose_6 body_vel;
+//        MuJoCo_helper->GetBodyPoseAngle(body.name, body_pose, d);
+//        MuJoCo_helper->GetBodyVelocity(body.name, body_vel, d);
 //
-//        l_xx(Q_index, Q_index) = dl_dr*dl_dr;
-//        l_xx(Q_index + 1, Q_index + 1) = dl_dp*dl_dp;
-//        l_xx(Q_index + 2, Q_index + 2) = dl_dy*dl_dy;
-
-
-        // TODO - second order l_xx derivs, also add computation from x and y vectors.......
-
-        // use internal F.D of costfunction body to compute derivatives????
-//        double cost_dec, cost_inc;
-//        double eps = 1e-5;
-//        // Perturb 3 orientations
+//        // Linear cost derivatives
+//        for(int j = 0; j < 3; j++) {
+//            if (body.active_linear_dof[j]) {
 //
-//        for(int j = 0; j < 3; j++){
-////            std::cout << "index: " << j << "\n";
+//                if (terminal) {
+//                    // Position cost derivatives
+//                    l_x(Q_index) = 2 * body.terminal_linear_pos_cost[j] * (body_pose.position[j] - body.goal_linear_pos[j]);
+//                    l_xx(Q_index, Q_index) = 2 * body.terminal_linear_pos_cost[j];
 //
-//            body_pose.orientation[j] += eps;
-//            // TODO - possible issue here with using the data object itself.
-//            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
+//                    // Velocity cost derivatives
+//                    l_x(Q_index + dof) = 2 * body.terminal_linear_vel_cost[j] * (body_vel.position[j]);
+//                    l_xx(Q_index + dof, Q_index + dof) = 2 * body.terminal_linear_vel_cost[j];
+//                } else {
+//                    // Position cost derivatives
+//                    l_x(Q_index) = 2 * body.linearPosCost[j] * (body_pose.position[j] - body.goal_linear_pos[j]);
+//                    l_xx(Q_index, Q_index) = 2 * body.linearPosCost[j];
 //
-//            cost_inc = CostFunctionBody(body, d, terminal);
-////            std::cout << "cost inc: " << cost_inc << "\n";
+//                    // Velocity cost derivatives
+//                    l_x(Q_index + dof) = 2 * body.linear_vel_cost[j] * (body_vel.position[j]);
+//                    l_xx(Q_index + dof, Q_index + dof) = 2 * body.linear_vel_cost[j];
+//                }
 //
-//            // Undo perturbation and apply negative perturb
-//            body_pose.orientation[j] -= (2 * eps);
-//
-//            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
-//
-//            cost_dec = CostFunctionBody(body, d, terminal);
-////            std::cout << "cost dec: " << cost_dec << "\n";
-//
-//            //Undo perturbation
-//            body_pose.orientation[j] += eps;
-//
-//            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
-//
-//            l_x(Q_index) = (cost_inc - cost_dec) / (2 * eps);
-//
-//            l_xx(Q_index, Q_index) = l_x(Q_index) * l_x(Q_index);
-//
-//            Q_index ++;
+//                Q_index++;
+//            }
 //        }
-    }
-
-    for(const auto& soft_body : state_vector.soft_bodies){
-        pose_6 vertex_pose;
-        pose_6 vertex_vel;
-
-        // Loop through soft body vertices
-        for(int i = 0; i < soft_body.num_vertices; i++){
-            MuJoCo_helper->GetSoftBodyVertexPosGlobal(soft_body.name, i, vertex_pose, d);
-            MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, vertex_vel, d);
-
-            // Linear cost derivatives
-            for(int j = 0; j < 3; j++) {
-                if (soft_body.vertices[i].active_linear_dof[j]) {
-
-                    if (terminal) {
-                        // Position cost derivatives
-                        l_x(Q_index) = 2 * soft_body.terminal_linear_pos_cost[j] * (vertex_pose.position[j] - soft_body.goal_linear_pos[j]);
-                        l_xx(Q_index, Q_index) = 2 * soft_body.terminal_linear_pos_cost[j];
-
-                        // Velocity cost derivatives
-                        l_x(Q_index + dof) = 2 * soft_body.terminal_linear_vel_cost[j] * (vertex_vel.position[j]);
-                        l_xx(Q_index + dof, Q_index + dof) = 2 * soft_body.terminal_linear_vel_cost[j];
-                    } else {
-                        // Position cost derivatives
-                        l_x(Q_index) = 2 * soft_body.linearPosCost[j] * (vertex_pose.position[j] - soft_body.goal_linear_pos[j]);
-                        l_xx(Q_index, Q_index) = 2 * soft_body.linearPosCost[j];
-
-                        // Velocity cost derivatives
-                        l_x(Q_index + dof) = 2 * soft_body.linear_vel_cost[j] * (vertex_vel.position[j]);
-                        l_xx(Q_index + dof, Q_index + dof) = 2 * soft_body.linear_vel_cost[j];
-                    }
-
-                    Q_index++;
-                }
-            }
-        }
-    }
+//
+//        // TODO - if cost is 0,  we should also probbaly skip computation
+//        // If no angular dofs active for this body, skip!
+//        if(!body.active_angular_dof[0] && !body.active_angular_dof[1] && !body.active_angular_dof[2]){
+//            continue;
+//        }
+//
+//        // Angular cost derivatives
+//        // Angular pos cost = w1*acos(dot_x) + w2*acos(dot_y) + w3*acos(dot_z)
+//
+//        //Compute 3D rotation matrix of current body orientation as well as the desired orientation
+////        Eigen::Matrix3d current_rot_mat = eul2RotMat(body_pose.orientation);
+////
+////        // Convert desired orientation to rotation matrix
+////        m_point desired;
+////        desired(0) = body.goalAngularPos[0];
+////        desired(1) = body.goalAngularPos[1];
+////        desired(2) = body.goalAngularPos[2];
+////        Eigen::Matrix3d desired_rot_mat = eul2RotMat(desired);
+////
+////        double dot_prods[3];
+////        for(int j = 0; j < 3; j++){
+////            dot_prods[j] = current_rot_mat(0, j) * desired_rot_mat(0, j) +
+////                    current_rot_mat(1, j) * desired_rot_mat(1, j) +
+////                    current_rot_mat(2, j) * desired_rot_mat(2, j);
+////        }
+////
+////        double dot_x, dot_y, dot_z;
+////        dot_x = dot_prods[0];
+////        dot_y = dot_prods[1];
+////        dot_z = dot_prods[2];
+////
+////        // Compute and store sin and cosine values for
+////        // object roll, pitch, yaw (r, p, y)
+////        // as well as goal roll, pitch and yaw (gr, gp, gy)
+////        double sr, sp, sy, cr, cp, cy;
+////        double sgr, sgp, sgy, cgr, cgp, cgy;
+////
+////        sr = sin(body_pose.orientation[0]);
+////        sp = sin(body_pose.orientation[1]);
+////        sy = sin(body_pose.orientation[2]);
+////        cr = cos(body_pose.orientation[0]);
+////        cp = cos(body_pose.orientation[1]);
+////        cy = cos(body_pose.orientation[2]);
+////
+////        sgr = sin(body.goalAngularPos[0]);
+////        sgp = sin(body.goalAngularPos[1]);
+////        sgy = sin(body.goalAngularPos[2]);
+////        cgr = cos(body.goalAngularPos[0]);
+////        cgp = cos(body.goalAngularPos[1]);
+////        cgy = cos(body.goalAngularPos[2]);
+////
+////        // first order deriv for dot_z, w.r.t roll, pitch, yaw
+////        double ddot_z_dr, ddot_z_dp, ddot_z_dy;
+////        // Storing values from computation of derivative dependant on desired goal angles
+////        double F, G, H;
+////
+////        F = cgy*sgp*cgr + sgy*sgr;
+////        G = sgy*sgp*cgr + sgy*sgr;
+////        H = cgp*cgr;
+////
+////        ddot_z_dr = F*(-cy*sp*cr + sy*cr) + G*(-sy*sp*cr + sy*cr) + H*(-cp*sr);
+////        ddot_z_dy = F*(-sy*sp*cr + cy*sr) + G*(cy*sp*cr + cy*sr);
+////        ddot_z_dp = F*(cy*cp*cr) + G*(sy*cp*cr) + H*(-sp*cr);
+////
+//////        std::cout << "ddot_z_dy: " << ddot_z_dy << std::endl;
+////
+////
+////        double dacos_dot_z;
+////        double dl_dr, dl_dp, dl_dy;
+////
+////        // This comes from deriv of acos(u)
+////        dacos_dot_z = -1 / (sqrt(1 - pow(dot_z, 2)));
+////
+////        // TODO - is this the correct cost weighting???
+////        if(terminal){
+////            dl_dr = body.terminalAngularPosCost[2] * dacos_dot_z * ddot_z_dr;
+////            dl_dp = body.terminalAngularPosCost[2] * dacos_dot_z * ddot_z_dp;
+////            dl_dy = body.terminalAngularPosCost[2] * dacos_dot_z * ddot_z_dy;
+////        }
+////        else{
+////            dl_dr = body.angularPosCost[2] * dacos_dot_z * ddot_z_dr;
+////            dl_dp = body.angularPosCost[2] * dacos_dot_z * ddot_z_dp;
+////            dl_dy = body.angularPosCost[2] * dacos_dot_z * ddot_z_dy;
+////        }
+////
+////        // Use these values to plug into l_x
+////
+////        // TODO Q indexing code????
+//////        std::cout << "dl_dr" << dl_dr << " dl_dp: " << dl_dp << " dl_dy: " << dl_dy << std::endl;
+////        l_x(Q_index) = dl_dr;
+////        l_x(Q_index + 1) = dl_dp;
+////        l_x(Q_index + 2) = dl_dy;
+////
+////        l_xx(Q_index, Q_index) = dl_dr*dl_dr;
+////        l_xx(Q_index + 1, Q_index + 1) = dl_dp*dl_dp;
+////        l_xx(Q_index + 2, Q_index + 2) = dl_dy*dl_dy;
+//
+//
+//        // TODO - second order l_xx derivs, also add computation from x and y vectors.......
+//
+//        // use internal F.D of costfunction body to compute derivatives????
+////        double cost_dec, cost_inc;
+////        double eps = 1e-5;
+////        // Perturb 3 orientations
+////
+////        for(int j = 0; j < 3; j++){
+//////            std::cout << "index: " << j << "\n";
+////
+////            body_pose.orientation[j] += eps;
+////            // TODO - possible issue here with using the data object itself.
+////            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
+////
+////            cost_inc = CostFunctionBody(body, d, terminal);
+//////            std::cout << "cost inc: " << cost_inc << "\n";
+////
+////            // Undo perturbation and apply negative perturb
+////            body_pose.orientation[j] -= (2 * eps);
+////
+////            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
+////
+////            cost_dec = CostFunctionBody(body, d, terminal);
+//////            std::cout << "cost dec: " << cost_dec << "\n";
+////
+////            //Undo perturbation
+////            body_pose.orientation[j] += eps;
+////
+////            MuJoCo_helper->SetBodyPoseAngle(body.name, body_pose, d);
+////
+////            l_x(Q_index) = (cost_inc - cost_dec) / (2 * eps);
+////
+////            l_xx(Q_index, Q_index) = l_x(Q_index) * l_x(Q_index);
+////
+////            Q_index ++;
+////        }
+//    }
+//
+//    for(const auto& soft_body : state_vector.soft_bodies){
+//        pose_6 vertex_pose;
+//        pose_6 vertex_vel;
+//
+//        // Loop through soft body vertices
+//        for(int i = 0; i < soft_body.num_vertices; i++){
+//            MuJoCo_helper->GetSoftBodyVertexPosGlobal(soft_body.name, i, vertex_pose, d);
+//            MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, vertex_vel, d);
+//
+//            // Linear cost derivatives
+//            for(int j = 0; j < 3; j++) {
+//                if (soft_body.vertices[i].active_linear_dof[j]) {
+//
+//                    if (terminal) {
+//                        // Position cost derivatives
+//                        l_x(Q_index) = 2 * soft_body.terminal_linear_pos_cost[j] * (vertex_pose.position[j] - soft_body.goal_linear_pos[j]);
+//                        l_xx(Q_index, Q_index) = 2 * soft_body.terminal_linear_pos_cost[j];
+//
+//                        // Velocity cost derivatives
+//                        l_x(Q_index + dof) = 2 * soft_body.terminal_linear_vel_cost[j] * (vertex_vel.position[j]);
+//                        l_xx(Q_index + dof, Q_index + dof) = 2 * soft_body.terminal_linear_vel_cost[j];
+//                    } else {
+//                        // Position cost derivatives
+//                        l_x(Q_index) = 2 * soft_body.linearPosCost[j] * (vertex_pose.position[j] - soft_body.goal_linear_pos[j]);
+//                        l_xx(Q_index, Q_index) = 2 * soft_body.linearPosCost[j];
+//
+//                        // Velocity cost derivatives
+//                        l_x(Q_index + dof) = 2 * soft_body.linear_vel_cost[j] * (vertex_vel.position[j]);
+//                        l_xx(Q_index + dof, Q_index + dof) = 2 * soft_body.linear_vel_cost[j];
+//                    }
+//
+//                    Q_index++;
+//                }
+//            }
+//        }
+//    }
 
 //    std::cout << "l_x \n" << l_x << std::endl;
 }
