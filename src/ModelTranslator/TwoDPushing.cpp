@@ -295,28 +295,9 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     return initControls;
 }
 
-void TwoDPushing::InstantiateResiduals(){
-//    num_residual_terms = 3;
-//    residual_weights.resize(num_residual_terms);
-//    residual_weights_terminal.resize(num_residual_terms);
-//
-////    residual_weights[0] = 0.0;
-////    residual_weights_terminal[0] = 1000.0;
-//    residual_weights[0] = 0.0;
-//    residual_weights_terminal[0] = 0.0;
-//
-////    residual_weights[1] = 0.2;
-////    residual_weights_terminal[1] = 0.2;
-//    residual_weights[1] = 0.0;
-//    residual_weights_terminal[1] = 0.0;
-//
-//    // EE position towards goal object
-//    residual_weights[2] = 0.1;
-//    residual_weights_terminal[2] = 100.0;
-}
-
 MatrixXd TwoDPushing::Residuals(mjData *d){
     MatrixXd residual(residual_list.size(), 1);
+    int resid_index;
 
     // Compute kinematics chain to compute site poses
     mj_kinematics(MuJoCo_helper->model, d);
@@ -329,11 +310,11 @@ MatrixXd TwoDPushing::Residuals(mjData *d){
     // --------------- Residual 0: Body goal position -----------------
     double diff_x = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
     double diff_y = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
-    residual(0, 0) = sqrt(pow(diff_x, 2)
+    residual(resid_index++, 0) = sqrt(pow(diff_x, 2)
             + pow(diff_y, 2));
 
     // --------------- Residual 1: Body goal velocity -----------------
-    residual(1, 0) = sqrt(pow(goal_vel.position(0), 2)
+    residual(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
             + pow(goal_vel.position(1), 2));
 
     // --------------- Residual 2: EE position towards goal object -----------------
@@ -342,9 +323,14 @@ MatrixXd TwoDPushing::Residuals(mjData *d){
     diff_x = EE_pose.position(0) - goal_pose.position(0);
     diff_y = EE_pose.position(1) - goal_pose.position(1);
     double diff_z = EE_pose.position(2) - goal_pose.position(2);
-    residual(2, 0) = sqrt(pow(diff_x, 2)
+    residual(resid_index++, 0) = sqrt(pow(diff_x, 2)
             + pow(diff_y, 2)
             + pow(diff_z, 2));
+
+    if(resid_index != residual_list.size()){
+        std::cerr << "Error: Residuals size mismatch\n";
+        exit(1);
+    }
 
     return residual;
 }

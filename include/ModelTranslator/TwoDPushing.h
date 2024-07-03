@@ -12,7 +12,6 @@ public:
     std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
     std::vector<MatrixXd> CreateInitSetupControls(int horizonLength) override;
 
-    void InstantiateResiduals() override;
     MatrixXd Residuals(mjData *d) override;
 
     bool TaskComplete(mjData *d, double &dist) override;

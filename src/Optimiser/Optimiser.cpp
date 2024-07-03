@@ -85,11 +85,11 @@ void Optimiser::GenerateDerivatives(){
                                                activeModelTranslator->current_state_vector.num_ctrl);
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
-    std::cout << "------------- residual derivatives wrt State -------------------" << std::endl;
-    for(int i = 0; i < activeModelTranslator->residual_list.size(); i++){
-        std::cout << "r_x[" << i << "]: " << std::endl;
-        std:: cout << r_x[0][i] << std::endl;
-    }
+//    std::cout << "------------- residual derivatives wrt State -------------------" << std::endl;
+//    for(int i = 0; i < activeModelTranslator->residual_list.size(); i++){
+//        std::cout << "r_x[" << i << "]: " << std::endl;
+//        std:: cout << r_x[0][i] << std::endl;
+//    }
 
 //    std::cout << "-------------- residual derivatives wrt State ------------------" << std::endl;
 //    for(int i = 0; i < activeModelTranslator->num_residual_terms; i++){
