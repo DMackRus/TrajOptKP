@@ -5,7 +5,7 @@ openloop_horizon: 1000
 mpc_horizon: 50
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
-minN: 1
+minN: 10
 maxN: 1000
 iterativeErrorThreshold: 0.00001
 robots:
@@ -58,5 +58,5 @@ residuals:
     weight_terminal: 0.2
   reach:
     target: [0]
-    weight: 0.1
-    weight_terminal: 0.1
+    weight: 0
+    weight_terminal: 0

@@ -81,7 +81,7 @@ void Optimiser::GenerateDerivatives(){
 
     auto start_interp_time = high_resolution_clock::now();
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, horizon_length,
-                                               A, B, l_x, l_u, l_xx, l_uu, activeYamlReader->costDerivsFD,
+                                               A, B, r_x, r_u, activeYamlReader->costDerivsFD,
                                                activeModelTranslator->current_state_vector.num_ctrl);
 //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
@@ -395,6 +395,6 @@ void Optimiser::SaveBestRollout(int thread_id){
         }
 
         // Update the residuals of the nominal trajectory
-        residuals[t] = activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t+1]);
+        activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t+1], residuals[t]);
     }
 }

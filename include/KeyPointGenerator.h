@@ -96,9 +96,8 @@ public:
 
     void InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, int T,
                                    std::vector<MatrixXd> &A, std::vector<MatrixXd> &B,
-                                   std::vector<MatrixXd> &l_x, std::vector<MatrixXd> &l_u,
-                                   std::vector<MatrixXd> &l_xx, std::vector<MatrixXd> &l_uu,
-                                   bool cost_derivs, int num_ctrl);
+                                   std::vector<std::vector<MatrixXd>> &r_x, std::vector<std::vector<MatrixXd>> &r_u,
+                                   bool residual_derivs, int num_ctrl);
 
     void ResetCache();
 
@@ -213,8 +212,6 @@ private:
     std::vector<int> ConvertPercentagesToNumKeypoints(const std::vector<double> &percentages);
 
     std::vector<double> ConvertNumKeypointsToPercentages(const std::vector<int> &num_keypoints);
-
-
 
     // Differentiator object, computes specific columns of the A and B matrices as desired.
     std::shared_ptr<Differentiator> differentiator;

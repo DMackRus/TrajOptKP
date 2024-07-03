@@ -94,9 +94,7 @@ public:
     //--------------------------------------------------------------------------------
     // Virtual functions that can be overwritten by the child class
     //--------------------------------------------------------------------------------
-    virtual void InstantiateResiduals();
-
-    virtual MatrixXd Residuals(mjData *d);
+    virtual void Residuals(mjData *d, MatrixXd &residual);
 
     /**
      * Returns the current cost of the system at the given data index.

@@ -86,97 +86,6 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
         std::cout << state_vector_name << " ";
     }
     std::cout << "\n";
-
-    InstantiateResiduals();
-}
-
-void ModelTranslator::InstantiateResiduals(){
-
-    // Setup residual weights
-    // Loop through robot joints first, then bodies, then soft bodies, then robot controls
-    // ---------------------- Position costs -------------------------------
-//    for(auto & robot : full_state_vector.robots){
-//        for(int j = 0; j < robot.joint_names.size(); j++){
-//            residual_weights.push_back(robot.joint_pos_costs[j]);
-//            residual_weights_terminal.push_back(robot.terminal_joint_pos_costs[j]);
-//            num_residual_terms++;
-//        }
-//    }
-//
-//    for(auto & body : full_state_vector.rigid_bodies){
-//        for(int j = 0; j < 3; j++){
-//            if(body.active_linear_dof[j]){
-//                residual_weights.push_back(body.linearPosCost[j]);
-//                residual_weights_terminal.push_back(body.terminal_linear_pos_cost[j]);
-//                num_residual_terms++;
-//            }
-//        }
-//
-//        for(int j = 0; j < 3; j++){
-//            if(body.active_angular_dof[j]){
-//                residual_weights.push_back(body.angular_pos_cost[j]);
-//                residual_weights_terminal.push_back(body.terminal_angular_pos_cost[j]);
-//                num_residual_terms++;
-//            }
-//        }
-//    }
-//
-//    for(auto & soft_body : full_state_vector.soft_bodies){
-//        for(int j = 0; j < 3; j++){
-//            if(soft_body.vertices[j].active_linear_dof[j]){
-//                residual_weights.push_back(soft_body.linearPosCost[j]);
-//                residual_weights_terminal.push_back(soft_body.terminal_linear_pos_cost[j]);
-//                num_residual_terms++;
-//            }
-//        }
-//    }
-//
-//    // ---------------------- Velocity costs -------------------------------
-//    for(auto & robot : full_state_vector.robots){
-//        for(int j = 0; j < robot.joint_names.size(); j++){
-//            residual_weights.push_back(robot.joint_vel_costs[j]);
-//            residual_weights_terminal.push_back(robot.terminal_joint_vel_costs[j]);
-//            num_residual_terms++;
-//        }
-//    }
-//
-//    for(auto & body : full_state_vector.rigid_bodies){
-//        for(int j = 0; j < 3; j++){
-//            if(body.active_linear_dof[j]){
-//                residual_weights.push_back(body.linear_vel_cost[j]);
-//                residual_weights_terminal.push_back(body.terminal_linear_vel_cost[j]);
-//                num_residual_terms++;
-//            }
-//        }
-//
-//        for(int j = 0; j < 3; j++){
-//            if(body.active_angular_dof[j]){
-//                residual_weights.push_back(body.angular_vel_cost[j]);
-//                residual_weights_terminal.push_back(body.terminal_angular_vel_cost[j]);
-//                num_residual_terms++;
-//            }
-//        }
-//    }
-//
-//    for(auto & soft_body : full_state_vector.soft_bodies){
-//        for(int j = 0; j < 3; j++){
-//            if(soft_body.vertices[j].active_linear_dof[j]){
-//                residual_weights.push_back(soft_body.linear_vel_cost[j]);
-//                residual_weights_terminal.push_back(soft_body.terminal_linear_vel_cost[j]);
-//                num_residual_terms++;
-//            }
-//        }
-//    }
-//
-//    // ---------------------- Control costs -------------------------------
-//    for(auto & robot : full_state_vector.robots){
-//        for(int j = 0; j < robot.actuator_names.size(); j++){
-//            // Residual weight for control is same in terminal case as running cost case
-//            residual_weights.push_back(robot.joint_controls_costs[j]);
-//            residual_weights_terminal.push_back(robot.joint_controls_costs[j]);
-//            num_residual_terms++;
-//        }
-//    }
 }
 
 void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_vector_names, bool add_extra_states){
@@ -387,7 +296,7 @@ void ModelTranslator::UpdateSceneVisualisation(){
     }
 }
 
-MatrixXd ModelTranslator::Residuals(mjData *d) {
+void ModelTranslator::Residuals(mjData *d, MatrixXd &residual) {
     std::cerr << "residuals not implemented for this model, exiting \n";
     exit(1);
 }

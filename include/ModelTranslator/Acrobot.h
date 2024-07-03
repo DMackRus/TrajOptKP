@@ -7,7 +7,7 @@ public:
 
     bool TaskComplete(mjData *d, double &dist) override;
 
-    MatrixXd Residuals(mjData *d) override;
+    void Residuals(mjData *d, MatrixXd &residuals) override;
 
 //    void ReturnRandomStartState() override;
 //    void ReturnRandomGoalState() override;

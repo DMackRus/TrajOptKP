@@ -49,36 +49,8 @@ void walker::ReturnRandomGoalState(){
     current_state_vector.robots[0].goal_vel[1] = rand_body_vel;
 }
 
-void walker::InstantiateResiduals(){
-//    num_residual_terms = 9;
-//    residual_weights.resize(num_residual_terms);
-//    residual_weights_terminal.resize(num_residual_terms);
-//
-//    residual_weights[0] = 1.0;
-//    residual_weights[1] = 0.1;
-//    residual_weights[2] = 0.1;
-//
-//    residual_weights[3] = 0.001;
-//    residual_weights[4] = 0.001;
-//    residual_weights[5] = 0.001;
-//    residual_weights[6] = 0.001;
-//    residual_weights[7] = 0.001;
-//    residual_weights[8] = 0.001;
-//
-//    residual_weights_terminal[0] = 100.0;
-//    residual_weights_terminal[1] = 0.0;
-//    residual_weights_terminal[2] = 0.0;
-//
-//    residual_weights_terminal[3] = 0.001;
-//    residual_weights_terminal[4] = 0.001;
-//    residual_weights_terminal[5] = 0.001;
-//    residual_weights_terminal[6] = 0.001;
-//    residual_weights_terminal[7] = 0.001;
-//    residual_weights_terminal[8] = 0.001;
-}
-
-MatrixXd walker::Residuals(mjData *d){
-    MatrixXd residuals(residual_list.size(), 1);
+void walker::Residuals(mjData *d, MatrixXd &residuals){
+//    MatrixXd residuals(residual_list.size(), 1);
     int resid_index = 0;
 
     std::vector<double> walker_joints;
@@ -107,5 +79,5 @@ MatrixXd walker::Residuals(mjData *d){
         exit(1);
     }
 
-    return residuals;
+//    return residuals;
 }

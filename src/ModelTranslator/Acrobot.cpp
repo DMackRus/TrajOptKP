@@ -23,8 +23,8 @@ bool Acrobot::TaskComplete(mjData *d, double &dist){
     return false;
 }
 
-MatrixXd Acrobot::Residuals(mjData *d){
-    MatrixXd residuals(residual_list.size(), 1);
+void Acrobot::Residuals(mjData *d, MatrixXd &residuals){
+//    MatrixXd residuals(residual_list.size(), 1);
     int resid_index = 0;
 
     std::vector<double> acrobot_joints;
@@ -54,7 +54,7 @@ MatrixXd Acrobot::Residuals(mjData *d){
         exit(1);
     }
 
-    return residuals;
+//    return residuals;
 }
 
 //MatrixXd Acrobot::ReturnRandomStartState(){

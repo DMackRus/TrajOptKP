@@ -295,8 +295,7 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     return initControls;
 }
 
-MatrixXd TwoDPushing::Residuals(mjData *d){
-    MatrixXd residual(residual_list.size(), 1);
+void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
     int resid_index;
 
     // Compute kinematics chain to compute site poses
@@ -310,11 +309,11 @@ MatrixXd TwoDPushing::Residuals(mjData *d){
     // --------------- Residual 0: Body goal position -----------------
     double diff_x = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
     double diff_y = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
-    residual(resid_index++, 0) = sqrt(pow(diff_x, 2)
+    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
             + pow(diff_y, 2));
 
     // --------------- Residual 1: Body goal velocity -----------------
-    residual(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
+    residuals(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
             + pow(goal_vel.position(1), 2));
 
     // --------------- Residual 2: EE position towards goal object -----------------
@@ -323,7 +322,7 @@ MatrixXd TwoDPushing::Residuals(mjData *d){
     diff_x = EE_pose.position(0) - goal_pose.position(0);
     diff_y = EE_pose.position(1) - goal_pose.position(1);
     double diff_z = EE_pose.position(2) - goal_pose.position(2);
-    residual(resid_index++, 0) = sqrt(pow(diff_x, 2)
+    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
             + pow(diff_y, 2)
             + pow(diff_z, 2));
 
@@ -331,8 +330,6 @@ MatrixXd TwoDPushing::Residuals(mjData *d){
         std::cerr << "Error: Residuals size mismatch\n";
         exit(1);
     }
-
-    return residual;
 }
 
 bool TwoDPushing::TaskComplete(mjData *d, double &dist){
