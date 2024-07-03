@@ -34,19 +34,19 @@ MatrixXd Acrobot::Residuals(mjData *d){
     MuJoCo_helper->GetRobotJointsControls("acrobot", acrobot_control, d);
 
     // --------------- Residual 0: Joint 0 position -----------------
-    residuals(0, 0) = acrobot_joints[0];
+    residuals(0, 0) = acrobot_joints[0] - residual_list[0].target[0];
 
     // --------------- Residual 1: Joint 1 position -----------------
-    residuals(1, 0) = acrobot_joints[1];
+    residuals(1, 0) = acrobot_joints[1] - residual_list[1].target[0];
 
     // --------------- Residual 2: Joint 0 velocity -----------------
-    residuals(2, 0) = acrobot_velocities[0];
+    residuals(2, 0) = acrobot_velocities[0] - residual_list[2].target[0];
 
     // --------------- Residual 3: Joint 1 velocity -----------------
-    residuals(3, 0) = acrobot_velocities[1];
+    residuals(3, 0) = acrobot_velocities[1] - - residual_list[3].target[0];
 
     // --------------- Residual 4: Joint 0 control -----------------
-    residuals(4, 0) = acrobot_control[0];
+    residuals(4, 0) = acrobot_control[0] - residual_list[4].target[0];
 
     return residuals;
 }

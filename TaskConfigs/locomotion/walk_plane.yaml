@@ -15,14 +15,33 @@ robots:
     torqueLimits: [1, 1, 1, 1, 1, 1]
     startPos: [0, 0, 0, 1, -1, 0.2, 0, 0, 0]
     goalPos: [0, 0, 0, 0, 0, 0, 0, 0, 0]
-    jointPosCosts: [1, 0, 0.1, 0, 0, 0, 0, 0, 0]
-    jointVelCosts: [0, 0.1, 0, 0, 0, 0, 0, 0, 0]
-    terminalJointPosCosts: [ 100, 0, 0, 0, 0, 0, 0, 0, 0 ]
-    terminalJointVelCosts: [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
-    jointControlCosts: [0.0001, 0.00001, 0.0001, 0.0001, 0.0001, 0.0001]
+#    jointPosCosts: [1, 0, 0.1, 0, 0, 0, 0, 0, 0]
+#    jointVelCosts: [0, 0.1, 0, 0, 0, 0, 0, 0, 0]
+#    terminalJointPosCosts: [ 100, 0, 0, 0, 0, 0, 0, 0, 0 ]
+#    terminalJointVelCosts: [ 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+#    jointControlCosts: [0.0001, 0.00001, 0.0001, 0.0001, 0.0001, 0.0001]
 #    jointControlCosts: [0, 0, 0, 0, 0, 0]
     #jointControlCosts: [0.005, 0.001, 0.001, 0.005, 0.001, 0.001]
 #    jointJerkThresholds: [1e-15, 1e-15, 0.01, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
 
     jointJerkThresholds: [1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15]
     magVelThresholds: [0.1, 0.1, 0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+residuals:
+  body_height:
+    target: [0]
+    weight: 1
+    weight_terminal: 1
+  body_orientation:
+    target: [0]
+    weight: 0.1
+    weight_terminal: 0.1
+  body_velocity:
+    target: [0.5]
+    weight: 0.1
+    weight_terminal: 0.1
+  body_controls:
+    target: [0, 0, 0, 0, 0, 0]
+    resid_dimension: 6
+    weight: 0.0001
+    weight_terminal: 0.0001

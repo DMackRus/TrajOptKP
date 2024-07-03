@@ -78,7 +78,8 @@ void walker::InstantiateResiduals(){
 }
 
 MatrixXd walker::Residuals(mjData *d){
-    MatrixXd residuals(9, 1);
+    MatrixXd residuals(residual_list.size(), 1);
+    int resid_index = 0;
 
     std::vector<double> walker_joints;
     std::vector<double> walker_velocities;
@@ -88,17 +89,22 @@ MatrixXd walker::Residuals(mjData *d){
     MuJoCo_helper->GetRobotJointsControls("walker", walker_controls, d);
 
     // --------------- Residual 0: Body height -----------------
-    residuals(0, 0) = walker_joints[0];
+    residuals(resid_index++, 0) = walker_joints[0] - residual_list[0].target[0];
 
     // --------------- Residual 1: Body rotation ---------------
-    residuals(1, 0) = walker_joints[2];
+    residuals(resid_index++, 0) = walker_joints[2] - residual_list[1].target[0];
 
     // --------------- Residual 2: Body velocity ---------------
-    residuals(2, 0) = walker_velocities[1];
+    residuals(resid_index++, 0) = walker_velocities[1] - residual_list[2].target[0];
 
     // --------------- Residual 3: Joints controls -------------
     for(int i = 0; i < walker_controls.size(); i++){
-        residuals(3+i, 0) = walker_controls[i];
+        residuals(resid_index++, 0) = walker_controls[i] - residual_list[3+i].target[0];
+    }
+
+    if(resid_index != residual_list.size()){
+        std::cerr << "Error: Residuals size mismatch\n";
+        exit(1);
     }
 
     return residuals;

@@ -414,11 +414,22 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
         residual _residual;
 
         _residual.name = residual_it->first.as<string>();
-        _residual.target = residual_it->second["target"].as<double>();
+        for(int i = 0; i < residual_it->second["target"].size(); i++){
+            _residual.target.push_back(residual_it->second["target"][i].as<double>());
+        }
+
+        if(residual_it->second["resid_dimension"]){
+            _residual.resid_dimension = residual_it->second["resid_dimension"].as<int>();
+        }
+        else{
+            _residual.resid_dimension = 1;
+        }
         _residual.weight = residual_it->second["weight"].as<double>();
         _residual.weight_terminal = residual_it->second["weight_terminal"].as<double>();
 
-        _taskConfig.residuals.push_back(_residual);
+        for(int i = 0; i < _residual.resid_dimension; i++){
+            _taskConfig.residuals.push_back(_residual);
+        }
     }
 }
 

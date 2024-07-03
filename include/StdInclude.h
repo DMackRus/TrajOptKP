@@ -85,7 +85,8 @@ struct soft_body{
 
 struct residual{
     std::string name;
-    double target;
+    std::vector<double> target;
+    int resid_dimension;
     double weight;
     double weight_terminal;
 };
