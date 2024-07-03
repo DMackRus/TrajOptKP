@@ -12,9 +12,8 @@ public:
     std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
     std::vector<MatrixXd> CreateInitSetupControls(int horizonLength) override;
 
-//    double CostFunction(mjData *d, bool terminal) override;
-
-//    void CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
+    void InstantiateResiduals() override;
+    MatrixXd Residuals(mjData *d) override;
 
     bool TaskComplete(mjData *d, double &dist) override;
 
