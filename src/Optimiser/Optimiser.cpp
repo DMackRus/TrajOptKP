@@ -87,8 +87,14 @@ void Optimiser::GenerateDerivatives(){
 
 //    std::cout << "------------- residual derivatives wrt State -------------------" << std::endl;
 //    for(int i = 0; i < activeModelTranslator->residual_list.size(); i++){
-//        std::cout << "r_x[" << i << "]: " << std::endl;
+//        std::cout << "r_x[0][" << i << "]: " << std::endl;
 //        std:: cout << r_x[0][i] << std::endl;
+//        std::cout << "r_x[1][" << i << "]: " << std::endl;
+//        std:: cout << r_x[1][i] << std::endl;
+//    }
+//
+//    for(int i = 0; i <= 10; i++){
+//        std:: cout << "r_x[ " << i << "] " << r_x[i][1] << "\n";
 //    }
 
 //    std::cout << "-------------- residual derivatives wrt State ------------------" << std::endl;
@@ -96,8 +102,6 @@ void Optimiser::GenerateDerivatives(){
 //        std::cout << "r_u[" << i << "]: " << std::endl;
 //        std:: cout << r_u[0][i] << std::endl;
 //    }
-
-
 
     // If finite differencing is used for cost derivatives, compute cost derivs from residual derivatives
     if(activeYamlReader->costDerivsFD){

@@ -849,26 +849,34 @@ void KeypointGenerator::InterpolateDerivatives(const std::vector<std::vector<int
                             std::vector<MatrixXd> &A, std::vector<MatrixXd> &B,
                             std::vector<std::vector<MatrixXd>> &r_x, std::vector<std::vector<MatrixXd>> &r_u,
                             bool residual_derivs, int num_ctrl){
+    // Interpolation of B matrices
     MatrixXd startB;
     MatrixXd endB;
     MatrixXd addB;
 
+    // Interpolation of position part of A matrices
     MatrixXd startACol1;
     MatrixXd endACol1;
     MatrixXd addACol1;
 
+    // Interpolation of velocity part of A matrices
     MatrixXd startACol2;
     MatrixXd endACol2;
     MatrixXd addACol2;
 
-    double start_val_r_x;
-    double end_val_r_x;
-    double add_val_r_x;
-    double start_val_r_u;
-    double end_val_r_u;
-    double add_val_r_u;
-
+    // Residual interpolation
     int num_residuals = r_x[0].size();
+    vector<double> start_val_r_x_pos(num_residuals);
+    vector<double> end_val_r_x_pos(num_residuals);
+    vector<double> add_val_r_x_pos(num_residuals);
+
+    vector<double> start_val_r_x_vel(num_residuals);
+    vector<double> end_val_r_x_vel(num_residuals);
+    vector<double> add_val_r_x_vel(num_residuals);
+
+    vector<double> start_val_r_u(num_residuals);
+    vector<double> end_val_r_u(num_residuals);
+    vector<double> add_val_r_u(num_residuals);
 
     // Create an array to track startIndices of next interpolation for each dof
     int startIndices[dof];
@@ -906,16 +914,20 @@ void KeypointGenerator::InterpolateDerivatives(const std::vector<std::vector<int
 
                     if(residual_derivs) {
                         for (int resid = 0; resid < num_residuals; resid++) {
-                            start_val_r_x = r_x[startIndices[i]][resid](i, 0);
-                            end_val_r_x = r_x[t][resid](i, 0);
-                            add_val_r_x = (end_val_r_x - start_val_r_x) / (t - startIndices[i]);
+                            start_val_r_x_pos[resid] = r_x[startIndices[i]][resid](i, 0);
+                            end_val_r_x_pos[resid] = r_x[t][resid](i, 0);
+                            add_val_r_x_pos[resid] = (end_val_r_x_pos[resid] - start_val_r_x_pos[resid]) / (t - startIndices[i]);
+
+                            start_val_r_x_vel[resid] = r_x[startIndices[i]][resid](i + dof, 0);
+                            end_val_r_x_vel[resid] = r_x[t][resid](i + dof, 0);
+                            add_val_r_x_vel[resid] = (end_val_r_x_vel[resid] - start_val_r_x_vel[resid]) / (t - startIndices[i]);
                         }
 
                         if(i < num_ctrl){
                             for (int resid = 0; resid < num_residuals; resid++) {
-                                start_val_r_u = r_u[startIndices[i]][resid](i, 0);
-                                end_val_r_u = r_u[t][resid](i, 0);
-                                add_val_r_u = (end_val_r_u - start_val_r_u) / (t - startIndices[i]);
+                                start_val_r_u[resid] = r_u[startIndices[i]][resid](i, 0);
+                                end_val_r_u[resid] = r_u[t][resid](i, 0);
+                                add_val_r_u[resid] = (end_val_r_u[resid] - start_val_r_u[resid]) / (t - startIndices[i]);
                             }
                         }
                     }
@@ -932,9 +944,10 @@ void KeypointGenerator::InterpolateDerivatives(const std::vector<std::vector<int
                         A[k].block(0, i + dof, 2*dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
 
                         for (int resid = 0; resid < num_residuals; resid++) {
-                            r_x[k][resid](i, 0) = start_val_r_x + ((k - startIndices[i]) * add_val_r_x);
+                            r_x[k][resid](i, 0) = start_val_r_x_pos[resid] + ((k - startIndices[i]) * add_val_r_x_pos[resid]);
+                            r_x[k][resid](i + dof, 0) = start_val_r_x_vel[resid] + ((k - startIndices[i]) * add_val_r_x_vel[resid]);
                             if(i < num_ctrl)
-                                r_u[k][resid](i, 0) = start_val_r_u + ((k - startIndices[i]) * add_val_r_u);
+                                r_u[k][resid](i, 0) = start_val_r_u[resid] + ((k - startIndices[i]) * add_val_r_u[resid]);
                         }
 
                         if(i < num_ctrl){

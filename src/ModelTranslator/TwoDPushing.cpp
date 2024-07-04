@@ -307,6 +307,8 @@ void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
     MuJoCo_helper->GetBodyVelocity("goal", goal_vel, d);
 
     // --------------- Residual 0: Body goal position -----------------
+//    double diff_x = goal_pose.position(0) - residual_list[0].target[0];
+//    double diff_y = goal_pose.position(1) - residual_list[0].target[1];
     double diff_x = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
     double diff_y = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
     residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
