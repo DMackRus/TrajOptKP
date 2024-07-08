@@ -1,8 +1,8 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing.xml"
 modelName: "/push_ncl"
-timeStep: 0.004
+timeStep: 0.008
 openloop_horizon: 1000
-mpc_horizon: 200
+mpc_horizon: 50
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
@@ -41,12 +41,20 @@ bodies:
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
 
 residuals:
-  goal_pos:
-    target: [0.7, -0.1]
+  goal_pos_x:
+    target: [0.7]
     weight: 1
     weight_terminal: 0
-  goal_vel:
-    target: [0, 0]
+  goal_pos_y:
+    target: [-0.1 ]
+    weight: 1
+    weight_terminal: 0
+  goal_vel_x:
+    target: [0]
+    weight: 0.2
+    weight_terminal: 0.2
+  goal_vel_y:
+    target: [0]
     weight: 0.2
     weight_terminal: 0.2
   reach:

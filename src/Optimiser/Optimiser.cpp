@@ -399,6 +399,6 @@ void Optimiser::SaveBestRollout(int thread_id){
         }
 
         // Update the residuals of the nominal trajectory
-        activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t+1], residuals[t]);
+        activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t], residuals[t]);
     }
 }
