@@ -3,7 +3,7 @@ modelName: "/push_ncl"
 timeStep: 0.008
 openloop_horizon: 1000
 mpc_horizon: 50
-keypointMethod: "adaptive_jerk"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
 maxN: 1000
@@ -33,9 +33,9 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, -0.1, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [0.0, 0.0, 0]
+    linearPosCost: [1, 1, 0]
     # When iLQR once
-    terminalLinearPosCost: [1000, 1000, 0]
+    terminalLinearPosCost: [0, 0, 0]
     linearVelCost: [0.2, 0.2, 0]
     terminalLinearVelCost: [0, 0, 0]
     angularPosCost: [0, 0, 0]

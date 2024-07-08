@@ -377,12 +377,14 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     auto timer_start = high_resolution_clock::now();
     if(cost_reduced_last_iter){
         GenerateDerivatives();
-//        std::cout << "A[0] \n" << A[0] << "\n";
+        std::cout << "A[0] \n" << A[0] << "\n";
 //        std::cout << "A[1] \n" << A[1] << "\n";
 //        std::cout << "A[2] \n" << A[2] << "\n";
-//        std::cout << "B[0] \n" << B[0] << "\n";
-//        std::cout << "l_x[0] \n" << l_x[0] << "\n";
-//        std::cout << "l_xx[0] \n" << l_xx[0] << "\n";
+        std::cout << "B[0] \n" << B[0] << "\n";
+        std::cout << "l_x[0] \n" << l_x[0] << "\n";
+        std::cout << "l_xx[0] \n" << l_xx[0] << "\n";
+        std::cout << "l_x[1] \n" << l_x[1] << "\n";
+        std::cout << "l_xx[1] \n" << l_xx[1] << "\n";
     }
     time_get_derivs_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
