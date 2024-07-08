@@ -314,9 +314,16 @@ void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
     residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
             + pow(diff_y, 2));
 
+//    double diff_x, diff_y;
+//    residuals(resid_index++, 0) = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+//    residuals(resid_index++, 0) = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+
     // --------------- Residual 1: Body goal velocity -----------------
     residuals(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
             + pow(goal_vel.position(1), 2));
+
+//    residuals(resid_index++, 0) = goal_vel.position(0);
+//    residuals(resid_index++, 0) = goal_vel.position(1);
 
     // --------------- Residual 2: EE position towards goal object -----------------
     pose_7 EE_pose;
@@ -348,7 +355,6 @@ bool TwoDPushing::TaskComplete(mjData *d, double &dist){
     if(dist < 0.025){
         taskComplete = true;
     }
-
 
     return taskComplete;
 }

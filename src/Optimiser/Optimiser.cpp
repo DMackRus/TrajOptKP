@@ -118,7 +118,7 @@ void Optimiser::GenerateDerivatives(){
     }
 
 //    std::cout << "------------------ cost derivatives from residuals ------------------------- \n";
-//    std::cout << "reisduals[0]: " << residuals[0] << "\n";
+//    std::cout << "residuals[0]: " << residuals[0] << "\n";
 //    std::cout << "l_x[0]: " << std::endl;
 //    std:: cout << l_x[0] << std::endl;
 //    std::cout << "l_xx[0]: " << std::endl;

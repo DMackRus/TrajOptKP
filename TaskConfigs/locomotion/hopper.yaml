@@ -13,10 +13,31 @@ robots:
     torqueLimits: [0.4, 0.4, 0.4]
     startPos: [1.2, 0, 0, 0, 0, 0]
     goalPos: [1.2, 1, 0, 0, 0, 0]
-    jointPosCosts: [1, 1, 1, 0, 0, 0]
-    jointVelCosts: [0, 0, 0, 0, 0, 0]
-    terminalJointPosCosts: [10, 1, 10, 0, 0, 0]
-    terminalJointVelCosts: [0, 0, 0, 0, 0, 0]
-    jointControlCosts: [0.01, 0.01, 0.01]
+#    jointPosCosts: [1, 1, 1, 0, 0, 0]
+#    jointVelCosts: [0, 0, 0, 0, 0, 0]
+#    terminalJointPosCosts: [10, 1, 10, 0, 0, 0]
+#    terminalJointVelCosts: [0, 0, 0, 0, 0, 0]
+#    jointControlCosts: [0.01, 0.01, 0.01]
     jointJerkThresholds: [0.1, 0.02, 0.1, 0.1, 0.1]
     magVelThresholds: [1.0, 1.0, 1.0, 0.2, 0.2, 0.2]
+
+residuals:
+  body_height:
+    target: [0]
+    weight: 1
+    weight_terminal: 1
+  body_orientation:
+    target: [0]
+    weight: 0.1
+    weight_terminal: 0.1
+  body_velocity:
+    target: [0.5]
+    weight: 0.1
+    weight_terminal: 0.1
+  body_controls:
+    target: [0, 0, 0]
+    resid_dimension: 3
+    #    weight: 0.0001
+    #    weight_terminal: 0.0001
+    weight: 0
+    weight_terminal: 0
