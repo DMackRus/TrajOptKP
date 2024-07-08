@@ -296,7 +296,7 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
 }
 
 void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
-    int resid_index;
+    int resid_index = 0;
 
     // Compute kinematics chain to compute site poses
     mj_kinematics(MuJoCo_helper->model, d);
@@ -309,21 +309,26 @@ void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
     // --------------- Residual 0: Body goal position -----------------
 //    double diff_x = goal_pose.position(0) - residual_list[0].target[0];
 //    double diff_y = goal_pose.position(1) - residual_list[0].target[1];
-//    double diff_x = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
-//    double diff_y = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
-//    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
-//            + pow(diff_y, 2));
+    double diff_x = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+    double diff_y = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+            + pow(diff_y, 2));
 
-    double diff_x, diff_y;
-    residuals(resid_index++, 0) = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    residuals(resid_index++, 0) = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+//    double diff_x, diff_y;
+//    residuals(resid_index++, 0) = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+//    residuals(resid_index++, 0) = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
 
     // --------------- Residual 1: Body goal velocity -----------------
-//    residuals(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
-//            + pow(goal_vel.position(1), 2));
+    residuals(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
+            + pow(goal_vel.position(1), 2));
 
-    residuals(resid_index++, 0) = goal_vel.position(0);
-    residuals(resid_index++, 0) = goal_vel.position(1);
+//    residuals(resid_index++, 0) = goal_vel.position(0);
+//    residuals(resid_index++, 0) = goal_vel.position(1);
+
+    // --------------- Residual 2: Joint velocity -----------------
+    std::vector<double> joint_velocities;
+    MuJoCo_helper->GetRobotJointsVelocities("panda", joint_velocities, d);
+    residuals(resid_index++, 0) = joint_velocities[5];
 
     // --------------- Residual 2: EE position towards goal object -----------------
     pose_7 EE_pose;

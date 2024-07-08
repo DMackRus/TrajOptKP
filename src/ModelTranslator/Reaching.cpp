@@ -1,7 +1,7 @@
 #include "ModelTranslator/Reaching.h"
 
 pandaReaching::pandaReaching(): ModelTranslator(){
-    std::string yamlFilePath = "/taskConfigs/free_motion.yaml";
+    std::string yamlFilePath = "/TaskConfigs/free_motion/reaching.yaml";
 
     InitModelTranslator(yamlFilePath);
 }
@@ -24,6 +24,34 @@ bool pandaReaching::TaskComplete(mjData *d, double &dist){
     }
     else{
         return false;
+    }
+}
+
+void pandaReaching::Residuals(mjData *d, MatrixXd &residuals){
+    int resid_index = 0;
+
+    // Compute kinematics chain to compute site poses
+    mj_kinematics(MuJoCo_helper->model, d);
+
+    pose_7 EE_pose;
+    MuJoCo_helper->GetBodyPoseQuatViaXpos("franka_gripper", EE_pose, d);
+    double diff_x = EE_pose.position(0) - residual_list[0].target[0];
+    double diff_y = EE_pose.position(1) - residual_list[0].target[1];
+    double diff_z = EE_pose.position(2) - residual_list[0].target[2];
+    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+                                       + pow(diff_y, 2)
+                                       + pow(diff_z, 2));
+
+    std::vector<double> joint_velocities;
+    MuJoCo_helper->GetRobotJointsVelocities("panda", joint_velocities, d);
+
+    for(double joint_velocitie : joint_velocities){
+        residuals(resid_index++, 0) = joint_velocitie;
+    }
+
+    if(resid_index != residual_list.size()){
+        std::cerr << "Error: Residuals size mismatch\n";
+        exit(1);
     }
 }
 
