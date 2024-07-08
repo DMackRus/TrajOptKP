@@ -301,36 +301,51 @@ void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
     // Compute kinematics chain to compute site poses
     mj_kinematics(MuJoCo_helper->model, d);
 
+    int num_obstacles = 0;
+
+    if(clutterLevel == noClutter){
+
+    }
+    else if(clutterLevel == lowClutter){
+        num_obstacles = 3;
+    }
+    else if(clutterLevel == heavyClutter){
+        num_obstacles = 7;
+    }
+
     pose_6 goal_pose;
     pose_6 goal_vel;
     MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
     MuJoCo_helper->GetBodyVelocity("goal", goal_vel, d);
 
     // --------------- Residual 0: Body goal position -----------------
-//    double diff_x = goal_pose.position(0) - residual_list[0].target[0];
-//    double diff_y = goal_pose.position(1) - residual_list[0].target[1];
     double diff_x = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
     double diff_y = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
     residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
             + pow(diff_y, 2));
 
-//    double diff_x, diff_y;
-//    residuals(resid_index++, 0) = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
-//    residuals(resid_index++, 0) = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
-
     // --------------- Residual 1: Body goal velocity -----------------
     residuals(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
             + pow(goal_vel.position(1), 2));
 
-//    residuals(resid_index++, 0) = goal_vel.position(0);
-//    residuals(resid_index++, 0) = goal_vel.position(1);
+    // Residuals 2 -> 2 + num_obstacles: Obstacle positions
+    for(int i = 0; i < num_obstacles; i++){
+        pose_6 obstacle_pose;
+        MuJoCo_helper->GetBodyPoseAngle("obstacle_" + std::to_string(i + 1), obstacle_pose, d);
 
-    // --------------- Residual 2: Joint velocity -----------------
+        diff_x = obstacle_pose.position(0) - full_state_vector.rigid_bodies[i + 1].start_linear_pos[0];
+        diff_y = obstacle_pose.position(1) - full_state_vector.rigid_bodies[i + 1].start_linear_pos[1];
+
+        residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+                + pow(diff_y, 2));
+    }
+
+    // --------------- Residual 3 + num_obstacles: Joint velocity -----------------
     std::vector<double> joint_velocities;
     MuJoCo_helper->GetRobotJointsVelocities("panda", joint_velocities, d);
     residuals(resid_index++, 0) = joint_velocities[5];
 
-    // --------------- Residual 2: EE position towards goal object -----------------
+    // --------------- Residual 4 + num_obstacles: EE position towards goal object -----------------
     pose_7 EE_pose;
     MuJoCo_helper->GetBodyPoseQuatViaXpos("franka_gripper", EE_pose, d);
     diff_x = EE_pose.position(0) - goal_pose.position(0);

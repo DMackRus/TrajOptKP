@@ -26,14 +26,6 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, -0.1, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [0.0, 0.0, 0]
-    # When iLQR once
-    terminalLinearPosCost: [1000, 1000, 0]
-    linearVelCost: [0.2, 0.2, 0]
-    terminalLinearVelCost: [0, 0, 0]
-    angularPosCost: [0, 0, 0]
-    terminalAngularPosCost: [0, 0, 0]
-    angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 1, 1, 1 ]
@@ -44,7 +36,7 @@ residuals:
   goal_pos:
     target: [0.7, -0.1]
     weight: 1
-    weight_terminal: 0
+    weight_terminal: 0  # 1000 when long horizon
   goal_vel:
     target: [0, 0]
     weight: 0.2

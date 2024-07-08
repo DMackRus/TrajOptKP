@@ -228,37 +228,37 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
             goalAngularPos[i] = body_it->second["goalAngularPos"][i].as<double>();
         }
 
-        for(int i = 0; i < body_it->second["linearPosCost"].size(); i++){
-            linearPosCosts[i] = body_it->second["linearPosCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["terminalLinearPosCost"].size(); i++){
-            terminalLinearPosCosts[i] = body_it->second["terminalLinearPosCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["linearVelCost"].size(); i++){
-            linearVelCosts[i] = body_it->second["linearVelCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["terminalLinearVelCost"].size(); i++){
-            terminalLinearVelCosts[i] = body_it->second["terminalLinearVelCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["angularPosCost"].size(); i++){
-            angularPosCosts[i] = body_it->second["angularPosCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["terminalAngularPosCost"].size(); i++){
-            terminalAngularPosCosts[i] = body_it->second["terminalAngularPosCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["angularVelCost"].size(); i++){
-            angularVelCosts[i] = body_it->second["angularVelCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["terminalAngularVelCost"].size(); i++){
-            terminalAngularVelCosts[i] = body_it->second["terminalAngularVelCost"][i].as<double>();
-        }
+//        for(int i = 0; i < body_it->second["linearPosCost"].size(); i++){
+//            linearPosCosts[i] = body_it->second["linearPosCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["terminalLinearPosCost"].size(); i++){
+//            terminalLinearPosCosts[i] = body_it->second["terminalLinearPosCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["linearVelCost"].size(); i++){
+//            linearVelCosts[i] = body_it->second["linearVelCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["terminalLinearVelCost"].size(); i++){
+//            terminalLinearVelCosts[i] = body_it->second["terminalLinearVelCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["angularPosCost"].size(); i++){
+//            angularPosCosts[i] = body_it->second["angularPosCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["terminalAngularPosCost"].size(); i++){
+//            terminalAngularPosCosts[i] = body_it->second["terminalAngularPosCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["angularVelCost"].size(); i++){
+//            angularVelCosts[i] = body_it->second["angularVelCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["terminalAngularVelCost"].size(); i++){
+//            terminalAngularVelCosts[i] = body_it->second["terminalAngularVelCost"][i].as<double>();
+//        }
 
         for(int i = 0; i < body_it->second["linearJerkThreshold"].size(); i++){
             linearJerkThreshold[i] = body_it->second["linearJerkThreshold"][i].as<double>();
@@ -284,14 +284,14 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
             _rigid_body.start_angular_pos[i] = startAngularPos[i];
             _rigid_body.goal_linear_pos[i] = goalLinearPos[i];
             _rigid_body.goal_angular_pos[i] = goalAngularPos[i];
-            _rigid_body.linearPosCost[i] = linearPosCosts[i];
-            _rigid_body.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
-            _rigid_body.linear_vel_cost[i] = linearVelCosts[i];
-            _rigid_body.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
-            _rigid_body.angular_pos_cost[i] = angularPosCosts[i];
-            _rigid_body.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
-            _rigid_body.angular_vel_cost[i] = angularVelCosts[i];
-            _rigid_body.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
+//            _rigid_body.linearPosCost[i] = linearPosCosts[i];
+//            _rigid_body.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
+//            _rigid_body.linear_vel_cost[i] = linearVelCosts[i];
+//            _rigid_body.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
+//            _rigid_body.angular_pos_cost[i] = angularPosCosts[i];
+//            _rigid_body.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
+//            _rigid_body.angular_vel_cost[i] = angularVelCosts[i];
+//            _rigid_body.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
             _rigid_body.linear_jerk_threshold[i] = linearJerkThreshold[i];
             _rigid_body.angular_jerk_threshold[i] = angularJerkThreshold[i];
             _rigid_body.linear_vel_change_threshold[i] = linearMagVelThreshold[i];
@@ -350,37 +350,37 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
             goalAngularPos[i] = body_it->second["goalAngularPos"][i].as<double>();
         }
 
-        for(int i = 0; i < body_it->second["linearPosCost"].size(); i++){
-            linearPosCosts[i] = body_it->second["linearPosCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["terminalLinearPosCost"].size(); i++){
-            terminalLinearPosCosts[i] = body_it->second["terminalLinearPosCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["linearVelCost"].size(); i++){
-            linearVelCosts[i] = body_it->second["linearVelCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["terminalLinearVelCost"].size(); i++){
-            terminalLinearVelCosts[i] = body_it->second["terminalLinearVelCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["angularPosCost"].size(); i++){
-            angularPosCosts[i] = body_it->second["angularPosCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["terminalAngularPosCost"].size(); i++){
-            terminalAngularPosCosts[i] = body_it->second["terminalAngularPosCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["angularVelCost"].size(); i++){
-            angularVelCosts[i] = body_it->second["angularVelCost"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["terminalAngularVelCost"].size(); i++){
-            terminalAngularVelCosts[i] = body_it->second["terminalAngularVelCost"][i].as<double>();
-        }
+//        for(int i = 0; i < body_it->second["linearPosCost"].size(); i++){
+//            linearPosCosts[i] = body_it->second["linearPosCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["terminalLinearPosCost"].size(); i++){
+//            terminalLinearPosCosts[i] = body_it->second["terminalLinearPosCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["linearVelCost"].size(); i++){
+//            linearVelCosts[i] = body_it->second["linearVelCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["terminalLinearVelCost"].size(); i++){
+//            terminalLinearVelCosts[i] = body_it->second["terminalLinearVelCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["angularPosCost"].size(); i++){
+//            angularPosCosts[i] = body_it->second["angularPosCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["terminalAngularPosCost"].size(); i++){
+//            terminalAngularPosCosts[i] = body_it->second["terminalAngularPosCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["angularVelCost"].size(); i++){
+//            angularVelCosts[i] = body_it->second["angularVelCost"][i].as<double>();
+//        }
+//
+//        for(int i = 0; i < body_it->second["terminalAngularVelCost"].size(); i++){
+//            terminalAngularVelCosts[i] = body_it->second["terminalAngularVelCost"][i].as<double>();
+//        }
 
         _soft_body.name = bodyName;
         _soft_body.num_vertices = num_vertices;
@@ -396,14 +396,14 @@ void FileHandler::readModelConfigFile(const std::string& yamlFilePath, task &_ta
             _soft_body.start_angular_pos[i] = startAngularPos[i];
             _soft_body.goal_linear_pos[i] = goalLinearPos[i];
             _soft_body.goal_angular_pos[i] = goalAngularPos[i];
-            _soft_body.linearPosCost[i] = linearPosCosts[i];
-            _soft_body.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
-            _soft_body.linear_vel_cost[i] = linearVelCosts[i];
-            _soft_body.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
-            _soft_body.angular_pos_cost[i] = angularPosCosts[i];
-            _soft_body.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
-            _soft_body.angular_vel_cost[i] = angularVelCosts[i];
-            _soft_body.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
+//            _soft_body.linearPosCost[i] = linearPosCosts[i];
+//            _soft_body.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
+//            _soft_body.linear_vel_cost[i] = linearVelCosts[i];
+//            _soft_body.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
+//            _soft_body.angular_pos_cost[i] = angularPosCosts[i];
+//            _soft_body.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
+//            _soft_body.angular_vel_cost[i] = angularVelCosts[i];
+//            _soft_body.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
         }
 
         _taskConfig.soft_bodies.push_back(_soft_body);

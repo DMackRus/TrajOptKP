@@ -3,11 +3,11 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "reaching"
+task: "pushing_moderate_clutter"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
-# "acrobot", "piston_block", "pentabot"push_soft
+# "acrobot", "piston_block", "pentabot"
 #
 # --- Free robot arm motion ---
 # "reaching"

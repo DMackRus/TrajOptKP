@@ -371,171 +371,171 @@ double ModelTranslator::CostFunction(const MatrixXd &residuals, const struct sta
 }
 
 double ModelTranslator::CostFunctionBody(const rigid_body& body, mjData *d, bool terminal){
-    double cost = 0.0;
-
-    pose_6 body_pose;
-    pose_6 body_vel;
-    MuJoCo_helper->GetBodyPoseAngle(body.name, body_pose, d);
-    MuJoCo_helper->GetBodyVelocity(body.name, body_vel, d);
-
-    // Linear costs
-    for(int j = 0; j < 3; j++){
-        if(body.active_linear_dof[j]){
-
-            if(terminal){
-                // Position cost
-                cost += body.terminal_linear_pos_cost[j] * pow((body_pose.position[j] - body.goal_linear_pos[j]), 2);
-
-                // Velocity cost
-                cost += body.terminal_linear_vel_cost[j] * pow(body_vel.position[j], 2);
-
-            }
-            else{
-                // Position cost
-                cost += body.linearPosCost[j] * pow((body_pose.position[j] - body.goal_linear_pos[j]), 2);
-
-                // Velocity cost
-                cost += body.linear_vel_cost[j] * pow(body_vel.position[j], 2);
-            }
-        }
-    }
-
-    // Angular cost
-    // Compute rotation matrix of body in world frame
-//    Eigen::Matrix3d current_rot_mat = eul2RotMat(body_pose.orientation);
-////        std::cout << "rot mat: \n" << current_rot_mat << "\n";
+//    double cost = 0.0;
 //
-//    // Convert desired orientation to rotation matrix
-    m_point desired_axis;
-    desired_axis(0) = body.goal_angular_pos[0];
-    desired_axis(1) = body.goal_angular_pos[1];
-    desired_axis(2) = body.goal_angular_pos[2];
-//    Eigen::Matrix3d desired_rot_mat = eul2RotMat(desired_eul);
-//    std::cout << "desired eul: " << desired_eul << "\n";
-
-    m_quat current, desired, inv_current, diff;
-    current = axis2Quat(body_pose.orientation);
-    desired = axis2Quat(desired_axis);
-//    std::cout << "current: " << current << "\n";
-//    std::cout << "desired: " << desired << "\n";
-    inv_current = invQuat(current);
-    diff = multQuat(inv_current, desired);
-
-    // temp mujoco quat2vel methodology?
-    double axis[3] = {diff[1], diff[2], diff[3]};
-    double sin_a_2 = sin(sqrt(pow(axis[0], 2) + pow(axis[1], 2) + pow(axis[2], 2)));
-    double speed = 2 * atan2(sin_a_2, diff[0]);
-
-    // When axis angle > pi rot is in other direction
-    if(speed > PI) speed -= 2*PI;
-
-    axis[0] *= speed;
-    axis[1] *= speed;
-    axis[2] *= speed;
-
-    m_point axis_diff = quat2Axis(diff);
-
-//    std::cout << "axis diff" << axis_diff.transpose() << "\n";
-//    std::cout << "axis " << axis[0] << " " << axis[1] << " " << axis[2] << "\n";
-
-
-//    for(int i = 0; i < 3; i++){
-//        if(terminal) {
-//            cost += body.terminalAngularPosCost[i] * pow(axis_diff(i), 2);
-//        }
-//        else{
-//            cost += body.angularPosCost[i] * pow(axis_diff(i), 2);
-//        }
-//    }
-
-    double dot_x, dot_y, dot_z = 0.0f;
-
-    // Axis X
-//    if(body.activeAngularDOF[0]){
-//        dot_x = current_rot_mat(0, 0) * desired_rot_mat(0, 0) +
-//                current_rot_mat(1, 0) * desired_rot_mat(1, 0) +
-//                current_rot_mat(2, 0) * desired_rot_mat(2, 0);
+//    pose_6 body_pose;
+//    pose_6 body_vel;
+//    MuJoCo_helper->GetBodyPoseAngle(body.name, body_pose, d);
+//    MuJoCo_helper->GetBodyVelocity(body.name, body_vel, d);
 //
-//        if(terminal) {
-//            cost += body.terminalAngularPosCost[0] * acos(dot_x);
-//        }
-//        else{
-//            cost += body.angularPosCost[0] * acos(dot_x);
+//    // Linear costs
+//    for(int j = 0; j < 3; j++){
+//        if(body.active_linear_dof[j]){
+//
+//            if(terminal){
+//                // Position cost
+//                cost += body.terminal_linear_pos_cost[j] * pow((body_pose.position[j] - body.goal_linear_pos[j]), 2);
+//
+//                // Velocity cost
+//                cost += body.terminal_linear_vel_cost[j] * pow(body_vel.position[j], 2);
+//
+//            }
+//            else{
+//                // Position cost
+//                cost += body.linearPosCost[j] * pow((body_pose.position[j] - body.goal_linear_pos[j]), 2);
+//
+//                // Velocity cost
+//                cost += body.linear_vel_cost[j] * pow(body_vel.position[j], 2);
+//            }
 //        }
 //    }
 //
-//    // Axis Y
-//    if(body.activeAngularDOF[1]){
-//        dot_y = current_rot_mat(0, 1) * desired_rot_mat(0, 1) +
-//                current_rot_mat(1, 1) * desired_rot_mat(1, 1) +
-//                current_rot_mat(2, 1) * desired_rot_mat(2, 1);
+//    // Angular cost
+//    // Compute rotation matrix of body in world frame
+////    Eigen::Matrix3d current_rot_mat = eul2RotMat(body_pose.orientation);
+//////        std::cout << "rot mat: \n" << current_rot_mat << "\n";
+////
+////    // Convert desired orientation to rotation matrix
+//    m_point desired_axis;
+//    desired_axis(0) = body.goal_angular_pos[0];
+//    desired_axis(1) = body.goal_angular_pos[1];
+//    desired_axis(2) = body.goal_angular_pos[2];
+////    Eigen::Matrix3d desired_rot_mat = eul2RotMat(desired_eul);
+////    std::cout << "desired eul: " << desired_eul << "\n";
 //
-//        if(terminal) {
-//            cost += body.terminalAngularPosCost[1] * acos(dot_y);
-//        }
-//        else{
-//            cost += body.angularPosCost[1] * acos(dot_y);
+//    m_quat current, desired, inv_current, diff;
+//    current = axis2Quat(body_pose.orientation);
+//    desired = axis2Quat(desired_axis);
+////    std::cout << "current: " << current << "\n";
+////    std::cout << "desired: " << desired << "\n";
+//    inv_current = invQuat(current);
+//    diff = multQuat(inv_current, desired);
+//
+//    // temp mujoco quat2vel methodology?
+//    double axis[3] = {diff[1], diff[2], diff[3]};
+//    double sin_a_2 = sin(sqrt(pow(axis[0], 2) + pow(axis[1], 2) + pow(axis[2], 2)));
+//    double speed = 2 * atan2(sin_a_2, diff[0]);
+//
+//    // When axis angle > pi rot is in other direction
+//    if(speed > PI) speed -= 2*PI;
+//
+//    axis[0] *= speed;
+//    axis[1] *= speed;
+//    axis[2] *= speed;
+//
+//    m_point axis_diff = quat2Axis(diff);
+//
+////    std::cout << "axis diff" << axis_diff.transpose() << "\n";
+////    std::cout << "axis " << axis[0] << " " << axis[1] << " " << axis[2] << "\n";
+//
+//
+////    for(int i = 0; i < 3; i++){
+////        if(terminal) {
+////            cost += body.terminalAngularPosCost[i] * pow(axis_diff(i), 2);
+////        }
+////        else{
+////            cost += body.angularPosCost[i] * pow(axis_diff(i), 2);
+////        }
+////    }
+//
+//    double dot_x, dot_y, dot_z = 0.0f;
+//
+//    // Axis X
+////    if(body.activeAngularDOF[0]){
+////        dot_x = current_rot_mat(0, 0) * desired_rot_mat(0, 0) +
+////                current_rot_mat(1, 0) * desired_rot_mat(1, 0) +
+////                current_rot_mat(2, 0) * desired_rot_mat(2, 0);
+////
+////        if(terminal) {
+////            cost += body.terminalAngularPosCost[0] * acos(dot_x);
+////        }
+////        else{
+////            cost += body.angularPosCost[0] * acos(dot_x);
+////        }
+////    }
+////
+////    // Axis Y
+////    if(body.activeAngularDOF[1]){
+////        dot_y = current_rot_mat(0, 1) * desired_rot_mat(0, 1) +
+////                current_rot_mat(1, 1) * desired_rot_mat(1, 1) +
+////                current_rot_mat(2, 1) * desired_rot_mat(2, 1);
+////
+////        if(terminal) {
+////            cost += body.terminalAngularPosCost[1] * acos(dot_y);
+////        }
+////        else{
+////            cost += body.angularPosCost[1] * acos(dot_y);
+////        }
+////    }
+////
+////    // Axis Z
+////    if(body.activeAngularDOF[2]){
+////        dot_z = current_rot_mat(0, 2) * desired_rot_mat(0, 2) +
+////                current_rot_mat(1, 2) * desired_rot_mat(1, 2) +
+////                current_rot_mat(2, 2) * desired_rot_mat(2, 2);
+////
+////        if(terminal) {
+////            cost += body.terminalAngularPosCost[2] * acos(dot_z);
+////        }
+////        else{
+////            cost += body.angularPosCost[2] * acos(dot_z);
+////        }
+////    }
+//
+////    std::cout << "dot x: " << dot_x << " dot y: " << dot_y << " dot z: " << dot_z << std::endl;
+//
+//    for(int j = 0; j < 3; j++){
+//        if(body.active_angular_dof[j]){
+//
+//            if(terminal){
+//                // Velocity cost
+//                cost += body.terminal_angular_vel_cost[j] * pow(body_vel.orientation[j], 2);
+//
+//            }
+//            else{
+//                // Velocity cost
+//                cost += body.angular_vel_cost[j] * pow(body_vel.orientation[j], 2);
+//            }
 //        }
 //    }
 //
-//    // Axis Z
-//    if(body.activeAngularDOF[2]){
-//        dot_z = current_rot_mat(0, 2) * desired_rot_mat(0, 2) +
-//                current_rot_mat(1, 2) * desired_rot_mat(1, 2) +
-//                current_rot_mat(2, 2) * desired_rot_mat(2, 2);
-//
-//        if(terminal) {
-//            cost += body.terminalAngularPosCost[2] * acos(dot_z);
-//        }
-//        else{
-//            cost += body.angularPosCost[2] * acos(dot_z);
-//        }
-//    }
-
-//    std::cout << "dot x: " << dot_x << " dot y: " << dot_y << " dot z: " << dot_z << std::endl;
-
-    for(int j = 0; j < 3; j++){
-        if(body.active_angular_dof[j]){
-
-            if(terminal){
-                // Velocity cost
-                cost += body.terminal_angular_vel_cost[j] * pow(body_vel.orientation[j], 2);
-
-            }
-            else{
-                // Velocity cost
-                cost += body.angular_vel_cost[j] * pow(body_vel.orientation[j], 2);
-            }
-        }
-    }
-
-    return cost;
+//    return cost;
 }
 
 double ModelTranslator::CostFuntionSoftBody(const soft_body& soft_body, mjData *d, bool terminal){
     // Loop through vertices of soft body
     double cost = 0.0;
-    for(int i = 0; i < soft_body.num_vertices; i++){
-        pose_6 vertex_pose;
-        pose_6 vertex_vel;
-        MuJoCo_helper->GetSoftBodyVertexPosGlobal(soft_body.name, i, vertex_pose, d);
-        MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, vertex_vel, d);
-//        if(i == 0){
-//            std::cout << "vertex_pose, x: " << vertex_pose.position[0] << " y: " << vertex_pose.position[1] << "\n";
+//    for(int i = 0; i < soft_body.num_vertices; i++){
+//        pose_6 vertex_pose;
+//        pose_6 vertex_vel;
+//        MuJoCo_helper->GetSoftBodyVertexPosGlobal(soft_body.name, i, vertex_pose, d);
+//        MuJoCo_helper->GetSoftBodyVertexVel(soft_body.name, i, vertex_vel, d);
+////        if(i == 0){
+////            std::cout << "vertex_pose, x: " << vertex_pose.position[0] << " y: " << vertex_pose.position[1] << "\n";
+////        }
+//
+//        for(int j = 0; j < 3; j++){
+//            if(terminal){
+//                cost += soft_body.terminal_linear_pos_cost[j] * pow((vertex_pose.position[j] - soft_body.goal_linear_pos[j]), 2);
+//                cost += soft_body.terminal_linear_vel_cost[j] * pow(vertex_vel.position[j], 2);
+//            }
+//            else{
+//                cost += soft_body.linearPosCost[j] * pow((vertex_pose.position[j] - soft_body.goal_linear_pos[j]), 2);
+//                cost += soft_body.linear_vel_cost[j] * pow(vertex_vel.position[j], 2);
+//            }
 //        }
-
-        for(int j = 0; j < 3; j++){
-            if(terminal){
-                cost += soft_body.terminal_linear_pos_cost[j] * pow((vertex_pose.position[j] - soft_body.goal_linear_pos[j]), 2);
-                cost += soft_body.terminal_linear_vel_cost[j] * pow(vertex_vel.position[j], 2);
-            }
-            else{
-                cost += soft_body.linearPosCost[j] * pow((vertex_pose.position[j] - soft_body.goal_linear_pos[j]), 2);
-                cost += soft_body.linear_vel_cost[j] * pow(vertex_vel.position[j], 2);
-            }
-        }
-
-    }
+//
+//    }
     return cost;
 }
 

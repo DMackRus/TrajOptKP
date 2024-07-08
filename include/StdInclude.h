@@ -38,14 +38,14 @@ struct rigid_body{
     double start_angular_pos[3];
     double goal_linear_pos[3];
     double goal_angular_pos[3];
-    double linearPosCost[3];
-    double terminal_linear_pos_cost[3];
-    double linear_vel_cost[3];
-    double terminal_linear_vel_cost[3];
-    double angular_pos_cost[3];
-    double terminal_angular_pos_cost[3];
-    double angular_vel_cost[3];
-    double terminal_angular_vel_cost[3];
+//    double linearPosCost[3];
+//    double terminal_linear_pos_cost[3];
+//    double linear_vel_cost[3];
+//    double terminal_linear_vel_cost[3];
+//    double angular_pos_cost[3];
+//    double terminal_angular_pos_cost[3];
+//    double angular_vel_cost[3];
+//    double terminal_angular_vel_cost[3];
     double linear_jerk_threshold[3];
     double angular_jerk_threshold[3];
     double linear_vel_change_threshold[3];
@@ -69,14 +69,14 @@ struct soft_body{
     double start_angular_pos[3];
     double goal_linear_pos[3];
     double goal_angular_pos[3];
-    double linearPosCost[3];
-    double terminal_linear_pos_cost[3];
-    double linear_vel_cost[3];
-    double terminal_linear_vel_cost[3];
-    double angular_pos_cost[3];
-    double terminal_angular_pos_cost[3];
-    double angular_vel_cost[3];
-    double terminal_angular_vel_cost[3];
+//    double linearPosCost[3];
+//    double terminal_linear_pos_cost[3];
+//    double linear_vel_cost[3];
+//    double terminal_linear_vel_cost[3];
+//    double angular_pos_cost[3];
+//    double terminal_angular_pos_cost[3];
+//    double angular_vel_cost[3];
+//    double terminal_angular_vel_cost[3];
 
     // Individual vertices specific
 //    std::vector<double> linear_jerk_threshold;

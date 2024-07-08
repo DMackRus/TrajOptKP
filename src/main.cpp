@@ -813,12 +813,12 @@ void AsyncMPC(){
 
     bool terminal = false;
 
-    if(task == "pushing_moderate_clutter"){
-        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
-            rigid_body.terminal_linear_pos_cost[0] = 10000;
-            rigid_body.terminal_linear_pos_cost[1] = 10000;
-        }
-    }
+//    if(task == "pushing_moderate_clutter"){
+//        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
+//            rigid_body.terminal_linear_pos_cost[0] = 10000;
+//            rigid_body.terminal_linear_pos_cost[1] = 10000;
+//        }
+//    }
 
     if(record_trajectory){
         activeVisualiser->StartRecording(task + "_MPC");
@@ -1065,8 +1065,8 @@ int assign_task(){
 }
 
 void change_cost_func_push_soft(){
-    for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
-        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-    }
+//    for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
+//        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+//        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+//    }
 }
