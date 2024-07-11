@@ -72,6 +72,7 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/BoxSweep.cpp
             src/ModelTranslator/Acrobot.cpp
             src/ModelTranslator/Hopper.cpp
+            src/ModelTranslator/Humanoid.cpp
             src/GenTestingData.cpp
             src/KeyPointGenerator/KeyPointGenerator.cpp
             src/ModelTranslator/ThreeDPushing.cpp
@@ -105,7 +106,7 @@ add_executable(test_derivs src/tests/Derivs_Test.cpp
         src/tests/3D_test_class.h
         src/PhysicsSimulators/MuJoCoHelper.cpp
         src/StdInclude/StdInclude.cpp
-        src/FileHandler/FileHandler.cpp)
+        src/FileHandler/FileHandler.cpp src/tests/test_humanoid.h)
 
 target_include_directories(test_derivs PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 

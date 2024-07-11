@@ -133,6 +133,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
             // return the new state vector
+            mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_pos, mjSTATE_PHYSICS);
             next_state_plus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
             // Undo the perturbation
@@ -169,6 +170,7 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
             // return the new state vector
+            mj_getState(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], next_full_state_minus, mjSTATE_PHYSICS);
             next_state_minus = model_translator->ReturnStateVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
             // Undo perturbation
@@ -177,7 +179,15 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
         // Compute finite differences, depending on what perturbations were made
         if(nudge_forward && nudge_back){
-            for(int j = 0; j < dim_state; j++){
+
+            // Compute one column of the A matrix
+            mj_differentiatePos(MuJoCo_helper->model, vel_diff, (2 * eps), next_full_state_minus, next_full_state_pos);
+            for(int j = 0; j < dim_state / 2; j++){
+                int q_index = model_translator->StateIndexToQposIndex(j, model_translator->current_state_vector);
+                dstatedctrl(j, i) = vel_diff[q_index];
+            }
+
+            for(int j = dim_state / 2; j < dim_state; j++){
                 dstatedctrl(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
             }
 
@@ -189,7 +199,14 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
         }
         else if(nudge_forward){
-            for(int j = 0; j < dim_state; j++){
+            // Compute one column of the A matrix
+            mj_differentiatePos(MuJoCo_helper->model, vel_diff, (eps), next_full_state, next_full_state_pos);
+            for(int j = 0; j < dim_state / 2; j++){
+                int q_index = model_translator->StateIndexToQposIndex(j, model_translator->current_state_vector);
+                dstatedctrl(j, i) = vel_diff[q_index];
+            }
+
+            for(int j = dim_state / 2; j < dim_state; j++){
                 dstatedctrl(j, i) = (next_state_plus(j) - next_state(j))/(eps);
             }
 
@@ -200,7 +217,14 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
         }
         else if(nudge_back){
-            for(int j = 0; j < dim_state; j++){
+            // Compute one column of the A matrix
+            mj_differentiatePos(MuJoCo_helper->model, vel_diff, (eps), next_full_state_minus, next_full_state);
+            for(int j = 0; j < dim_state / 2; j++){
+                int q_index = model_translator->StateIndexToQposIndex(j, model_translator->current_state_vector);
+                dstatedctrl(j, i) = vel_diff[q_index];
+            }
+
+            for(int j = dim_state / 2; j < dim_state; j++){
                 dstatedctrl(j, i) = (next_state(j) - next_state_minus(j))/(eps);
             }
 

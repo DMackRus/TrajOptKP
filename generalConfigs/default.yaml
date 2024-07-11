@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_moderate_clutter"
+task: "humanoid"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -19,7 +19,7 @@ task: "pushing_moderate_clutter"
 # "push_soft_into_rigid", "push_soft"
 #
 # ---- Locomotion ----
-# "walker_walk", "walker_run", "walker_uneven"
+# "walker_walk", "walker_run", "walker_uneven", "humanoid"
 #
 # ------------------------------------------------------------------------------
 

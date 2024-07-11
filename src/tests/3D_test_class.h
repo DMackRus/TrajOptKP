@@ -8,4 +8,8 @@ public:
 
         InitModelTranslator(yamlFilePath);
     }
+
+    void Residuals(mjData *d, MatrixXd &residual){
+
+    }
 };

@@ -374,6 +374,8 @@ public:
      */
     int StateIndexToQposIndex(int state_index, const struct stateVectorList &state_vector);
 
+    void ComputeStateDofAdrIndices(mjData* d, const struct stateVectorList &state_vector);
+
     void InitialiseSystemToStartState(mjData* d);
 
     // Reset the state vector reduction variables
@@ -387,6 +389,9 @@ public:
 
         unused_state_vector_elements.clear();
         candidates_for_removal.clear();
+
+        state_dof_adr_indices.clear();
+        ComputeStateDofAdrIndices(MuJoCo_helper->master_reset_data, full_state_vector);
     }
 
     // State vector objects and names
@@ -397,6 +402,8 @@ public:
     std::vector<std::string> candidates_for_removal;
 
     std::vector<std::string> iteration_readded_state_elements;
+
+    std::vector<int> state_dof_adr_indices;
 
     // mujoco helper object
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
@@ -430,13 +437,6 @@ public:
 //    vector<double> residual_weights_terminal;
 
     // num of dofs considered between 0 and 6
-//    color distractor_colors[7] = {{0.4, 0,    0, 1},
-//                                  {0.5, 0, 0, 1},
-//                                  {0.6, 0, 0, 1},
-//                                  {0.7, 0, 0, 1},
-//                                  {0.8, 0, 0, 1},
-//                                  {0.9, 0, 0, 1},
-//                                  {1, 0,    0, 1}};
 
     color distractor_colors[7] = {{0.4, 0.48,    0.48, 1},
                                   {0.5, 0.4, 0.4, 1},

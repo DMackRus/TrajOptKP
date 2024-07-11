@@ -211,7 +211,7 @@ public:
 
     int sampling_k_interval = 1;
     int num_dofs_readd = 10;
-    double K_matrix_threshold = 50; // maybe 0.001 or 0.0001
+    double K_matrix_threshold = 1; // maybe 0.001 or 0.0001
     // When eigen vector 0.1, 0.2, 0.5
     // WHen just summing numbers went from 1 -> 2000
     bool eigen_vector_method = false;

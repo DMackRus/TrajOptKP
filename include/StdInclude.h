@@ -14,18 +14,14 @@
 
 struct robot{
     std::string name;
+    std::string root_name;
     std::vector<std::string> joint_names;
     std::vector<std::string> actuator_names;
-    bool torque_controlled;
-    std::vector<double> torque_limits;
+
     std::vector<double> start_pos;
     std::vector<double> goal_pos;
     std::vector<double> goal_vel;
-//    std::vector<double> joint_pos_costs;
-//    std::vector<double> joint_vel_costs;
-//    std::vector<double> terminal_joint_pos_costs;
-//    std::vector<double> terminal_joint_vel_costs;
-//    std::vector<double> joint_controls_costs;
+
     std::vector<double> jerk_thresholds;
     std::vector<double> vel_change_thresholds;
 };
@@ -130,6 +126,20 @@ struct stateVectorList{
         std::string ang_suffixes[3] = {"_roll", "_pitch", "_yaw"};
 
         for(auto & robot : robots){
+            // Check if robot has a free root joint?
+            if(robot.root_name != "-"){
+                dof += 6;
+                dof_quat += 7;
+
+                state_names.push_back(robot.root_name + "_x");
+                state_names.push_back(robot.root_name + "_y");
+                state_names.push_back(robot.root_name + "_z");
+                state_names.push_back(robot.root_name + "_roll");
+                state_names.push_back(robot.root_name + "_pitch");
+                state_names.push_back(robot.root_name + "_yaw");
+            }
+
+
             // Increment the number of dofs by the number of joints in the robots
             dof += static_cast<int>(robot.joint_names.size());
             dof_quat += static_cast<int>(robot.joint_names.size());
@@ -191,6 +201,15 @@ struct stateVectorList{
         std::cout << "---- robots ----\n";
         for(auto& robot : robots){
             std::cout << robot.name << ": ";
+            if(robot.root_name != "-"){
+                std::cout << robot.root_name + "_x" << " ";
+                std::cout << robot.root_name + "_y" << " ";
+                std::cout << robot.root_name + "_z" << " ";
+                std::cout << robot.root_name + "_roll" << " ";
+                std::cout << robot.root_name + "_pitch" << " ";
+                std::cout << robot.root_name + "_yaw" << " ";
+            }
+
             for(auto& joint_name: robot.joint_names){
                 std::cout << joint_name << " ";
             }

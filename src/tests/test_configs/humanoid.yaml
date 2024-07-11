@@ -1,0 +1,56 @@
+modelFile: "/src/tests/test_xml/humanoid/humanoid.xml"   # Path to the model xml file
+modelName: "/walker_run"
+timeStep: 0.005
+keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+auto_adjust: false
+minN: 1
+maxN: 20
+iterativeErrorThreshold: 0.1
+
+robots:
+  walker:
+    root_name: "root"
+    jointNames: [ "abdomen_z", "abdomen_y", "abdomen_x", "hip_x_right", "hip_z_right", "hip_y_right", "knee_right", "ankle_y_right", "ankle_x_right", "hip_x_left", "hip_z_left", "hip_y_left", "knee_left", "ankle_y_left", "ankle_x_left", "shoulder1_right", "shoulder2_right", "elbow_right", "shoulder1_left", "shoulder2_left", "elbow_left" ]
+    actuatorNames: [ "abdomen_y", "abdomen_z", "abdomen_x", "hip_x_right", "hip_z_right", "hip_y_right", "knee_right", "ankle_x_right", "ankle_y_right", "hip_x_left", "hip_z_left", "hip_y_left", "knee_left", "ankle_x_left", "ankle_y_left", "shoulder1_right", "shoulder2_right", "elbow_right", "shoulder1_left", "shoulder2_left", "elbow_left" ]
+    startPos: [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+    goalPos: [ 0.2, 0, 0, 0, 0, 0, 0, 0, 0 ]
+    goalVel: [ 0, 0.8, 0, 0, 0, 0, 0, 0, 0 ]
+    jointJerkThresholds: [ 1e-15, 1e-15, 0.01, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0 ]
+    #jointJerkThresholds: [0.1, 0.02, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+    magVelThresholds: [ 0.1, 0.1, 0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 ]
+
+#bodies:
+#  root:
+#    activeLinearDOF: [ true, true, true ]
+#    activeAngularDOF: [ true, true, true ]
+#    startLinearPos: [ 0.0, 0, 2.0 ]
+#    startAngularPos: [ 0, 0, 0 ]
+#    goalLinearPos: [ 0.7, -0.1, 0.0 ]
+#    goalAngularPos: [ 0, 0, 0 ]
+#    terminalAngularVelCost: [ 0, 0, 0 ]
+#    linearJerkThreshold: [ 1, 1, 1 ]
+#    angularJerkThreshold: [ 1, 1, 1 ]
+#    linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+#    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+
+
+residuals:
+  body_height:
+    target: [0]
+    weight: 0.1
+    weight_terminal: 100
+#  body_orientation:
+#    target: [0]
+#    weight: 0.1
+#    weight_terminal: 0.1
+#  body_velocity:
+#    target: [0.5]
+#    weight: 0.1
+#    weight_terminal: 0.1
+#  body_controls:
+#    target: [0, 0, 0, 0, 0, 0]
+#    resid_dimension: 6
+#    #    weight: 0.0001
+#    #    weight_terminal: 0.0001
+#    weight: 0
+#    weight_terminal: 0

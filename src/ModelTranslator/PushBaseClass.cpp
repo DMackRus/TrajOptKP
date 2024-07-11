@@ -222,27 +222,20 @@ std::vector<MatrixXd> PushBaseClass::JacobianEEControl(const std::vector<m_point
         MatrixXd desiredEEForce(6, 1);
         MatrixXd desiredControls(num_ctrl, 1);
 
-        if(current_state_vector.robots[0].torque_controlled){
-            for(int j = 0; j < 6; j++) {
-                desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
-            }
-            desiredControls = JacInv * desiredEEForce;
+        for(int j = 0; j < 6; j++) {
+            desiredEEForce(j) = differenceFromPath(j) * gainsTorque[j];
+        }
+        desiredControls = JacInv * desiredEEForce;
 
-            std::vector<double> gravCompensation;
-            MatrixXd gravCompControl(num_ctrl, 1);
-            MuJoCo_helper->GetRobotJointsGravityCompensationControls(current_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
-            for(int j = 0; j < num_ctrl; j++){
-                gravCompControl(j) = gravCompensation[j];
-            }
-            desiredControls += gravCompControl;
+        std::vector<double> gravCompensation;
+        MatrixXd gravCompControl(num_ctrl, 1);
+        MuJoCo_helper->GetRobotJointsGravityCompensationControls(current_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
+        for(int j = 0; j < num_ctrl; j++){
+            gravCompControl(j) = gravCompensation[j];
         }
-        // Position control
-        else{
-            for(int j = 0; j < 6; j++) {
-                desiredEEForce(j) = differenceFromPath(j) * gainsPositionControl[j] * 0.000001;
-            }
-            desiredControls += JacInv * desiredEEForce;
-        }
+        desiredControls += gravCompControl;
+
+
 
         init_controls.push_back(desiredControls);
 

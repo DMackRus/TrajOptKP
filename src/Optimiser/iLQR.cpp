@@ -485,8 +485,6 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 
             // Update saved systems state list
             SaveBestRollout(static_cast<int>(min_index));
-
-
         }
         else{
             new_cost = old_cost;
@@ -729,14 +727,6 @@ double iLQR::ForwardsPass(double _old_cost){
             // Calculate new optimal controls
             U_new = U_old[t] + (alphas[alphaCount] * k[t]) + feedback_gain;
 
-            // Clamp torque within limits
-            // TODO - replace this with model translator torque limits function, its better
-            if(activeModelTranslator->current_state_vector.robots[0].torque_controlled){
-                for(int i = 0; i < num_ctrl; i++){
-                    if (U_new(i) > activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
-                    if (U_new(i) < -activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = -activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
-                }
-            }
             // Clamp torque within limits
             for(int i = 0; i < num_ctrl; i++){
                 if(U_new(i) > control_limits(2*i+1, 0)) U_new(i) = control_limits(2*i+1, 0);

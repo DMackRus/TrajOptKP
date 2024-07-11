@@ -399,6 +399,7 @@ void Optimiser::SaveBestRollout(int thread_id){
         }
 
         // Update the residuals of the nominal trajectory
+        // TODO (DMackRus) - is this indexing correct, lets double check
         activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t], residuals[t]);
     }
 }
