@@ -326,12 +326,12 @@ int main(int argc, char **argv) {
     }
 
     // Loop through mujoco number of joints and print them
-    std::cout << "Number of mujococ joints: " << activeModelTranslator->MuJoCo_helper->model->njnt << "\n";
-    for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->njnt; i++){
-        std::string name = mj_id2name(activeModelTranslator->MuJoCo_helper->model, mjOBJ_JOINT, i);
-        int qpos_adr = activeModelTranslator->MuJoCo_helper->model->jnt_qposadr[i];
-        std::cout << "joint name: " << name <<  " joint num: " << i << " qpos index: " << qpos_adr << "\n";
-    }
+//    std::cout << "Number of mujococ joints: " << activeModelTranslator->MuJoCo_helper->model->njnt << "\n";
+//    for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->njnt; i++){
+//        std::string name = mj_id2name(activeModelTranslator->MuJoCo_helper->model, mjOBJ_JOINT, i);
+//        int qpos_adr = activeModelTranslator->MuJoCo_helper->model->jnt_qposadr[i];
+//        std::cout << "joint name: " << name <<  " joint num: " << i << " qpos index: " << qpos_adr << "\n";
+//    }
 
     // Loop through the actuators and print them
     std::cout << "number of mujoco actuators: " << activeModelTranslator->MuJoCo_helper->model->nu << "\n";
@@ -822,7 +822,7 @@ void AsyncMPC(){
         int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-            difference_ms += 100;
+//            difference_ms += 100;
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
     }

@@ -1567,18 +1567,17 @@ void ModelTranslator::ComputeStateDofAdrIndices(mjData* d, const struct stateVec
 
     // Loop through all bodies in the state vector
     for(auto & body : state_vector.rigid_bodies) {
+        int body_id = mj_name2id(MuJoCo_helper->model, mjOBJ_BODY, body.name.c_str());
+        int joint_id = MuJoCo_helper->model->body_jntadr[body_id];
+        int dof_adr = MuJoCo_helper->model->jnt_dofadr[joint_id];
         for(int i = 0; i < 3; i++) {
             if(body.active_linear_dof[i]) {
-                int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, body.name.c_str());
-                int dof_adr = MuJoCo_helper->model->jnt_dofadr[joint_id];
                 state_dof_adr_indices.push_back(dof_adr + i);
             }
         }
 
         for(int i = 0; i < 3; i++){
             if(body.active_angular_dof[i]){
-                int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, body.name.c_str());
-                int dof_adr = MuJoCo_helper->model->jnt_dofadr[joint_id];
                 state_dof_adr_indices.push_back(dof_adr + 3 + i);
             }
         }
