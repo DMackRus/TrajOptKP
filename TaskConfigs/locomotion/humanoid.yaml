@@ -19,7 +19,6 @@ robots:
     #jointJerkThresholds: [0.1, 0.02, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     magVelThresholds: [0.1, 0.1, 0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
 
-
 residuals:
   body_height:
     target: [0]

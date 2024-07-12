@@ -36,7 +36,7 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
 
 void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     auto start = std::chrono::high_resolution_clock::now();
-    std::cout << "new dofs: " << new_num_dofs << " new ctrl: " << new_num_ctrl << " new horizon: " << new_horizon << std::endl;
+//    std::cout << "new dofs: " << new_num_dofs << " new ctrl: " << new_num_ctrl << " new horizon: " << new_horizon << std::endl;
 
     bool update_ctrl = false;
     bool update_dof = false;
@@ -188,11 +188,13 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
     std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
 
-    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
+//    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
 }
 
 double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd> initial_controls){
     double cost = 0.0;
+
+//    std::cout << "initial controls[0] " << initial_controls[0].transpose() << "\n";
 
 //    if(d != MuJoCo_helper->main_data){
 //        MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, d);
@@ -200,6 +202,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, d);
 
     X_old[0] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+//    std::cout << "X[0] " << X_old[0].transpose() << "\n";
 
     if(MuJoCo_helper->CheckIfDataIndexExists(0)){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
@@ -454,7 +457,7 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
         best_alpha = last_iter_num_linesearches;
     }
     else{
-        auto temp_timer = high_resolution_clock::now();
+//        auto temp_timer = high_resolution_clock::now();
         std::vector<std::future<double>> futures;
         std::vector<double> alphas;
 
@@ -872,9 +875,18 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
 
         // Clamp torque within limits
         for(int i = 0; i < num_ctrl; i++){
-            if(U_new(i) > control_limits(2*i+1, 0)) U_new(i) = control_limits(2*i+1, 0);
+            if(U_new(i) > control_limits(2*i+1, 0)){
+//                std::cout << "U_new(i) is " << U_new(i) << " and control limits are " << control_limits(2*i+1, 0) << "\n";
+                U_new(i) = control_limits(2*i+1, 0);
+//                std::cout << "U_new(i) is " << U_new(i) << "\n";
+
+            }
             if(U_new(i) < control_limits(2*i, 0)) U_new(i) = control_limits(2*i, 0);
         }
+
+//        if(t == 0){
+//            std::cout << "U_new[0] " << U_new.transpose() << "\n";
+//        }
 
         activeModelTranslator->SetControlVector(U_new, MuJoCo_helper->fd_data[thread_id],
                                                 activeModelTranslator->current_state_vector);
@@ -897,7 +909,9 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
         mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[thread_id]);
 
         // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-        SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t);
+        if(t != 0){
+            SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t);
+        }
     }
 
     // Compute expected costreduction
@@ -922,6 +936,8 @@ void iLQR::UpdateNominal(){
         U_old[t] = activeModelTranslator->ReturnControlVector(MuJoCo_helper->saved_systems_state_list[t],
                                                               activeModelTranslator->current_state_vector);
     }
+//    std::cout << "X[0] " << X_old[0].transpose() << "\n";
+//    std::cout << "nominal U[0] " << U_old[0].transpose() << "\n";
 
     old_cost = new_cost;
 }

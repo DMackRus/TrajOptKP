@@ -14,6 +14,7 @@ void Humanoid::Residuals(mjData *d, MatrixXd &residuals){
 
 //    mj_forward(MuJoCo_helper->model, d);
     mj_sensorPos(MuJoCo_helper->model, d);
+    mj_sensorVel(MuJoCo_helper->model, d);
 
     // --------------- Residual 1 - Stand upright ----------------
     double* f1_position = MuJoCo_helper->SensorState(d, "sp0");

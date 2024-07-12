@@ -347,12 +347,29 @@ int main(int argc, char **argv) {
         std::cout << "actuator name: " << activeModelTranslator->current_state_vector.robots[0].actuator_names[i].c_str() <<  " ctrl index: " << actuator_id << "\n";
     }
 
+    // Quick test to make sure setting and returning stata vectors is correct
+//    MatrixXd state_vector_test(activeModelTranslator->current_state_vector.dof+activeModelTranslator->current_state_vector.dof_quat, 1);
+//    state_vector_test << 0.1, 0.1, 0.1,
+//                            0.988015, 0, 0.154359, 0,
+//                            0, 0.4, 0,
+//                            -0.25, -0.5, -2.5, -2.65, -0.8, 0.56,
+//                            -0.25, -0.5, -2.5, -2.65, -0.8, 0.56,
+//                            0, 0, 0, 0, 0, 0,
+//                            0, 0, 0, 0, 0, 0,
+//                            0, 0, 0,
+//                            0, 0, 0, 0, 0, 0,
+//                            0, 0, 0, 0, 0, 0,
+//                            0, 0, 0, 0, 0, 0;
+//    activeModelTranslator->SetStateVectorQuat(state_vector_test, activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->current_state_vector);
+//
+//    MatrixXd returned_state_vector;
+//    returned_state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->current_state_vector);
+//    std::cout << "returned state vector: " << returned_state_vector << "\n";
     // Print the control limits
 //    MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
 //    for(int i = 0; i < control_lims.rows(); i++){
 //        std::cout << "control lims: " << control_lims(i, 0) << " \n";
 //    }
-
 
     // Initialise the system state from desired mechanism
     // Set goal pose here maybe???
@@ -970,7 +987,7 @@ void MPCUntilComplete(int OPT_HORIZON){
                     bestMatchingStateIndex = i;
                 }
             }
-//            bestMatchingStateIndex = 1;
+            bestMatchingStateIndex = 1;
 
             // Mutex lock
             {

@@ -366,7 +366,7 @@ void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_
     }
 
     for(int i = 0; i < MuJoCo_helper->model->nu; i++){
-        rollout_data[thread_id][data_index].ctrl[i] = d->ctrl[i];
+        rollout_data[thread_id][data_index - 1].ctrl[i] = d->ctrl[i];
     }
 
     for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
@@ -375,31 +375,32 @@ void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_
 }
 
 void Optimiser::SaveBestRollout(int thread_id){
+    // TODO - this needs fixing i suspect!!!!!!!!!!! Do it first thing please future david!
     for(int t = 0; t < horizon_length; t++){
 
-        MuJoCo_helper->saved_systems_state_list[t+1]->time = rollout_data[thread_id][t].time;
+        MuJoCo_helper->saved_systems_state_list[t+1]->time = rollout_data[thread_id][t+1].time;
 
         for(int i = 0; i < MuJoCo_helper->model->nq; i++){
-            MuJoCo_helper->saved_systems_state_list[t+1]->qpos[i] = rollout_data[thread_id][t].q_pos[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qpos[i] = rollout_data[thread_id][t+1].q_pos[i];
         }
 
         for(int i = 0; i < MuJoCo_helper->model->nv; i++){
-            MuJoCo_helper->saved_systems_state_list[t+1]->qvel[i]           = rollout_data[thread_id][t].q_vel[i];
-            MuJoCo_helper->saved_systems_state_list[t+1]->qacc[i]           = rollout_data[thread_id][t].q_acc[i];
-            MuJoCo_helper->saved_systems_state_list[t+1]->qacc_warmstart[i] = rollout_data[thread_id][t].q_acc_warmstart[i];
-            MuJoCo_helper->saved_systems_state_list[t+1]->qfrc_applied[i]   = rollout_data[thread_id][t].qfrc_applied[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qvel[i]           = rollout_data[thread_id][t+1].q_vel[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qacc[i]           = rollout_data[thread_id][t+1].q_acc[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qacc_warmstart[i] = rollout_data[thread_id][t+1].q_acc_warmstart[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->qfrc_applied[i]   = rollout_data[thread_id][t+1].qfrc_applied[i];
         }
 
         for(int i = 0; i < MuJoCo_helper->model->nu; i++){
-            MuJoCo_helper->saved_systems_state_list[t+1]->ctrl[i] = rollout_data[thread_id][t].ctrl[i];
+            MuJoCo_helper->saved_systems_state_list[t]->ctrl[i] = rollout_data[thread_id][t].ctrl[i];
         }
 
         for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
-            MuJoCo_helper->saved_systems_state_list[t+1]->xfrc_applied[i] = rollout_data[thread_id][t].xfrc_applied[i];
+            MuJoCo_helper->saved_systems_state_list[t+1]->xfrc_applied[i] = rollout_data[thread_id][t+1].xfrc_applied[i];
         }
 
         // Update the residuals of the nominal trajectory
         // TODO (DMackRus) - is this indexing correct, lets double check
-        activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t], residuals[t]);
+        activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t+1], residuals[t+1]);
     }
 }
