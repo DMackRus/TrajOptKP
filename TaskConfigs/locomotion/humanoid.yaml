@@ -22,8 +22,8 @@ robots:
 residuals:
   body_height:
     target: [0]
-    weight: 0.1
-    weight_terminal: 0.1
+    weight: 1
+    weight_terminal: 0
 #  body_orientation:
 #    target: [0]
 #    weight: 0.1

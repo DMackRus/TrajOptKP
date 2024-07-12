@@ -366,7 +366,7 @@ void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_
     }
 
     for(int i = 0; i < MuJoCo_helper->model->nu; i++){
-        rollout_data[thread_id][data_index - 1].ctrl[i] = d->ctrl[i];
+        rollout_data[thread_id][data_index-1].ctrl[i] = d->ctrl[i];
     }
 
     for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){

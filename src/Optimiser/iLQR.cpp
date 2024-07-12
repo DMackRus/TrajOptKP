@@ -100,7 +100,6 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     int num_dof_quat = activeModelTranslator->current_state_vector.dof_quat;
 
     for(int t = 0; t < this->horizon_length; t++){
-        // Cost matrices
 
         if(update_dof){
             l_x.emplace_back(MatrixXd(2*dof, 1));
@@ -110,7 +109,6 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
             X_old.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
             X_new.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
-
 
             vector<MatrixXd> r_x_;
             for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
@@ -147,16 +145,22 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
         X_old.push_back(MatrixXd(num_dof_quat + num_dof, 1));
         X_new.push_back(MatrixXd(num_dof_quat + num_dof, 1));
+
+        vector<MatrixXd> r_x_;
+        for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
+            r_x_.emplace_back(MatrixXd(2*dof, 1));
+        }
+
+        r_x.emplace_back(r_x_);
     }
 
-    // TODO - validate this method of saving trajectory data works correctly
     if(update_horizon){
         // Clear old rollout datas
         for(int i = 0; i < num_parallel_rollouts; i++){
             rollout_data[i].clear();
         }
 
-        std::vector<mujoco_data_min> data_horizon(horizon_length);
+        std::vector<mujoco_data_min> data_horizon(horizon_length+1);
 
         mujoco_data_min data_timestep;
         data_timestep.time = 0.0;
@@ -168,16 +172,16 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         data_timestep.xfrc_applied.resize(6*MuJoCo_helper->model->nbody);
         data_timestep.ctrl.resize(MuJoCo_helper->model->nu);
 
-        for(int t = 0; t < horizon_length; t++){
+        for(int t = 0; t < horizon_length+1; t++){
             data_horizon[t] = data_timestep;
         }
 
         for(int i = 0; i < num_parallel_rollouts; i++){
-            rollout_data[i].resize(horizon_length);
+            rollout_data[i].resize(horizon_length+1);
             rollout_data[i] = data_horizon;
         }
 
-        for(int t = 0; t < horizon_length; t++){
+        for(int t = 0; t < horizon_length+1; t++){
             residuals.push_back(MatrixXd(activeModelTranslator->residual_list.size(), 1));
         }
 

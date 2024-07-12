@@ -35,8 +35,8 @@ bodies:
 residuals:
   goal_pos:
     target: [0.7, -0.1]
-    weight: 1
-    weight_terminal: 0  # 1000 when long horizon
+    weight: 0
+    weight_terminal: 1000  # 1000 when long horizon
   goal_vel:
     target: [0, 0]
     weight: 0.2
@@ -47,5 +47,5 @@ residuals:
     weight_terminal: 0.1
   reach:
     target: [0]
-    weight: 0.1
-    weight_terminal: 0.1
+    weight: 0.01
+    weight_terminal: 0.01

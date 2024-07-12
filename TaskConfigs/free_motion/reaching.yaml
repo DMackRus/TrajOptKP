@@ -19,10 +19,10 @@ robots:
 residuals:
   EE_goal:
     target: [0.5, 0, 0.5]
-    weight: 1
-    weight_terminal: 5
+    weight: 0.1
+    weight_terminal: 10
   joint_velocities:
     target: [0, 0, 0, 0, 0, 0, 0]
-    weight: 0.05
-    weight_terminal: 0
+    weight: 0.1
+    weight_terminal: 1
     resid_dimension: 7
