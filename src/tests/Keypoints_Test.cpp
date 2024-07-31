@@ -230,10 +230,8 @@ TEST(Interpolate, basic_interpolation){
     std::vector<MatrixXd> trajectory_states;
     std::vector<MatrixXd> A;
     std::vector<MatrixXd> B;
-    std::vector<MatrixXd> l_x;
-    std::vector<MatrixXd> l_xx;
-    std::vector<MatrixXd> l_u;
-    std::vector<MatrixXd> l_uu;
+    std::vector<std::vector<MatrixXd>> r_x;
+    std::vector<std::vector<MatrixXd>> r_u;
 
     // Allocate heap memory
     for(int t = 0; t < T; t++){
@@ -255,14 +253,14 @@ TEST(Interpolate, basic_interpolation){
         }
 
         differentiator->DynamicsDerivatives(A[t], B[t], keypoint_generator->keypoints[t],
-                                            l_x[0], l_u[0], l_xx[0], l_uu[0], t, 0, false,
-                                            false, true, 1.0e-6);
+                                            t, 0,
+                                            false, 1.0e-6);
 
     }
 
     // Call Interpolate derivatives
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, T, A, B,
-                                               l_x, l_u, l_xx, l_uu, false,
+                                               r_x, r_u, false,
                                                model_translator->current_state_vector.num_ctrl);
 
 
