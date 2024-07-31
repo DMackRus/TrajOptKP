@@ -839,11 +839,10 @@ void AsyncMPC(){
         int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-//            difference_ms += 100;
+            difference_ms += 20;
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
     }
-
 
     // Stop MPC thread
     {

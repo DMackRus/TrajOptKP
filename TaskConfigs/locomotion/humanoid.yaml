@@ -3,6 +3,7 @@ modelName: "/walker_run"
 timeStep: 0.005
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
 auto_adjust: false
+mpc_horizon: 20
 minN: 1
 maxN: 20
 iterativeErrorThreshold: 0.1
@@ -22,8 +23,17 @@ robots:
 residuals:
   body_height:
     target: [0]
-    weight: 1
-    weight_terminal: 0
+    weight: 10
+    weight_terminal: 10
+  balance:
+    target: [0]
+    weight: 0.1
+    weight_terminal: 0.1
+  controls:
+    target: [0]
+    resid_dimension: 21
+    weight: 0.001
+    weight_terminal: 0.001
 #  body_orientation:
 #    target: [0]
 #    weight: 0.1
