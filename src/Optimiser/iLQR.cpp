@@ -36,7 +36,7 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
 
 void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     auto start = std::chrono::high_resolution_clock::now();
-    std::cout << "new dofs: " << new_num_dofs << " new ctrl: " << new_num_ctrl << " new horizon: " << new_horizon << std::endl;
+//    std::cout << "new dofs: " << new_num_dofs << " new ctrl: " << new_num_ctrl << " new horizon: " << new_horizon << std::endl;
 
     bool update_ctrl = false;
     bool update_dof = false;
@@ -58,24 +58,38 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
     // Clear old matrices
     if(update_ctrl){
-        std::cout << "clearing contrl things \n";
+        // Cost derivatives with respect to control
         l_u.clear();
         l_uu.clear();
 
+        // Residual derivatives with respect to control
+        r_u.clear();
+
+        // Old control trajectory
         U_old.clear();
 
+        // Open-loop feedback control law
         k.clear();
     }
 
     if(update_dof){
+        // Cost derivatives with respect to state
         l_x.clear();
         l_xx.clear();
 
+        // Residual derivatives with respect to state
+        r_x.clear();
+
+        // Dynamics derivatives with respect to state
         A.clear();
 
+        // New and old state trajectories
         X_old.clear();
         X_new.clear();
+    }
 
+    if(update_horizon){
+        residuals.clear();
     }
 
     // dependant on both dofs and num_ctrl
@@ -86,7 +100,6 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     int num_dof_quat = activeModelTranslator->current_state_vector.dof_quat;
 
     for(int t = 0; t < this->horizon_length; t++){
-        // Cost matrices
 
         if(update_dof){
             l_x.emplace_back(MatrixXd(2*dof, 1));
@@ -97,6 +110,12 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
             X_old.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
             X_new.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
 
+            vector<MatrixXd> r_x_;
+            for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
+                r_x_.emplace_back(MatrixXd(2*dof, 1));
+            }
+
+            r_x.emplace_back(r_x_);
         }
 
         if(update_ctrl){
@@ -106,6 +125,13 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
             k.emplace_back(MatrixXd(num_ctrl, 1));
 
             U_old.emplace_back(MatrixXd(num_ctrl, 1));
+
+            vector<MatrixXd> r_u_;
+            for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
+                r_u_.emplace_back(MatrixXd(num_ctrl, 1));
+            }
+
+            r_u.emplace_back(r_u_);
         }
 
         B.emplace_back(MatrixXd(2*dof, num_ctrl));
@@ -119,16 +145,26 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
         X_old.push_back(MatrixXd(num_dof_quat + num_dof, 1));
         X_new.push_back(MatrixXd(num_dof_quat + num_dof, 1));
+
+        vector<MatrixXd> r_x_;
+        vector<MatrixXd> r_u_;
+        for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
+            r_x_.emplace_back(MatrixXd(2*dof, 1));
+            r_u_.emplace_back(MatrixXd(num_ctrl, 1));
+
+        }
+
+        r_x.emplace_back(r_x_);
+        r_u.emplace_back(r_u_);
     }
 
-    // TODO - validate this method of saving trajectory data works correctly
     if(update_horizon){
         // Clear old rollout datas
         for(int i = 0; i < num_parallel_rollouts; i++){
             rollout_data[i].clear();
         }
 
-        std::vector<mujoco_data_min> data_horizon(horizon_length);
+        std::vector<mujoco_data_min> data_horizon(horizon_length+1);
 
         mujoco_data_min data_timestep;
         data_timestep.time = 0.0;
@@ -140,14 +176,19 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         data_timestep.xfrc_applied.resize(6*MuJoCo_helper->model->nbody);
         data_timestep.ctrl.resize(MuJoCo_helper->model->nu);
 
-        for(int t = 0; t < horizon_length; t++){
+        for(int t = 0; t < horizon_length+1; t++){
             data_horizon[t] = data_timestep;
         }
 
         for(int i = 0; i < num_parallel_rollouts; i++){
-            rollout_data[i].resize(horizon_length);
+            rollout_data[i].resize(horizon_length+1);
             rollout_data[i] = data_horizon;
         }
+
+        for(int t = 0; t < horizon_length+1; t++){
+            residuals.push_back(MatrixXd(activeModelTranslator->residual_list.size(), 1));
+        }
+
     }
 
     // Resize Keypoint generator class
@@ -155,11 +196,13 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
     std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
 
-    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
+//    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
 }
 
 double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd> initial_controls){
     double cost = 0.0;
+
+//    std::cout << "initial controls[0] " << initial_controls[0].transpose() << "\n";
 
 //    if(d != MuJoCo_helper->main_data){
 //        MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, d);
@@ -167,6 +210,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, d);
 
     X_old[0] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+//    std::cout << "X[0] " << X_old[0].transpose() << "\n";
 
     if(MuJoCo_helper->CheckIfDataIndexExists(0)){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
@@ -184,11 +228,12 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
 
         // return cost for this state
         double state_cost;
+        activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[i]);
         if(i == horizon_length - 1){
-            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector, true);
+            state_cost = activeModelTranslator->CostFunction(residuals[i], activeModelTranslator->full_state_vector, true);
         }
         else{
-            state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector, false);
+            state_cost = activeModelTranslator->CostFunction(residuals[i], activeModelTranslator->full_state_vector, false);
         }
 
         // If required to save states to trajectory tracking, then save state
@@ -273,6 +318,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     auto time_start = high_resolution_clock::now();
     old_cost = RolloutTrajectory(d, true, initial_controls);
+    std::cout << "cost from rollout: " << old_cost << "\n";
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
     if(verbose_output) {
@@ -377,14 +423,13 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     auto timer_start = high_resolution_clock::now();
     if(cost_reduced_last_iter){
         GenerateDerivatives();
-        std::cout << "A[0] \n" << A[0] << "\n";
-//        std::cout << "A[1] \n" << A[1] << "\n";
-//        std::cout << "A[2] \n" << A[2] << "\n";
-        std::cout << "B[0] \n" << B[0] << "\n";
-        std::cout << "l_x[0] \n" << l_x[0] << "\n";
-        std::cout << "l_xx[0] \n" << l_xx[0] << "\n";
-        std::cout << "l_x[1] \n" << l_x[1] << "\n";
-        std::cout << "l_xx[1] \n" << l_xx[1] << "\n";
+//        std::cout << "A[0] \n" << A[0] << "\n";
+//        std::cout << "B[0] \n" << B[0] << "\n";
+//        std::cout << "l_x[0] \n" << l_x[0] << "\n";
+//        std::cout << "l_xx[0] \n" << l_xx[0] << "\n";
+//        std::cout << "l_x[1] \n" << l_x[1] << "\n";
+//        std::cout << "l_xx[1] \n" << l_xx[1] << "\n";
+//        std::cout << "l_x[horizon - 1] \n" << l_x[horizon_length - 1] << "\n";
     }
     time_get_derivs_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
@@ -420,7 +465,7 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
         best_alpha = last_iter_num_linesearches;
     }
     else{
-        auto temp_timer = high_resolution_clock::now();
+//        auto temp_timer = high_resolution_clock::now();
         std::vector<std::future<double>> futures;
         std::vector<double> alphas;
 
@@ -542,7 +587,6 @@ bool iLQR::BackwardsPassQuuRegularisation(){
             Q_uu_reg(i, i) += lambda;
         }
 
-
         if(Quu_pd_check_counter >= number_steps_between_pd_checks){
             if(!CheckMatrixPD(Q_uu_reg)){
                 if(verbose_output){
@@ -553,12 +597,10 @@ bool iLQR::BackwardsPassQuuRegularisation(){
             Quu_pd_check_counter = 0;
         }
 
-
         auto temp = (Q_uu_reg).ldlt();
         MatrixXd I(num_ctrl, num_ctrl);
         I.setIdentity();
         MatrixXd Q_uu_inv = temp.solve(I);
-
 
         // control update law, open loop and feedback
         k[t] = -Q_uu_inv * Q_u;
@@ -651,6 +693,7 @@ double iLQR::ForwardsPass(double _old_cost){
     auto *state_new = new double[nq + nv + na];
 
     std::vector<double> alphas = {1.0, 0.8, 0.5, 0.3, 0.1};
+    MatrixXd control_limits = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
 
     while(!cost_reduction){
 
@@ -696,25 +739,22 @@ double iLQR::ForwardsPass(double _old_cost){
             U_new = U_old[t] + (alphas[alphaCount] * k[t]) + feedback_gain;
 
             // Clamp torque within limits
-            // TODO - replace this with model translator torque limits function, its better
-            if(activeModelTranslator->current_state_vector.robots[0].torque_controlled){
-                for(int i = 0; i < num_ctrl; i++){
-                    if (U_new(i) > activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
-                    if (U_new(i) < -activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = -activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
-                }
+            for(int i = 0; i < num_ctrl; i++){
+                if(U_new(i) > control_limits(2*i+1, 0)) U_new(i) = control_limits(2*i+1, 0);
+                if(U_new(i) < control_limits(2*i, 0)) U_new(i) = control_limits(2*i, 0);
             }
 
             activeModelTranslator->SetControlVector(U_new, MuJoCo_helper->main_data,
                                                     activeModelTranslator->current_state_vector);
 
             double newStateCost;
-            // Terminal state
+            activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[t]);
             if(t == horizon_length - 1){
-                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data,
+                newStateCost = activeModelTranslator->CostFunction(residuals[t],
                                                                    activeModelTranslator->full_state_vector, true);
             }
             else{
-                newStateCost = activeModelTranslator->CostFunction(MuJoCo_helper->main_data,
+                newStateCost = activeModelTranslator->CostFunction(residuals[t],
                                                                    activeModelTranslator->full_state_vector, false);
             }
 
@@ -803,6 +843,7 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
 
     // Copy initial data state into main data state for rollout
     MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[thread_id], MuJoCo_helper->saved_systems_state_list[0]);
+    MatrixXd control_limits = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
 
     for(int t = 0; t < horizon_length; t++) {
 
@@ -841,25 +882,33 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
         U_new = U_old[t] + (alpha * k[t]) + feedback_gain;
 
         // Clamp torque within limits
-        // TODO - replace this with model translator torque limits function, its better
-        if(activeModelTranslator->current_state_vector.robots[0].torque_controlled){
-            for(int i = 0; i < num_ctrl; i++){
-                if (U_new(i) > activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
-                if (U_new(i) < -activeModelTranslator->current_state_vector.robots[0].torque_limits[i]) U_new(i) = -activeModelTranslator->current_state_vector.robots[0].torque_limits[i];
+        for(int i = 0; i < num_ctrl; i++){
+            if(U_new(i) > control_limits(2*i+1, 0)){
+//                std::cout << "U_new(i) is " << U_new(i) << " and control limits are " << control_limits(2*i+1, 0) << "\n";
+                U_new(i) = control_limits(2*i+1, 0);
+//                std::cout << "U_new(i) is " << U_new(i) << "\n";
+
             }
+            if(U_new(i) < control_limits(2*i, 0)) U_new(i) = control_limits(2*i, 0);
         }
+
+//        if(t == 0){
+//            std::cout << "U_new[0] " << U_new.transpose() << "\n";
+//        }
 
         activeModelTranslator->SetControlVector(U_new, MuJoCo_helper->fd_data[thread_id],
                                                 activeModelTranslator->current_state_vector);
 
         double new_state_cost;
         // Terminal state
+        MatrixXd residuals_t(activeModelTranslator->residual_list.size(), 1);
+        activeModelTranslator->Residuals(MuJoCo_helper->fd_data[thread_id], residuals_t);
         if(t == horizon_length - 1){
-            new_state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[thread_id],
+            new_state_cost = activeModelTranslator->CostFunction(residuals_t,
                                                                  activeModelTranslator->full_state_vector, true);
         }
         else{
-            new_state_cost = activeModelTranslator->CostFunction(MuJoCo_helper->fd_data[thread_id],
+            new_state_cost = activeModelTranslator->CostFunction(residuals_t,
                                                                  activeModelTranslator->full_state_vector, false);
         }
 
@@ -868,7 +917,9 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
         mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[thread_id]);
 
         // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-        SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t);
+        if(t != 0){
+            SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t);
+        }
     }
 
     // Compute expected costreduction
@@ -893,6 +944,8 @@ void iLQR::UpdateNominal(){
         U_old[t] = activeModelTranslator->ReturnControlVector(MuJoCo_helper->saved_systems_state_list[t],
                                                               activeModelTranslator->current_state_vector);
     }
+//    std::cout << "X[0] " << X_old[0].transpose() << "\n";
+//    std::cout << "nominal U[0] " << U_old[0].transpose() << "\n";
 
     old_cost = new_cost;
 }

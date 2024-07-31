@@ -16,13 +16,6 @@ robots:
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
     goalPos: [ 0, 0, 0, 0, 0, 0, 0 ]
-    jointPosCosts: [0, 0, 0, 0, 0, 0, 0, 0]
-    jointVelCosts: [0, 0, 0, 0, 0, 0.1, 0]
-#    jointVelCosts: [0, 0, 0, 0, 0, 0.1, 0]
-    terminalJointPosCosts: [0, 0, 0, 0, 0, 0, 0]
-    terminalJointVelCosts: [0, 0, 0, 0, 0, 0, 0]
-    jointControlCosts: [0, 0, 0, 0, 0, 0, 0]
-#    jointJerkThresholds: [0.002, 0.002, 0.002, 0.002, 0.002, 0.002, 0.002]
     jointJerkThresholds: [10, 10, 10, 10, 10, 10, 10]
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
@@ -33,16 +26,26 @@ bodies:
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.7, -0.1, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearPosCost: [1, 1, 0]
-    # When iLQR once
-    terminalLinearPosCost: [0, 0, 0]
-    linearVelCost: [0.2, 0.2, 0]
-    terminalLinearVelCost: [0, 0, 0]
-    angularPosCost: [0, 0, 0]
-    terminalAngularPosCost: [0, 0, 0]
-    angularVelCost: [0, 0, 0]
     terminalAngularVelCost: [0, 0, 0]
     linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 1, 1, 1 ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+
+residuals:
+  goal_pos:
+    target: [0.7, -0.1]
+    weight: 0
+    weight_terminal: 1000  # 1000 when long horizon
+  goal_vel:
+    target: [0, 0]
+    weight: 0.2
+    weight_terminal: 0.2
+  joint_vel:
+    target: [0]
+    weight: 0.1
+    weight_terminal: 0.1
+  reach:
+    target: [0]
+    weight: 0.01
+    weight_terminal: 0.01

@@ -23,10 +23,6 @@ TwoDPushing::TwoDPushing(int _clutterLevel): PushBaseClass("franka_gripper", "go
         cout << "ERROR: Invalid clutter level" << endl;
     }
 
-    cost_reach.setZero();
-    cost_reach(0, 0) = 1;
-    cost_reach(1, 1) = 1;
-
     InitModelTranslator(yamlFilePath);
 }
 
@@ -299,86 +295,72 @@ std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLen
     return initControls;
 }
 
-// New - testing it out
-//double TwoDPushing::CostFunction(mjData *d, bool terminal){
-//    double cost;
-//    MatrixXd Xt = ReturnStateVector(d);
-//    MatrixXd Ut = ReturnControlVector(d);
-//
-//    // General cost function for the difference between desired and actual state
-//    MatrixXd X_diff = Xt - X_desired;
-//    MatrixXd temp;
-//
-//    if(terminal){
-//        temp = ((X_diff.transpose() * Q_terminal * X_diff)) + (Ut.transpose() * R * Ut);
-//    }
-//    else{
-//        temp = ((X_diff.transpose() * Q * X_diff)) + (Ut.transpose() * R * Ut);
-//    }
-//
-//    cost = temp(0);
-//
-//    // Reach cost function - difference between EE and goal object.
-////    pose_7 EE_pose;
-////    MuJoCo_helper->getBodyPose_quat_ViaXpos("franka_gripper", EE_pose, d);
-////
-////    cost += pow(EE_pose.position(0) - X_desired(7), 2) * 1;
-////    cost += pow(EE_pose.position(1) - X_desired(8), 2) * 1;
-//
-//    return cost;
-//}
+void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
+    int resid_index = 0;
 
-//void TwoDPushing::CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-//    MatrixXd Xt = ReturnStateVector(d);
-//    MatrixXd Ut = ReturnControlVector(d);
-//
-//    MatrixXd X_diff = Xt - X_desired;
-//
-//    // Size cost derivatives appropriately
-//    l_x.resize(state_vector_size, 1);
-//    l_xx.resize(state_vector_size, state_vector_size);
-//
-//    l_u.resize(num_ctrl, 1);
-//    l_uu.resize(num_ctrl, num_ctrl);
-//
-//    if(terminal){
-//        l_x = 2 * Q_terminal * X_diff;
-//        l_xx = 2 * Q_terminal;
-//    }
-//    else{
-//        l_x = 2 * Q * X_diff;
-//        l_xx = 2 * Q;
-//    }
-//
-//    l_u = 2 * R * Ut;
-//    l_uu = 2 * R;
-//
-////    // Reach gradients
-////    MatrixXd Jac;
-////    MatrixXd joints = Xt.block(0, 0, 7, 1);
-////
-////    // Not ideal this being here, computationally expensive
-////    MuJoCo_helper->forwardSimulator(data_index);
-////
-////    Jac = MuJoCo_helper->calculateJacobian("franka_gripper", data_index);
-////
-////    std::cout << "Jac " << Jac << std::endl;
-////    std::cout << "joints transpose " << joints << std::endl;
-////
-////    MatrixXd joints_2_EE(6, 1);
-////    MatrixXd EE_x(7, 1);
-////    MatrixXd EE_xx(7, 7);
-////    joints_2_EE = Jac * joints;
-////    std::cout << "jointes_2_ee " << EE_x << std::endl;
-////
-////    EE_x = 2 * joints_2_EE * cost_reach;
-////    std::cout << "EE_x " << EE_x << std::endl;
-////    EE_xx = 2 * cost_reach;
-////
-////    // Add the reach gradients to the cost derivatives
-////    l_x.block(7, 0, 7, 1) += EE_x;
-////    l_xx.block(7, 7, 7, 7) += EE_xx;
-//}
+    // Compute kinematics chain to compute site poses
+    mj_kinematics(MuJoCo_helper->model, d);
+//    mj_forwardSkip(MuJoCo_helper->model, d, mjSTAGE_NONE, 1);
+
+    int num_obstacles = 0;
+
+    if(clutterLevel == noClutter){
+
+    }
+    else if(clutterLevel == lowClutter){
+        num_obstacles = 3;
+    }
+    else if(clutterLevel == heavyClutter){
+        num_obstacles = 7;
+    }
+
+    pose_6 goal_pose;
+    pose_6 goal_vel;
+    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
+    MuJoCo_helper->GetBodyVelocity("goal", goal_vel, d);
+
+    // --------------- Residual 0: Body goal position -----------------
+    double diff_x = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+    double diff_y = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+            + pow(diff_y, 2));
+
+    // --------------- Residual 1: Body goal velocity -----------------
+    residuals(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
+            + pow(goal_vel.position(1), 2));
+
+    // Residuals 2 -> 2 + num_obstacles: Obstacle positions
+    for(int i = 0; i < num_obstacles; i++){
+        pose_6 obstacle_pose;
+        MuJoCo_helper->GetBodyPoseAngle("obstacle_" + std::to_string(i + 1), obstacle_pose, d);
+
+        diff_x = obstacle_pose.position(0) - full_state_vector.rigid_bodies[i + 1].start_linear_pos[0];
+        diff_y = obstacle_pose.position(1) - full_state_vector.rigid_bodies[i + 1].start_linear_pos[1];
+
+        residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+                + pow(diff_y, 2));
+    }
+
+    // --------------- Residual 3 + num_obstacles: Joint velocity -----------------
+    std::vector<double> joint_velocities;
+    MuJoCo_helper->GetRobotJointsVelocities("panda", joint_velocities, d);
+    residuals(resid_index++, 0) = joint_velocities[5];
+
+    // --------------- Residual 4 + num_obstacles: EE position towards goal object -----------------
+    pose_7 EE_pose;
+    MuJoCo_helper->GetBodyPoseQuatViaXpos("franka_gripper", EE_pose, d);
+    diff_x = EE_pose.position(0) - goal_pose.position(0);
+    diff_y = EE_pose.position(1) - goal_pose.position(1);
+    double diff_z = EE_pose.position(2) - goal_pose.position(2);
+    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+            + pow(diff_y, 2)
+            + pow(diff_z, 2));
+
+    if(resid_index != residual_list.size()){
+        std::cerr << "Error: Residuals size mismatch\n";
+        exit(1);
+    }
+}
 
 bool TwoDPushing::TaskComplete(mjData *d, double &dist){
     bool taskComplete = false;
@@ -394,7 +376,6 @@ bool TwoDPushing::TaskComplete(mjData *d, double &dist){
     if(dist < 0.025){
         taskComplete = true;
     }
-
 
     return taskComplete;
 }

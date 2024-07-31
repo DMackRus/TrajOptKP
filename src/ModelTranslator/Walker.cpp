@@ -49,66 +49,35 @@ void walker::ReturnRandomGoalState(){
     current_state_vector.robots[0].goal_vel[1] = rand_body_vel;
 }
 
-//double walker::CostFunction(mjData *d, bool terminal){
-//    double cost;
-//    MatrixXd Xt = ReturnStateVector(d);
-//    MatrixXd Ut = ReturnControlVector(d);
-//
-//    MatrixXd X_diff = Xt - X_desired;
-//
-//    for(int i = 0; i < 9; i++){
-//        //0 = height, 1 = x, 2 = rotation
-//        if(i == 0){
-//            // Only penalise if height below expected.
-//            if(X_diff(i) < 0){
-//                if(terminal) cost += X_diff(i) * X_diff(i) * Q_terminal.diagonal()(i);
-//                else cost += X_diff(i) * X_diff(i) * Q.diagonal()(i);
-//            }
-//
-////            if(terminal) cost += exp(-Q_terminal.diagonal()(i) * X_diff(i));
-////            else cost += exp(-Q.diagonal()(i) * X_diff(i));
-//        }
-//        else{
-//            if(terminal) cost += X_diff(i) * X_diff(i) * Q_terminal.diagonal()(i);
-//            else cost += X_diff(i) * X_diff(i) * Q.diagonal()(i);
-//        }
-//    }
-//
-//    return cost;
-//}
-//
-//void walker::CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal){
-//    MatrixXd Xt = ReturnStateVector(d);
-//    MatrixXd Ut = ReturnControlVector(d);
-//    MatrixXd X_diff = Xt - X_desired;
-//
-//    double height_gradient = 0.0f;
-//    double height_hessian = 0.0f;
-//
-//    if(terminal){
-//        l_x = 2 * Q_terminal * X_diff;
-//        l_xx = 2 * Q_terminal;
-//        if(X_diff(0) < 0){
-//            height_gradient = 2 * Q_terminal.diagonal()[0] * X_diff(0);
-//            height_hessian = 2 * Q_terminal.diagonal()[0];
-//        }
-////        height_gradient = -Q_terminal.diagonal()[0] * X_diff(0) * exp(-Q_terminal.diagonal()[0] * X_diff(0));
-////        height_hessian = Q_terminal.diagonal()[0] * exp(-Q_terminal.diagonal()[0] * X_diff(0)) * (Q_terminal.diagonal()[0] * X_diff(0));
-//    }
-//    else{
-//        l_x = 2 * Q * X_diff;
-//        l_xx = 2 * Q;
-//        if(X_diff(0) < 0){
-//            height_gradient = 2 * Q.diagonal()[0] * X_diff(0);
-//            height_hessian = 2 * Q.diagonal()[0];
-//        }
-////        height_gradient = -Q.diagonal()[0] * X_diff(0) * exp(-Q.diagonal()[0] * X_diff(0));
-////        height_hessian = Q.diagonal()[0] * exp(-Q.diagonal()[0] * X_diff(0)) * (Q.diagonal()[0] * X_diff(0));
-//    }
-//
-//    l_x(0) = l_x(0) + height_gradient;
-//    l_xx(0,0) = l_xx(0,0) + height_hessian;
-//
-//    l_u = 2 * R * Ut;
-//    l_uu = 2 * R;
-//}
+void walker::Residuals(mjData *d, MatrixXd &residuals){
+//    MatrixXd residuals(residual_list.size(), 1);
+    int resid_index = 0;
+
+    std::vector<double> walker_joints;
+    std::vector<double> walker_velocities;
+    std::vector<double> walker_controls;
+    MuJoCo_helper->GetRobotJointsPositions("walker", walker_joints, d);
+    MuJoCo_helper->GetRobotJointsVelocities("walker", walker_velocities, d);
+    MuJoCo_helper->GetRobotJointsControls("walker", walker_controls, d);
+
+    // --------------- Residual 0: Body height -----------------
+    residuals(resid_index++, 0) = walker_joints[0] - residual_list[0].target[0];
+
+    // --------------- Residual 1: Body rotation ---------------
+    residuals(resid_index++, 0) = walker_joints[2] - residual_list[1].target[0];
+
+    // --------------- Residual 2: Body velocity ---------------
+    residuals(resid_index++, 0) = walker_velocities[1] - residual_list[2].target[0];
+
+    // --------------- Residual 3: Joints controls -------------
+    for(int i = 0; i < walker_controls.size(); i++){
+        residuals(resid_index++, 0) = walker_controls[i] - residual_list[3+i].target[0];
+    }
+
+    if(resid_index != residual_list.size()){
+        std::cerr << "Error: Residuals size mismatch\n";
+        exit(1);
+    }
+
+//    return residuals;
+}

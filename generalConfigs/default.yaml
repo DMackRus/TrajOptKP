@@ -7,7 +7,7 @@ task: "pushing_no_clutter"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
-# "acrobot", "piston_block", "pentabot"push_soft
+# "acrobot", "piston_block", "pentabot"
 #
 # --- Free robot arm motion ---
 # "reaching"
@@ -19,7 +19,7 @@ task: "pushing_no_clutter"
 # "push_soft_into_rigid", "push_soft"
 #
 # ---- Locomotion ----
-# "walker_walk", "walker_run", "walker_uneven"
+# "walker_walk", "walker_run", "walker_uneven", "humanoid"
 #
 # ------------------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ taskInitMode: "fromYAML"    # taskInitMode can be, "random", "fromCSV", "fromYAM
 csvRow: 2                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
-costDerivsFD: false       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
+costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
 minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for

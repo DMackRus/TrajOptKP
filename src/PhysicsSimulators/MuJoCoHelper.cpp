@@ -43,7 +43,6 @@ void MuJoCoHelper::SetRobotJointPositions(const string& robot_name, vector<doubl
         exit(1);
     }
 
-
     for(int i = 0; i < joint_positions.size(); i++){
         int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].joint_names[i].c_str());
         if(joint_id == -1){
@@ -78,8 +77,8 @@ void MuJoCoHelper::SetRobotJointsVelocities(const string& robot_name, vector<dou
             std::cerr << "Invalid bodyId for robot: " << robots[robot_index].joint_names[i].c_str() << "\n";
             exit(1);
         }
-        int q_pos_index = model->jnt_qposadr[joint_id];
-        d->qvel[q_pos_index] = joint_velocities[i];
+        int dof_index = model->jnt_dofadr[joint_id];
+        d->qvel[dof_index] = joint_velocities[i];
     }
 }
 
@@ -101,8 +100,7 @@ void MuJoCoHelper::SetRobotJointsControls(const string& robot_name, vector<doubl
 
     for(int i = 0; i < joint_controls.size(); i++){
         int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, robots[robot_index].actuator_names[i].c_str());
-        int q_pos_index = model->jnt_dofadr[actuator_id];
-        d->ctrl[q_pos_index] = joint_controls[i];
+        d->ctrl[actuator_id] = joint_controls[i];
     }
 }
 
@@ -145,8 +143,8 @@ void MuJoCoHelper::GetRobotJointsVelocities(const string& robot_name, vector<dou
             std::cerr << "Invalid bodyId for robot: " << robots[robot_index].joint_names[i].c_str() << "\n";
             exit(1);
         }
-        int qpos_index = model->jnt_qposadr[joint_id];
-        joint_velocities[i] = d->qvel[qpos_index];
+        int dof_index = model->jnt_dofadr[joint_id];
+        joint_velocities[i] = d->qvel[dof_index];
     }
 }
 
@@ -189,8 +187,7 @@ void MuJoCoHelper::GetRobotJointsControls(const string& robot_name, vector<doubl
 
     for(int i = 0; i < robots[robot_index].actuator_names.size(); i++){
         int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, robots[robot_index].actuator_names[i].c_str());
-        int ctrl_index = model->jnt_dofadr[actuator_id];
-        joint_controls[i] = (d->ctrl[ctrl_index]);
+        joint_controls[i] = (d->ctrl[actuator_id]);
     }
 }
 

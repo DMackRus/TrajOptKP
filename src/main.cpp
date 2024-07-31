@@ -19,7 +19,7 @@
 
 #include "ModelTranslator/PushSoft.h"
 //#include "Hopper.h"
-//#include "humanoid.h"
+#include "ModelTranslator/Humanoid.h"
 
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
@@ -78,82 +78,61 @@ int num_steps_replan = 1;
 
 volatile bool reoptimise = false;
 
-void analyzeKMatrices(const std::vector<Eigen::MatrixXd>& KMatrices, int numImportantElements) {
-    std::vector<Eigen::VectorXd> singularValuesList;
-    std::vector<Eigen::MatrixXd> VtMatricesList;
-
-    // Perform SVD on each K matrix
-    for (const auto& K : KMatrices) {
-        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K, Eigen::ComputeFullV | Eigen::ComputeFullU);
-        singularValuesList.push_back(svd.singularValues());
-        VtMatricesList.push_back(svd.matrixV().transpose());
-        std::cout << "singular values: " << svd.singularValues() << "\n";
-        std::cout << "V matrixes: " << svd.matrixV().transpose() << "\n";
-    }
-
-    // Sum the singular values across all K matrices
-    Eigen::VectorXd totalSingularValues = Eigen::VectorXd::Zero(singularValuesList[0].size());
-    for (const auto& singularValues : singularValuesList) {
-        totalSingularValues += singularValues;
-    }
-    std::cout << "total singular values: " << totalSingularValues << "\n";
-
-    // Find the indices of the most important singular values
-    std::vector<int> importantIndices(totalSingularValues.size());
-    std::iota(importantIndices.begin(), importantIndices.end(), 0); // Fill with 0, 1, ..., n-1
-
-    std::partial_sort(importantIndices.begin(), importantIndices.begin() + numImportantElements, importantIndices.end(),
-                      [&totalSingularValues](int i, int j) { return totalSingularValues[i] > totalSingularValues[j]; });
-
-    std::cout << "important index 0: " << importantIndices[0] << "\n";
-    std::cout << "important index 1: " << importantIndices[1] << "\n";
-
-    // Extract the most important directions
-    std::vector<Eigen::MatrixXd> importantDirections;
-    for (const auto& Vt : VtMatricesList) {
-        Eigen::MatrixXd importantVt = Eigen::MatrixXd::Zero(Vt.rows(), numImportantElements);
-        for (int i = 0; i < numImportantElements; ++i) {
-            importantVt.col(i) = Vt.row(importantIndices[i]).transpose();
-        }
-        importantDirections.push_back(importantVt);
-    }
-
-    std::cout << "important directions 0: " << importantDirections[0] << "\n";
-    std::cout << "important directions 1: " << importantDirections[1] << "\n";
-
-    // Aggregate the important directions (mean)
-    Eigen::MatrixXd aggregatedDirections = Eigen::MatrixXd::Zero(importantDirections[0].rows(), numImportantElements);
-    for (const auto& dir : importantDirections) {
-        aggregatedDirections += dir;
-    }
-    aggregatedDirections /= importantDirections.size();
-
-    // Print the results
-    std::cout << "Aggregated Important Directions:\n" << aggregatedDirections << std::endl;
-}
+//void analyzeKMatrices(const std::vector<Eigen::MatrixXd>& KMatrices, int numImportantElements) {
+//    std::vector<Eigen::VectorXd> singularValuesList;
+//    std::vector<Eigen::MatrixXd> VtMatricesList;
+//
+//    // Perform SVD on each K matrix
+//    for (const auto& K : KMatrices) {
+//        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K, Eigen::ComputeFullV | Eigen::ComputeFullU);
+//        singularValuesList.push_back(svd.singularValues());
+//        VtMatricesList.push_back(svd.matrixV().transpose());
+//        std::cout << "singular values: " << svd.singularValues() << "\n";
+//        std::cout << "V matrixes: " << svd.matrixV().transpose() << "\n";
+//    }
+//
+//    // Sum the singular values across all K matrices
+//    Eigen::VectorXd totalSingularValues = Eigen::VectorXd::Zero(singularValuesList[0].size());
+//    for (const auto& singularValues : singularValuesList) {
+//        totalSingularValues += singularValues;
+//    }
+//    std::cout << "total singular values: " << totalSingularValues << "\n";
+//
+//    // Find the indices of the most important singular values
+//    std::vector<int> importantIndices(totalSingularValues.size());
+//    std::iota(importantIndices.begin(), importantIndices.end(), 0); // Fill with 0, 1, ..., n-1
+//
+//    std::partial_sort(importantIndices.begin(), importantIndices.begin() + numImportantElements, importantIndices.end(),
+//                      [&totalSingularValues](int i, int j) { return totalSingularValues[i] > totalSingularValues[j]; });
+//
+//    std::cout << "important index 0: " << importantIndices[0] << "\n";
+//    std::cout << "important index 1: " << importantIndices[1] << "\n";
+//
+//    // Extract the most important directions
+//    std::vector<Eigen::MatrixXd> importantDirections;
+//    for (const auto& Vt : VtMatricesList) {
+//        Eigen::MatrixXd importantVt = Eigen::MatrixXd::Zero(Vt.rows(), numImportantElements);
+//        for (int i = 0; i < numImportantElements; ++i) {
+//            importantVt.col(i) = Vt.row(importantIndices[i]).transpose();
+//        }
+//        importantDirections.push_back(importantVt);
+//    }
+//
+//    std::cout << "important directions 0: " << importantDirections[0] << "\n";
+//    std::cout << "important directions 1: " << importantDirections[1] << "\n";
+//
+//    // Aggregate the important directions (mean)
+//    Eigen::MatrixXd aggregatedDirections = Eigen::MatrixXd::Zero(importantDirections[0].rows(), numImportantElements);
+//    for (const auto& dir : importantDirections) {
+//        aggregatedDirections += dir;
+//    }
+//    aggregatedDirections /= importantDirections.size();
+//
+//    // Print the results
+//    std::cout << "Aggregated Important Directions:\n" << aggregatedDirections << std::endl;
+//}
 
 int main(int argc, char **argv) {
-
-//    if(1){
-//
-//        // Function to compute the SVD and analyze the matrices
-//
-//        // Example K matrices
-//        std::vector<Eigen::MatrixXd> KMatrices;
-//        KMatrices.push_back((Eigen::MatrixXd(2, 3) << 10, 0, 100, 0, 0, 0).finished());
-//        KMatrices.push_back((Eigen::MatrixXd(2, 3) << 10, 5, 100, 0, 5, 0).finished());
-//
-//        std::cout << "------------ K matrices ----------- \n";
-//        for(int i = 0; i < KMatrices.size(); i++){
-//            std::cout << KMatrices[i] << "\n";
-//        }
-//
-//        int numImportantElements = 2;
-//        analyzeKMatrices(KMatrices, numImportantElements);
-//
-//        return 0;
-//
-//    }
 
     // Expected arguments
     // 1. Program name
@@ -324,6 +303,74 @@ int main(int argc, char **argv) {
         activeModelTranslator->UpdateSceneVisualisation();
     }
 
+    // Temp code print model parameters
+    std::cout << "model->nq: " << activeModelTranslator->MuJoCo_helper->model->nq << "\n";
+    std::cout << "model->nv: " << activeModelTranslator->MuJoCo_helper->model->nv << "\n";
+    std::cout << "model->nu: " << activeModelTranslator->MuJoCo_helper->model->nu << "\n";
+    std::cout << "model->na: " << activeModelTranslator->MuJoCo_helper->model->na << "\n";
+
+    // Loop through joints and print the names
+    for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->njnt; i++){
+        std::cout << "joint name: " << activeModelTranslator->MuJoCo_helper->model->names + activeModelTranslator->MuJoCo_helper->model->name_jntadr[i] << "\n";
+    }
+
+    activeModelTranslator->current_state_vector.PrintFormattedStateVector();
+
+    // Print the sensors
+    std::cout << "num sensors: " << activeModelTranslator->MuJoCo_helper->model->nsensor << "\n";
+
+    // Print statevector index to q pos index
+    for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
+        int q_index = activeModelTranslator->StateIndexToQposIndex(i, activeModelTranslator->current_state_vector);
+        std::cout << "state name: " << activeModelTranslator->current_state_vector.state_names[i] << ": " << q_index << "\n";
+    }
+
+    // Loop through mujoco number of joints and print them
+//    std::cout << "Number of mujococ joints: " << activeModelTranslator->MuJoCo_helper->model->njnt << "\n";
+//    for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->njnt; i++){
+//        std::string name = mj_id2name(activeModelTranslator->MuJoCo_helper->model, mjOBJ_JOINT, i);
+//        int qpos_adr = activeModelTranslator->MuJoCo_helper->model->jnt_qposadr[i];
+//        std::cout << "joint name: " << name <<  " joint num: " << i << " qpos index: " << qpos_adr << "\n";
+//    }
+
+    // Loop through the actuators and print them
+    std::cout << "number of mujoco actuators: " << activeModelTranslator->MuJoCo_helper->model->nu << "\n";
+    for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->nu; i++){
+        std::string name = mj_id2name(activeModelTranslator->MuJoCo_helper->model, mjOBJ_ACTUATOR, i);
+        std::cout << "actuator name: " << name << " actuator num: " << i << "\n";
+    }
+
+    // Check my method for getting actuator index
+    for(int i = 0; i < activeModelTranslator->current_state_vector.robots[0].actuator_names.size(); i++){
+        int actuator_id = mj_name2id(activeModelTranslator->MuJoCo_helper->model, mjOBJ_ACTUATOR, activeModelTranslator->current_state_vector.robots[0].actuator_names[i].c_str());
+//        int ctrl_index = activeModelTranslator->MuJoCo_helper->model->act[actuator_id];
+        std::cout << "actuator name: " << activeModelTranslator->current_state_vector.robots[0].actuator_names[i].c_str() <<  " ctrl index: " << actuator_id << "\n";
+    }
+
+    // Quick test to make sure setting and returning stata vectors is correct
+//    MatrixXd state_vector_test(activeModelTranslator->current_state_vector.dof+activeModelTranslator->current_state_vector.dof_quat, 1);
+//    state_vector_test << 0.1, 0.1, 0.1,
+//                            0.988015, 0, 0.154359, 0,
+//                            0, 0.4, 0,
+//                            -0.25, -0.5, -2.5, -2.65, -0.8, 0.56,
+//                            -0.25, -0.5, -2.5, -2.65, -0.8, 0.56,
+//                            0, 0, 0, 0, 0, 0,
+//                            0, 0, 0, 0, 0, 0,
+//                            0, 0, 0,
+//                            0, 0, 0, 0, 0, 0,
+//                            0, 0, 0, 0, 0, 0,
+//                            0, 0, 0, 0, 0, 0;
+//    activeModelTranslator->SetStateVectorQuat(state_vector_test, activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->current_state_vector);
+//
+//    MatrixXd returned_state_vector;
+//    returned_state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->current_state_vector);
+//    std::cout << "returned state vector: " << returned_state_vector << "\n";
+    // Print the control limits
+//    MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
+//    for(int i = 0; i < control_lims.rows(); i++){
+//        std::cout << "control lims: " << control_lims(i, 0) << " \n";
+//    }
+
     // Initialise the system state from desired mechanism
     // Set goal pose here maybe???
     activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -344,8 +391,6 @@ int main(int argc, char **argv) {
     }
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
-
-
 
 
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -392,7 +437,9 @@ int main(int argc, char **argv) {
 //            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
             activeVisualiser->render("Test");
-            double cost = activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, false);
+            MatrixXd residuals(activeModelTranslator->residual_list.size(), 1);
+            activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, residuals);
+            double cost = activeModelTranslator->CostFunction(residuals, activeModelTranslator->full_state_vector, false);
             std::cout << "cost: " << cost << "\n";
         }
         // --------------------------------------------------------------------------------------------------------------
@@ -792,11 +839,10 @@ void AsyncMPC(){
         int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-//            difference_ms += 8;
+            difference_ms += 20;
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
     }
-
 
     // Stop MPC thread
     {
@@ -811,12 +857,12 @@ void AsyncMPC(){
 
     bool terminal = false;
 
-    if(task == "pushing_moderate_clutter"){
-        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
-            rigid_body.terminal_linear_pos_cost[0] = 10000;
-            rigid_body.terminal_linear_pos_cost[1] = 10000;
-        }
-    }
+//    if(task == "pushing_moderate_clutter"){
+//        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
+//            rigid_body.terminal_linear_pos_cost[0] = 10000;
+//            rigid_body.terminal_linear_pos_cost[1] = 10000;
+//        }
+//    }
 
     if(record_trajectory){
         activeVisualiser->StartRecording(task + "_MPC");
@@ -841,7 +887,10 @@ void AsyncMPC(){
         if(i == activeVisualiser->trajectory_states.size() - 1){
             terminal = true;
         }
-        cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector, terminal);
+
+        MatrixXd residuals(activeModelTranslator->residual_list.size(), 1);
+        activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, residuals);
+        cost += activeModelTranslator->CostFunction(residuals, activeModelTranslator->full_state_vector, terminal);
         if(i % 5 == 0){
             activeVisualiser->render("");
         }
@@ -937,7 +986,7 @@ void MPCUntilComplete(int OPT_HORIZON){
                     bestMatchingStateIndex = i;
                 }
             }
-//            bestMatchingStateIndex = 1;
+            bestMatchingStateIndex = 1;
 
             // Mutex lock
             {
@@ -1053,6 +1102,10 @@ int assign_task(){
         std::shared_ptr<PushSoft> my_squish_soft = std::make_shared<PushSoft>(PUSH_SOFT);
         activeModelTranslator = my_squish_soft;
     }
+    else if(task == "humanoid"){
+        std::shared_ptr<Humanoid> my_humanoid = std::make_shared<Humanoid>();
+        activeModelTranslator = my_humanoid;
+    }
     else{
         std::cout << "invalid scene selected, " << task << " does not exist" << std::endl;
     }
@@ -1060,8 +1113,8 @@ int assign_task(){
 }
 
 void change_cost_func_push_soft(){
-    for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
-        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-    }
+//    for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
+//        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+//        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
+//    }
 }

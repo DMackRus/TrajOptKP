@@ -109,6 +109,44 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     return init_controls;
 }
 
+void BoxSweep::Residuals(mjData *d, MatrixXd &residuals){
+//    MatrixXd residual(residual_list.size(), 1);
+    int resid_index;
+
+    // Compute kinematics chain to compute site poses
+    mj_kinematics(MuJoCo_helper->model, d);
+
+    pose_6 goal_pose;
+    pose_6 goal_vel;
+    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
+    MuJoCo_helper->GetBodyVelocity("goal", goal_vel, d);
+
+    // --------------- Residual 0: Body goal position -----------------
+    double diff_x = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+    double diff_y = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+                                       + pow(diff_y, 2));
+
+    // --------------- Residual 1: Body goal velocity -----------------
+    residuals(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
+                                       + pow(goal_vel.position(1), 2));
+
+    // --------------- Residual 2: EE position towards goal object -----------------
+    pose_7 EE_pose;
+    MuJoCo_helper->GetBodyPoseQuatViaXpos("franka_gripper", EE_pose, d);
+    diff_x = EE_pose.position(0) - goal_pose.position(0);
+    diff_y = EE_pose.position(1) - goal_pose.position(1);
+    double diff_z = EE_pose.position(2) - goal_pose.position(2);
+    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+                                       + pow(diff_y, 2)
+                                       + pow(diff_z, 2));
+
+    if(resid_index != residual_list.size()){
+        std::cerr << "Error: Residuals size mismatch\n";
+        exit(1);
+    }
+}
+
 bool BoxSweep::TaskComplete(mjData *d, double &dist){
     bool taskComplete = false;
 

@@ -1,29 +1,55 @@
 #include "ModelTranslator/Reaching.h"
 
 pandaReaching::pandaReaching(): ModelTranslator(){
-    std::string yamlFilePath = "/taskConfigs/free_motion.yaml";
-
+    std::string yamlFilePath = "/TaskConfigs/free_motion/reaching.yaml";
     InitModelTranslator(yamlFilePath);
 }
 
 bool pandaReaching::TaskComplete(mjData *d, double &dist){
-    double cum_error = 0.0f;
+    pose_7 EE_pose;
+    MuJoCo_helper->GetBodyPoseQuatViaXpos("franka_gripper", EE_pose, d);
 
-    std::vector<double> robot_joints;
-    MuJoCo_helper->GetRobotJointsPositions("panda", robot_joints, d);
+    double diff_x = EE_pose.position(0) - residual_list[0].target[0];
+    double diff_y = EE_pose.position(1) - residual_list[0].target[1];
+    double diff_z = EE_pose.position(2) - residual_list[0].target[2];
 
-    for(int i = 0; i < full_state_vector.dof; i++){
-        double diff = full_state_vector.robots[0].goal_pos[i] - robot_joints[i];
-        cum_error += diff;
-    }
+    dist = sqrt(pow(diff_x, 2)
+            + pow(diff_y, 2)
+            + pow(diff_z, 2));
 
-    dist = cum_error;
-
-    if(cum_error < 0.05){
+    if(dist < 0.05){
         return true;
     }
     else{
         return false;
+    }
+}
+
+void pandaReaching::Residuals(mjData *d, MatrixXd &residuals){
+    int resid_index = 0;
+
+    // Compute kinematics chain to compute site poses
+    mj_kinematics(MuJoCo_helper->model, d);
+
+    pose_7 EE_pose;
+    MuJoCo_helper->GetBodyPoseQuatViaXpos("franka_gripper", EE_pose, d);
+    double diff_x = EE_pose.position(0) - residual_list[0].target[0];
+    double diff_y = EE_pose.position(1) - residual_list[0].target[1];
+    double diff_z = EE_pose.position(2) - residual_list[0].target[2];
+    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+                                       + pow(diff_y, 2)
+                                       + pow(diff_z, 2));
+
+    std::vector<double> joint_velocities;
+    MuJoCo_helper->GetRobotJointsVelocities("panda", joint_velocities, d);
+
+    for(double joint_velocitie : joint_velocities){
+        residuals(resid_index++, 0) = joint_velocitie;
+    }
+
+    if(resid_index != residual_list.size()){
+        std::cerr << "Error: Residuals size mismatch\n";
+        exit(1);
     }
 }
 
@@ -201,31 +227,27 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
     std::vector<MatrixXd> init_controls;
     int num_ctrl = current_state_vector.num_ctrl;
 
-    if(current_state_vector.robots[0].torque_controlled){
 
-        MatrixXd control(num_ctrl, 1);
-        double gains[7] = {10, 10, 10, 10, 5, 5, 5};
+
+    MatrixXd control(num_ctrl, 1);
+    double gains[7] = {10, 10, 10, 10, 5, 5, 5};
 //        MatrixXd Xt;
-        vector<double> gravCompensation;
-        for(int i = 0; i < horizonLength; i++){
+    vector<double> gravCompensation;
+    for(int i = 0; i < horizonLength; i++){
 
-            MuJoCo_helper->GetRobotJointsGravityCompensationControls(current_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
+        MuJoCo_helper->GetRobotJointsGravityCompensationControls(current_state_vector.robots[0].name, gravCompensation, MuJoCo_helper->main_data);
 
 //            Xt = ReturnStateVector(MuJoCo_helper->main_data);
 
-            for(int j = 0; j < num_ctrl; j++){
-                control(j) = gravCompensation[j];
+        for(int j = 0; j < num_ctrl; j++){
+            control(j) = gravCompensation[j];
 //                double diff = X_desired(j) - Xt(j);
 //                control(j) += diff * gains[j];
-            }
-
-            SetControlVector(control, MuJoCo_helper->main_data, full_state_vector);
-            mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
-            init_controls.push_back(control);
         }
-    }
-    else{
 
+        SetControlVector(control, MuJoCo_helper->main_data, full_state_vector);
+        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
+        init_controls.push_back(control);
     }
 
     

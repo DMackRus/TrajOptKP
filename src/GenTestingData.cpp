@@ -438,12 +438,12 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
 //        }
 //    }
 
-    if(1){
-        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
-            rigid_body.terminal_linear_pos_cost[0] = 1000;
-            rigid_body.terminal_linear_pos_cost[1] = 1000;
-        }
-    }
+//    if(1){
+//        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
+//            rigid_body.terminal_linear_pos_cost[0] = 1000;
+//            rigid_body.terminal_linear_pos_cost[1] = 1000;
+//        }
+//    }
 
     final_cost = 0.0;
     bool terminal = false;
@@ -459,17 +459,19 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
             terminal = true;
         }
 
-        final_cost += activeModelTranslator->CostFunction(activeModelTranslator->MuJoCo_helper->vis_data,
+        MatrixXd residuals(activeModelTranslator->residual_list.size(), 1);
+        activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, residuals);
+        final_cost += activeModelTranslator->CostFunction(residuals,
                                                           activeModelTranslator->full_state_vector, terminal);
 
     }
 
-    if(1){
-        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
-            rigid_body.terminal_linear_pos_cost[0] = 0;
-            rigid_body.terminal_linear_pos_cost[1] = 0;
-        }
-    }
+//    if(1){
+//        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
+//            rigid_body.terminal_linear_pos_cost[0] = 0;
+//            rigid_body.terminal_linear_pos_cost[1] = 0;
+//        }
+//    }
 
     std::cout << "final cost of entire MPC trajectory was: " << final_cost << "\n";
     std::cout << "avg opt time: " << average_opt_time_ms << " ms \n";

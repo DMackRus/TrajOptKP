@@ -131,6 +131,14 @@ public:
     void WorkerComputeDerivatives(int threadId);
 
     /**
+     * Worker function for computing residual derivatives in parallel.
+     *
+     * @param threadId - The thread id of the worker thread.
+     *
+     */
+    void WorkerComputeResidualDerivatives(int threadId);
+
+    /**
      * This functions generates all the dynamic derivatives and cost derivatives over the entire trajectory.
      *
      */
@@ -145,9 +153,11 @@ public:
 
     // List of differentiator function callbacks, for parallelisation.
     std::vector<void (Differentiator::*)(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
-                                        MatrixXd &l_x, MatrixXd &l_u, MatrixXd &l_xx, MatrixXd &l_uu,
-                                        int dataIndex, int threadId, bool terminal, bool costDerivs,
-                                        bool central_diff, double eps)> tasks;
+                                        int dataIndex, int threadId,
+                                        bool central_diff, double eps)> tasks_dynamics_derivs;
+
+    std::vector<void (Differentiator::*)(vector<MatrixXd> &r_x, vector<MatrixXd> &r_u,
+                                            int dataIndex, int tid, bool central_diff, double eps)> tasks_residual_derivs;
 
     // current_iteration used for parallelisation of dynamics derivatives
     std::atomic<int> current_iteration;
@@ -191,6 +201,10 @@ public:
     vector<MatrixXd> l_u;
     vector<MatrixXd> l_uu;
 
+    vector<MatrixXd> residuals;
+    vector<vector<MatrixXd>> r_x;
+    vector<vector<MatrixXd>> r_u;
+
     // Saved states and controls
 //    vector<MatrixXd> U_new;
     vector<MatrixXd> U_old;
@@ -207,7 +221,7 @@ public:
 
     int sampling_k_interval = 1;
     int num_dofs_readd = 10;
-    double K_matrix_threshold = 50; // maybe 0.001 or 0.0001
+    double K_matrix_threshold = 1; // maybe 0.001 or 0.0001
     // When eigen vector 0.1, 0.2, 0.5
     // WHen just summing numbers went from 1 -> 2000
     bool eigen_vector_method = false;
@@ -238,12 +252,17 @@ protected:
      * @param keyPoints - The keypoints to compute the derivatives at. A list of lists, where each sublist refers to a different
      * degree of freedom. The elements in the list are the time indices to compute the derivatives at.
      */
-    void ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints);
+    void ComputeDynamicsDerivativesAtKeypoints(std::vector<std::vector<int>> keyPoints);
 
     /**
      * Computes the cost derivatives over the entire trajectory.
      */
     void ComputeCostDerivatives();
+
+    /**
+     * Computes the residual derivatives over the entire trajectory.
+     */
+    void ComputeResidualDerivatives();
 
     /**
      * Applies a filter to the internal dynamics derivatives.

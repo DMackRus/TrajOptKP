@@ -1,15 +1,15 @@
 #pragma once
-#include "ModelTranslator.h"
 
-class Acrobot : public ModelTranslator {
+#include "ModelTranslator/ModelTranslator.h"
+
+class Humanoid: public ModelTranslator {
 public:
-    Acrobot();
+    Humanoid();
 
     bool TaskComplete(mjData *d, double &dist) override;
-
     void Residuals(mjData *d, MatrixXd &residuals) override;
-
 //    void ReturnRandomStartState() override;
 //    void ReturnRandomGoalState() override;
 
 };
+
