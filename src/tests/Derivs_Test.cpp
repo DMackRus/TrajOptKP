@@ -63,8 +63,8 @@ void compare_dynamics_derivatives(){
     double time = 0.0f;
     start = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < T; i++){
-        differentiator->ComputeDerivatives(A_mine[0], B_mine[0], cols, r_x, r_u,
-                                           0, 0, false, false, flg_centred, 1e-6);
+        differentiator->DynamicsDerivatives(A_mine[0], B_mine[0], cols, r_x, r_u,
+                                            0, 0, false, false, flg_centred, 1e-6);
         time += differentiator->time_mj_forwards;
     }
     std::cout << "time of mj_forwards calls " << (time / 1000.0f) << "ms\n";

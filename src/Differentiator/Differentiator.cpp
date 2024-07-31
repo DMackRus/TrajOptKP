@@ -5,10 +5,9 @@ Differentiator::Differentiator(std::shared_ptr<ModelTranslator> model_translator
     this->MuJoCo_helper = MuJoCo_helper;
 }
 
-void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
-                                        vector<MatrixXd> &r_x, vector<MatrixXd> &r_u,
-                                        int data_index, int tid, bool terminal, bool cost_derivs,
-                                        bool central_diff, double eps){
+void Differentiator::DynamicsDerivatives(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
+                                         int data_index, int tid,
+                                         bool central_diff, double eps){
 
     // Aliases
     dof = model_translator->current_state_vector.dof;
@@ -48,19 +47,6 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
     // ------------ dof x ctrl --------------
     MatrixXd dstatedctrl(dim_state, num_ctrl);
 
-    // How the cost changes
-//    MatrixXd dcostdctrl(num_ctrl, 1);
-//    MatrixXd dcostdpos(dof, 1);
-//    MatrixXd dcostdvel(dof, 1);
-
-//    double cost;
-//    double cost_inc = 0.0f;
-//    double cost_dec = 0.0f;
-
-    MatrixXd residuals(model_translator->residual_list.size(), 1);
-    MatrixXd residuals_inc(model_translator->residual_list.size(), 1);
-    MatrixXd residuals_dec(model_translator->residual_list.size(), 1);
-
     // Mark stack for stack allocation of some dynamic variables
     mj_markStack(MuJoCo_helper->fd_data[tid]);
 
@@ -76,8 +62,6 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
 
     // Copy data we wish to finite-difference into finite differencing data (for multi threading)
     MuJoCo_helper->CpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
-
-    model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals);
 
     // Compute next state with no perturbations
     mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]);
@@ -122,10 +106,10 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             // Set perturbed control vector
             model_translator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
-            // If computing cost derivatives
-            if(cost_derivs){
-                model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
-            }
+//            // If computing cost derivatives
+//            if(cost_derivs){
+//                model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
+//            }
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
@@ -160,9 +144,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             model_translator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
             // If calculating cost derivatives via finite-differencing
-            if(cost_derivs){
-                model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
-            }
+//            if(cost_derivs){
+//                model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
+//            }
 
             // integrate simulator
             start = std::chrono::high_resolution_clock::now();
@@ -191,12 +175,12 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedctrl(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
             }
 
-            if(cost_derivs){
-                // Loop through number of residuals, compute dr0/dx, dr1/dx ... drn/dx
-                for(int j = 0; j < model_translator->residual_list.size(); j++){
-                    r_u[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
-                }
-            }
+//            if(cost_derivs){
+//                // Loop through number of residuals, compute dr0/dx, dr1/dx ... drn/dx
+//                for(int j = 0; j < model_translator->residual_list.size(); j++){
+//                    r_u[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
+//                }
+//            }
         }
         else if(nudge_forward){
             // Compute one column of the A matrix
@@ -210,11 +194,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedctrl(j, i) = (next_state_plus(j) - next_state(j))/(eps);
             }
 
-            if(cost_derivs){
-                for(int j = 0; j < model_translator->residual_list.size(); j++){
-                    r_u[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
-                }
-            }
+//            if(cost_derivs){
+//                for(int j = 0; j < model_translator->residual_list.size(); j++){
+//                    r_u[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
+//                }
+//            }
         }
         else if(nudge_back){
             // Compute one column of the A matrix
@@ -228,11 +212,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedctrl(j, i) = (next_state(j) - next_state_minus(j))/(eps);
             }
 
-            if(cost_derivs){
-                for(int j = 0; j < model_translator->residual_list.size(); j++){
-                    r_u[j](i, 0) = (residuals(j) - residuals_dec(j)) / (eps);
-                }
-            }
+//            if(cost_derivs){
+//                for(int j = 0; j < model_translator->residual_list.size(); j++){
+//                    r_u[j](i, 0) = (residuals(j) - residuals_dec(j)) / (eps);
+//                }
+//            }
         }
     }
 
@@ -258,9 +242,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         model_translator->SetVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
         // If calculating cost derivs via finite-differencing
-        if(cost_derivs){
-            model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
-        }
+//        if(cost_derivs){
+//            model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
+//        }
 
         // Integrate the simulator
         start = std::chrono::high_resolution_clock::now();
@@ -281,9 +265,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             model_translator->SetVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
             // If calculating cost derivs via finite-differencing
-            if(cost_derivs){
-                model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
-            }
+//            if(cost_derivs){
+//                model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
+//            }
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
@@ -309,11 +293,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedqvel(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
             }
 
-            if(cost_derivs) {
-                for(int j = 0; j < model_translator->residual_list.size(); j++){
-                    r_x[j](i + dof, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
-                }
-            }
+//            if(cost_derivs) {
+//                for(int j = 0; j < model_translator->residual_list.size(); j++){
+//                    r_x[j](i + dof, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
+//                }
+//            }
 
         }
         else{
@@ -327,11 +311,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedqvel(j, i) = (next_state_plus(j) - next_state(j))/(eps);
             }
 
-            if(cost_derivs) {
-                for(int j = 0; j < model_translator->residual_list.size(); j++){
-                    r_x[j](i + dof, 0) = (residuals_inc(j) - residuals(j)) / (eps);
-                }
-            }
+//            if(cost_derivs) {
+//                for(int j = 0; j < model_translator->residual_list.size(); j++){
+//                    r_x[j](i + dof, 0) = (residuals_inc(j) - residuals(j)) / (eps);
+//                }
+//            }
         }
 
         // Undo perturbation
@@ -362,9 +346,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         dpos[dpos_index] = 1;
         mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, eps);
 
-        if(cost_derivs){
-            model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
-        }
+//        if(cost_derivs){
+//            model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
+//        }
 
         // Integrate the simulator
         start = std::chrono::high_resolution_clock::now();
@@ -382,9 +366,9 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             // perturb position vector negatively
             mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, -eps);
 
-            if(cost_derivs){
-                model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
-            }
+//            if(cost_derivs){
+//                model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
+//            }
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
@@ -410,11 +394,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
                 dstatedqpos(j, i) = (next_state_plus(j) - next_state_minus(j))/(2*eps);
             }
 
-            if(cost_derivs) {
-                for(int j = 0; j < model_translator->residual_list.size(); j++){
-                    r_x[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
-                }
-            }
+//            if(cost_derivs) {
+//                for(int j = 0; j < model_translator->residual_list.size(); j++){
+//                    r_x[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
+//                }
+//            }
         }
         else{
             mj_differentiatePos(MuJoCo_helper->model, vel_diff, eps, next_full_state, next_full_state_pos);
@@ -429,11 +413,11 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
             }
 
 
-            if(cost_derivs) {
-                for(int j = 0; j < model_translator->residual_list.size(); j++){
-                    r_x[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
-                }
-            }
+//            if(cost_derivs) {
+//                for(int j = 0; j < model_translator->residual_list.size(); j++){
+//                    r_x[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
+//                }
+//            }
         }
 
         // Undo perturbation
@@ -470,17 +454,217 @@ void Differentiator::ComputeDerivatives(MatrixXd &A, MatrixXd &B, const std::vec
         }
     }
 
-//    if(cost_derivs){
-//        std::cout << "warning - fd for cost derivatives is currently untested \n";
-//        l_x.block(0, 0, dof, 1) = dcostdpos;
-//        l_x.block(dof, 0, dof, 1) = dcostdvel;
-//        l_u.block(0, 0, num_ctrl, 1) = dcostdctrl;
-//
-//        l_uu = l_u.transpose() * l_u;
-//        l_xx = l_x.transpose() * l_x;
-//    }
-
 //    std::cout << "time of sim integration: " << time_mj_forwards / 1000.0f << "\n";
 //    std::cout << "num of sim integration: " << count_integrations << "\n";
 //    std::cout << "diff time: "  << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - diff_start).count() / 1000.0 << std::endl;
 }
+
+void Differentiator::ResidualDerivatives(vector<MatrixXd> &r_x, vector<MatrixXd> &r_u,
+                         int data_index, int tid, bool central_diff, double eps){
+    // Aliases
+    dof = model_translator->current_state_vector.dof;
+    num_ctrl = model_translator->current_state_vector.num_ctrl;
+    dim_state = 2 * dof;
+
+    // Aliases
+    int nq = MuJoCo_helper->model->nq, nv = MuJoCo_helper->model->nv,
+            na = MuJoCo_helper->model->na;
+
+    // Reset some debugging timing variables
+    time_mj_forwards = 0.0f;
+    count_integrations = 0;
+    auto start = std::chrono::high_resolution_clock::now();
+    auto diff_start = std::chrono::high_resolution_clock::now();
+
+    // Memory allocation for current state and controls
+    MatrixXd unperturbed_controls(num_ctrl, 1);
+    MatrixXd unperturbed_positions(dof, 1);
+    MatrixXd unperturbed_velocities(dof, 1);
+
+    // Memory allocation for perturbed state and controls
+    MatrixXd perturbed_controls(num_ctrl, 1);
+    MatrixXd perturbed_positions(dof, 1);
+    MatrixXd perturbed_velocities(dof, 1);
+
+    // Residuals results
+    MatrixXd residuals(model_translator->residual_list.size(), 1);
+    MatrixXd residuals_inc(model_translator->residual_list.size(), 1);
+    MatrixXd residuals_dec(model_translator->residual_list.size(), 1);
+
+    // Mark stack for stack allocation of some dynamic variables
+    mj_markStack(MuJoCo_helper->fd_data[tid]);
+
+    mjtNum *dpos  = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nv);
+    mjtNum *vel_diff = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nv);
+
+    mjtNum *next_full_state = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
+    mjtNum *next_full_state_pos = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
+    mjtNum *next_full_state_minus = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
+    mju_zero(next_full_state, nq + nv + na);
+    mju_zero(next_full_state_pos, nq + nv + na);
+    mju_zero(next_full_state_minus, nq + nv + na);
+
+    // Copy data we wish to finite-difference into finite differencing data (for multi threading)
+    MuJoCo_helper->CpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
+
+    // Reset the simulator to the initial state
+    MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
+
+    // Compute unperturbed residuals
+    model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals);
+
+    unperturbed_controls = model_translator->ReturnControlVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
+    unperturbed_velocities = model_translator->ReturnVelocityVector(MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
+
+    // --------------------------------------------- FD for controls ---------------------------------------------
+    MatrixXd control_limits = model_translator->ReturnControlLimits(model_translator->current_state_vector);
+    for(int i = 0; i < num_ctrl; i++){
+
+        // perturb control vector positively
+        perturbed_controls = unperturbed_controls.replicate(1,1);
+        perturbed_controls(i) += eps;
+
+        // Check if the perturbed control is within the control limits
+        int nudge_forward = 1;
+        if(perturbed_controls(i) > control_limits(2*i + 1)){
+            nudge_forward = 0;
+        }
+
+        if(nudge_forward){
+            // Set perturbed control vector
+            model_translator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
+
+            // Compute residuals
+            model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
+
+            // Undo the perturbation
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
+        }
+
+        int nudge_back;
+
+        // perturb control vector in opposite direction
+        perturbed_controls = unperturbed_controls.replicate(1, 1);
+        perturbed_controls(i) -= eps;
+
+        // If we use central difference or we didnt nudge forward, due to control limits
+        if(central_diff || !nudge_forward){
+            nudge_back = 1;
+            if(perturbed_controls(i) < control_limits(2*i)){
+                nudge_back = 0;
+            }
+        } else {
+            nudge_back = 0;
+        }
+
+        if(nudge_back){
+            // Perturb control vector
+            model_translator->SetControlVector(perturbed_controls, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
+
+            // Compute residuals
+            model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
+
+            // Undo perturbation
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
+        }
+
+        // Compute finite differences, depending on what perturbations were made
+        if(nudge_forward && nudge_back){
+            for(int j = 0; j < model_translator->residual_list.size(); j++){
+                r_u[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
+            }
+        }
+        else if(nudge_forward){
+            for(int j = 0; j < model_translator->residual_list.size(); j++){
+                r_u[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
+            }
+
+        }
+        else if(nudge_back){
+            for(int j = 0; j < model_translator->residual_list.size(); j++) {
+                r_u[j](i, 0) = (residuals(j) - residuals_dec(j)) / (eps);
+            }
+        }
+    }
+
+    // ----------------------------------------------- FD for velocities ---------------------------------------------
+    for(int i = 0; i < dof; i++){
+
+        // Perturb velocity vector positively
+        perturbed_velocities = unperturbed_velocities.replicate(1, 1);
+        perturbed_velocities(i) += eps;
+        model_translator->SetVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
+
+        model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
+
+        if(central_diff){
+            // reset the data state back to initial data state
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
+
+            // perturb velocity vector negatively
+            perturbed_velocities = unperturbed_velocities.replicate(1, 1);
+            perturbed_velocities(i) -= eps;
+            model_translator->SetVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector); model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
+
+            model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
+
+        }
+
+        if(central_diff){
+            for(int j = 0; j < model_translator->residual_list.size(); j++){
+                r_x[j](i + dof, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
+            }
+        }
+        else{
+            for(int j = 0; j < model_translator->residual_list.size(); j++){
+                r_x[j](i + dof, 0) = (residuals_inc(j) - residuals(j)) / (eps);
+            }
+        }
+
+        // Undo perturbation
+        MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
+    }
+
+    // ----------------------------------------------- FD for positions ---------------------------------------------
+    for(int i = 0; i < dof; i++){
+
+        // Compute the index of the position vector in MuJoCo that corresponds to the index of the state vector
+        int dpos_index = model_translator->StateIndexToQposIndex(i, model_translator->current_state_vector);
+
+        // Perturb position vector positively
+        mju_zero(dpos, nv);
+        dpos[dpos_index] = 1;
+        mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, eps);
+
+        model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
+
+        if(central_diff){
+            // reset the data state back to initial data statedataIndex
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
+
+            // perturb position vector negatively
+            mj_integratePos(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid]->qpos, dpos, -eps);
+
+            model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
+        }
+
+        if(central_diff){
+            for(int j = 0; j < model_translator->residual_list.size(); j++){
+                r_x[j](i, 0) = (residuals_inc(j) - residuals_dec(j)) / (2 * eps);
+            }
+        }
+        else{
+            for(int j = 0; j < model_translator->residual_list.size(); j++){
+                r_x[j](i, 0) = (residuals_inc(j) - residuals(j)) / (eps);
+            }
+        }
+
+        // Undo perturbation
+        MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
+
+    }
+
+    // free the stack allocated variables
+    mj_freeStack(MuJoCo_helper->fd_data[tid]);
+}
+

@@ -147,11 +147,15 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         X_new.push_back(MatrixXd(num_dof_quat + num_dof, 1));
 
         vector<MatrixXd> r_x_;
+        vector<MatrixXd> r_u_;
         for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
             r_x_.emplace_back(MatrixXd(2*dof, 1));
+            r_u_.emplace_back(MatrixXd(num_ctrl, 1));
+
         }
 
         r_x.emplace_back(r_x_);
+        r_u.emplace_back(r_u_);
     }
 
     if(update_horizon){

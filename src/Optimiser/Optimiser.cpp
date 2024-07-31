@@ -58,11 +58,9 @@ void Optimiser::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
 }
 
 void Optimiser::GenerateDerivatives(){
-    // STEP 1 - Linearise dynamics and calculate first + second order cost derivatives for current trajectory
-    // generate the dynamics evaluation waypoints
-    auto start_keypoint_time = high_resolution_clock::now();
-    keypoint_generator->GenerateKeyPoints(X_old, A, B);
 
+//    auto start_keypoint_time = high_resolution_clock::now();
+    keypoint_generator->GenerateKeyPoints(X_old, A, B);
     keypoint_generator->ResetCache();
 //    std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
 
@@ -103,6 +101,10 @@ void Optimiser::GenerateDerivatives(){
 //        std:: cout << r_u[0][i] << std::endl;
 //    }
 
+    // Compute residual derivatives over the entire trajectory
+    auto time_start_residual_derivs = high_resolution_clock::now();
+    ComputeResidualDerivatives();
+
     // If finite differencing is used for cost derivatives, compute cost derivs from residual derivatives
     if(activeYamlReader->costDerivsFD){
         for(int t = 0; t < horizon_length; t++){
@@ -116,6 +118,8 @@ void Optimiser::GenerateDerivatives(){
                                                             l_u[horizon_length - 1], l_uu[horizon_length - 1],
                                                             residuals[horizon_length - 1], r_x[horizon_length - 1], r_u[horizon_length - 1], true);
     }
+    auto time_stop_residual_derivs = high_resolution_clock::now();
+    std::cout << "time resid derivs: " << duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0f << " ms\n";
 
 //    std::cout << "------------------ cost derivatives from residuals ------------------------- \n";
 //    std::cout << "residuals[0]: " << residuals[0] << "\n";
@@ -185,6 +189,28 @@ void Optimiser::ComputeCostDerivatives(){
                                            l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
 }
 
+void Optimiser::ComputeResidualDerivatives(){
+
+    current_iteration = 0;
+    num_threads_iterations = horizon_length + 1;
+    tasks_residual_derivs.clear();
+
+    for (int i = 0; i < horizon_length + 1; ++i) {
+        tasks_residual_derivs.push_back(&Differentiator::ResidualDerivatives);
+    }
+
+    const int num_threads = std::thread::hardware_concurrency() - 1;  // Get the number of available CPU cores
+    std::vector<std::thread> thread_pool;
+    for (int i = 0; i < num_threads; ++i) {
+        thread_pool.push_back(std::thread(&Optimiser::WorkerComputeResidualDerivatives, this, i));
+    }
+
+    for (std::thread& thread : thread_pool) {
+        thread.join();
+    }
+}
+
+
 void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
 
     MuJoCo_helper->InitModelForFiniteDifferencing();
@@ -214,14 +240,15 @@ void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int
     // compute derivs serially
 //    for(int i = 0; i < horizon_length; i++){
 //        if(!keyPoints[i].empty()){
-//            activeDifferentiator->ComputeDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_u[i], l_xx[i], l_uu[i],
+//            activeDifferentiator->DynamicsDerivatives(A[i], B[i], keyPoints[i], l_x[i], l_u[i], l_xx[i], l_uu[i],
 //                                                     i, 0, false, activeYamlReader->costDerivsFD, true, 1e-6);
 //        }
 //    }
 
     // Setup all the required tasks
+    tasks_dynamics_derivs.clear();
     for (int i = 0; i < keyPoints.size(); ++i) {
-        tasks.push_back(&Differentiator::ComputeDerivatives);
+        tasks_dynamics_derivs.push_back(&Differentiator::DynamicsDerivatives);
     }
 
     // Get the number of threads available
@@ -262,15 +289,26 @@ void Optimiser::WorkerComputeDerivatives(int threadId) {
         }
 
         int timeIndex = timeIndicesGlobal[iteration];
-        bool terminal = false;
-        if(timeIndex == horizon_length - 1){
-            terminal = true;
-        }
 
         std::vector<int> keyPoints;
-        (activeDifferentiator.get()->*(tasks[iteration]))(A[timeIndex], B[timeIndex],
-                                        keypointsGlobal[iteration], r_x[timeIndex], r_u[timeIndex],
-                                        timeIndex, threadId, terminal, activeYamlReader->costDerivsFD, true, 1e-6);
+        (activeDifferentiator.get()->*(tasks_dynamics_derivs[iteration]))(A[timeIndex], B[timeIndex],
+                                        keypointsGlobal[iteration],
+                                        timeIndex, threadId, true, 1e-6);
+    }
+}
+
+void Optimiser::WorkerComputeResidualDerivatives(int threadId){
+    while (true) {
+        int iteration = current_iteration.fetch_add(1);
+        if (iteration >= num_threads_iterations) {
+            break;  // All iterations done
+        }
+
+//        int timeIndex = timeIndicesGlobal[iteration];
+
+        std::vector<int> keyPoints;
+        (activeDifferentiator.get()->*(tasks_residual_derivs[iteration]))(r_x[iteration], r_u[iteration],
+                                                                          iteration, threadId, true, 1e-6);
     }
 }
 

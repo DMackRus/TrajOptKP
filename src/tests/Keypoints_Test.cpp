@@ -254,9 +254,9 @@ TEST(Interpolate, basic_interpolation){
             continue;
         }
 
-        differentiator->ComputeDerivatives(A[t], B[t], keypoint_generator->keypoints[t],
-                                           l_x[0], l_u[0], l_xx[0], l_uu[0], t, 0, false,
-                                           false, true, 1.0e-6);
+        differentiator->DynamicsDerivatives(A[t], B[t], keypoint_generator->keypoints[t],
+                                            l_x[0], l_u[0], l_xx[0], l_uu[0], t, 0, false,
+                                            false, true, 1.0e-6);
 
     }
 

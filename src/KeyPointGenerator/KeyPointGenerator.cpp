@@ -585,17 +585,17 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
     int tid = omp_get_thread_num();
 
 //    if(!start_index_computed){
-//        differentiator->ComputeDerivatives(A[indices.start_index], B[indices.start_index], cols, blank1, blank2, blank3, blank4, false, indices.start_index, false, tid, true, 1e-6);
+//        differentiator->DynamicsDerivatives(A[indices.start_index], B[indices.start_index], cols, blank1, blank2, blank3, blank4, false, indices.start_index, false, tid, true, 1e-6);
 //        computed_keypoints[dof_index].push_back(indices.start_index);
 //    }
 //
 //    if(!mid_index_computed){
-//        differentiator->ComputeDerivatives(A[mid_index], B[mid_index], cols, blank1, blank2, blank3, blank4, false, mid_index, false, tid, true, 1e-6);
+//        differentiator->DynamicsDerivatives(A[mid_index], B[mid_index], cols, blank1, blank2, blank3, blank4, false, mid_index, false, tid, true, 1e-6);
 //        computed_keypoints[dof_index].push_back(mid_index);
 //    }
 //
 //    if(!end_index_computed){
-//        differentiator->ComputeDerivatives(A[indices.end_index], B[indices.end_index], cols, blank1, blank2, blank3, blank4, false, indices.end_index, false, tid, true, 1e-6);
+//        differentiator->DynamicsDerivatives(A[indices.end_index], B[indices.end_index], cols, blank1, blank2, blank3, blank4, false, indices.end_index, false, tid, true, 1e-6);
 //        computed_keypoints[dof_index].push_back(indices.end_index);
 //    }
 
@@ -865,18 +865,18 @@ void KeypointGenerator::InterpolateDerivatives(const std::vector<std::vector<int
     MatrixXd addACol2;
 
     // Residual interpolation
-    int num_residuals = r_x[0].size();
-    vector<double> start_val_r_x_pos(num_residuals);
-    vector<double> end_val_r_x_pos(num_residuals);
-    vector<double> add_val_r_x_pos(num_residuals);
-
-    vector<double> start_val_r_x_vel(num_residuals);
-    vector<double> end_val_r_x_vel(num_residuals);
-    vector<double> add_val_r_x_vel(num_residuals);
-
-    vector<double> start_val_r_u(num_residuals);
-    vector<double> end_val_r_u(num_residuals);
-    vector<double> add_val_r_u(num_residuals);
+//    int num_residuals = r_x[0].size();
+//    vector<double> start_val_r_x_pos(num_residuals);
+//    vector<double> end_val_r_x_pos(num_residuals);
+//    vector<double> add_val_r_x_pos(num_residuals);
+//
+//    vector<double> start_val_r_x_vel(num_residuals);
+//    vector<double> end_val_r_x_vel(num_residuals);
+//    vector<double> add_val_r_x_vel(num_residuals);
+//
+//    vector<double> start_val_r_u(num_residuals);
+//    vector<double> end_val_r_u(num_residuals);
+//    vector<double> add_val_r_u(num_residuals);
 
     // Create an array to track startIndices of next interpolation for each dof
     int startIndices[dof];
@@ -912,25 +912,25 @@ void KeypointGenerator::InterpolateDerivatives(const std::vector<std::vector<int
                     endACol2 = A[t].block(0, i + dof, 2*dof, 1);
                     addACol2 = (endACol2 - startACol2) / (t - startIndices[i]);
 
-                    if(residual_derivs) {
-                        for (int resid = 0; resid < num_residuals; resid++) {
-                            start_val_r_x_pos[resid] = r_x[startIndices[i]][resid](i, 0);
-                            end_val_r_x_pos[resid] = r_x[t][resid](i, 0);
-                            add_val_r_x_pos[resid] = (end_val_r_x_pos[resid] - start_val_r_x_pos[resid]) / (t - startIndices[i]);
-
-                            start_val_r_x_vel[resid] = r_x[startIndices[i]][resid](i + dof, 0);
-                            end_val_r_x_vel[resid] = r_x[t][resid](i + dof, 0);
-                            add_val_r_x_vel[resid] = (end_val_r_x_vel[resid] - start_val_r_x_vel[resid]) / (t - startIndices[i]);
-                        }
-
-                        if(i < num_ctrl){
-                            for (int resid = 0; resid < num_residuals; resid++) {
-                                start_val_r_u[resid] = r_u[startIndices[i]][resid](i, 0);
-                                end_val_r_u[resid] = r_u[t][resid](i, 0);
-                                add_val_r_u[resid] = (end_val_r_u[resid] - start_val_r_u[resid]) / (t - startIndices[i]);
-                            }
-                        }
-                    }
+//                    if(residual_derivs) {
+//                        for (int resid = 0; resid < num_residuals; resid++) {
+//                            start_val_r_x_pos[resid] = r_x[startIndices[i]][resid](i, 0);
+//                            end_val_r_x_pos[resid] = r_x[t][resid](i, 0);
+//                            add_val_r_x_pos[resid] = (end_val_r_x_pos[resid] - start_val_r_x_pos[resid]) / (t - startIndices[i]);
+//
+//                            start_val_r_x_vel[resid] = r_x[startIndices[i]][resid](i + dof, 0);
+//                            end_val_r_x_vel[resid] = r_x[t][resid](i + dof, 0);
+//                            add_val_r_x_vel[resid] = (end_val_r_x_vel[resid] - start_val_r_x_vel[resid]) / (t - startIndices[i]);
+//                        }
+//
+//                        if(i < num_ctrl){
+//                            for (int resid = 0; resid < num_residuals; resid++) {
+//                                start_val_r_u[resid] = r_u[startIndices[i]][resid](i, 0);
+//                                end_val_r_u[resid] = r_u[t][resid](i, 0);
+//                                add_val_r_u[resid] = (end_val_r_u[resid] - start_val_r_u[resid]) / (t - startIndices[i]);
+//                            }
+//                        }
+//                    }
 
                     if(i < num_ctrl){
                         startB = B[startIndices[i]].block(0, i, 2*dof, 1);
@@ -943,12 +943,12 @@ void KeypointGenerator::InterpolateDerivatives(const std::vector<std::vector<int
 
                         A[k].block(0, i + dof, 2*dof, 1) = startACol2 + ((k - startIndices[i]) * addACol2);
 
-                        for (int resid = 0; resid < num_residuals; resid++) {
-                            r_x[k][resid](i, 0) = start_val_r_x_pos[resid] + ((k - startIndices[i]) * add_val_r_x_pos[resid]);
-                            r_x[k][resid](i + dof, 0) = start_val_r_x_vel[resid] + ((k - startIndices[i]) * add_val_r_x_vel[resid]);
-                            if(i < num_ctrl)
-                                r_u[k][resid](i, 0) = start_val_r_u[resid] + ((k - startIndices[i]) * add_val_r_u[resid]);
-                        }
+//                        for (int resid = 0; resid < num_residuals; resid++) {
+//                            r_x[k][resid](i, 0) = start_val_r_x_pos[resid] + ((k - startIndices[i]) * add_val_r_x_pos[resid]);
+//                            r_x[k][resid](i + dof, 0) = start_val_r_x_vel[resid] + ((k - startIndices[i]) * add_val_r_x_vel[resid]);
+//                            if(i < num_ctrl)
+//                                r_u[k][resid](i, 0) = start_val_r_u[resid] + ((k - startIndices[i]) * add_val_r_u[resid]);
+//                        }
 
                         if(i < num_ctrl){
                             B[k].block(0, i, 2*dof, 1) = startB + ((k - startIndices[i]) * addB);

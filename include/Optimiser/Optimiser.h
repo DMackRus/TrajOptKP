@@ -131,6 +131,14 @@ public:
     void WorkerComputeDerivatives(int threadId);
 
     /**
+     * Worker function for computing residual derivatives in parallel.
+     *
+     * @param threadId - The thread id of the worker thread.
+     *
+     */
+    void WorkerComputeResidualDerivatives(int threadId);
+
+    /**
      * This functions generates all the dynamic derivatives and cost derivatives over the entire trajectory.
      *
      */
@@ -145,9 +153,11 @@ public:
 
     // List of differentiator function callbacks, for parallelisation.
     std::vector<void (Differentiator::*)(MatrixXd &A, MatrixXd &B, const std::vector<int> &cols,
-                                        vector<MatrixXd> &r_x, vector<MatrixXd> &r_u,
-                                        int dataIndex, int threadId, bool terminal, bool costDerivs,
-                                        bool central_diff, double eps)> tasks;
+                                        int dataIndex, int threadId,
+                                        bool central_diff, double eps)> tasks_dynamics_derivs;
+
+    std::vector<void (Differentiator::*)(vector<MatrixXd> &r_x, vector<MatrixXd> &r_u,
+                                            int dataIndex, int tid, bool central_diff, double eps)> tasks_residual_derivs;
 
     // current_iteration used for parallelisation of dynamics derivatives
     std::atomic<int> current_iteration;
@@ -248,6 +258,11 @@ protected:
      * Computes the cost derivatives over the entire trajectory.
      */
     void ComputeCostDerivatives();
+
+    /**
+     * Computes the residual derivatives over the entire trajectory.
+     */
+    void ComputeResidualDerivatives();
 
     /**
      * Applies a filter to the internal dynamics derivatives.
