@@ -9,6 +9,8 @@ void Differentiator::DynamicsDerivatives(MatrixXd &A, MatrixXd &B, const std::ve
                                          int data_index, int tid,
                                          bool central_diff, double eps){
 
+    int skip_sensor = 1;
+
     // Aliases
     dof = model_translator->current_state_vector.dof;
     num_ctrl = model_translator->current_state_vector.num_ctrl;
@@ -113,7 +115,7 @@ void Differentiator::DynamicsDerivatives(MatrixXd &A, MatrixXd &B, const std::ve
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, skip_sensor);
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
             // return the new state vector
@@ -150,7 +152,7 @@ void Differentiator::DynamicsDerivatives(MatrixXd &A, MatrixXd &B, const std::ve
 
             // integrate simulator
             start = std::chrono::high_resolution_clock::now();
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, 1);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_VEL, skip_sensor);
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
             // return the new state vector
@@ -248,7 +250,7 @@ void Differentiator::DynamicsDerivatives(MatrixXd &A, MatrixXd &B, const std::ve
 
         // Integrate the simulator
         start = std::chrono::high_resolution_clock::now();
-        mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, 1);
+        mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, skip_sensor);
         time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
         // return the new velocity vector
@@ -271,7 +273,7 @@ void Differentiator::DynamicsDerivatives(MatrixXd &A, MatrixXd &B, const std::ve
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, 1);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_POS, skip_sensor);
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
             // Return the new velocity vector
@@ -352,7 +354,7 @@ void Differentiator::DynamicsDerivatives(MatrixXd &A, MatrixXd &B, const std::ve
 
         // Integrate the simulator
         start = std::chrono::high_resolution_clock::now();
-        mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
+        mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, skip_sensor);
         time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
         // return the positive perturbed next state vector
@@ -372,7 +374,7 @@ void Differentiator::DynamicsDerivatives(MatrixXd &A, MatrixXd &B, const std::ve
 
             // Integrate the simulator
             start = std::chrono::high_resolution_clock::now();
-            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, 1);
+            mj_stepSkip(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], mjSTAGE_NONE, skip_sensor);
             time_mj_forwards += static_cast<double>(std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count());
 
             // Return the decremented state vector
@@ -495,14 +497,6 @@ void Differentiator::ResidualDerivatives(vector<MatrixXd> &r_x, vector<MatrixXd>
     mj_markStack(MuJoCo_helper->fd_data[tid]);
 
     mjtNum *dpos  = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nv);
-    mjtNum *vel_diff = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nv);
-
-    mjtNum *next_full_state = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
-    mjtNum *next_full_state_pos = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
-    mjtNum *next_full_state_minus = mj_stackAllocNum(MuJoCo_helper->fd_data[tid], nq + nv + na);
-    mju_zero(next_full_state, nq + nv + na);
-    mju_zero(next_full_state_pos, nq + nv + na);
-    mju_zero(next_full_state_minus, nq + nv + na);
 
     // Copy data we wish to finite-difference into finite differencing data (for multi threading)
     MuJoCo_helper->CpMjData(MuJoCo_helper->model, MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);

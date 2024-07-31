@@ -59,29 +59,47 @@ void Optimiser::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
 
 void Optimiser::GenerateDerivatives(){
 
+    // Compute key-points at which we compute expensive dynamics derivatives
 //    auto start_keypoint_time = high_resolution_clock::now();
     keypoint_generator->GenerateKeyPoints(X_old, A, B);
     keypoint_generator->ResetCache();
 //    std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
 
-    // Calculate derivatives via finite differencing / analytically for cost functions if available
-    if(activeKeyPointMethod.name != "iterative_error"){
+    // Compute dynamics derivatives at keypoints - note if keypoint method = iterative error, we do not need to compute derivatives
+    // as they have already been computed
+    if(activeKeyPointMethod.name != "iterative_error") {
         auto start_fd_time = high_resolution_clock::now();
-        ComputeDerivativesAtSpecifiedIndices(keypoint_generator->keypoints);
+        ComputeDynamicsDerivativesAtKeypoints(keypoint_generator->keypoints);
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
-
-//        std::cout << "fd time: " << duration_fd_time.count() / 1000.0f << " ms\n";
-    }
-    else{
-        ComputeCostDerivatives();
     }
 
+    // Interpolate the dynamics derivatives
     auto start_interp_time = high_resolution_clock::now();
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, horizon_length,
                                                A, B, r_x, r_u, activeYamlReader->costDerivsFD,
                                                activeModelTranslator->current_state_vector.num_ctrl);
-//    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
+
+    // Compute residual derivatives over the entire trajectory
+    auto time_start_residual_derivs = high_resolution_clock::now();
+    ComputeResidualDerivatives();
+
+    // If finite differencing is used for cost derivatives, compute cost derivs from residual derivatives
+    for(int t = 0; t < horizon_length; t++){
+        activeModelTranslator->CostDerivativesFromResiduals(activeModelTranslator->current_state_vector,
+                                                            l_x[t], l_xx[t], l_u[t], l_uu[t],
+                                                            residuals[t], r_x[t], r_u[t], false);
+    }
+
+    activeModelTranslator->CostDerivativesFromResiduals(activeModelTranslator->current_state_vector,
+                                                        l_x[horizon_length - 1], l_xx[horizon_length - 1],
+                                                        l_u[horizon_length - 1], l_uu[horizon_length - 1],
+                                                        residuals[horizon_length - 1], r_x[horizon_length - 1], r_u[horizon_length - 1], true);
+
+    auto time_stop_residual_derivs = high_resolution_clock::now();
+    std::cout << "time resid derivs: " << duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0f << " ms\n";
+
+    //    std::cout <<" interpolate derivs took: " << duration_cast<microseconds>(high_resolution_clock::now() - start_interp_time).count() / 1000.0f << " ms\n";
 
 //    std::cout << "------------- residual derivatives wrt State -------------------" << std::endl;
 //    for(int i = 0; i < activeModelTranslator->residual_list.size(); i++){
@@ -100,26 +118,6 @@ void Optimiser::GenerateDerivatives(){
 //        std::cout << "r_u[" << i << "]: " << std::endl;
 //        std:: cout << r_u[0][i] << std::endl;
 //    }
-
-    // Compute residual derivatives over the entire trajectory
-    auto time_start_residual_derivs = high_resolution_clock::now();
-    ComputeResidualDerivatives();
-
-    // If finite differencing is used for cost derivatives, compute cost derivs from residual derivatives
-    if(activeYamlReader->costDerivsFD){
-        for(int t = 0; t < horizon_length; t++){
-            activeModelTranslator->CostDerivativesFromResiduals(activeModelTranslator->current_state_vector,
-                                                                l_x[t], l_xx[t], l_u[t], l_uu[t],
-                                                                residuals[t], r_x[t], r_u[t], false);
-        }
-
-        activeModelTranslator->CostDerivativesFromResiduals(activeModelTranslator->current_state_vector,
-                                                            l_x[horizon_length - 1], l_xx[horizon_length - 1],
-                                                            l_u[horizon_length - 1], l_uu[horizon_length - 1],
-                                                            residuals[horizon_length - 1], r_x[horizon_length - 1], r_u[horizon_length - 1], true);
-    }
-    auto time_stop_residual_derivs = high_resolution_clock::now();
-    std::cout << "time resid derivs: " << duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0f << " ms\n";
 
 //    std::cout << "------------------ cost derivatives from residuals ------------------------- \n";
 //    std::cout << "residuals[0]: " << residuals[0] << "\n";
@@ -162,6 +160,7 @@ void Optimiser::GenerateDerivatives(){
 //    std::cout << "l_uu[horizon-1]: " << std::endl;
 //    std:: cout << l_uu[horizon_length-1] << std::endl;
 
+    // Compute the average percentage derivatives for each dof
     double average_percent_derivs = 0.0;
     for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
         average_percent_derivs += keypoint_generator->last_percentages[i];
@@ -170,6 +169,7 @@ void Optimiser::GenerateDerivatives(){
 
     percentage_derivs_per_iteration.push_back(average_percent_derivs);
 
+    // Filter dynamics derivatives if required
     if(filteringMethod != "none"){
         FilterDynamicsMatrices();
     }
@@ -211,7 +211,7 @@ void Optimiser::ComputeResidualDerivatives(){
 }
 
 
-void Optimiser::ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints){
+void Optimiser::ComputeDynamicsDerivativesAtKeypoints(std::vector<std::vector<int>> keyPoints){
 
     MuJoCo_helper->InitModelForFiniteDifferencing();
 

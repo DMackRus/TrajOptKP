@@ -300,6 +300,7 @@ void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
 
     // Compute kinematics chain to compute site poses
     mj_kinematics(MuJoCo_helper->model, d);
+//    mj_forwardSkip(MuJoCo_helper->model, d, mjSTAGE_NONE, 1);
 
     int num_obstacles = 0;
 

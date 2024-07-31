@@ -252,7 +252,7 @@ protected:
      * @param keyPoints - The keypoints to compute the derivatives at. A list of lists, where each sublist refers to a different
      * degree of freedom. The elements in the list are the time indices to compute the derivatives at.
      */
-    void ComputeDerivativesAtSpecifiedIndices(std::vector<std::vector<int>> keyPoints);
+    void ComputeDynamicsDerivativesAtKeypoints(std::vector<std::vector<int>> keyPoints);
 
     /**
      * Computes the cost derivatives over the entire trajectory.
