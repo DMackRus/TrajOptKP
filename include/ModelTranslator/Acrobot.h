@@ -4,12 +4,8 @@
 class Acrobot : public ModelTranslator {
 public:
     Acrobot();
-
-    bool TaskComplete(mjData *d, double &dist) override;
-
+    void ReturnRandomStartState() override;
+    void ReturnRandomGoalState() override;
     void Residuals(mjData *d, MatrixXd &residuals) override;
-
-//    void ReturnRandomStartState() override;
-//    void ReturnRandomGoalState() override;
-
+    bool TaskComplete(mjData *d, double &dist) override;
 };
