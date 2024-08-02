@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "reaching"
+task: "pushing_no_clutter"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -27,7 +27,7 @@ task: "reaching"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Optimise_once"
+runMode: "Generate_test_scenes"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -40,8 +40,8 @@ runMode: "Optimise_once"
 # "Generate_filtering_data"       - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
 # "Generate_dynamics_data"        - Loop thorugh 100 CSV files and generate A, B, X, U data over a horizon and save to file.
 
-taskInitMode: "fromYAML"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 2                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+csvRow: 1                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)

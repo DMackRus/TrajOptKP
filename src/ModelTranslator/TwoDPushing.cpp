@@ -185,8 +185,6 @@ void TwoDPushing::ReturnRandomStartState(){
             full_state_vector.rigid_bodies[i + 1].start_angular_pos[j] = obstacle_pose.orientation[j];
         }
     }
-    std::cout << "in generation \n";
-    std::cout << "body " << full_state_vector.rigid_bodies[2].name << " x: " << full_state_vector.rigid_bodies[2].start_linear_pos[0] << " y: " << full_state_vector.rigid_bodies[2].start_linear_pos[1] << std::endl;
 }
 
 void TwoDPushing::ReturnRandomGoalState(){

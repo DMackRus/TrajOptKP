@@ -179,7 +179,6 @@ void pandaReaching::ReturnRandomStartState(){
         }
     }
 
-    // TODO - shouldnt this be full state vector?
     for(int i = 0; i < full_state_vector.dof; i++){
         current_state_vector.robots[0].start_pos[i] = joint_positions[i];
     }

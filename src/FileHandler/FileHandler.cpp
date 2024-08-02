@@ -115,18 +115,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             startPos.push_back(robot_it->second["startPos"][i].as<double>());
         }
 
-//        for(int i = 0; i < robot_it->second["goalPos"].size(); i++){
-//            goalPos.push_back(robot_it->second["goalPos"][i].as<double>());
-//            // Always make this the same size as goal pos
-//            goalVel.push_back(0.0);
-//        }
-
-//        if(robot_it->second["goalVel"]){
-//            for(int i = 0; i < robot_it->second["goalVel"].size(); i++){
-//                goalVel[i] = robot_it->second["goalVel"][i].as<double>();
-//            }
-//        }
-
         for(int i = 0; i < robot_it->second["jointJerkThresholds"].size(); i++){
             jointJerkThresholds.push_back(robot_it->second["jointJerkThresholds"][i].as<double>());
         }
@@ -157,16 +145,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
         bool activeAngularDOF[3];
         double startLinearPos[3];
         double startAngularPos[3];
-        double goalLinearPos[3];
-        double goalAngularPos[3];
-        double linearPosCosts[3];
-        double terminalLinearPosCosts[3];
-        double linearVelCosts[3];
-        double terminalLinearVelCosts[3];
-        double angularPosCosts[3];
-        double terminalAngularPosCosts[3];
-        double angularVelCosts[3];
-        double terminalAngularVelCosts[3];
         double linearJerkThreshold[3];
         double angularJerkThreshold[3];
         double linearMagVelThreshold[3];
@@ -190,46 +168,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             startAngularPos[i] = body_it->second["startAngularPos"][i].as<double>();
         }
 
-        for(int i = 0; i < body_it->second["goalLinearPos"].size(); i++){
-            goalLinearPos[i] = body_it->second["goalLinearPos"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["goalAngularPos"].size(); i++){
-            goalAngularPos[i] = body_it->second["goalAngularPos"][i].as<double>();
-        }
-
-//        for(int i = 0; i < body_it->second["linearPosCost"].size(); i++){
-//            linearPosCosts[i] = body_it->second["linearPosCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["terminalLinearPosCost"].size(); i++){
-//            terminalLinearPosCosts[i] = body_it->second["terminalLinearPosCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["linearVelCost"].size(); i++){
-//            linearVelCosts[i] = body_it->second["linearVelCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["terminalLinearVelCost"].size(); i++){
-//            terminalLinearVelCosts[i] = body_it->second["terminalLinearVelCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["angularPosCost"].size(); i++){
-//            angularPosCosts[i] = body_it->second["angularPosCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["terminalAngularPosCost"].size(); i++){
-//            terminalAngularPosCosts[i] = body_it->second["terminalAngularPosCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["angularVelCost"].size(); i++){
-//            angularVelCosts[i] = body_it->second["angularVelCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["terminalAngularVelCost"].size(); i++){
-//            terminalAngularVelCosts[i] = body_it->second["terminalAngularVelCost"][i].as<double>();
-//        }
-
         for(int i = 0; i < body_it->second["linearJerkThreshold"].size(); i++){
             linearJerkThreshold[i] = body_it->second["linearJerkThreshold"][i].as<double>();
         }
@@ -252,16 +190,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             _rigid_body.active_angular_dof[i] = activeAngularDOF[i];
             _rigid_body.start_linear_pos[i] = startLinearPos[i];
             _rigid_body.start_angular_pos[i] = startAngularPos[i];
-//            _rigid_body.goal_linear_pos[i] = goalLinearPos[i];
-//            _rigid_body.goal_angular_pos[i] = goalAngularPos[i];
-//            _rigid_body.linearPosCost[i] = linearPosCosts[i];
-//            _rigid_body.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
-//            _rigid_body.linear_vel_cost[i] = linearVelCosts[i];
-//            _rigid_body.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
-//            _rigid_body.angular_pos_cost[i] = angularPosCosts[i];
-//            _rigid_body.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
-//            _rigid_body.angular_vel_cost[i] = angularVelCosts[i];
-//            _rigid_body.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
             _rigid_body.linear_jerk_threshold[i] = linearJerkThreshold[i];
             _rigid_body.angular_jerk_threshold[i] = angularJerkThreshold[i];
             _rigid_body.linear_vel_change_threshold[i] = linearMagVelThreshold[i];
@@ -280,14 +208,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
         double startAngularPos[3];
         double goalLinearPos[3];
         double goalAngularPos[3];
-//        double linearPosCosts[3];
-//        double terminalLinearPosCosts[3];
-//        double linearVelCosts[3];
-//        double terminalLinearVelCosts[3];
-//        double angularPosCosts[3];
-//        double terminalAngularPosCosts[3];
-//        double angularVelCosts[3];
-//        double terminalAngularVelCosts[3];
 
         bodyName = body_it->first.as<string>();
         num_vertices = body_it->second["num_vertices"].as<int>();
@@ -320,38 +240,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             goalAngularPos[i] = body_it->second["goalAngularPos"][i].as<double>();
         }
 
-//        for(int i = 0; i < body_it->second["linearPosCost"].size(); i++){
-//            linearPosCosts[i] = body_it->second["linearPosCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["terminalLinearPosCost"].size(); i++){
-//            terminalLinearPosCosts[i] = body_it->second["terminalLinearPosCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["linearVelCost"].size(); i++){
-//            linearVelCosts[i] = body_it->second["linearVelCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["terminalLinearVelCost"].size(); i++){
-//            terminalLinearVelCosts[i] = body_it->second["terminalLinearVelCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["angularPosCost"].size(); i++){
-//            angularPosCosts[i] = body_it->second["angularPosCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["terminalAngularPosCost"].size(); i++){
-//            terminalAngularPosCosts[i] = body_it->second["terminalAngularPosCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["angularVelCost"].size(); i++){
-//            angularVelCosts[i] = body_it->second["angularVelCost"][i].as<double>();
-//        }
-//
-//        for(int i = 0; i < body_it->second["terminalAngularVelCost"].size(); i++){
-//            terminalAngularVelCosts[i] = body_it->second["terminalAngularVelCost"][i].as<double>();
-//        }
-
         _soft_body.name = bodyName;
         _soft_body.num_vertices = num_vertices;
 
@@ -364,16 +252,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
         for(int i = 0; i < 3; i++){
             _soft_body.start_linear_pos[i] = startLinearPos[i];
             _soft_body.start_angular_pos[i] = startAngularPos[i];
-//            _soft_body.goal_linear_pos[i] = goalLinearPos[i];
-//            _soft_body.goal_angular_pos[i] = goalAngularPos[i];
-//            _soft_body.linearPosCost[i] = linearPosCosts[i];
-//            _soft_body.terminal_linear_pos_cost[i] = terminalLinearPosCosts[i];
-//            _soft_body.linear_vel_cost[i] = linearVelCosts[i];
-//            _soft_body.terminal_linear_vel_cost[i] = terminalLinearVelCosts[i];
-//            _soft_body.angular_pos_cost[i] = angularPosCosts[i];
-//            _soft_body.terminal_angular_pos_cost[i] = terminalAngularPosCosts[i];
-//            _soft_body.angular_vel_cost[i] = angularVelCosts[i];
-//            _soft_body.terminal_angular_vel_cost[i] = terminalAngularVelCosts[i];
         }
 
         _taskConfig.soft_bodies.push_back(_soft_body);
@@ -528,30 +406,30 @@ void FileHandler::SaveTaskToFile(std::string file_prefix, int file_num, const st
         }
     }
 
-    // Robot velocities
-    for(auto & robot : state_vector.robots){
-        for(int i = 0; i < robot.joint_names.size(); i++){
-            fileOutput << 0 << ",";
-        }
-    }
-
-    // Rigid body velocities
-    for( auto body : state_vector.rigid_bodies){
-        for(int i = 0; i < 3; i++){
-            fileOutput << 0 << ",";
-        }
-
-        for(int i = 0; i < 3; i++){
-            fileOutput << 0 << ",";
-        }
-    }
-
-    // Soft body velocities
-    for( auto soft_body : state_vector.soft_bodies){
-        for(int i = 0; i < 3; i++){
-            fileOutput << 0 << ",";
-        }
-    }
+//    // Robot velocities
+//    for(auto & robot : state_vector.robots){
+//        for(int i = 0; i < robot.joint_names.size(); i++){
+//            fileOutput << 0 << ",";
+//        }
+//    }
+//
+//    // Rigid body velocities
+//    for( auto body : state_vector.rigid_bodies){
+//        for(int i = 0; i < 3; i++){
+//            fileOutput << 0 << ",";
+//        }
+//
+//        for(int i = 0; i < 3; i++){
+//            fileOutput << 0 << ",";
+//        }
+//    }
+//
+//    // Soft body velocities
+//    for( auto soft_body : state_vector.soft_bodies){
+//        for(int i = 0; i < 3; i++){
+//            fileOutput << 0 << ",";
+//        }
+//    }
 
     // ----------------- Residual targets ----------------------
     for(auto & residual : residuals){
@@ -630,29 +508,28 @@ void FileHandler::LoadTaskFromFile(std::string task_prefix, int file_num, stateV
     std::vector<string> row;
     std::string line, word, temp;
 
-    int state_vector_size = 0;
+    int num_dofs = 0;
     int residuals_targets_size = 0;
     // Compute size of the full state vector
     for(auto & robot : state_vector.robots){
-        state_vector_size += 2 * static_cast<int>(robot.joint_names.size());
+        num_dofs += static_cast<int>(robot.joint_names.size());
     }
 
     // Loop through bodies
     for( auto body : state_vector.rigid_bodies){
         // x, y, z, r, p ,y
-        state_vector_size += 6;
-        state_vector_size += 6;
+        num_dofs += 6;
     }
 
     for(auto soft_body : state_vector.soft_bodies){
         // x, y, z, r, p, y
-        state_vector_size += 6;
+        num_dofs += 6;
     }
     // ------------------------------------------------------------------------
 
     // ---------------- Compute residual sizes --------------------------------
     for(auto & residual : residuals){
-        residuals_targets_size += residual.resid_dimension;
+        residuals_targets_size += residual.target.size();
     }
     // ------------------------------------------------------------------------
 
@@ -669,8 +546,9 @@ void FileHandler::LoadTaskFromFile(std::string task_prefix, int file_num, stateV
         }
 
         // Start state and goal state
-        if(row.size() != state_vector_size + residuals_targets_size){
-            std::cerr << "CSV file has " << row.size() << "elements, state vector size is: " << state_vector_size << "\n";
+        if(row.size() != num_dofs + residuals_targets_size){
+            std::cerr << "CSV file has " << row.size() << "elements, num dofs is: " <<
+                num_dofs << "and resids target size is: " << residuals_targets_size << "\n";
             exit(1);
         }
 
