@@ -13,7 +13,7 @@ bool Acrobot::TaskComplete(mjData *d, double &dist){
 
     for(int i = 0; i < full_state_vector.dof; i++){
         std::cout << "joint pos " << acrobot_joints[i] << "\n";
-        dist += abs(current_state_vector.robots[0].goal_pos[i] - acrobot_joints[i]);
+        dist += abs(residual_list[i].target[0] - acrobot_joints[i]);
     }
 
     if(dist < 0.01){
@@ -24,7 +24,6 @@ bool Acrobot::TaskComplete(mjData *d, double &dist){
 }
 
 void Acrobot::Residuals(mjData *d, MatrixXd &residuals){
-//    MatrixXd residuals(residual_list.size(), 1);
     int resid_index = 0;
 
     std::vector<double> acrobot_joints;
@@ -53,8 +52,6 @@ void Acrobot::Residuals(mjData *d, MatrixXd &residuals){
         std::cerr << "Error: Residuals size mismatch\n";
         exit(1);
     }
-
-//    return residuals;
 }
 
 //MatrixXd Acrobot::ReturnRandomStartState(){

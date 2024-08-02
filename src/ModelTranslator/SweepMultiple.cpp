@@ -172,32 +172,16 @@ void SweepMultiple::ReturnRandomStartState(){
 
 void SweepMultiple::ReturnRandomGoalState(){
 
-    // Robot configuration doesnt matter for this task
-    for(int i = 0; i < full_state_vector.robots[0].joint_names.size(); i++){
-        full_state_vector.robots[0].goal_pos[i] = 0.0;
-        full_state_vector.robots[0].goal_vel[i] = 0.0;
-    }
-
     // Goal object body
     std::cout << "goal x" << randomGoalX << "goal y: " << randomGoalY << std::endl;
-    full_state_vector.rigid_bodies[0].goal_linear_pos[0] = randomGoalX;
-    full_state_vector.rigid_bodies[0].goal_linear_pos[1] = randomGoalY;
-    full_state_vector.rigid_bodies[0].goal_linear_pos[2] = 0.0;
 
-    full_state_vector.rigid_bodies[0].goal_angular_pos[0] = 0.0;
-    full_state_vector.rigid_bodies[0].goal_angular_pos[1] = 0.0;
-    full_state_vector.rigid_bodies[0].goal_angular_pos[2] = 0.0;
+    residual_list[0].target[0] = randomGoalX;
+    residual_list[0].target[1] = randomGoalY;
 
     // Distractor objects
     for(int i = 1; i < full_state_vector.rigid_bodies.size(); i++){
-
-        full_state_vector.rigid_bodies[i].goal_linear_pos[0] = full_state_vector.rigid_bodies[i].start_linear_pos[0];
-        full_state_vector.rigid_bodies[i].goal_linear_pos[1] = full_state_vector.rigid_bodies[i].start_linear_pos[1];
-        full_state_vector.rigid_bodies[i].goal_linear_pos[2] = full_state_vector.rigid_bodies[i].start_linear_pos[2];
-
-        full_state_vector.rigid_bodies[i].goal_angular_pos[0] = full_state_vector.rigid_bodies[i].start_angular_pos[0];
-        full_state_vector.rigid_bodies[i].goal_angular_pos[1] = full_state_vector.rigid_bodies[i].start_angular_pos[1];
-        full_state_vector.rigid_bodies[i].goal_angular_pos[2] = full_state_vector.rigid_bodies[i].start_angular_pos[2];
+        residual_list[i].target[0] = full_state_vector.rigid_bodies[i].start_linear_pos[0];
+        residual_list[i].target[1] = full_state_vector.rigid_bodies[i].start_linear_pos[1];
     }
 }
 
@@ -213,8 +197,8 @@ std::vector<MatrixXd> SweepMultiple::CreateInitSetupControls(int horizonLength){
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    goal_pos(0) = residual_list[0].target[0];
+    goal_pos(1) = residual_list[0].target[1];
     goal_pos(2) = 0.0;
     EEWayPointsSetup(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
@@ -243,8 +227,8 @@ std::vector<MatrixXd> SweepMultiple::CreateInitOptimisationControls(int horizonL
     std::string goalMarkerName = "display_goal";
     pose_6 displayBodyPose;
     MuJoCo_helper->GetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
-    displayBodyPose.position[0] = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    displayBodyPose.position[1] = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    displayBodyPose.position[0] = residual_list[0].target[0];
+    displayBodyPose.position[1] = residual_list[0].target[1];
     displayBodyPose.position[2] = 0.0f;
     MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
 
@@ -254,8 +238,8 @@ std::vector<MatrixXd> SweepMultiple::CreateInitOptimisationControls(int horizonL
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    goal_pos(0) = residual_list[0].target[0];
+    goal_pos(1) = residual_list[0].target[1];
     EEWayPointsPush(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
 //    cout << mainWayPoints.size() << " waypoints created" << endl;
 //    cout << "mainwaypoint 0: " << mainWayPoints[1] << endl;

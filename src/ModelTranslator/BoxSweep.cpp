@@ -38,22 +38,8 @@ void BoxSweep::ReturnRandomGoalState(){
     float randX = randFloat(lowerBoundX, upperBoundX);
     float randY = randFloat(lowerBoundY, upperBoundY);
 
-    // Franka Panda goal configuration is unimportant
-    for(int i = 0; i < 7; i++){
-        full_state_vector.robots[0].goal_pos[i] = 0.0;
-        full_state_vector.robots[0].goal_vel[i] = 0.0;
-    }
-
-    // Large box configuration
-    for(int i = 0; i < 3; i++){
-        full_state_vector.rigid_bodies[0].goal_linear_pos[i] = 0.0;
-        full_state_vector.rigid_bodies[0].goal_angular_pos[i] = 0.0;
-    }
-
-    // Set goal location for big box
-    full_state_vector.rigid_bodies[0].goal_linear_pos[0] = randX;
-    full_state_vector.rigid_bodies[0].goal_linear_pos[1] = randY;
-
+    residual_list[0].target[0] = randX;
+    residual_list[0].target[1] = randY;
 }
 
 std::vector<MatrixXd> BoxSweep::CreateInitSetupControls(int horizonLength){
@@ -71,15 +57,15 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     // Set the goal position so that we can see where we are pushing to
     std::string goalMarkerName = "display_goal";
     pose_7 display_goal_pose;
-    display_goal_pose.position[0] = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    display_goal_pose.position[1] = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    display_goal_pose.position[0] = residual_list[0].target[0];
+    display_goal_pose.position[1] = residual_list[0].target[1];
     display_goal_pose.position[2] = 0.0f;
 
-    m_point desired_eul = {current_state_vector.rigid_bodies[0].goal_angular_pos[0],
-                           current_state_vector.rigid_bodies[0].goal_angular_pos[1],
-                           current_state_vector.rigid_bodies[0].goal_angular_pos[2]};
+//    m_point desired_eul = {current_state_vector.rigid_bodies[0].goal_angular_pos[0],
+//                           current_state_vector.rigid_bodies[0].goal_angular_pos[1],
+//                           current_state_vector.rigid_bodies[0].goal_angular_pos[2]};
 
-    display_goal_pose.quat = eul2Quat(desired_eul);
+//    display_goal_pose.quat = eul2Quat(desired_eul);
 
     MuJoCo_helper->SetBodyPoseQuat(goalMarkerName, display_goal_pose, MuJoCo_helper->master_reset_data);
 
@@ -89,8 +75,8 @@ std::vector<MatrixXd> BoxSweep::CreateInitOptimisationControls(int horizonLength
     std::vector<m_point> mainWayPoints;
     std::vector<int> mainWayPointsTimings;
     std::vector<m_point> allWayPoints;
-    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    goal_pos(0) = residual_list[0].target[0];
+    goal_pos(1) = residual_list[0].target[1];
     EEWayPointsPush(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
 
     // Step 2 - create all subwaypoints over the entire trajectory
@@ -122,8 +108,8 @@ void BoxSweep::Residuals(mjData *d, MatrixXd &residuals){
     MuJoCo_helper->GetBodyVelocity("goal", goal_vel, d);
 
     // --------------- Residual 0: Body goal position -----------------
-    double diff_x = goal_pose.position(0) - full_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    double diff_y = goal_pose.position(1) - full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    double diff_x = goal_pose.position(0) - residual_list[0].target[0];
+    double diff_y = goal_pose.position(1) - residual_list[0].target[1];
     residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
                                        + pow(diff_y, 2));
 
@@ -153,8 +139,8 @@ bool BoxSweep::TaskComplete(mjData *d, double &dist){
     pose_6 goal_pose;
     MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
 
-    double x_diff = goal_pose.position(0) - current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    double y_diff = goal_pose.position(1) - current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+    double x_diff = goal_pose.position(0) - residual_list[0].target[0];
+    double y_diff = goal_pose.position(1) - residual_list[0].target[1];
 
     dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
 

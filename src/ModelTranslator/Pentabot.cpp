@@ -15,26 +15,26 @@ void Pentabot::ReturnRandomStartState(){
 
 void Pentabot::ReturnRandomGoalState(){
 
-    for(int i = 0; i < full_state_vector.dof; i++){
-        current_state_vector.robots[0].goal_pos[i] = 0.0;
-        current_state_vector.robots[0].goal_vel[i] = 0.0;
-    }
+//    for(int i = 0; i < full_state_vector.dof; i++){
+//        current_state_vector.robots[0].goal_pos[i] = 0.0;
+//        current_state_vector.robots[0].goal_vel[i] = 0.0;
+//    }
 }
 
 bool Pentabot::TaskComplete(mjData *d, double &dist){
     dist = 0.0;
-    std::vector<double> pentabot_joints;
-    MuJoCo_helper->GetRobotJointsPositions("pentabot", pentabot_joints, d);
-
-    for(int i = 0; i < full_state_vector.dof; i++){
-        std::cout << "joint pos " << pentabot_joints[i] << "\n";
-        dist += abs(current_state_vector.robots[0].goal_pos[i] - pentabot_joints[i]);
-    }
-
-    std::cout << "dist" << dist << std::endl;
-
-    if(dist < 0.01){
-        return true;
-    }
+//    std::vector<double> pentabot_joints;
+//    MuJoCo_helper->GetRobotJointsPositions("pentabot", pentabot_joints, d);
+//
+//    for(int i = 0; i < full_state_vector.dof; i++){
+//        std::cout << "joint pos " << pentabot_joints[i] << "\n";
+//        dist += abs(current_state_vector.robots[0].goal_pos[i] - pentabot_joints[i]);
+//    }
+//
+//    std::cout << "dist" << dist << std::endl;
+//
+//    if(dist < 0.01){
+//        return true;
+//    }
     return false;
 }

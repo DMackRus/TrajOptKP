@@ -11,17 +11,13 @@ enum task_mode{
 class PushSoft: virtual public ModelTranslator, public PushBaseClass{
 public:
     PushSoft(int _task_mode);
-
-    void ReturnRandomStartState() override;
-    void ReturnRandomGoalState() override;
-    std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
-//    std::vector<MatrixXd> CreateInitSetupControls(int horizonLength) override;
-
-//    double CostFunction(mjData *d, bool terminal) override;
-
-//    void CostDerivatives(mjData *d, MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal) override;
-
-    bool TaskComplete(mjData *d, double &dist) override;
+//
+//    void ReturnRandomStartState() override;
+//    void ReturnRandomGoalState() override;
+//    std::vector<MatrixXd> CreateInitOptimisationControls(int horizonLength) override;
+////    std::vector<MatrixXd> CreateInitSetupControls(int horizonLength) override;
+//
+//    bool TaskComplete(mjData *d, double &dist) override;
 
 private:
     int task_mode = PUSH_SOFT;

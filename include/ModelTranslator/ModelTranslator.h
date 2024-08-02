@@ -10,12 +10,6 @@
         state of the system. Also provides functions for calculating the cost
         function and its derivatives.
 
-        The data_index concept is used a lot in this file. I store the full
-        system state of the simulator at indices in a buffer in the abstract
-        physics simulator class. data index can be a number between 0-> horizon - 1.
-        As well as some "special" situations like MAIN_DATA_STATE, VISUALISATION_DATA,
-        AND MASTER_RESET_DATA. These are defined in the physics simulator class.
-
         Some of the functions can be overwritten to provide custom behaviour
         ,especially useful for defining custom cost functions and initial controls.
 ================================================================================
@@ -377,6 +371,10 @@ public:
     void ComputeStateDofAdrIndices(mjData* d, const struct stateVectorList &state_vector);
 
     void InitialiseSystemToStartState(mjData* d);
+
+    virtual void SetGoalVisuals(mjData *d){
+
+    }
 
     // Reset the state vector reduction variables
     void ResetSVR(){

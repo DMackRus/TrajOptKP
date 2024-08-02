@@ -11,6 +11,10 @@ public:
     void ReturnRandomStartState();
     void ReturnRandomGoalState();
 
+    void Residuals(mjData *d, MatrixXd &residuals) override;
+
+    void SetGoalVisuals(mjData *d) override;
+
 //    bool TaskComplete(mjData *d, double &dist) override;
 
 };

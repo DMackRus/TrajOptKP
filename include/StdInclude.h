@@ -19,8 +19,8 @@ struct robot{
     std::vector<std::string> actuator_names;
 
     std::vector<double> start_pos;
-    std::vector<double> goal_pos;
-    std::vector<double> goal_vel;
+//    std::vector<double> goal_pos;
+//    std::vector<double> goal_vel;
 
     std::vector<double> jerk_thresholds;
     std::vector<double> vel_change_thresholds;
@@ -32,8 +32,8 @@ struct rigid_body{
     bool active_angular_dof[3];
     double start_linear_pos[3];
     double start_angular_pos[3];
-    double goal_linear_pos[3];
-    double goal_angular_pos[3];
+//    double goal_linear_pos[3];
+//    double goal_angular_pos[3];
 //    double linearPosCost[3];
 //    double terminal_linear_pos_cost[3];
 //    double linear_vel_cost[3];
@@ -63,8 +63,8 @@ struct soft_body{
     // Centroid of the soft body
     double start_linear_pos[3];
     double start_angular_pos[3];
-    double goal_linear_pos[3];
-    double goal_angular_pos[3];
+//    double goal_linear_pos[3];
+//    double goal_angular_pos[3];
 //    double linearPosCost[3];
 //    double terminal_linear_pos_cost[3];
 //    double linear_vel_cost[3];

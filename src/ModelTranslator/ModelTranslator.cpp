@@ -19,7 +19,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     task taskConfig;
 
     FileHandler yamlReader;
-    yamlReader.readModelConfigFile(yamlFilePath, taskConfig);
+    yamlReader.ReadModelConfigFile(yamlFilePath, taskConfig);
     model_file_path = taskConfig.modelFilePath;
 
     model_name = taskConfig.modelName;
@@ -1747,42 +1747,46 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 //        }
 //    }
 
+
+    // Call this function which can be overwriten by the task implementation if goal visuals are desired
+    SetGoalVisuals(d);
+
     // If we have a goal body in the model, lets set it to the goal pose
     // TODO - add this in task config yaml
     // TODO - also this assumes first body is the goal body.
-    int body_id;
-    if(MuJoCo_helper->BodyExists("display_goal",  body_id)){
-        pose_7 goal_body;
-        if(!full_state_vector.rigid_bodies.empty()){
-            goal_body.position[0] = full_state_vector.rigid_bodies[0].goal_linear_pos[0];
-            goal_body.position[1] = full_state_vector.rigid_bodies[0].goal_linear_pos[1];
-            goal_body.position[2] = full_state_vector.rigid_bodies[0].goal_linear_pos[2];
-
-            m_point desired_eul = {full_state_vector.rigid_bodies[0].goal_angular_pos[0],
-                                   full_state_vector.rigid_bodies[0].goal_angular_pos[1],
-                                   full_state_vector.rigid_bodies[0].goal_angular_pos[2]};
-
-            goal_body.quat = eul2Quat(desired_eul);
-
-        }
-        else{
-            goal_body.position[0] = full_state_vector.soft_bodies[0].goal_linear_pos[0];
-            goal_body.position[1] = full_state_vector.soft_bodies[0].goal_linear_pos[1];
-            goal_body.position[2] = full_state_vector.soft_bodies[0].goal_linear_pos[2];
-
-            m_point desired_eul = {full_state_vector.soft_bodies[0].goal_angular_pos[0],
-                                   full_state_vector.soft_bodies[0].goal_angular_pos[1],
-                                   full_state_vector.soft_bodies[0].goal_angular_pos[2]};
-
-            goal_body.quat = eul2Quat(desired_eul);
-        }
-
-
-        std::cout << "goal body pos: " << goal_body.position[0] << " " << goal_body.position[1] << " " << goal_body.position[2] << "\n";
-//        std::cout << "goal body pos: " << full_state_vector.soft_bodies[0].goal_linear_pos[0]
-//        << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << "\n";
-        MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
-    }
+//    int body_id;
+//    if(MuJoCo_helper->BodyExists("display_goal",  body_id)){
+//        pose_7 goal_body;
+//        if(!full_state_vector.rigid_bodies.empty()){
+//            goal_body.position[0] = full_state_vector.rigid_bodies[0].goal_linear_pos[0];
+//            goal_body.position[1] = full_state_vector.rigid_bodies[0].goal_linear_pos[1];
+//            goal_body.position[2] = full_state_vector.rigid_bodies[0].goal_linear_pos[2];
+//
+//            m_point desired_eul = {full_state_vector.rigid_bodies[0].goal_angular_pos[0],
+//                                   full_state_vector.rigid_bodies[0].goal_angular_pos[1],
+//                                   full_state_vector.rigid_bodies[0].goal_angular_pos[2]};
+//
+//            goal_body.quat = eul2Quat(desired_eul);
+//
+//        }
+//        else{
+//            goal_body.position[0] = full_state_vector.soft_bodies[0].goal_linear_pos[0];
+//            goal_body.position[1] = full_state_vector.soft_bodies[0].goal_linear_pos[1];
+//            goal_body.position[2] = full_state_vector.soft_bodies[0].goal_linear_pos[2];
+//
+//            m_point desired_eul = {full_state_vector.soft_bodies[0].goal_angular_pos[0],
+//                                   full_state_vector.soft_bodies[0].goal_angular_pos[1],
+//                                   full_state_vector.soft_bodies[0].goal_angular_pos[2]};
+//
+//            goal_body.quat = eul2Quat(desired_eul);
+//        }
+//
+//
+//        std::cout << "goal body pos: " << goal_body.position[0] << " " << goal_body.position[1] << " " << goal_body.position[2] << "\n";
+////        std::cout << "goal body pos: " << full_state_vector.soft_bodies[0].goal_linear_pos[0]
+////        << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << "\n";
+//        MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
+//    }
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {

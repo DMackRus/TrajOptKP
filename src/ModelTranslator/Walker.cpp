@@ -39,14 +39,22 @@ void walker::ReturnRandomStartState(){
 }
 
 void walker::ReturnRandomGoalState(){
-    for(int i = 0; i < 9; i++){
-        current_state_vector.robots[0].goal_pos[i] = 0.0;
-        current_state_vector.robots[0].goal_vel[i] = 0.0;
+
+    // Stand at normal height
+    residual_list[0].target[0] = 0.0;
+
+    // Be upright
+    residual_list[1].target[0] = 0.0;
+
+    // Body velocity
+    float rand_body_vel = randFloat(low_bound_velocity, high_bound_velocity);
+    residual_list[2].target[0] = rand_body_vel;
+
+    // Joint controls always want to be close to zero
+    for(int i = 0; i < 6; i++){
+        residual_list[3+i].target[0] = 0.0;
     }
 
-    // Random body velocity between low_bound_vel and hig_bound_vel
-    float rand_body_vel = randFloat(low_bound_velocity, high_bound_velocity);
-    current_state_vector.robots[0].goal_vel[1] = rand_body_vel;
 }
 
 void walker::Residuals(mjData *d, MatrixXd &residuals){

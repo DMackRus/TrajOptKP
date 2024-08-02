@@ -13,7 +13,8 @@ public:
 
     void Residuals(mjData *d, MatrixXd &residuals) override;
 
+    void SetGoalVisuals(mjData *d) override;
+
     float jointLimsMax[7] = {2.2, 0.6, 2.97, 0, 2.97, 1.5, 2.5};
     float jointLimsMin[7] = {-2.2, -0.6, -2.97, -1.5, -2.97, -1.1, -2.5};
-
 };

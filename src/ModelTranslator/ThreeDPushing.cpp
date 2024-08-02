@@ -67,94 +67,94 @@ ThreeDPushing::ThreeDPushing() : PushBaseClass("franka_gripper", "goal"){
 //    return randomGoalState;
 //}
 
-std::vector<MatrixXd> ThreeDPushing::CreateInitSetupControls(int horizonLength){
-    std::vector<MatrixXd> initSetupControls;
-
-    MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->master_reset_data);
-    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
-
-    // Pushing create init controls borken into three main steps
-    // Step 1 - create main waypoints we want to end-effector to pass through
-    m_point goal_pos;
-    std::vector<m_point> mainWayPoints;
-    std::vector<int> mainWayPointsTimings;
-    std::vector<m_point> allWayPoints;
-    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
-    EEWayPointsSetup(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
-//    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
-//    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
-
-    // Step 2 - create all subwaypoints over the entire trajectory
-    allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
-
-    // Compute angle of EE for push
-    pose_7 goal_obj_start;
-    MuJoCo_helper->GetBodyPoseQuat(body_name, goal_obj_start, MuJoCo_helper->master_reset_data);
-    double diff_x = goal_pos(0) - goal_obj_start.position[0];
-    double diff_y =  goal_pos(1) - goal_obj_start.position[1];
-    double angle_EE_push = atan2(diff_y, diff_x);
-
-    // Step 3 - follow the points via the jacobian
-    initSetupControls = JacobianEEControl(allWayPoints, angle_EE_push);
-
-    return initSetupControls;
-}
-
-std::vector<MatrixXd> ThreeDPushing::CreateInitOptimisationControls(int horizonLength){
-    std::vector<MatrixXd> initControls;
-
-    // Set the goal position so that we can see where we are pushing to
-    std::string goalMarkerName = "display_goal";
-    pose_6 displayBodyPose;
-    displayBodyPose.position[0] = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    displayBodyPose.position[1] = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
-    displayBodyPose.position[2] = 0.0f;
-    MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
-
-    // Pushing create init controls broken into three main steps
-    // Step 1 - create main waypoints we want to end-effector to pass through
-    m_point goal_pos;
-    std::vector<m_point> mainWayPoints;
-    std::vector<int> mainWayPointsTimings;
-    std::vector<m_point> allWayPoints;
-    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
-    EEWayPointsPush(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
-//    cout << mainWayPoints.size() << " waypoints created" << endl;
-//    cout << "mainwaypoint 0: " << mainWayPoints[1] << endl;
-//    cout << "mainWayPoint 1: " << mainWayPoints[2] << endl;
-
-    // Step 2 - create all subwaypoints over the entire trajectory
-    allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
-
-    // Compute angle of EE for push
-    pose_7 goal_obj_start;
-    MuJoCo_helper->GetBodyPoseQuat(body_name, goal_obj_start, MuJoCo_helper->master_reset_data);
-    double diff_x = goal_pos(0) - goal_obj_start.position[0];
-    double diff_y =  goal_pos(1) - goal_obj_start.position[1];
-    double angle_EE_push = atan2(diff_y, diff_x);
-
-    // Step 3 - follow the points via the jacobian
-    initControls = JacobianEEControl(allWayPoints, angle_EE_push);
-
-    return initControls;
-}
-
-bool ThreeDPushing::TaskComplete(mjData *d, double &dist){
-    bool taskComplete = false;
-
-    pose_6 goal_pose;
-    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
-
-    double x_diff = goal_pose.position(0) - current_state_vector.rigid_bodies[0].goal_linear_pos[0];
-    double y_diff = goal_pose.position(1) - current_state_vector.rigid_bodies[0].goal_linear_pos[1];
-
-    dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
-
-    if(dist < 0.025){
-        taskComplete = true;
-    }
-
-    return taskComplete;
-}
+//std::vector<MatrixXd> ThreeDPushing::CreateInitSetupControls(int horizonLength){
+//    std::vector<MatrixXd> initSetupControls;
+//
+//    MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->master_reset_data);
+//    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
+//
+//    // Pushing create init controls borken into three main steps
+//    // Step 1 - create main waypoints we want to end-effector to pass through
+//    m_point goal_pos;
+//    std::vector<m_point> mainWayPoints;
+//    std::vector<int> mainWayPointsTimings;
+//    std::vector<m_point> allWayPoints;
+//    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+//    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+//    EEWayPointsSetup(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
+////    cout << "setup mainwaypoint 0: " << mainWayPoints[0] << endl;
+////    cout << "setup mainWayPoint 1: " << mainWayPoints[1] << endl;
+//
+//    // Step 2 - create all subwaypoints over the entire trajectory
+//    allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
+//
+//    // Compute angle of EE for push
+//    pose_7 goal_obj_start;
+//    MuJoCo_helper->GetBodyPoseQuat(body_name, goal_obj_start, MuJoCo_helper->master_reset_data);
+//    double diff_x = goal_pos(0) - goal_obj_start.position[0];
+//    double diff_y =  goal_pos(1) - goal_obj_start.position[1];
+//    double angle_EE_push = atan2(diff_y, diff_x);
+//
+//    // Step 3 - follow the points via the jacobian
+//    initSetupControls = JacobianEEControl(allWayPoints, angle_EE_push);
+//
+//    return initSetupControls;
+//}
+//
+//std::vector<MatrixXd> ThreeDPushing::CreateInitOptimisationControls(int horizonLength){
+//    std::vector<MatrixXd> initControls;
+//
+//    // Set the goal position so that we can see where we are pushing to
+//    std::string goalMarkerName = "display_goal";
+//    pose_6 displayBodyPose;
+//    displayBodyPose.position[0] = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+//    displayBodyPose.position[1] = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+//    displayBodyPose.position[2] = 0.0f;
+//    MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
+//
+//    // Pushing create init controls broken into three main steps
+//    // Step 1 - create main waypoints we want to end-effector to pass through
+//    m_point goal_pos;
+//    std::vector<m_point> mainWayPoints;
+//    std::vector<int> mainWayPointsTimings;
+//    std::vector<m_point> allWayPoints;
+//    goal_pos(0) = current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+//    goal_pos(1) = current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+//    EEWayPointsPush(goal_pos, mainWayPoints, mainWayPointsTimings, horizonLength);
+////    cout << mainWayPoints.size() << " waypoints created" << endl;
+////    cout << "mainwaypoint 0: " << mainWayPoints[1] << endl;
+////    cout << "mainWayPoint 1: " << mainWayPoints[2] << endl;
+//
+//    // Step 2 - create all subwaypoints over the entire trajectory
+//    allWayPoints = CreateAllEETransitPoints(mainWayPoints, mainWayPointsTimings);
+//
+//    // Compute angle of EE for push
+//    pose_7 goal_obj_start;
+//    MuJoCo_helper->GetBodyPoseQuat(body_name, goal_obj_start, MuJoCo_helper->master_reset_data);
+//    double diff_x = goal_pos(0) - goal_obj_start.position[0];
+//    double diff_y =  goal_pos(1) - goal_obj_start.position[1];
+//    double angle_EE_push = atan2(diff_y, diff_x);
+//
+//    // Step 3 - follow the points via the jacobian
+//    initControls = JacobianEEControl(allWayPoints, angle_EE_push);
+//
+//    return initControls;
+//}
+//
+//bool ThreeDPushing::TaskComplete(mjData *d, double &dist){
+//    bool taskComplete = false;
+//
+//    pose_6 goal_pose;
+//    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
+//
+//    double x_diff = goal_pose.position(0) - current_state_vector.rigid_bodies[0].goal_linear_pos[0];
+//    double y_diff = goal_pose.position(1) - current_state_vector.rigid_bodies[0].goal_linear_pos[1];
+//
+//    dist = sqrt(pow(x_diff, 2) + pow(y_diff, 2));
+//
+//    if(dist < 0.025){
+//        taskComplete = true;
+//    }
+//
+//    return taskComplete;
+//}

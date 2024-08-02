@@ -160,7 +160,7 @@ int main(int argc, char **argv) {
     std::string taskInitMode;
 
     yamlReader = std::make_shared<FileHandler>();
-    yamlReader->readSettingsFile("/generalConfigs/" + configFileName + ".yaml");
+    yamlReader->ReadSettingsFile("/generalConfigs/" + configFileName + ".yaml");
     optimiser = yamlReader->optimiser;
     runMode = yamlReader->project_run_mode;
     task = yamlReader->taskName;
@@ -297,7 +297,7 @@ int main(int argc, char **argv) {
         activeModelTranslator->GenerateRandomGoalAndStartState();
     }
     else if(taskInitMode == "fromCSV"){
-        yamlReader->loadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->full_state_vector);
+        yamlReader->LoadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
         activeModelTranslator->full_state_vector.Update();
         activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
         activeModelTranslator->UpdateSceneVisualisation();
@@ -625,7 +625,6 @@ void InitControls(){
             else{
                 activeVisualiser->render("show init controls");
             }
-
         }
     }
 }

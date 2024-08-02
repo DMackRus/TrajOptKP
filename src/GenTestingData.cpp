@@ -50,7 +50,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
         // Load start and desired state from csv file
 
         // Load the task from CSV file
-        yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector);
+        yamlReader->LoadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
         activeModelTranslator->ResetSVR();
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
@@ -240,7 +240,7 @@ int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method
         optimiser->keypoint_generator->ResetCache();
         // Load start and desired state from csv file
 
-        yamlReader->loadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector);
+        yamlReader->LoadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
         activeModelTranslator->ResetSVR();
         std::cout << "current state vector: \n";
         std::cout << activeModelTranslator->current_state_vector.dof << " " << activeModelTranslator->current_state_vector.num_ctrl << "\n";
@@ -646,7 +646,7 @@ int GenTestingData::GenerateDynamicsDerivsData(int num_trajecs, int num_iters_pe
     while(count < num_trajecs){
 
         // Initialise system for task
-        yamlReader->loadTaskFromFile(task_name, file_num, activeModelTranslator->current_state_vector);
+        yamlReader->LoadTaskFromFile(task_name, file_num, activeModelTranslator->current_state_vector, activeModelTranslator->residual_list);
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -677,9 +677,9 @@ int GenTestingData::GenerateDynamicsDerivsData(int num_trajecs, int num_iters_pe
         for(int i = 0; i < num_iters_per_task; i++){
 
             // Save Data (A, B, X, U)
-            yamlReader->saveTrajecInfomation(optimiser->A, optimiser->B,
-                                             optimiser->X_old, optimiser->U_old,
-                                             task_name, count, optimisation_horizon);
+            yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
+                                              optimiser->X_old, optimiser->U_old,
+                                              task_name, count, optimisation_horizon);
 
             count++;
 
@@ -702,7 +702,7 @@ int GenTestingData::GenerateTestScenes(int num_scenes){
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->vis_data);
         mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
         activeVisualiser->render("Generating random test scenes");
-        yamlReader->saveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector);
+        yamlReader->SaveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
         std::cout << "scene " << i << " generated \n";
     }
 

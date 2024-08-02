@@ -43,14 +43,23 @@ void pandaReaching::Residuals(mjData *d, MatrixXd &residuals){
     std::vector<double> joint_velocities;
     MuJoCo_helper->GetRobotJointsVelocities("panda", joint_velocities, d);
 
-    for(double joint_velocitie : joint_velocities){
-        residuals(resid_index++, 0) = joint_velocitie;
+    for(double velocity : joint_velocities){
+        residuals(resid_index++, 0) = velocity;
     }
 
     if(resid_index != residual_list.size()){
         std::cerr << "Error: Residuals size mismatch\n";
         exit(1);
     }
+}
+
+void pandaReaching::SetGoalVisuals(mjData *d){
+    pose_6 EE_target_pose;
+    EE_target_pose.position(0) = residual_list[0].target[0];
+    EE_target_pose.position(1) = residual_list[0].target[1];
+    EE_target_pose.position(2) = residual_list[0].target[2];
+
+    MuJoCo_helper->SetBodyPoseAngle("target", EE_target_pose, d);
 }
 
 //void pandaReaching::GenerateRandomGoalAndStartState() {
@@ -186,7 +195,7 @@ void pandaReaching::ReturnRandomGoalState(){
     vector<double> joints_positions;
 
     for(int i = 0; i < 7; i++){
-        joints_positions.push_back(0.0f);
+        joints_positions.push_back(0.0);
     }
 
     while(!valid_start_state){
@@ -214,20 +223,22 @@ void pandaReaching::ReturnRandomGoalState(){
         else{
             valid_start_state = true;
         }
-
     }
 
-    for(int i = 0; i < full_state_vector.dof; i++){
-        current_state_vector.robots[0].goal_pos[i] = joints_positions[i];
-        current_state_vector.robots[0].goal_vel[i] = 0.0;
-    }
+    // Get the EE position!
+    pose_6 EE_pose;
+    MuJoCo_helper->GetBodyPoseAngleViaXpos("franka_gripper", EE_pose, MuJoCo_helper->main_data);
+
+    // Sample a 3D point in the workspace?
+    residual_list[0].target[0] = EE_pose.position(0);
+    residual_list[0].target[1] = EE_pose.position(1);
+    residual_list[0].target[2] = EE_pose.position(2);
+
 }
 
 std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> init_controls;
     int num_ctrl = current_state_vector.num_ctrl;
-
-
 
     MatrixXd control(num_ctrl, 1);
     double gains[7] = {10, 10, 10, 10, 5, 5, 5};
@@ -249,8 +260,6 @@ std::vector<MatrixXd> pandaReaching::CreateInitOptimisationControls(int horizonL
         mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
         init_controls.push_back(control);
     }
-
-    
 
     return init_controls;
 }
