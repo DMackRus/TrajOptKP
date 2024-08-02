@@ -406,31 +406,6 @@ void FileHandler::SaveTaskToFile(std::string file_prefix, int file_num, const st
         }
     }
 
-//    // Robot velocities
-//    for(auto & robot : state_vector.robots){
-//        for(int i = 0; i < robot.joint_names.size(); i++){
-//            fileOutput << 0 << ",";
-//        }
-//    }
-//
-//    // Rigid body velocities
-//    for( auto body : state_vector.rigid_bodies){
-//        for(int i = 0; i < 3; i++){
-//            fileOutput << 0 << ",";
-//        }
-//
-//        for(int i = 0; i < 3; i++){
-//            fileOutput << 0 << ",";
-//        }
-//    }
-//
-//    // Soft body velocities
-//    for( auto soft_body : state_vector.soft_bodies){
-//        for(int i = 0; i < 3; i++){
-//            fileOutput << 0 << ",";
-//        }
-//    }
-
     // ----------------- Residual targets ----------------------
     for(auto & residual : residuals){
         for(double target : residual.target){
@@ -438,62 +413,8 @@ void FileHandler::SaveTaskToFile(std::string file_prefix, int file_num, const st
         }
     }
 
-    // ----------------- Goal values ---------------------------
-
-//    // Robot joint positions
-//    for(auto & robot : state_vector.robots){
-//        for(int i = 0; i < robot.joint_names.size(); i++){
-//            fileOutput << robot.goal_pos[i] << ",";
-//        }
-//    }
-//
-//    // Body poses
-//    for( const auto& body : state_vector.rigid_bodies){
-//        for(double goal_linear_po : body.goal_linear_pos){
-//            fileOutput << goal_linear_po << ",";
-//        }
-//
-//        for(double goal_angular_po : body.goal_angular_pos){
-//            fileOutput << goal_angular_po << ",";
-//        }
-//    }
-//
-//    // Soft body poses
-//    for( const auto& soft_body : state_vector.soft_bodies){
-//        for(double goal_linear_po : soft_body.goal_linear_pos){
-//            fileOutput << goal_linear_po << ",";
-//        }
-//    }
-//
-//    // Robot velocities
-//    for(auto & robot : state_vector.robots){
-//        for(int i = 0; i < robot.joint_names.size(); i++){
-//            fileOutput << robot.goal_vel[i] << ",";
-//        }
-//    }
-//
-//    // Body velocities
-//    for( auto body : state_vector.rigid_bodies){
-//        for(int i = 0; i < 3; i++){
-//            fileOutput << 0 << ",";
-//        }
-//
-//        for(int i = 0; i < 3; i++){
-//            fileOutput << 0 << ",";
-//        }
-//    }
-//
-//    // Soft body velocities
-//    for( auto soft_body : state_vector.soft_bodies){
-//        for(int i = 0; i < 3; i++){
-//            fileOutput << 0 << ",";
-//        }
-//    }
-
     fileOutput << std::endl;
-
     fileOutput.close();
-
 }
 
 void FileHandler::LoadTaskFromFile(std::string task_prefix, int file_num, stateVectorList &state_vector, vector<residual> &residuals){
@@ -503,6 +424,12 @@ void FileHandler::LoadTaskFromFile(std::string task_prefix, int file_num, stateV
     std::string filename = rootPath + "/" + std::to_string(file_num) + ".csv";
 
     fstream fin;
+
+    // Check if file exists first
+    if(!filesystem::exists(filename)){
+        std::cerr << "File "<< filename << " does not exist\n";
+        exit(1);
+    }
 
     fin.open(filename, ios::in);
     std::vector<string> row;
