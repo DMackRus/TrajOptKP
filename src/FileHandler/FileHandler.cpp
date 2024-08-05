@@ -503,7 +503,7 @@ void FileHandler::LoadTaskFromFile(std::string task_prefix, int file_num, stateV
         }
 
         for(auto & soft_body : state_vector.soft_bodies){
-            // General centorid things
+            // General centroid things
             for(int i = 0; i < 3; i++) {
                 soft_body.start_linear_pos[i] = stod(row[counter]);
                 counter++;
@@ -518,7 +518,7 @@ void FileHandler::LoadTaskFromFile(std::string task_prefix, int file_num, stateV
 
         // ----------------- Residual targets --------------------------------
         for(auto & residual : residuals){
-            for(int i = 0; i < residual.resid_dimension; i++){
+            for(int i = 0; i < residual.target.size(); i++){
                 residual.target[i] = stod(row[counter]);
                 counter++;
             }
