@@ -52,15 +52,19 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     for(auto & bodiesState : taskConfig.rigid_bodies){
         bodyNames.push_back(bodiesState.name);
         for(int j = 0; j < 3; j++){
-            jerk_thresholds.push_back(bodiesState.linear_jerk_threshold[j]);
-            jerk_thresholds.push_back(bodiesState.angular_jerk_threshold[j]);
+            if(bodiesState.active_linear_dof[j]){
+                jerk_thresholds.push_back(bodiesState.linear_jerk_threshold[j]);
+                // TODO fix this duplicate jerk thresholds
+                accel_thresholds.push_back(bodiesState.linear_jerk_threshold[j]);
+                velocity_change_thresholds.push_back(bodiesState.linear_vel_change_threshold[j]);
+            }
 
-            // TODO fix this duplicate jerk thresholds
-            accel_thresholds.push_back(bodiesState.linear_jerk_threshold[j]);
-            accel_thresholds.push_back(bodiesState.angular_jerk_threshold[j]);
-
-            velocity_change_thresholds.push_back(bodiesState.linear_vel_change_threshold[j]);
-            velocity_change_thresholds.push_back(bodiesState.angular_vel_change_threshold[j]);
+            if(bodiesState.active_angular_dof[j]){
+                jerk_thresholds.push_back(bodiesState.angular_jerk_threshold[j]);
+                // TODO fix this duplicate jerk thresholds
+                accel_thresholds.push_back(bodiesState.angular_jerk_threshold[j]);
+                velocity_change_thresholds.push_back(bodiesState.angular_vel_change_threshold[j]);
+            }
         }
     }
 

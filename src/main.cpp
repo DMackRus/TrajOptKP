@@ -78,81 +78,17 @@ int num_steps_replan = 1;
 
 volatile bool reoptimise = false;
 
-//void analyzeKMatrices(const std::vector<Eigen::MatrixXd>& KMatrices, int numImportantElements) {
-//    std::vector<Eigen::VectorXd> singularValuesList;
-//    std::vector<Eigen::MatrixXd> VtMatricesList;
-//
-//    // Perform SVD on each K matrix
-//    for (const auto& K : KMatrices) {
-//        Eigen::JacobiSVD<Eigen::MatrixXd> svd(K, Eigen::ComputeFullV | Eigen::ComputeFullU);
-//        singularValuesList.push_back(svd.singularValues());
-//        VtMatricesList.push_back(svd.matrixV().transpose());
-//        std::cout << "singular values: " << svd.singularValues() << "\n";
-//        std::cout << "V matrixes: " << svd.matrixV().transpose() << "\n";
-//    }
-//
-//    // Sum the singular values across all K matrices
-//    Eigen::VectorXd totalSingularValues = Eigen::VectorXd::Zero(singularValuesList[0].size());
-//    for (const auto& singularValues : singularValuesList) {
-//        totalSingularValues += singularValues;
-//    }
-//    std::cout << "total singular values: " << totalSingularValues << "\n";
-//
-//    // Find the indices of the most important singular values
-//    std::vector<int> importantIndices(totalSingularValues.size());
-//    std::iota(importantIndices.begin(), importantIndices.end(), 0); // Fill with 0, 1, ..., n-1
-//
-//    std::partial_sort(importantIndices.begin(), importantIndices.begin() + numImportantElements, importantIndices.end(),
-//                      [&totalSingularValues](int i, int j) { return totalSingularValues[i] > totalSingularValues[j]; });
-//
-//    std::cout << "important index 0: " << importantIndices[0] << "\n";
-//    std::cout << "important index 1: " << importantIndices[1] << "\n";
-//
-//    // Extract the most important directions
-//    std::vector<Eigen::MatrixXd> importantDirections;
-//    for (const auto& Vt : VtMatricesList) {
-//        Eigen::MatrixXd importantVt = Eigen::MatrixXd::Zero(Vt.rows(), numImportantElements);
-//        for (int i = 0; i < numImportantElements; ++i) {
-//            importantVt.col(i) = Vt.row(importantIndices[i]).transpose();
-//        }
-//        importantDirections.push_back(importantVt);
-//    }
-//
-//    std::cout << "important directions 0: " << importantDirections[0] << "\n";
-//    std::cout << "important directions 1: " << importantDirections[1] << "\n";
-//
-//    // Aggregate the important directions (mean)
-//    Eigen::MatrixXd aggregatedDirections = Eigen::MatrixXd::Zero(importantDirections[0].rows(), numImportantElements);
-//    for (const auto& dir : importantDirections) {
-//        aggregatedDirections += dir;
-//    }
-//    aggregatedDirections /= importantDirections.size();
-//
-//    // Print the results
-//    std::cout << "Aggregated Important Directions:\n" << aggregatedDirections << std::endl;
-//}
-
 int main(int argc, char **argv) {
 
-    // Expected arguments
+    // Minimum Expected arguments
     // 1. Program name
-    // 2. Task name
+    // 2. Config file name
     if(argc < 2){
         std::cout << "No task name provided, exiting" << endl;
         return -1;
     }
 
-    std::string configFileName = argv[1];
-//    std::cout << "config file name: " << configFileName << endl;
-
-    // Optional arguments
-    // 3. key-point method (only used for generating testing data)
-    // Only used for generating testing data for different key-point methods
-//    if(argc > 2){
-//        for (int i = 1; i < argc; i++) {
-//            testingMethods.push_back(argv[i]);
-//        }
-//    }
+    std::string config_file_name = argv[1];
 
     std::string optimiser;
     std::string runMode;
@@ -160,7 +96,7 @@ int main(int argc, char **argv) {
     std::string taskInitMode;
 
     yamlReader = std::make_shared<FileHandler>();
-    yamlReader->ReadSettingsFile("/generalConfigs/" + configFileName + ".yaml");
+    yamlReader->ReadSettingsFile("/generalConfigs/" + config_file_name + ".yaml");
     optimiser = yamlReader->optimiser;
     runMode = yamlReader->project_run_mode;
     task = yamlReader->taskName;
@@ -245,23 +181,23 @@ int main(int argc, char **argv) {
                                        activeDifferentiator, activeVisualiser, yamlReader);
 
         int task_horizon = activeModelTranslator->openloop_horizon;
-        int re_add_dofs;
-        double K_threshold;
 
+        // Optimisation horizon
         if(argc > 2){
             task_horizon = std::atoi(argv[2]);
         }
 
-        if(argc > 3){
-            re_add_dofs = std::atoi(argv[3]);
-            K_threshold = std::atof(argv[4]);
+        if(optimiser == "iLQR_SVR"){
+            if(argc > 3){
+                std::cout << "setting optimiser parameters \n";
+                int re_add_dofs = std::atoi(argv[3]);
+                int K_threshold = std::atof(argv[4]);
 
-            myTestingObject.SetParamsiLQR_SVR(re_add_dofs, K_threshold);
-            std::cout << "set optimiser parameters \n";
+                myTestingObject.SetParamsiLQR_SVR(re_add_dofs, K_threshold);
+            }
         }
 
         return myTestingObject.GenDataOpenloopOptimisation(task_horizon);
-
     }
     if(runMode == "Generate_asynchronus_mpc_data"){
         GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
@@ -291,88 +227,19 @@ int main(int argc, char **argv) {
         return myTestingObject.GenDataAsyncMPC(task_horizon, task_timeout);
     }
 
-    // random start and goal state
-    std::string taskPrefix = activeModelTranslator->model_name;
     if(taskInitMode == "random"){
         activeModelTranslator->GenerateRandomGoalAndStartState();
     }
-    else if(taskInitMode == "fromCSV"){
-        yamlReader->LoadTaskFromFile(taskPrefix, yamlReader->csvRow, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
+    else if(taskInitMode == "fromCSV") {
+        std::string task_prefix = activeModelTranslator->model_name;
+        yamlReader->LoadTaskFromFile(task_prefix, yamlReader->csvRow, activeModelTranslator->full_state_vector,
+                                     activeModelTranslator->residual_list);
         activeModelTranslator->full_state_vector.Update();
         activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
         activeModelTranslator->UpdateSceneVisualisation();
     }
 
-    // Temp code print model parameters
-    std::cout << "model->nq: " << activeModelTranslator->MuJoCo_helper->model->nq << "\n";
-    std::cout << "model->nv: " << activeModelTranslator->MuJoCo_helper->model->nv << "\n";
-    std::cout << "model->nu: " << activeModelTranslator->MuJoCo_helper->model->nu << "\n";
-    std::cout << "model->na: " << activeModelTranslator->MuJoCo_helper->model->na << "\n";
-
-    // Loop through joints and print the names
-    for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->njnt; i++){
-        std::cout << "joint name: " << activeModelTranslator->MuJoCo_helper->model->names + activeModelTranslator->MuJoCo_helper->model->name_jntadr[i] << "\n";
-    }
-
-    activeModelTranslator->current_state_vector.PrintFormattedStateVector();
-
-    // Print the sensors
-    std::cout << "num sensors: " << activeModelTranslator->MuJoCo_helper->model->nsensor << "\n";
-
-    // Print statevector index to q pos index
-    for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
-        int q_index = activeModelTranslator->StateIndexToQposIndex(i, activeModelTranslator->current_state_vector);
-        std::cout << "state name: " << activeModelTranslator->current_state_vector.state_names[i] << ": " << q_index << "\n";
-    }
-
-    // Loop through mujoco number of joints and print them
-//    std::cout << "Number of mujococ joints: " << activeModelTranslator->MuJoCo_helper->model->njnt << "\n";
-//    for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->njnt; i++){
-//        std::string name = mj_id2name(activeModelTranslator->MuJoCo_helper->model, mjOBJ_JOINT, i);
-//        int qpos_adr = activeModelTranslator->MuJoCo_helper->model->jnt_qposadr[i];
-//        std::cout << "joint name: " << name <<  " joint num: " << i << " qpos index: " << qpos_adr << "\n";
-//    }
-
-    // Loop through the actuators and print them
-    std::cout << "number of mujoco actuators: " << activeModelTranslator->MuJoCo_helper->model->nu << "\n";
-    for(int i = 0; i < activeModelTranslator->MuJoCo_helper->model->nu; i++){
-        std::string name = mj_id2name(activeModelTranslator->MuJoCo_helper->model, mjOBJ_ACTUATOR, i);
-        std::cout << "actuator name: " << name << " actuator num: " << i << "\n";
-    }
-
-    // Check my method for getting actuator index
-    for(int i = 0; i < activeModelTranslator->current_state_vector.robots[0].actuator_names.size(); i++){
-        int actuator_id = mj_name2id(activeModelTranslator->MuJoCo_helper->model, mjOBJ_ACTUATOR, activeModelTranslator->current_state_vector.robots[0].actuator_names[i].c_str());
-//        int ctrl_index = activeModelTranslator->MuJoCo_helper->model->act[actuator_id];
-        std::cout << "actuator name: " << activeModelTranslator->current_state_vector.robots[0].actuator_names[i].c_str() <<  " ctrl index: " << actuator_id << "\n";
-    }
-
-    // Quick test to make sure setting and returning stata vectors is correct
-//    MatrixXd state_vector_test(activeModelTranslator->current_state_vector.dof+activeModelTranslator->current_state_vector.dof_quat, 1);
-//    state_vector_test << 0.1, 0.1, 0.1,
-//                            0.988015, 0, 0.154359, 0,
-//                            0, 0.4, 0,
-//                            -0.25, -0.5, -2.5, -2.65, -0.8, 0.56,
-//                            -0.25, -0.5, -2.5, -2.65, -0.8, 0.56,
-//                            0, 0, 0, 0, 0, 0,
-//                            0, 0, 0, 0, 0, 0,
-//                            0, 0, 0,
-//                            0, 0, 0, 0, 0, 0,
-//                            0, 0, 0, 0, 0, 0,
-//                            0, 0, 0, 0, 0, 0;
-//    activeModelTranslator->SetStateVectorQuat(state_vector_test, activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->current_state_vector);
-//
-//    MatrixXd returned_state_vector;
-//    returned_state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->current_state_vector);
-//    std::cout << "returned state vector: " << returned_state_vector << "\n";
-    // Print the control limits
-//    MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
-//    for(int i = 0; i < control_lims.rows(); i++){
-//        std::cout << "control lims: " << control_lims(i, 0) << " \n";
-//    }
-
-    // Initialise the system state from desired mechanism
-    // Set goal pose here maybe???
+    // Initialise the system state from full state vector here
     activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     // Methods of control / visualisation
@@ -391,187 +258,6 @@ int main(int argc, char **argv) {
     }
     else{
         cout << "INVALID MODE OF OPERATION OF PROGRAM \n";
-
-
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
-//
-//        std::cout << "nq: " << activeModelTranslator->MuJoCo_helper->model->nq << "\n";
-//        std::cout << "nv: " << activeModelTranslator->MuJoCo_helper->model->nv << "\n";
-//        std::cout << "nbody: " << activeModelTranslator->MuJoCo_helper->model->nbody << "\n";
-//
-//        // Print state vector name and its associated q pos index
-//        std::cout << "dof in current state vector: " << activeModelTranslator->current_state_vector.dof << "\n";
-//        std::cout << "state vector names size: " << activeModelTranslator->current_state_vector.state_names.size() << "\n";
-//        for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
-//            std::cout << "i: " << i << "\n";
-//            int q_index = activeModelTranslator->StateIndexToQposIndex(i, activeModelTranslator->current_state_vector);
-//            std::cout << "state name: " << activeModelTranslator->current_state_vector.state_names[i] << ": " << q_index << "\n";
-//        }
-
-        //
-//        activeModelTranslator->current_state_vector.PrintFormattedStateVector();
-//
-//        // remove some vertices
-//        std::vector<std::string> remove = {"jelly_V1_x", "jelly_V2_y", "jelly_V11_z"};
-//        activeModelTranslator->UpdateCurrentStateVector(remove, false);
-//
-//        activeModelTranslator->current_state_vector.PrintFormattedStateVector();
-
-
-//        std::string flex_name = "Jelly2";
-//        int flexId = mj_name2id(activeModelTranslator->MuJoCo_helper->model, mjOBJ_FLEX, flex_name.c_str());
-//        int firstVertadr = activeModelTranslator->MuJoCo_helper->model->flex_vertadr[flexId];
-//        int numVertices = activeModelTranslator->MuJoCo_helper->model->flex_vertnum[flexId];
-//
-//        int body_id = activeModelTranslator->MuJoCo_helper->model->flex_vertbodyid[firstVertadr];
-//        int geom_id = activeModelTranslator->MuJoCo_helper->model->body_geomadr[body_id];
-//
-//        std::cout << "flex id: " << flexId << " first vert adr: " << firstVertadr << "body is: " << body_id << "geom id: " << geom_id << "\n";
-//
-//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4]     = 0; // Red
-//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 1] = 0; // Green
-//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 2] = 0; // Blue
-//        activeModelTranslator->MuJoCo_helper->model->geom_rgba[geom_id * 4 + 3] = 0.5; // Alpha
-//
-        while(activeVisualiser->windowOpen()){
-//            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
-            mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
-            activeVisualiser->render("Test");
-            MatrixXd residuals(activeModelTranslator->residual_list.size(), 1);
-            activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, residuals);
-            double cost = activeModelTranslator->CostFunction(residuals, activeModelTranslator->full_state_vector, false);
-            std::cout << "cost: " << cost << "\n";
-        }
-        // --------------------------------------------------------------------------------------------------------------
-
-//        std::vector<double> time_derivs_full;
-//        std::vector<double> time_bp_full;
-//        std::vector<double> time_derivs_reduced;
-//        std::vector<double> time_bp_reduced;
-
-//        int dofs_full, dofs_reduced;
-//        int N = 10;
-//
-//        dofs_full = activeModelTranslator->full_state_vector.dof;
-//
-//        iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator, activeModelTranslator->MuJoCo_helper, activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
-
-//        MatrixXd state_vector = activeModelTranslator->ReturnStateVectorQuaternions(activeModelTranslator->MuJoCo_helper->master_reset_data);
-//        std::cout << "size of state vector quaternion: " << state_vector.rows() << std::endl;
-//        activeModelTranslator->current_state_vector.Update();
-//        std::cout << "num dofs: " << activeModelTranslator->current_state_vector.dof << " num dofs quat: " << activeModelTranslator->current_state_vector.dof_quat << std::endl;
-
-//        std::cout << "state vector: ";
-//        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
-//            std::cout << state_name << " ";
-//        }
-//        std::cout << "\n";
-//        std::cout << "size of state vector before: " << activeModelTranslator->current_state_vector.dof << " \n";
-//
-//        // remove elements
-//        std::vector<std::string> remove = {"panda0_joint1", "goal_x", "obstacle_1_x"};
-//        activeModelTranslator->UpdateCurrentStateVector(remove, false);
-//
-//        std::cout << "state vector: ";
-//        for(const auto & state_name : activeModelTranslator->current_state_vector.state_names){
-//            std::cout << state_name << " ";
-//        }
-//        std::cout << "\n";
-//        std::cout << "size of state vector after: " << activeModelTranslator->current_state_vector.dof << " \n";
-
-
-//        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
-//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
-//
-//        std::vector<MatrixXd> U_init;
-//        U_init = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
-//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
-//
-//
-//        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
-//        std::cout << "rollout done \n";
-//
-//        // Compute derivatives
-//        auto timer_start = std::chrono::high_resolution_clock::now();
-//
-//        for(int i = 0; i < N; i++){
-//            timer_start = std::chrono::high_resolution_clock::now();
-//            iLQROptimiser->GenerateDerivatives();
-//            time_derivs_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-//                    std::chrono::high_resolution_clock::now() - timer_start).count());
-//        }
-//
-//        for(int i = 0; i < N; i++){
-//            timer_start = std::chrono::high_resolution_clock::now();
-//            iLQROptimiser->BackwardsPassQuuRegularisation();
-//            time_bp_full.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-//                    std::chrono::high_resolution_clock::now() - timer_start).count());
-//        }
-//
-//
-//        // Remove elements from task
-//        std::vector<std::string> remove_elements = {"goal_y", "goal_pitch", "goal_roll", "goal_yaw",
-//                                                    "mediumCylinder_y", "mediumCylinder_pitch", "mediumCylinder_roll", "mediumCylinder_yaw",
-//                                                    "bigBox_y", "bigBox_pitch", "bigBox_roll", "bigBox_yaw",
-//                                                    "obstacle1_y", "obstacle1_pitch", "obstacle1_roll", "obstacle1_yaw",
-//                                                    "obstacle2_y", "obstacle2_pitch", "obstacle2_roll", "obstacle2_yaw",
-//                                                    "obstacle3_y", "obstacle3_pitch", "obstacle3_roll", "obstacle3_yaw",
-//                                                    "obstacle4_y", "obstacle4_pitch", "obstacle4_roll", "obstacle4_yaw",
-//                                                    "obstacle5_y", "obstacle5_pitch", "obstacle5_roll", "obstacle5_yaw",};
-//        activeModelTranslator->UpdateCurrentStateVector(remove_elements, false);
-//        dofs_reduced = activeModelTranslator->dof;
-//
-//        // resize optimiser state
-//        iLQROptimiser->Resize(activeModelTranslator->dof, activeModelTranslator->num_ctrl, iLQROptimiser->horizon_length);
-//
-//        iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true,  U_init);
-//        std::cout << "2nd rollout done \n";
-//
-//        // Compute derivatives
-//        for(int i = 0; i < N; i++){
-//            timer_start = std::chrono::high_resolution_clock::now();
-//            iLQROptimiser->GenerateDerivatives();
-//            time_derivs_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-//                    std::chrono::high_resolution_clock::now() - timer_start).count());
-//        }
-//
-//        // Compute backwards pass
-//        for(int i = 0; i < N; i++){
-//            timer_start = std::chrono::high_resolution_clock::now();
-//            iLQROptimiser->BackwardsPassQuuRegularisation();
-//            time_bp_reduced.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(
-//                    std::chrono::high_resolution_clock::now() - timer_start).count());
-//        }
-//
-//        double avg_time_derivs_full, avg_time_derivs_reduced, avg_time_bp_full, avg_time_bp_reduced;
-//
-//        for(int i = 0; i < N; i++){
-//            avg_time_derivs_full += time_derivs_full[i];
-//            avg_time_derivs_reduced += time_derivs_reduced[i];
-//            avg_time_bp_full += time_bp_full[i];
-//            avg_time_bp_reduced += time_bp_reduced[i];
-//        }
-//
-//        avg_time_derivs_full /= N;
-//        avg_time_derivs_reduced /= N;
-//        avg_time_bp_full /= N;
-//        avg_time_bp_reduced /= N;
-//
-//        std::cout << "-------- Results of state vector dimensionality reduction ----------- \n";
-//        std::cout << "num dofs in full state vector: " << dofs_full << "\n";
-//        std::cout << "time of derivs for full state vector: " << avg_time_derivs_full << " ms \n";
-//        std::cout << "time of bp for full state vector: " << avg_time_bp_full << " ms \n";
-//        std::cout << "num dofs in reduced state vector: " << dofs_reduced << "\n";
-//        std::cout << "time of derivs for reduced state vector: " << avg_time_derivs_reduced << " ms\n";
-//        std::cout << "time of bp for reduced state vector: " << avg_time_bp_reduced << " ms\n";
-//
-//        double percentage_decrease_derivs = (1 - (avg_time_derivs_reduced / avg_time_derivs_full)) * 100.0;
-//        double percentage_decrease_bp = (1 - (avg_time_bp_reduced / avg_time_bp_full)) * 100.0;
-//        double dof_percentage_decrease = (1 - ((double)dofs_reduced / (double)dofs_full)) * 100.0;
-//        std::cout << "percent decrease of derivatives: " << percentage_decrease_derivs << "\n";
-//        std::cout << "percent decrease of backwards pass: " << percentage_decrease_bp << "\n";
-//        std::cout << "expected percentage decrease: " << dof_percentage_decrease << "\n";
-
         return EXIT_FAILURE;
     }
 

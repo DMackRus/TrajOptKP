@@ -33,7 +33,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     // ------------------------- data storage -------------------------------------
     std::vector<double> cost_reductions;
     std::vector<double> optimisation_times;
-    std::vector<int> num_iterations;
+    std::vector<int>    num_iterations;
     std::vector<double> avg_num_dofs;
     std::vector<double> avg_percent_derivs;
     std::vector<double> total_time_derivs;
@@ -51,6 +51,8 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
 
         // Load the task from CSV file
         yamlReader->LoadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
+
+        // Reset state vector (only really applicable for iLQR_SVR method)
         activeModelTranslator->ResetSVR();
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
@@ -59,6 +61,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
                                                               activeModelTranslator->MuJoCo_helper->master_reset_data);
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
                                                               activeModelTranslator->MuJoCo_helper->master_reset_data);
+
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
         if (!activeModelTranslator->MuJoCo_helper->CheckIfDataIndexExists(0)) {
             activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(
@@ -760,27 +763,14 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
             keypoint_method_name = "SI_" + std::to_string(keypoint_method.min_N);
         }
         else if(keypoint_method.name == "velocity_change"){
-            int substring_length = 3;
-            if(keypoint_method.velocity_change_thresholds[0] < 0.1){
-                substring_length = 4;
-            }
             keypoint_method_name = "VC_" +
                           std::to_string(keypoint_method.min_N) + "_" +
-                          std::to_string(keypoint_method.max_N) + "_" +
-                          std::to_string(keypoint_method.velocity_change_thresholds[0]).substr(0, substring_length);
+                          std::to_string(keypoint_method.max_N);
         }
         else if(keypoint_method.name == "adaptive_jerk"){
-            int substring_length = 4;
-            if(keypoint_method.jerk_thresholds[0] <= 0.001){
-                substring_length = 5;
-            }
-            if(keypoint_method.jerk_thresholds[0] <= 0.0001){
-                substring_length = 6;
-            }
             keypoint_method_name = "AJ_" +
                           std::to_string(keypoint_method.min_N) + "_" +
-                          std::to_string(keypoint_method.max_N) + "_" +
-                          std::to_string(keypoint_method.jerk_thresholds[0]).substr(0, substring_length);
+                          std::to_string(keypoint_method.max_N);
         }
     }
 
@@ -793,11 +783,38 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
     out << YAML::Key << "controls_noise";
     out << YAML::Value << control_noise;
 
+    out << YAML::Key << "model timestep";
+    out << YAML::Value << activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep();
+
+    // -------------------- Keypoint names and other parameters -----------------------
     out << YAML::Key << "keypoint_name";
     out << YAML::Value << keypoint_method_name;
 
-    out << YAML::Key << "model timestep";
-    out << YAML::Value << activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep();
+    out << YAML::Key << "keypoint_min_N";
+    out << YAML::Value << keypoint_method.min_N;
+
+    out << YAML::Key << "keypoint_max_N";
+    out << YAML::Value << keypoint_method.max_N;
+
+    if(keypoint_method.name == "velocity_change"){
+        std::vector<double> thresholds;
+        for(int i = 0; i < keypoint_method.velocity_change_thresholds.size(); i++){
+            thresholds.push_back(keypoint_method.velocity_change_thresholds[i]);
+        }
+        out << YAML::Key << "velocity_change_thresholds";
+        out << YAML::Value << thresholds;
+    }
+
+    if(keypoint_method.name == "adaptive_jerk"){
+        std::vector<double> thresholds;
+        for(int i = 0; i < keypoint_method.jerk_thresholds.size(); i++){
+            thresholds.push_back(keypoint_method.jerk_thresholds[i]);
+        }
+        out << YAML::Key << "jerk_thresholds";
+        out << YAML::Value << thresholds;
+    }
+
+    // -------------------------- State vector reduction ----------------------------
 
     if(optimiser_name == "iLQR_SVR"){
         out << YAML::Key << "num_dofs_readd";
