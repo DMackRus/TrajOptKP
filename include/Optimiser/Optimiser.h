@@ -213,6 +213,9 @@ public:
 
     int horizon_length = 0;
 
+    double new_cost = 0.0;
+    double old_cost = 0.0;
+
     std::vector<double> cost_history;
     double lowPassACoefficient = 0.25;
     std::vector<double> FIRCoefficients = {0.1, 0.15, 0.5, 0.15, 0.1};
@@ -232,6 +235,12 @@ public:
     int dof = 0;
     int num_ctrl = 0;
     int dof_used_last_optimisation = 0;
+
+    // Lambda value which is added to the diagonal of the Q_uu matrix for regularisation purposes.
+    double lambda = 0.1;
+    double max_lambda = 10.0;
+    double min_lambda = 0.0001;
+    double lambda_factor = 10;
 
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;

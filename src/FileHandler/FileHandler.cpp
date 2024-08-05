@@ -16,7 +16,6 @@ FileHandler::FileHandler(){
     projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
     projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
     projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
-
 }
 
 void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_taskConfig){
@@ -300,8 +299,12 @@ void FileHandler::ReadSettingsFile(const std::string& settingsFilePath){
     record_trajectory = node["record"].as<bool>();
 }
 
-void FileHandler::SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength){
-    std::string rootPath = projectParentPath + "/savedTrajecInfo" + filePrefix + "/" + std::to_string(trajecNumber);
+void FileHandler::SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices,
+                                        std::vector<MatrixXd> states, std::vector<MatrixXd> controls,
+                                        std::string file_prefix){
+    std::string rootPath = projectParentPath + "/savedTrajecInfo" + file_prefix;
+
+    int horizon = A_matrices.size();
 
     if (!filesystem::exists(rootPath)) {
         if (!filesystem::create_directories(rootPath)) {
@@ -317,7 +320,7 @@ void FileHandler::SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::v
     int num_ctrl = B_matrices[0].cols();
 
     // trajectory length
-    for(int i = 0; i < horizonLength - 1; i++){
+    for(int i = 0; i < horizon - 1; i++){
         // Row
         for(int j = 0; j < (2 * dof); j++){
             // Column
@@ -333,7 +336,7 @@ void FileHandler::SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::v
     filename = rootPath + "/B_matrices.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < horizonLength - 1; i++){
+    for(int i = 0; i < horizon - 1; i++){
         for(int j = 0; j < (2 * dof); j++){
             for(int k = 0; k < num_ctrl; k++){
                 fileOutput << B_matrices[i](j, k) << ",";
@@ -346,7 +349,7 @@ void FileHandler::SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::v
 
     filename = rootPath + "/states.csv";
     fileOutput.open(filename);
-    for(int i = 0; i < horizonLength - 1; i++){
+    for(int i = 0; i < horizon - 1; i++){
         for(int j = 0; j < (dof * 2); j++)
         {
             fileOutput << states[i](j) << ",";
@@ -359,7 +362,7 @@ void FileHandler::SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::v
     filename = rootPath + "/controls.csv";
     fileOutput.open(filename);
 
-    for(int i = 0; i < horizonLength - 1; i++){
+    for(int i = 0; i < horizon - 1; i++){
         for(int j = 0; j < num_ctrl; j++) {
             fileOutput << controls[i](j) << ",";
         }

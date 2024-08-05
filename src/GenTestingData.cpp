@@ -141,79 +141,6 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     keypoint_method.auto_adjust = false;
 
     return TestingAsynchronusMPC(keypoint_method, 100, task_horizon, task_timeout);
-
-
-//    std::vector<int> minN = {1};
-//    std::vector<int> maxN_multiplier = {20};
-//    std::vector<double> velocity_change_thresholds = {0.01, 0.1, 0.5, 1.0, 2.0};
-//
-//    for(int i = 0; i < minN.size(); i++){
-//        for(int j = 0; j < maxN_multiplier.size(); j++){
-//            for(int k = 0; k < velocity_change_thresholds.size(); k++){
-//                keypoint_method keypoint_method;
-//                keypoint_method.name = "velocity_change";
-//                keypoint_method.min_N = minN[i];
-//                keypoint_method.max_N = minN[i] * maxN_multiplier[j];
-//                for(int l = 0; l < activeModelTranslator->dof; l++){
-//                    keypoint_method.velocity_change_thresholds.push_back(velocity_change_thresholds[k]);
-//                }
-//                std::cout << "testing keypoint method: " << keypoint_method.name << " with minN: " << keypoint_method.min_N
-//                          << " maxN: " << keypoint_method.max_N << " and velocity change thresholds: " << keypoint_method.velocity_change_thresholds[0] << std::endl;
-//
-//                testing_asynchronus_mpc(keypoint_method, 100);
-//            }
-//        }
-//    }
-
-//    keypoint_method keypoint_method;
-//
-//    int num_trials = 20;
-//
-//    keypoint_method.name = "adaptive_jerk";
-//    keypoint_method.min_N = 1;
-//    keypoint_method.max_N = 50;
-//    keypoint_method.auto_adjust = true;
-//    for(int i = 0; i < activeModelTranslator->dof; i++){
-//        keypoint_method.jerk_thresholds.push_back(1e-15);
-//    }
-//    testing_asynchronus_mpc(keypoint_method, num_trials, task_horizon, task_timeout);
-//
-//    // Test set interval methods
-//    keypoint_method.name = "set_interval";
-//    keypoint_method.max_N = 1;
-//    keypoint_method.auto_adjust = false;
-//    std::vector<int> minNs = {1, 2, 5, 10, 20, 40, 60, 80, 150};
-////    std::vector<int> minNs = {10, 110};
-//    for(int minN : minNs){
-//        // Only test for minN's < task_horizon
-//        if(minN <= task_horizon){
-//            keypoint_method.min_N = minN;
-//            testing_asynchronus_mpc(keypoint_method, num_trials, task_horizon, task_timeout);
-//        }
-//    }
-
-
-
-//    std::vector<int> minN = {1};
-//    std::vector<int> maxN_multiplier = {50};
-//    std::vector<double> jerk_thresholds = {0.0001, 0.001, 0.01, 0.1, 1.0};
-//
-//    for(int i = 0; i < minN.size(); i++){
-//        for(int j = 0; j < maxN_multiplier.size(); j++){
-//            for(int k = 0; k < jerk_thresholds.size(); k++){
-//                keypoint_method.name = "adaptive_jerk";
-//                keypoint_method.min_N = minN[i];
-//                keypoint_method.max_N = minN[i] * maxN_multiplier[j];
-//                for(int l = 0; l < activeModelTranslator->dof; l++){
-//                    keypoint_method.jerk_thresholds.push_back(jerk_thresholds[k]);
-//                }
-//                std::cout << "testing keypoint method: " << keypoint_method.name << " with minN: " << keypoint_method.min_N
-//                          << " maxN: " << keypoint_method.max_N << " and jerk thresholds: " << keypoint_method.jerk_thresholds[0] << std::endl;
-//
-//                testing_asynchronus_mpc(keypoint_method, 100);
-//            }
-//        }
-//    }
 }
 
 int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method, int num_trials, int task_horzion, int task_timeout){
@@ -638,8 +565,6 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
 }
 
 int GenTestingData::GenerateDynamicsDerivsData(int num_trajecs, int num_iters_per_task){
-    std::cout << "generate dynamics derivs in loop \n";
-
     int count = 0;
     int file_num = 0;
     std::string task_name = activeModelTranslator->model_name;
@@ -680,9 +605,10 @@ int GenTestingData::GenerateDynamicsDerivsData(int num_trajecs, int num_iters_pe
         for(int i = 0; i < num_iters_per_task; i++){
 
             // Save Data (A, B, X, U)
+            // TODO - needs fixing
             yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
                                               optimiser->X_old, optimiser->U_old,
-                                              task_name, count, optimisation_horizon);
+                                              task_name);
 
             count++;
 
@@ -834,4 +760,139 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
     std::ofstream fout(file_name);
     fout << out.c_str();
     fout.close();
+}
+
+int GenTestingData::AnalyseToyContact(int horizon){
+
+    // Perform special optimisation using iLQR. Do one iteration at a time, compare performance
+    // when optimising with exact derivatives and approximated derivatives.
+    // Save the exact derivatives, approximated derivatives, and the cost performance of each method.
+
+    std::string project_parent_path = __FILE__;
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+
+    // Create the file directory root path dynamically
+    std::string method_directory = CreateTestName("openloop");
+
+    // ------------------------- data storage -------------------------------------
+    std::vector<double> cost_reductions;
+    std::vector<double> optimisation_times;
+    std::vector<int>    num_iterations;
+    std::vector<double> avg_num_dofs;
+    std::vector<double> avg_percent_derivs;
+    std::vector<double> total_time_derivs;
+    std::vector<double> total_time_bp;
+    std::vector<double> total_time_fp;
+    // -----------------------------------------------------------------------------
+
+    auto startTimer = std::chrono::high_resolution_clock::now();
+    optimiser->verbose_output = true;
+
+    // Arbitrary number of trials
+    optimiser->keypoint_generator->ResetCache();
+    // Load the task from CSV file
+    yamlReader->LoadTaskFromFile(activeModelTranslator->model_name, 6, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
+    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    // Setup mj data objects
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    if (!activeModelTranslator->MuJoCo_helper->CheckIfDataIndexExists(0)) {
+        activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(
+                activeModelTranslator->MuJoCo_helper->master_reset_data);
+    }
+    // Perform any setup controls for this task
+    std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data,
+                                                          activeModelTranslator->MuJoCo_helper->main_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    // Create init optimisation controls
+    std::vector<MatrixXd> init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(horizon);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(
+            activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+            activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    keypoint_method saved_method = optimiser->activeKeyPointMethod;
+
+    for (int i = 0; i < 5; i++) {
+        double lambda_save = optimiser->lambda;
+        // ----------------- Perform optimisation once with exact derivatives!! -------------------------
+        double old_cost = optimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                       false, init_opt_controls);
+
+        // Do the optimisation with interpolated derivatives
+        std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
+                horizon);
+
+
+        // Saving the data
+        std::string task_name = activeModelTranslator->model_name;
+        std::string file_prefix = task_name + "/iter_" + std::to_string(i) + "/interpolated_derivs";
+        yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
+                                          optimiser->X_old, optimiser->U_old,
+                                          file_prefix);
+
+        double new_cost_approximated = optimiser->new_cost;
+
+        // Set keypoint method to set interval 1 for exact derivatives
+        optimiser->activeKeyPointMethod.name = "set_interval";
+        optimiser->activeKeyPointMethod.min_N = 1;
+
+        optimiser->SetCurrentKeypointMethod(optimiser->activeKeyPointMethod);
+
+        // Do the optimisation with interpolated derivatives!
+        optimiser->lambda = lambda_save;
+        optimised_controls = optimiser->Optimise(
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
+                horizon);
+
+        // Saving the data
+        file_prefix = task_name + "/iter_" + std::to_string(i) + "/exact_derivs";
+        yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
+                                          optimiser->X_old, optimiser->U_old,
+                                          file_prefix);
+
+        double new_cost_exact = optimiser->new_cost;
+
+        // Reset keypoint method
+        optimiser->activeKeyPointMethod = saved_method;
+        optimiser->SetCurrentKeypointMethod(optimiser->activeKeyPointMethod);
+
+        // Update the trajectory
+        init_opt_controls = optimised_controls;
+
+        // ------------------- Save YAML file -----------------------------
+        YAML::Emitter out;
+
+        out << YAML::BeginMap;
+        out << YAML::Key << "old_cost";
+        out << YAML::Value << old_cost;
+
+        out << YAML::Key << "new_cost_exact";
+        out << YAML::Value << new_cost_exact;
+
+        out << YAML::Key << "new_cost_approx";
+        out << YAML::Value << new_cost_approximated;
+
+        out << YAML::EndMap;
+
+        // Open a file for writing
+        std::string file_name = project_parent_path + "/savedTrajecInfo" + task_name + "/iter_" + std::to_string(i) + "/performance.yaml";
+
+        std::ofstream fout(file_name);
+        fout << out.c_str();
+        fout.close();
+        // --------------------------------------------------------------
+    }
 }

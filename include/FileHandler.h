@@ -17,7 +17,8 @@ public:
 
     void ReadSettingsFile(const std::string& settingsFilePath);
 
-    void SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices, std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string filePrefix, int trajecNumber, int horizonLength);
+    void SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices,
+                               std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string file_prefix);
 
     void SaveTaskToFile(std::string file_prefix, int file_num, const stateVectorList &state_vector, const vector<residual> &residuals);
     void LoadTaskFromFile(std::string task_prefix, int file_num, stateVectorList &state_vector, vector<residual> &residuals);

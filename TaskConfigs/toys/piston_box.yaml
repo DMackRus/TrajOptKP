@@ -3,7 +3,7 @@ modelName: "/piston_block"
 timeStep: 0.005
 openloop_horizon: 2000
 mpc_horizon: 100
-keypointMethod: "adaptive_jerk"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
 maxN: 20
@@ -15,7 +15,7 @@ robots:
     torqueControl: true
     torqueLimits: [1]
     startPos: [-0.5]
-    jointJerkThresholds: [20]
+    jointJerkThresholds: [1]
     magVelThresholds: [0.1]
 bodies:
   goal:
@@ -23,7 +23,7 @@ bodies:
     activeAngularDOF: [false, false, false]
     startLinearPos: [ 0, 0.9, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0, 10, 0 ]
+    linearJerkThreshold: [ 0, 1, 0 ]
     angularJerkThreshold: [ 0, 0, 0 ]
     linearMagVelThreshold: [ 0, 0.1, 0 ]
     angularMagVelThreshold: [ 0, 0, 0 ]

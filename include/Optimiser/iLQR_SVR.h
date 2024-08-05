@@ -98,17 +98,10 @@ public:
 
     double avg_surprise = 0.0;
     double avg_expected = 0.0;
-    double new_cost = 0.0;
-    double old_cost = 0.0;
     bool cost_reduced_last_iter = true;
 
 
 private:
-    // Lambda value which is added to the diagonal of the Q_uu matrix for regularisation purposes.
-    double lambda = 0.1;
-    double max_lambda = 10.0;
-    double min_lambda = 0.0001;
-    double lambda_factor = 10;
 
     // Last number of linesearches performed for print banner
     int last_iter_num_linesearches = 0;

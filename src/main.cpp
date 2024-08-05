@@ -227,6 +227,15 @@ int main(int argc, char **argv) {
         return myTestingObject.GenDataAsyncMPC(task_horizon, task_timeout);
     }
 
+    if(runMode == "Analyse_toy_contact"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_horizon = activeModelTranslator->openloop_horizon;
+
+        return myTestingObject.AnalyseToyContact(task_horizon);
+    }
+
     if(taskInitMode == "random"){
         activeModelTranslator->GenerateRandomGoalAndStartState();
     }
