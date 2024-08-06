@@ -825,10 +825,19 @@ int GenTestingData::AnalyseToyContact(int horizon){
     keypoint_method saved_method = optimiser->activeKeyPointMethod;
 
     for (int i = 0; i < 5; i++) {
+        std::vector<int> contact;
         double lambda_save = optimiser->lambda;
         // ----------------- Perform optimisation once with exact derivatives!! -------------------------
         double old_cost = optimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
-                                                       false, init_opt_controls);
+                                                       true, init_opt_controls);
+
+        // Get the contact change list
+        // loop over trajectory
+        for(int t = 0; t < horizon; t++){
+            bool contact_found = activeModelTranslator->MuJoCo_helper->CheckPairForCollisions("goal", "piston_rod",
+                                                                                              activeModelTranslator->MuJoCo_helper->saved_systems_state_list[t]);
+            contact.push_back(contact_found);
+        }
 
         // Do the optimisation with interpolated derivatives
         std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
@@ -885,6 +894,9 @@ int GenTestingData::AnalyseToyContact(int horizon){
         out << YAML::Key << "new_cost_approx";
         out << YAML::Value << new_cost_approximated;
 
+        out << YAML::Key << "contact";
+        out << YAML::Value << contact;
+
         out << YAML::EndMap;
 
         // Open a file for writing
@@ -895,4 +907,6 @@ int GenTestingData::AnalyseToyContact(int horizon){
         fout.close();
         // --------------------------------------------------------------
     }
+
+    return EXIT_SUCCESS;
 }

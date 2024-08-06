@@ -202,15 +202,9 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd> initial_controls){
     double cost = 0.0;
 
-//    std::cout << "initial controls[0] " << initial_controls[0].transpose() << "\n";
-
-//    if(d != MuJoCo_helper->main_data){
-//        MuJoCo_helper->copySystemState(MuJoCo_helper->main_data, d);
-//    }
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, d);
 
     X_old[0] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
-//    std::cout << "X[0] " << X_old[0].transpose() << "\n";
 
     if(MuJoCo_helper->CheckIfDataIndexExists(0)){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
@@ -220,6 +214,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
     }
 
     for(int i = 0; i < horizon_length; i++){
+
         // set controls
         activeModelTranslator->SetControlVector(initial_controls[i], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 

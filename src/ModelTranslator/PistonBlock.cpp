@@ -33,7 +33,7 @@ std::vector<MatrixXd> PistonBlock::CreateInitOptimisationControls(int horizonLen
     // Create controls where we move forward to contact the box
     for(int t = 0; t < horizonLength; t++){
         MatrixXd control(current_state_vector.num_ctrl, 1);
-        control(0) = 0.2;
+        control(0) = 0.1;
         init_controls.push_back(control);
     }
 

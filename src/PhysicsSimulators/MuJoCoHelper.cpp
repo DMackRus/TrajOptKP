@@ -639,6 +639,52 @@ bool MuJoCoHelper::CheckBodyForCollisions(const string& body_name, mjData *d) co
     return body_collision_found;
 }
 
+bool MuJoCoHelper::CheckPairForCollisions(const string& body_name_1, const string& body_name_2, mjData *d) const{
+
+        // TODO (DMackRus) - Check if this is necessary
+        mj_forward(model, d);
+
+        int num_contacts = d->ncon;
+        bool pair_collision_found = false;
+
+        int body_id_1 = mj_name2id(model, mjOBJ_BODY, body_name_1.c_str());
+        int body_id_2 = mj_name2id(model, mjOBJ_BODY, body_name_2.c_str());
+
+        for(int i = 0; i < num_contacts; i++){
+            auto contact = d->contact[i];
+
+            int body_contact_1 = model->body_rootid[model->geom_bodyid[contact.geom1]];
+            int body_contact_2 = model->body_rootid[model->geom_bodyid[contact.geom2]];
+
+            if((body_contact_1 == body_id_1 && body_contact_2 == body_id_2) || (body_contact_1 == body_id_2 && body_contact_2 == body_id_1)){
+                pair_collision_found = true;
+                break;
+            }
+        }
+
+        return pair_collision_found;
+}
+
+std::vector<int> MuJoCoHelper::GetContactList(mjData *d) const{
+    std::vector<int> contact_list;
+
+    // TODO(DMackRus) - Check if this is necessary
+    mj_forward(model, d);
+    int num_contacts = d->ncon;
+
+    for(int i = 0; i < num_contacts; i++){
+        auto contact = d->contact[i];
+
+        int body_contact_1 = model->body_rootid[model->geom_bodyid[contact.geom1]];
+        int body_contact_2 = model->body_rootid[model->geom_bodyid[contact.geom2]];
+
+        contact_list.push_back(body_contact_1);
+        contact_list.push_back(body_contact_2);
+    }
+
+    return contact_list;
+}
+
 // ------------------------------- System State Functions -----------------------------------------------
 bool MuJoCoHelper::AppendSystemStateToEnd(mjData *d){
 
