@@ -3,7 +3,7 @@ modelName: "/piston_block"
 timeStep: 0.005
 openloop_horizon: 2000
 mpc_horizon: 100
-keypointMethod: "adaptive_jerk"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
 maxN: 100

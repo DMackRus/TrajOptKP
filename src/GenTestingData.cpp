@@ -824,35 +824,50 @@ int GenTestingData::AnalyseToyContact(int horizon){
 
     keypoint_method saved_method = optimiser->activeKeyPointMethod;
 
-    for (int i = 0; i < 5; i++) {
-        std::vector<int> contact;
-        double lambda_save = optimiser->lambda;
-        // ----------------- Perform optimisation once with exact derivatives!! -------------------------
-        double old_cost = optimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+    double old_cost;
+    double new_cost_exact;
+    std::vector<double> new_cost_approximated;
+    std::vector<int> contact;
+    std::string task_name = activeModelTranslator->model_name;
+
+    double lambda_save = optimiser->lambda;
+
+    for (int i = 1; i < 100; i++) {
+
+
+        optimiser->lambda = lambda_save;
+
+        // Do the optimisation with interpolated derivatives
+        // ------------------ Manual optimisation iteration - detect the contact change and suggest key-points based on this ------------------------
+        old_cost = optimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
                                                        true, init_opt_controls);
 
         // Get the contact change list
-        // loop over trajectory
+        contact.clear();
         for(int t = 0; t < horizon; t++){
             bool contact_found = activeModelTranslator->MuJoCo_helper->CheckPairForCollisions("goal", "piston_rod",
                                                                                               activeModelTranslator->MuJoCo_helper->saved_systems_state_list[t]);
             contact.push_back(contact_found);
         }
 
-        // Do the optimisation with interpolated derivatives
+        // Set the optimiser to smooth contact
+        optimiser->smoothing_contact = true;
+        optimiser->smoothing = i;
+
+        // -----------------------------
         std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
                 activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
                 horizon);
 
 
         // Saving the data
-        std::string task_name = activeModelTranslator->model_name;
-        std::string file_prefix = task_name + "/iter_" + std::to_string(i) + "/interpolated_derivs";
+
+        std::string file_prefix = task_name + "/iter_0" + "/smoothing_contact_" + std::to_string(i);
         yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
                                           optimiser->X_old, optimiser->U_old,
                                           file_prefix);
 
-        double new_cost_approximated = optimiser->new_cost;
+        new_cost_approximated.push_back(optimiser->new_cost);
 
         // Set keypoint method to set interval 1 for exact derivatives
         optimiser->activeKeyPointMethod.name = "set_interval";
@@ -860,53 +875,58 @@ int GenTestingData::AnalyseToyContact(int horizon){
 
         optimiser->SetCurrentKeypointMethod(optimiser->activeKeyPointMethod);
 
-        // Do the optimisation with interpolated derivatives!
+        // Reset the optimiser back to exact derivatives
+        optimiser->smoothing_contact = false;
+        optimiser->smoothing = 0;
+
+        // Do the optimisation with exact derivatives!
         optimiser->lambda = lambda_save;
         optimised_controls = optimiser->Optimise(
                 activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
                 horizon);
 
         // Saving the data
-        file_prefix = task_name + "/iter_" + std::to_string(i) + "/exact_derivs";
+        file_prefix = task_name + "/iter_0" + "/exact_derivs";
         yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
                                           optimiser->X_old, optimiser->U_old,
                                           file_prefix);
 
-        double new_cost_exact = optimiser->new_cost;
+        new_cost_exact = optimiser->new_cost;
 
         // Reset keypoint method
         optimiser->activeKeyPointMethod = saved_method;
         optimiser->SetCurrentKeypointMethod(optimiser->activeKeyPointMethod);
 
         // Update the trajectory
-        init_opt_controls = optimised_controls;
-
-        // ------------------- Save YAML file -----------------------------
-        YAML::Emitter out;
-
-        out << YAML::BeginMap;
-        out << YAML::Key << "old_cost";
-        out << YAML::Value << old_cost;
-
-        out << YAML::Key << "new_cost_exact";
-        out << YAML::Value << new_cost_exact;
-
-        out << YAML::Key << "new_cost_approx";
-        out << YAML::Value << new_cost_approximated;
-
-        out << YAML::Key << "contact";
-        out << YAML::Value << contact;
-
-        out << YAML::EndMap;
-
-        // Open a file for writing
-        std::string file_name = project_parent_path + "/savedTrajecInfo" + task_name + "/iter_" + std::to_string(i) + "/performance.yaml";
-
-        std::ofstream fout(file_name);
-        fout << out.c_str();
-        fout.close();
-        // --------------------------------------------------------------
+//        init_opt_controls = optimised_controls;
     }
+
+    // Save YAML file
+    // old cost, new cost exact, new cost_1, new_cost_2 .....
+    // contact list
+    YAML::Emitter out;
+
+    out << YAML::BeginMap;
+    out << YAML::Key << "old_cost";
+    out << YAML::Value << old_cost;
+
+    out << YAML::Key << "new_cost_exact";
+    out << YAML::Value << new_cost_exact;
+
+    out << YAML::Key << "new_cost_approx";
+    out << YAML::Value << new_cost_approximated;
+
+    out << YAML::Key << "contact";
+    out << YAML::Value << contact;
+
+    out << YAML::EndMap;
+
+    // Open a file for writing
+    std::string file_name = project_parent_path + "/savedTrajecInfo" + task_name + "/iter_0" + "/performance.yaml";
+
+    std::ofstream fout(file_name);
+    fout << out.c_str();
+    fout.close();
 
     return EXIT_SUCCESS;
 }

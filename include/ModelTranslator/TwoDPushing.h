@@ -16,6 +16,8 @@ public:
 
     bool TaskComplete(mjData *d, double &dist) override;
 
+    void SetGoalVisuals(mjData *d) override;
+
 private:
     int clutterLevel = noClutter;
     double randomGoalX = 0.0;

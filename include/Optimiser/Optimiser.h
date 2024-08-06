@@ -144,6 +144,10 @@ public:
      */
     void GenerateDerivatives();
 
+    void ComputeKeypoints();
+    void ComputeDynamicsDerivatives();
+    void ComputeCostDerivatives();
+
     /**
      * This function sets the current FIR filter coefficients.
      *
@@ -242,6 +246,11 @@ public:
     double min_lambda = 0.0001;
     double lambda_factor = 10;
 
+    // Temporary variables / functions for testing smoothing contact against optimisation performance
+    int smoothing = 0;
+    bool smoothing_contact = false;
+    void SmoothDerivativesAtContact(int smoothing);
+
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
@@ -262,11 +271,6 @@ protected:
      * degree of freedom. The elements in the list are the time indices to compute the derivatives at.
      */
     void ComputeDynamicsDerivativesAtKeypoints(std::vector<std::vector<int>> keyPoints);
-
-    /**
-     * Computes the cost derivatives over the entire trajectory.
-     */
-    void ComputeCostDerivatives();
 
     /**
      * Computes the residual derivatives over the entire trajectory.

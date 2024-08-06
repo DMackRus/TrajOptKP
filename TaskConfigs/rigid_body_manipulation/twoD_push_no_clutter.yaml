@@ -40,7 +40,7 @@ residuals:
   goal_vel:
     target: [0, 0]
     weight: 0.2
-    weight_terminal: 0.2
+    weight_terminal: 10
   joint_5_velocity:
     target: [ 0 ]
     weight: 0.1

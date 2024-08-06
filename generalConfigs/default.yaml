@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "piston_block"
+task: "pushing_low_clutter"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -27,7 +27,7 @@ task: "piston_block"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Analyse_toy_contact"
+runMode: "Optimise_once"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -43,8 +43,8 @@ runMode: "Analyse_toy_contact"
 # Special modes - possibly temporary
 # "Analyse_toy_contact"          - Analyse the derivatives in toy example with contact.
 
-taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 6                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+taskInitMode: "fromYAML"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+csvRow: 0                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)

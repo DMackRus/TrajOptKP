@@ -203,6 +203,17 @@ void TwoDPushing::ReturnRandomGoalState(){
     }
 }
 
+void TwoDPushing::SetGoalVisuals(mjData *d){
+    pose_6 goal_pose;
+    MuJoCo_helper->GetBodyPoseAngle("display_goal", goal_pose, d);
+
+    // Set the goal object position
+    goal_pose.position(0) = residual_list[0].target[0];
+    goal_pose.position(1) = residual_list[0].target[1];
+    goal_pose.position(2) = 0.032;
+    MuJoCo_helper->SetBodyPoseAngle("display_goal", goal_pose, d);
+}
+
 std::vector<MatrixXd> TwoDPushing::CreateInitSetupControls(int horizonLength){
     std::vector<MatrixXd> initSetupControls;
 
@@ -240,15 +251,6 @@ std::vector<MatrixXd> TwoDPushing::CreateInitSetupControls(int horizonLength){
 
 std::vector<MatrixXd> TwoDPushing::CreateInitOptimisationControls(int horizonLength){
     std::vector<MatrixXd> initControls;
-
-    // Set the goal position so that we can see where we are pushing to
-    std::string goalMarkerName = "display_goal";
-    pose_6 displayBodyPose;
-    MuJoCo_helper->GetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
-    displayBodyPose.position[0] = residual_list[0].target[0];
-    displayBodyPose.position[1] = residual_list[0].target[1];
-    displayBodyPose.position[2] = 0.0f;
-    MuJoCo_helper->SetBodyPoseAngle(goalMarkerName, displayBodyPose, MuJoCo_helper->master_reset_data);
 
     // Pushing create init controls broken into three main steps
     // Step 1 - create main waypoints we want to end-effector to pass through
