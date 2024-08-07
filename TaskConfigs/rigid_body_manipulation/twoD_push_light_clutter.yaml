@@ -66,7 +66,7 @@ residuals:
   obstacle_1_pos:
     target: [ 0.6, 0 ]
     weight: 0
-    weight_terminal: 100  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
 #  obstacle_1_vel:
 #    target: [ 0, 0 ]
 #    weight: 0.2
@@ -74,7 +74,7 @@ residuals:
   obstacle_2_pos:
     target: [ 0.6, 0.1 ]
     weight: 0
-    weight_terminal: 100  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
 #  obstacle_2_vel:
 #    target: [ 0, 0 ]
 #    weight: 0.2
@@ -82,7 +82,7 @@ residuals:
   obstacle_3_pos:
     target: [ 0.7, 0 ]
     weight: 0
-    weight_terminal: 100  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
 #  obstacle_3_vel:
 #    target: [ 0, 0 ]
 #    weight: 0.2

@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_low_clutter"
+task: "pushing_moderate_clutter"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -43,8 +43,8 @@ runMode: "Optimise_once"
 # Special modes - possibly temporary
 # "Analyse_toy_contact"          - Analyse the derivatives in toy example with contact.
 
-taskInitMode: "fromYAML"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 0                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+csvRow: 1                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)

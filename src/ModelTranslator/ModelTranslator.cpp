@@ -85,11 +85,11 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     // Clear optimiser dof and num ctrl so matrices are properly sized
     ResetSVR();
 
-    std::cout << "full state vector names: ";
-    for(const auto & state_vector_name : full_state_vector.state_names){
-        std::cout << state_vector_name << " ";
-    }
-    std::cout << "\n";
+//    std::cout << "full state vector names: ";
+//    for(const auto & state_vector_name : full_state_vector.state_names){
+//        std::cout << state_vector_name << " ";
+//    }
+//    std::cout << "\n";
 }
 
 void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_vector_names, bool add_extra_states){

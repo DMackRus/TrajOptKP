@@ -57,7 +57,8 @@ void KeypointGenerator::SetKeypointMethod(keypoint_method method){
 }
 
 void KeypointGenerator::PrintKeypointMethod(){
-    std::cout << "Method: " << current_keypoint_method.name << std::endl;
+    std::cout << "------------------------------------------------------------------------------------ \n";
+    std::cout << "Keypoint Method: " << current_keypoint_method.name << std::endl;
     std::cout << "min_N: " << current_keypoint_method.min_N << " max_N: " << current_keypoint_method.max_N << std::endl;
     std::cout << "jerk thresholds: ";
     for(int i = 0; i < dof; i++){
@@ -69,6 +70,7 @@ void KeypointGenerator::PrintKeypointMethod(){
         std::cout << " " << current_keypoint_method.velocity_change_thresholds[i];
     }
     std::cout << "\n ";
+    std::cout << "------------------------------------------------------------------------------------ \n";
 }
 
 void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
@@ -124,13 +126,12 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 
     UpdateLastPercentageDerivatives(keypoints);
 
-
     // Print the dof percentages
-    std::cout << "dof percent derivs: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << last_percentages[i] << " ";
-    }
-    std::cout << "\n";
+//    std::cout << "dof percent derivs: ";
+//    for(int i = 0; i < dof; i++){
+//        std::cout << last_percentages[i] << " ";
+//    }
+//    std::cout << "\n";
 }
 
 void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,

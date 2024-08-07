@@ -3,7 +3,7 @@ modelName: "/push_mcl"
 timeStep: 0.004
 openloop_horizon: 2000
 mpc_horizon: 50
-keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+keypointMethod: "adaptive_jerk"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
 maxN: 50
@@ -15,119 +15,126 @@ robots:
     torqueControl: true
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
-    goalPos: [0, 0, 0, 0, 0, 0, 0]
     jointJerkThresholds: [10, 10, 10, 10, 10, 10, 10]
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   goal:
     activeLinearDOF: [true, true, true]
-    activeAngularDOF: [true, true, true]
+    activeAngularDOF: [false, false, false]
     startLinearPos: [0.4, 0.2, 0.0]
     startAngularPos: [0, 0, 0]
-    goalLinearPos: [0.6, 0.3, 0.0]
-    goalAngularPos: [0, 0, 0]
-    #    linearJerkThreshold: [ 0.01, 0.01, 0.01 ]
-    linearJerkThreshold: [ 1e-15, 1e-15, 1e-15 ]
+    linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 0.01, 0.01, 0.01 ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_1:
     activeLinearDOF: [true, true, true]
-    activeAngularDOF: [true, true, true]
+    activeAngularDOF: [false, false, false]
     startLinearPos: [0.65, 0.45, 0.0]
     startAngularPos: [0, 0, 0]
-    goalLinearPos: [0.65, 0.45, 0.0]
-    goalAngularPos: [0, 0, 0]
-    linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_2:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
+    activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.68, 0.3, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.68, 0.3, 0.0 ]
-    goalAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_3:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
+    activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.72, 0.3, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.72, 0.3, 0.0 ]
-    goalAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_4:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
+    activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.5, 0.2, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.5, 0.2, 0.0 ]
-    goalAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_5:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
+    activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.55, 0.45, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.55, 0.45, 0.0 ]
-    goalAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.02, 0.02, 0.02  ]
+    linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02  ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_6:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
+    activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.6, 0.15, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.6, 0.15, 0.0 ]
-    goalAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.02, 0.02, 0.02 ]
+    linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02 ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
   obstacle_7:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
+    activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.75, 0.5, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.5, 0.5, 0.0 ]
     goalAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0.02, 0.02, 0.02 ]
+    linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 0.02, 0.02, 0.02 ]
     linearMagVelThreshold: [ 0.1, 0.1, 0.1 ]
     angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
 
 residuals:
   goal_pos:
-    target: [0.7, -0.1]
-    weight: 8
-    weight_terminal: 0  # 1000 when long horizon
+    target: [0.7, 0.0]
+    weight: 0
+    weight_terminal: 1000  # 1000 when long horizon
   goal_vel:
     target: [0, 0]
     weight: 0.2
-    weight_terminal: 0.2
-  obstacle_pos:
-    target: [0.65, 0.45, 0.68, 0.3, 0.72, 0.3, 0.5, 0.2, 0.55, 0.45, 0.6, 0.15, 0.75, 0.5]
-    weight: 2
-    weight_terminal: 0
-    resid_dimension: 7
-  joint_vel:
-    target: [0]
+    weight_terminal: 10
+  obstacle_1_pos:
+    target: [ 0.65, 0.45 ]
+    weight: 0
+    weight_terminal: 10  # 1000 when long horizon
+  obstacle_2_pos:
+    target: [ 0.68, 0.3 ]
+    weight: 0
+    weight_terminal: 10  # 1000 when long horizon
+  obstacle_3_pos:
+    target: [ 0.72, 0.3 ]
+    weight: 0
+    weight_terminal: 10  # 1000 when long horizon
+  obstacle_4_pos:
+    target: [ 0.5, 0.2 ]
+    weight: 0
+    weight_terminal: 10  # 1000 when long horizon
+  obstacle_5_pos:
+    target: [ 0.55, 0.45 ]
+    weight: 0
+    weight_terminal: 10  # 1000 when long horizon
+  obstacle_6_pos:
+    target: [ 0.6, 0.15 ]
+    weight: 0
+    weight_terminal: 10  # 1000 when long horizon
+  obstacle_7_pos:
+    target: [ 0.75, 0.5 ]
+    weight: 0
+    weight_terminal: 10  # 1000 when long horizon
+  joint_5_velocity:
+    target: [ 0 ]
     weight: 0.1
     weight_terminal: 0.1
   reach:
     target: [0]
-    weight: 0.1
-    weight_terminal: 0.1
+    weight: 0.01
+    weight_terminal: 0.01

@@ -195,12 +195,20 @@ void TwoDPushing::ReturnRandomGoalState(){
     residual_list[0].target[0] = randomGoalX;
     residual_list[0].target[1] = randomGoalY;
 
-    // Distractor objects
-    for(int i = 1; i < full_state_vector.rigid_bodies.size(); i++){
-        residual_list[i].target[0] = full_state_vector.rigid_bodies[i].start_linear_pos[0];
-        residual_list[i].target[1] = full_state_vector.rigid_bodies[i].start_linear_pos[1];
+    residual_list[1].target[0] = 0.0;
+    residual_list[1].target[1] = 0.0;
 
+    // Distractor objects positions
+    for(int i = 1; i < full_state_vector.rigid_bodies.size(); i++){
+        residual_list[1 + i].target[0] = full_state_vector.rigid_bodies[i].start_linear_pos[0];
+        residual_list[1 + i].target[1] = full_state_vector.rigid_bodies[i].start_linear_pos[1];
     }
+
+    // Joint 5 velocity
+    residual_list[1 + full_state_vector.rigid_bodies.size()].target[0] = 0.0;
+
+    // EE position towards goal object
+    residual_list[2 + full_state_vector.rigid_bodies.size()].target[0] = 0.0;
 }
 
 void TwoDPushing::SetGoalVisuals(mjData *d){

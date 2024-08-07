@@ -194,7 +194,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     // Resize Keypoint generator class
     keypoint_generator->Resize(dof, num_ctrl, horizon_length);
 
-    std::cout << "time to allocate, " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
+    std::cout << "iLQR time to allocate memory: " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
 
 //    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
 }
