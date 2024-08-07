@@ -127,11 +127,11 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
     UpdateLastPercentageDerivatives(keypoints);
 
     // Print the dof percentages
-//    std::cout << "dof percent derivs: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << last_percentages[i] << " ";
-//    }
-//    std::cout << "\n";
+    std::cout << "dof percent derivs: ";
+    for(int i = 0; i < dof; i++){
+        std::cout << last_percentages[i] << " ";
+    }
+    std::cout << "\n";
 }
 
 void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,
@@ -585,20 +585,23 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
     // Gets thread id so we can make sure we use different data structure for F.D computations
     int tid = omp_get_thread_num();
 
-//    if(!start_index_computed){
-//        differentiator->DynamicsDerivatives(A[indices.start_index], B[indices.start_index], cols, blank1, blank2, blank3, blank4, false, indices.start_index, false, tid, true, 1e-6);
-//        computed_keypoints[dof_index].push_back(indices.start_index);
-//    }
-//
-//    if(!mid_index_computed){
-//        differentiator->DynamicsDerivatives(A[mid_index], B[mid_index], cols, blank1, blank2, blank3, blank4, false, mid_index, false, tid, true, 1e-6);
-//        computed_keypoints[dof_index].push_back(mid_index);
-//    }
-//
-//    if(!end_index_computed){
-//        differentiator->DynamicsDerivatives(A[indices.end_index], B[indices.end_index], cols, blank1, blank2, blank3, blank4, false, indices.end_index, false, tid, true, 1e-6);
-//        computed_keypoints[dof_index].push_back(indices.end_index);
-//    }
+    if(!start_index_computed){
+        differentiator->DynamicsDerivatives(A[indices.start_index], B[indices.start_index], cols,
+                                            indices.start_index, tid, true, 1e-6);
+        computed_keypoints[dof_index].push_back(indices.start_index);
+    }
+
+    if(!mid_index_computed){
+        differentiator->DynamicsDerivatives(A[mid_index], B[mid_index], cols,
+                                            mid_index, tid, true, 1e-6);
+        computed_keypoints[dof_index].push_back(mid_index);
+    }
+
+    if(!end_index_computed){
+        differentiator->DynamicsDerivatives(A[indices.end_index], B[indices.end_index], cols,
+                                            indices.end_index, tid, true, 1e-6);
+        computed_keypoints[dof_index].push_back(indices.end_index);
+    }
 
     mid_columns_approximated[0] = (A[indices.start_index].block(0, dof_index, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index, num_dofs * 2, 1)) / 2;
     mid_columns_approximated[1] = (A[indices.start_index].block(0, dof_index + num_dofs, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index + num_dofs, num_dofs * 2, 1)) / 2;
@@ -616,7 +619,6 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
             counter++;
             error_sum += square_difference;
         }
-//        cout << "error_sum: " << error_sum << "\n";
     }
 
     double average_error;
@@ -632,9 +634,6 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
 //    }
 
 //    cout << "average error: " << average_error << "\n";
-//    cout << "num valid: " << counter << "\n";
-//    cout << "num too small: " << counterTooSmall << "\n";
-//    cout << "num too large: " << counterTooLarge << "\n";
 
     if(average_error < current_keypoint_method.iterative_error_threshold){
         approximation_good = true;

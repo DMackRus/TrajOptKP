@@ -3,7 +3,7 @@ modelName: "/push_mcl"
 timeStep: 0.004
 openloop_horizon: 2000
 mpc_horizon: 50
-keypointMethod: "adaptive_jerk"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+keypointMethod: "iterative_error"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
 maxN: 50
