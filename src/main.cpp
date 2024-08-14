@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        return myTestingObject.GenDataOpenloopOptimisation(task_horizon);
+        return myTestingObject.GenDataOpenLoopMultipleMethods(task_horizon);
     }
     if(runMode == "Generate_asynchronus_mpc_data"){
         GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,

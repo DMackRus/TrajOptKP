@@ -1707,8 +1707,30 @@ int ModelTranslator::StateIndexToQposIndex(int state_index, const struct stateVe
 
 void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 
+    // ----------- Reset other variables of the simulation to zero ----------------
     // Reset time of simulation
     d->time = 0.0;
+
+    for(int i = 0; i < MuJoCo_helper->model->nq; i++){
+        d->qpos[i] = 0.0;
+    }
+
+    for(int i = 0; i < MuJoCo_helper->model->nv; i++){
+        d->qvel[i] = 0.0;
+        d->qacc[i] = 0.0;
+        d->qacc_warmstart[i] = 0.0;
+        d->qfrc_applied[i] = 0.0;
+    }
+
+    // Reset the control vector to zero
+    for(int i = 0; i < MuJoCo_helper->model->nu; i++){
+        d->ctrl[i] = 0.0;
+    }
+
+    for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
+        d->xfrc_applied[i] = 0.0;
+    }
+    // -------------------------------------------------------------------------
 
     // Initialise robot positions to start configuration
     for(auto & robot : full_state_vector.robots){
@@ -1752,45 +1774,8 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 //    }
 
 
-    // Call this function which can be overwriten by the task implementation if goal visuals are desired
+    // Call this function which can be overwritten by the task implementation if goal visuals are desired
     SetGoalVisuals(d);
-
-    // If we have a goal body in the model, lets set it to the goal pose
-    // TODO - add this in task config yaml
-    // TODO - also this assumes first body is the goal body.
-//    int body_id;
-//    if(MuJoCo_helper->BodyExists("display_goal",  body_id)){
-//        pose_7 goal_body;
-//        if(!full_state_vector.rigid_bodies.empty()){
-//            goal_body.position[0] = full_state_vector.rigid_bodies[0].goal_linear_pos[0];
-//            goal_body.position[1] = full_state_vector.rigid_bodies[0].goal_linear_pos[1];
-//            goal_body.position[2] = full_state_vector.rigid_bodies[0].goal_linear_pos[2];
-//
-//            m_point desired_eul = {full_state_vector.rigid_bodies[0].goal_angular_pos[0],
-//                                   full_state_vector.rigid_bodies[0].goal_angular_pos[1],
-//                                   full_state_vector.rigid_bodies[0].goal_angular_pos[2]};
-//
-//            goal_body.quat = eul2Quat(desired_eul);
-//
-//        }
-//        else{
-//            goal_body.position[0] = full_state_vector.soft_bodies[0].goal_linear_pos[0];
-//            goal_body.position[1] = full_state_vector.soft_bodies[0].goal_linear_pos[1];
-//            goal_body.position[2] = full_state_vector.soft_bodies[0].goal_linear_pos[2];
-//
-//            m_point desired_eul = {full_state_vector.soft_bodies[0].goal_angular_pos[0],
-//                                   full_state_vector.soft_bodies[0].goal_angular_pos[1],
-//                                   full_state_vector.soft_bodies[0].goal_angular_pos[2]};
-//
-//            goal_body.quat = eul2Quat(desired_eul);
-//        }
-//
-//
-//        std::cout << "goal body pos: " << goal_body.position[0] << " " << goal_body.position[1] << " " << goal_body.position[2] << "\n";
-////        std::cout << "goal body pos: " << full_state_vector.soft_bodies[0].goal_linear_pos[0]
-////        << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << " " << full_state_vector.soft_bodies[0].goal_linear_pos[0] << "\n";
-//        MuJoCo_helper->SetBodyPoseQuat("display_goal", goal_body, d);
-//    }
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {

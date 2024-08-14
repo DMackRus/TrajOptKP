@@ -40,20 +40,12 @@ void Optimiser::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
 }
 
-void Optimiser::ReturnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations){
-
-    _optTime = opt_time_ms;
-    _costReduction = cost_reduction;
-    _avgPercentageDerivs = avg_percent_derivs;
-    _avgTimeGettingDerivs = avg_time_get_derivs_ms;
-    _numIterations = num_iterations;
-}
-
 keypoint_method Optimiser::ReturnCurrentKeypointMethod(){
     return keypoint_generator->ReturnCurrentKeypointMethod();
 }
 
 void Optimiser::SetCurrentKeypointMethod(keypoint_method _keypoint_method){
+    activeKeyPointMethod = _keypoint_method;
     keypoint_generator->SetKeypointMethod(_keypoint_method);
 }
 

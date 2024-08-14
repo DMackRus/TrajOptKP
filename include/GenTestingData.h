@@ -36,6 +36,8 @@ public:
      */
     int GenDataAsyncMPC(int task_horizon, int task_timeout);
 
+    int GenDataOpenLoopMultipleMethods(int task_horizon);
+
     int GenDataOpenloopOptimisation(int task_horizon);
 
     /**

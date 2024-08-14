@@ -83,19 +83,14 @@ public:
         return "general";
     }
 
-    /**
-     * Returns optimisation data about the last optimisation performed from function "Optimise". The data it returns
-     * is timing data about the optimisation, the cost reduction, the average percentage of derivatives computed, and
-     * the number of iterations it took to converge.
-     *
-     * @param _optTime - The time it took to optimise the trajectory. Passed by reference.
-     * @param _costReduction - The cost reduction from the initial cost to the final cost. Passed by reference.
-     * @param _avgPercentageDerivs - The average percentage of derivatives computed over the entire trajectory. Passed by reference.
-     * @param _avgTimeGettingDerivs - The average time it took to compute the derivatives. Passed by reference.
-     * @param _numIterations - The number of iterations it took to converge. Passed by reference.
-     *
-     */
-    void ReturnOptimisationData(double &_optTime, double &_costReduction, double &_avgPercentageDerivs, double &_avgTimeGettingDerivs, int &_numIterations);
+    void Reset(){
+        cost_history.clear();
+        num_dofs.clear();
+        time_get_derivs_ms.clear();
+        time_backwards_pass_ms.clear();
+        time_forwardsPass_ms.clear();
+        percentage_derivs_per_iteration.clear();
+    }
 
     /**
      * Resize variables that are dependant on the size of the state vector.

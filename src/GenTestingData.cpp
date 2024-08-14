@@ -16,6 +16,52 @@ GenTestingData::GenTestingData(std::shared_ptr<Optimiser> optimiser_,
 
 }
 
+int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
+    int tests_fine = EXIT_SUCCESS;
+
+    // ----------------- Set interval 1 -------------------
+    keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
+    keypoint_method.name = "set_interval";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 1;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    int this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+
+    // ----------------- Set interval 5 ---------------------
+    keypoint_method.name = "set_interval";
+    keypoint_method.min_N = 5;
+    keypoint_method.max_N = 1;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+
+    // ----------------- Set interval 1000 ---------------------
+    keypoint_method.name = "set_interval";
+    keypoint_method.min_N = 1000;
+    keypoint_method.max_N = 1;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+
+    return tests_fine;
+}
+
 int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     std::cout << "begining testing openloop optimisation for " << activeModelTranslator->model_name << std::endl;
     std::cout << "optimisation horizon is: " << task_horizon << std::endl;
@@ -44,8 +90,11 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     auto startTimer = std::chrono::high_resolution_clock::now();
     optimiser->verbose_output = true;
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 1; i++) {
         std::cout << "trial: " << i << "\n";
+
+        // Reset internal optimisation data and clear key-points cache
+        optimiser->Reset();
         optimiser->keypoint_generator->ResetCache();
         // Load start and desired state from csv file
 
@@ -62,7 +111,15 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
                                                               activeModelTranslator->MuJoCo_helper->master_reset_data);
 
+//        MatrixXd test_state_start = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->master_reset_data,
+//                                                                             activeModelTranslator->full_state_vector);
+//        std::cout << "state vector after initialised: " << test_state_start.transpose() << "\n";
+
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+//        test_state_start = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->master_reset_data,
+//                                                                    activeModelTranslator->full_state_vector);
+//        std::cout << "state vector after step: " << test_state_start.transpose() << "\n";
+
         if (!activeModelTranslator->MuJoCo_helper->CheckIfDataIndexExists(0)) {
             activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(
                     activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -86,6 +143,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
                 activeModelTranslator->MuJoCo_helper->master_reset_data);
 
         // Do the optimisation!
+        optimiser->lambda = 0.01;
         std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
                 activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 10, 3,
                 task_horizon);
@@ -698,6 +756,11 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
                           std::to_string(keypoint_method.min_N) + "_" +
                           std::to_string(keypoint_method.max_N);
         }
+        else if(keypoint_method.name == "iterative_error"){
+            keypoint_method_name = "IE_" +
+                          std::to_string(keypoint_method.min_N) + "_" +
+                          std::to_string(keypoint_method.max_N);
+        }
     }
 
     YAML::Emitter out;
@@ -738,6 +801,11 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
         }
         out << YAML::Key << "jerk_thresholds";
         out << YAML::Value << thresholds;
+    }
+
+    if(keypoint_method.name == "iterative_error"){
+        out << YAML::Key << "error_threshold";
+        out << YAML::Value << keypoint_method.iterative_error_threshold;
     }
 
     // -------------------------- State vector reduction ----------------------------

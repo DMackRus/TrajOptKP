@@ -28,7 +28,6 @@ struct mujoco_data_min{
     std::vector<double> qfrc_applied;
     std::vector<double> xfrc_applied;
     std::vector<double> ctrl;
-
 };
 
 class MuJoCoHelper {
@@ -91,6 +90,9 @@ public:
     bool ClearSystemStateList();
 
     static void CpMjData(const mjModel* m, mjData* d_dest, mjData* d_src);
+
+    void SaveDataMin(mjData* d, mujoco_data_min &data_min);
+    void LoadDataMin(mjData* d, const mujoco_data_min &data_min);
 
     // ------------------------------- Visualisation -----------------------------------------
     void InitVisualisation();

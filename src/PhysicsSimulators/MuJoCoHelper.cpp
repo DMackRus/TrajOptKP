@@ -934,8 +934,29 @@ double* MuJoCoHelper::SensorState(mjData *d, const std::string& sensor_name){
     }
 }
 
+void MuJoCoHelper::SaveDataMin(mjData* d, mujoco_data_min &data_min){
+    data_min.time = d->time;
+    data_min.q_pos.assign(d->qpos, d->qpos + model->nq);
+    data_min.q_vel.assign(d->qvel, d->qvel + model->nv);
+    data_min.q_acc.assign(d->qacc, d->qacc + model->nv);
+    data_min.q_acc_warmstart.assign(d->qacc_warmstart, d->qacc_warmstart + model->nv);
+    data_min.qfrc_applied.assign(d->qfrc_applied, d->qfrc_applied + model->nv);
+    data_min.xfrc_applied.assign(d->xfrc_applied, d->xfrc_applied + 6*model->nbody);
+    data_min.ctrl.assign(d->ctrl, d->ctrl + model->nu);
+}
+
+void MuJoCoHelper::LoadDataMin(mjData* d, const mujoco_data_min &data_min){
+    d->time = data_min.time;
+    std::copy(data_min.q_pos.begin(), data_min.q_pos.end(), d->qpos);
+    std::copy(data_min.q_vel.begin(), data_min.q_vel.end(), d->qvel);
+    std::copy(data_min.q_acc.begin(), data_min.q_acc.end(), d->qacc);
+    std::copy(data_min.q_acc_warmstart.begin(), data_min.q_acc_warmstart.end(), d->qacc_warmstart);
+    std::copy(data_min.qfrc_applied.begin(), data_min.qfrc_applied.end(), d->qfrc_applied);
+    std::copy(data_min.xfrc_applied.begin(), data_min.xfrc_applied.end(), d->xfrc_applied);
+    std::copy(data_min.ctrl.begin(), data_min.ctrl.end(), d->ctrl);
+}
+
 void MuJoCoHelper::InitialisePlugins(){
-    std::cout << "initialise plugins \n";
     int nplugin = mjp_pluginCount();
     if (nplugin) {
         std::printf("Built-in plugins:\n");
