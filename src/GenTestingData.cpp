@@ -90,7 +90,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     auto startTimer = std::chrono::high_resolution_clock::now();
     optimiser->verbose_output = true;
 
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < 100; i++) {
         std::cout << "trial: " << i << "\n";
 
         // Reset internal optimisation data and clear key-points cache
