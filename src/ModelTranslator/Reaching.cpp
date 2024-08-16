@@ -29,16 +29,22 @@ void pandaReaching::Residuals(mjData *d, MatrixXd &residuals){
     int resid_index = 0;
 
     // Compute kinematics chain to compute site poses
-    mj_kinematics(MuJoCo_helper->model, d);
+//    mj_kinematics(MuJoCo_helper->model, d);
+//
+//    pose_7 EE_pose;
+//    MuJoCo_helper->GetBodyPoseQuatViaXpos("franka_gripper", EE_pose, d);
+//    double diff_x = EE_pose.position(0) - residual_list[0].target[0];
+//    double diff_y = EE_pose.position(1) - residual_list[0].target[1];
+//    double diff_z = EE_pose.position(2) - residual_list[0].target[2];
+//    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+//                                       + pow(diff_y, 2)
+//                                       + pow(diff_z, 2));
 
-    pose_7 EE_pose;
-    MuJoCo_helper->GetBodyPoseQuatViaXpos("franka_gripper", EE_pose, d);
-    double diff_x = EE_pose.position(0) - residual_list[0].target[0];
-    double diff_y = EE_pose.position(1) - residual_list[0].target[1];
-    double diff_z = EE_pose.position(2) - residual_list[0].target[2];
-    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
-                                       + pow(diff_y, 2)
-                                       + pow(diff_z, 2));
+    std::vector<double> joint_positions;
+    MuJoCo_helper->GetRobotJointsPositions("panda", joint_positions, d);
+    for(int i = 0; i < joint_positions.size(); i++){
+        residuals(resid_index++, 0) = joint_positions[i] - residual_list[0].target[i];
+    }
 
     std::vector<double> joint_velocities;
     MuJoCo_helper->GetRobotJointsVelocities("panda", joint_velocities, d);
@@ -54,10 +60,26 @@ void pandaReaching::Residuals(mjData *d, MatrixXd &residuals){
 }
 
 void pandaReaching::SetGoalVisuals(mjData *d){
+
+    // Set the joint configurations from the target list
+    std::vector<double> joint_positions;
+    for(int i = 0; i < 7; i++){
+        joint_positions.push_back(residual_list[0].target[i]);
+    }
+    MuJoCo_helper->SetRobotJointPositions("panda", joint_positions, d);
+
+    // Call mj_kinematics
+    mj_kinematics(MuJoCo_helper->model, d);
+
+    // Compute end-effector positions
+    pose_6 EE_pose;
+    MuJoCo_helper->GetBodyPoseAngleViaXpos("franka_gripper", EE_pose, d);
+
+    // Set EE position for the goal sphere
     pose_6 EE_target_pose;
-    EE_target_pose.position(0) = residual_list[0].target[0];
-    EE_target_pose.position(1) = residual_list[0].target[1];
-    EE_target_pose.position(2) = residual_list[0].target[2];
+    EE_target_pose.position(0) = EE_pose.position(0);
+    EE_target_pose.position(1) = EE_pose.position(1);
+    EE_target_pose.position(2) = EE_pose.position(2);
 
     MuJoCo_helper->SetBodyPoseAngle("target", EE_target_pose, d);
 }
@@ -225,13 +247,23 @@ void pandaReaching::ReturnRandomGoalState(){
     }
 
     // Get the EE position!
-    pose_6 EE_pose;
-    MuJoCo_helper->GetBodyPoseAngleViaXpos("franka_gripper", EE_pose, MuJoCo_helper->main_data);
+//    pose_6 EE_pose;
+//    MuJoCo_helper->GetBodyPoseAngleViaXpos("franka_gripper", EE_pose, MuJoCo_helper->main_data);
+//
+//    // Sample a 3D point in the workspace?
+//    residual_list[0].target[0] = EE_pose.position(0);
+//    residual_list[0].target[1] = EE_pose.position(1);
+//    residual_list[0].target[2] = EE_pose.position(2);
 
-    // Sample a 3D point in the workspace?
-    residual_list[0].target[0] = EE_pose.position(0);
-    residual_list[0].target[1] = EE_pose.position(1);
-    residual_list[0].target[2] = EE_pose.position(2);
+    // Joint positions
+    for(int i = 0; i < 7; i++){
+        residual_list[0].target[i] = joints_positions[i];
+    }
+
+    // Joint velocities
+    for(int i = 0; i < 7; i++){
+        residual_list[1].target[i] = 0.0;
+    }
 
 }
 

@@ -12,15 +12,15 @@ robots:
     torqueControl: true 
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [-1, 0.5, 0, -1, 0, 0.6, 1]
-    goalPos: [1, 0.5, 2, -1.4, 0, 0.6, 1]
     jointJerkThresholds: [0.005, 0.005, 0.005, 0.005, 0.005, 0.005, 0.005]
     magVelThresholds: [1.0, 1.0, 1.0, 1.0, 0.1, 0.1, 0.1]
 
 residuals:
   EE_goal:
-    target: [0.4, 0.2, 0.2]
+    target: [1, 0.5, 2, -1.4, 0, 0.6, 1]
     weight: 0.01
     weight_terminal: 100
+    resid_dimension: 7
   joint_velocities:
     target: [0, 0, 0, 0, 0, 0, 0]
     weight: 0.01

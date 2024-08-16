@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "acrobot"
+task: "reaching"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -27,7 +27,7 @@ task: "acrobot"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Generate_openloop_data"
+runMode: "Optimise_once"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -44,7 +44,7 @@ runMode: "Generate_openloop_data"
 # "Analyse_toy_contact"          - Analyse the derivatives in toy example with contact.
 
 taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 0                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+csvRow: 1                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)

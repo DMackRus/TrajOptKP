@@ -1732,6 +1732,9 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
     }
     // -------------------------------------------------------------------------
 
+    // Set goal visuals, functions needs to be overwritten by task implementation file if desired
+    SetGoalVisuals(d);
+
     // Initialise robot positions to start configuration
     for(auto & robot : full_state_vector.robots){
         std::vector<double> zero_robot_velocities(robot.joint_names.size(), 0.0);
@@ -1774,8 +1777,7 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 //    }
 
 
-    // Call this function which can be overwritten by the task implementation if goal visuals are desired
-    SetGoalVisuals(d);
+
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {
