@@ -10,7 +10,7 @@ import yaml
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "push_ncl"
+task_name = "acrobot"
 base_dir = ".."
 
 def main():
@@ -156,8 +156,8 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
         print(f'{graphs[i]}', end=' ')
         for j in range(len(names)):
             
-            print(means[j,i], end=' ')
-            print(f' +- {confidence_intervals[j,i]}', end=' ')
+            print(f'{means[j,i]:.2f}', end=' ')
+            print(f' +- {confidence_intervals[j,i]:.2f}', end=' ')
             
         print('')
     

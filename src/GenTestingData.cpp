@@ -18,9 +18,11 @@ GenTestingData::GenTestingData(std::shared_ptr<Optimiser> optimiser_,
 
 int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     int tests_fine = EXIT_SUCCESS;
+    int this_test_fine = EXIT_SUCCESS;
+
+    keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
 
     // ----------------- Set interval 1 -------------------
-    keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
     keypoint_method.name = "set_interval";
     keypoint_method.min_N = 1;
     keypoint_method.max_N = 1;
@@ -28,10 +30,12 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     // Set the keypoint method
     optimiser->SetCurrentKeypointMethod(keypoint_method);
 
-    int this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
     if(this_test_fine != EXIT_SUCCESS){
         tests_fine = this_test_fine;
     }
+    // Sleep for 60 seconds - enforces file name change for different tests
+    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Set interval 5 ---------------------
     keypoint_method.name = "set_interval";
@@ -45,11 +49,58 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     if(this_test_fine != EXIT_SUCCESS){
         tests_fine = this_test_fine;
     }
+    // Sleep for 60 seconds - enforces file name change for different tests
+    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Set interval 1000 ---------------------
     keypoint_method.name = "set_interval";
     keypoint_method.min_N = 1000;
     keypoint_method.max_N = 1;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+    // Sleep for 60 seconds - enforces file name change for different tests
+    std::this_thread::sleep_for(std::chrono::seconds(60));
+
+    // ----------------- Adaptive jerk 1 50 ---------------------
+    keypoint_method.name = "adaptive_jerk";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 50;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+    // Sleep for 60 seconds - enforces file name change for different tests
+    std::this_thread::sleep_for(std::chrono::seconds(60));
+
+    // ----------------- Velocity change 1 50 -------------------
+    keypoint_method.name = "velocity_change";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 50;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+    // Sleep for 60 seconds - enforces file name change for different tests
+    std::this_thread::sleep_for(std::chrono::seconds(60));
+
+    // ----------------- Iterative error 1 50 -------------------
+    keypoint_method.name = "iterative_error";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 50;
 
     // Set the keypoint method
     optimiser->SetCurrentKeypointMethod(keypoint_method);
