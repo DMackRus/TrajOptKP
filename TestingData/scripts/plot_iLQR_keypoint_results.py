@@ -184,7 +184,13 @@ def load_raw_data(task_name):
     yamlfiles_iLQR = []
     
     current_dir = base_dir + "/iLQR"
-    for folder in os.listdir(current_dir):
+
+    entries = os.listdir(current_dir)
+
+    # Sort the entries alphabetically - ensures that the order is the same for all lists
+    entries.sort()
+
+    for folder in entries:
         # Only add the data if the task name is correct
         if task_name not in folder:
             continue

@@ -220,7 +220,7 @@ private:
     std::shared_ptr<MuJoCoHelper> physics_simulator;
 
     // Stored keypoints for the iterative error method so we know where we have already computed keypoints. Prevents recomputation.
-    std::vector<std::vector<int>> computed_keypoints;
+    std::vector<std::vector<bool>> computed_keypoints;
 
     std::vector<int> last_num_keypoints;
 
