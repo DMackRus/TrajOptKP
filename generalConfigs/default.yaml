@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "acrobot"
+task: "piston_block"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -27,7 +27,7 @@ task: "acrobot"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Generate_openloop_data"
+runMode: "Init_controls"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -53,4 +53,4 @@ minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
-record: false
+record: true

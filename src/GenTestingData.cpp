@@ -919,7 +919,10 @@ int GenTestingData::AnalyseToyContact(int horizon){
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
                                                           activeModelTranslator->MuJoCo_helper->master_reset_data);
 
-    mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    for(int i = 0; i < 100; i++){
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    }
+
     if (!activeModelTranslator->MuJoCo_helper->CheckIfDataIndexExists(0)) {
         activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(
                 activeModelTranslator->MuJoCo_helper->master_reset_data);
@@ -953,7 +956,6 @@ int GenTestingData::AnalyseToyContact(int horizon){
 
     for (int i = 1; i < 100; i++) {
 
-
         optimiser->lambda = lambda_save;
 
         // Do the optimisation with interpolated derivatives
@@ -980,7 +982,6 @@ int GenTestingData::AnalyseToyContact(int horizon){
 
 
         // Saving the data
-
         std::string file_prefix = task_name + "/iter_0" + "/smoothing_contact_" + std::to_string(i);
         yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
                                           optimiser->X_old, optimiser->U_old,
