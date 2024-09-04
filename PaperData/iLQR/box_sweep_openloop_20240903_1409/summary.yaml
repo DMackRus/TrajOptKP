@@ -1,0 +1,17 @@
+optimisation horizon: 1500
+controls_noise: 0.5
+model timestep: 0.008
+keypoint_name: AJ_1_1000
+keypoint_min_N: 1
+keypoint_max_N: 1000
+jerk_thresholds:
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000

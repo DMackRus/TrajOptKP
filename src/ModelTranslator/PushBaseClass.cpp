@@ -118,7 +118,7 @@ std::vector<m_point> PushBaseClass::CreateAllEETransitPoints(const std::vector<m
     EE_path.push_back(mainWayPoints[0]);
 
     int path_counter = 1;
-    for(int i = 0; i < mainWayPoints.size(); i++){
+    for(int i = 0; i < mainWayPoints.size() - 1; i++){
         double x_diff = mainWayPoints[i + 1](0) - mainWayPoints[i](0);
         double y_diff = mainWayPoints[i + 1](1) - mainWayPoints[i](1);
         double z_diff = mainWayPoints[i + 1](2) - mainWayPoints[i](2);
