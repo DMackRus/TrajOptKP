@@ -10,7 +10,7 @@ import yaml
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "acrobot"
+task_name = "box_sweep"
 base_dir = ".."
 
 def main():
@@ -126,22 +126,6 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
             
             # Loop through iLQR
             for j, data_frame in enumerate(dataframes_iLQR):
-                
-                # Calculate Q1 (25th percentile) and Q3 (75th percentile)
-                # Q1 = data_frame[graph_name].quantile(0)
-                # Q3 = data_frame[graph_name].quantile(0.6)
-
-                # # Calculate the IQR
-                # IQR = Q3 - Q1
-
-                # # Define the lower and upper bounds for outliers
-                # # lower_bound = Q1 - 1.5 * IQR
-                # lower_bound = 0
-                # upper_bound = Q3 + 1.5 * IQR
-
-                # # Filter the DataFrame to remove outliers
-                # df_filtered = data_frame[(data_frame[graph_name] >= lower_bound) & (data_frame[graph_name] <= upper_bound)]
-                # df_filtered = data_frame
             
                 means[j, i] = data_frame[graph_name].mean()
                 confidence_intervals[j, i] = z * (data_frame[graph_name].std() / np.sqrt(num_data_rows))
@@ -160,6 +144,14 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
             print(f' +- {confidence_intervals[j,i]:.2f}', end=' ')
             
         print('')
+
+    # Print average time per iteration for each method (means[0,2] / means[2,2])
+    print('Average time per iteration ', end='')
+    for j in range(len(names)):
+        print(f'{means[j,0]/means[j,2]:.2f}', end=' ')
+        print(f' +- {confidence_intervals[j,0]/means[j,2]:.2f}', end=' ')
+
+    print('')
     
     
     plt.xticks(x, names, rotation=45, ha='right') 
@@ -184,7 +176,13 @@ def load_raw_data(task_name):
     yamlfiles_iLQR = []
     
     current_dir = base_dir + "/iLQR"
-    for folder in os.listdir(current_dir):
+
+    entries = os.listdir(current_dir)
+
+    # Sort the entries alphabetically - ensures that the order is the same for all lists
+    entries.sort()
+
+    for folder in entries:
         # Only add the data if the task name is correct
         if task_name not in folder:
             continue

@@ -459,7 +459,15 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsIteratively(in
     // Initialise variables
     for(int i = 0; i < dof; i++){
         bins_complete[i] = false;
-        computed_keypoints.push_back(std::vector<int>());
+//        computed_keypoints.push_back(std::vector<int>());
+    }
+
+    // Resize the outer vector to 'dof'
+    computed_keypoints.resize(dof);
+
+    // Resize each inner vector to 'T' and initialize with 'false'
+    for (auto& innerVec : computed_keypoints) {
+        innerVec.resize(horizon, false);
     }
 
     for(int i = 0; i < horizon; i++){
@@ -520,12 +528,8 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsIteratively(in
     for(int i = 0; i < horizon; i++){
         // Loop over the dofs
         for(int j = 0; j < dof; j++){
-            // Loop over the computed key points per dof
-            for(int k = 0; k < computed_keypoints[j].size(); k++){
-                // If the current index is a computed key point
-                if(i == computed_keypoints[j][k]){
-                    keypoints[i].push_back(j);
-                }
+            if(computed_keypoints[j][i]){
+                keypoints[i].push_back(j);
             }
         }
     }
@@ -565,18 +569,16 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
     bool mid_index_computed = false;
     bool end_index_computed = false;
 
-    for(int i : computed_keypoints[dof_index]){
-        if(i == indices.start_index){
-            start_index_computed = true;
-        }
+    if(computed_keypoints[dof_index][indices.start_index]){
+        start_index_computed = true;
+    }
 
-        if(i == mid_index){
-            mid_index_computed = true;
-        }
+    if(computed_keypoints[dof_index][mid_index]){
+        mid_index_computed = true;
+    }
 
-        if(i == indices.end_index){
-            end_index_computed = true;
-        }
+    if(computed_keypoints[dof_index][indices.end_index]){
+        end_index_computed = true;
     }
 
     std::vector<int> cols;
@@ -588,26 +590,24 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
     if(!start_index_computed){
         differentiator->DynamicsDerivatives(A[indices.start_index], B[indices.start_index], cols,
                                             indices.start_index, tid, true, 1e-6);
-        computed_keypoints[dof_index].push_back(indices.start_index);
+        computed_keypoints[dof_index][indices.start_index] = true;
     }
 
     if(!mid_index_computed){
         differentiator->DynamicsDerivatives(A[mid_index], B[mid_index], cols,
                                             mid_index, tid, true, 1e-6);
-        computed_keypoints[dof_index].push_back(mid_index);
+        computed_keypoints[dof_index][mid_index] = true;
     }
 
     if(!end_index_computed){
         differentiator->DynamicsDerivatives(A[indices.end_index], B[indices.end_index], cols,
                                             indices.end_index, tid, true, 1e-6);
-        computed_keypoints[dof_index].push_back(indices.end_index);
+        computed_keypoints[dof_index][indices.end_index] = true;
     }
 
     mid_columns_approximated[0] = (A[indices.start_index].block(0, dof_index, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index, num_dofs * 2, 1)) / 2;
     mid_columns_approximated[1] = (A[indices.start_index].block(0, dof_index + num_dofs, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index + num_dofs, num_dofs * 2, 1)) / 2;
 
-
-    bool approximation_good = false;
     double error_sum = 0.0f;
     int counter = 0;
 
@@ -633,23 +633,10 @@ bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, 
 //        cout << "average error: " << average_error << "\n";
 //    }
 
-//    cout << "average error: " << average_error << "\n";
-
     if(average_error < current_keypoint_method.iterative_error_threshold){
-        approximation_good = true;
+        return true;
     }
-    else{
-//        cout << "matrix mid approx" << matrixMidApprox << "\n";
-//        cout << "matrix mid true" << A[mid_index] << "\n";
-    }
-
-//    if(counter == 0){
-//        cout << "start index: " << indices.start_index << " mid index: " << mid_index << " end index: " << indices.end_index << "\n";
-//        cout << "matrix mid approx" << matrixMidApprox << "\n";
-//        cout << "matrix mid true" << A[mid_index] << "\n";
-//    }
-
-    return approximation_good;
+    return false;
 }
 
 void KeypointGenerator::GenerateKeyPointsVelocityChange(const std::vector<MatrixXd> &velocity_profile) {

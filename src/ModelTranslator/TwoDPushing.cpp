@@ -42,8 +42,8 @@ void TwoDPushing::ReturnRandomStartState(){
 
     }
     else{
-        startX = 0.4;
-        startY = randFloat(-0.1, 0.1);
+        startX = 0.42;
+        startY = randFloat(-0.05, 0.05);
 
         float randAngle = randFloat(-PI/4, PI/4);
         float randDist = randFloat(0.28, 0.3);

@@ -185,6 +185,8 @@ void Optimiser::ComputeDynamicsDerivatives(){
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
     }
 
+
+
     // Interpolate the dynamics derivatives
 //    auto start_interp_time = high_resolution_clock::now();
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, horizon_length,
