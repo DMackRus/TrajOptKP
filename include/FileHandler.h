@@ -21,6 +21,7 @@ public:
                                std::vector<MatrixXd> states, std::vector<MatrixXd> controls, std::string file_prefix);
 
     void SaveTaskToFile(std::string file_prefix, int file_num, const stateVectorList &state_vector, const vector<residual> &residuals);
+    void SaveKeypointsToFile(std::string file_prefix, int file_num, const std::vector<std::vector<int>> &keypoints);
     void LoadTaskFromFile(std::string task_prefix, int file_num, stateVectorList &state_vector, vector<residual> &residuals);
 
 //    void saveCostHistory(std::vector<double> costHistory, std::string filePrefix, int trajecNumber);

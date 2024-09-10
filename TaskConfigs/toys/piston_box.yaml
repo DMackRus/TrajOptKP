@@ -6,7 +6,7 @@ mpc_horizon: 100
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
-maxN: 100
+maxN: 500
 iterativeErrorThreshold: 0.00001
 robots:
   piston:
@@ -23,7 +23,7 @@ bodies:
     activeAngularDOF: [false, false, false]
     startLinearPos: [ 0, 0.9, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 0, 100, 0 ]
+    linearJerkThreshold: [ 0, 1, 0 ]
     angularJerkThreshold: [ 0, 0, 0 ]
     linearMagVelThreshold: [ 0, 0.1, 0 ]
     angularMagVelThreshold: [ 0, 0, 0 ]

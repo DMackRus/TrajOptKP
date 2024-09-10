@@ -372,6 +372,44 @@ void FileHandler::SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::v
     fileOutput.close();
 }
 
+void FileHandler::SaveKeypointsToFile(std::string file_prefix, int file_num, const std::vector<std::vector<int>> &keypoints){
+    std::string rootPath = projectParentPath + "/savedTrajecInfo" + file_prefix;
+
+    std::string filename = rootPath + "/keypoints.csv";
+    fileOutput.open(filename);
+
+    if (!filesystem::exists(rootPath)) {
+        if (!filesystem::create_directories(rootPath)) {
+            std::cerr << "Failed to create directory: " << rootPath << std::endl;
+            exit(1);
+        }
+    }
+
+    int dof = keypoints[0].size();
+
+    for(int i = 0; i < dof; i++){
+        for(int j = 0; j < keypoints.size(); j++) {
+            for(int k = 0; k < keypoints[j].size(); k++){
+                if(keypoints[j][k] == i){
+                    fileOutput << j << ",";
+                    break;
+                }
+            }
+        }
+        fileOutput << endl;
+    }
+
+//    for(int i = 0; i < keypoints.size(); i++){
+//        for(int j = 0; j < keypoints[i].size(); j++){
+//            std::cout << "Keypoint: " << keypoints[i][j] << "\n";
+//            fileOutput << keypoints[i][j] << ",";
+//        }
+//        fileOutput << endl;
+//    }
+
+    fileOutput.close();
+}
+
 void FileHandler::SaveTaskToFile(std::string file_prefix, int file_num, const stateVectorList &state_vector, const vector<residual> &residuals){
 
     std::string rootPath = projectParentPath + "/TestTasks/" + file_prefix;

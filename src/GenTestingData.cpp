@@ -917,6 +917,7 @@ int GenTestingData::AnalyseToyContact(int horizon){
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
                                                           activeModelTranslator->MuJoCo_helper->master_reset_data);
 
+    // Simulation stabilise
     for(int i = 0; i < 100; i++){
         mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
     }
@@ -952,6 +953,7 @@ int GenTestingData::AnalyseToyContact(int horizon){
 
     double lambda_save = optimiser->lambda;
 
+    // Different levels of contact smoothing
     for (int i = 1; i < 100; i++) {
 
         optimiser->lambda = lambda_save;
@@ -1045,6 +1047,203 @@ int GenTestingData::AnalyseToyContact(int horizon){
     std::ofstream fout(file_name);
     fout << out.c_str();
     fout.close();
+
+    return EXIT_SUCCESS;
+}
+
+int GenTestingData::AnalyseToyContactKeypoints(int horizon){
+
+    // Perform special optimisation using iLQR. Do one iteration at a time, compare performance
+    // when optimising with exact derivatives and approximated derivatives.
+    // Save the exact derivatives, approximated derivatives, and the cost performance of each method.
+
+    std::string project_parent_path = __FILE__;
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+
+    // Create the file directory root path dynamically
+    std::string method_directory = CreateTestName("openloop");
+
+    // ------------------------- data storage -------------------------------------
+    std::vector<double> cost_reductions;
+    std::vector<double> optimisation_times;
+    std::vector<int>    num_iterations;
+    std::vector<double> avg_num_dofs;
+    std::vector<double> avg_percent_derivs;
+    std::vector<double> total_time_derivs;
+    std::vector<double> total_time_bp;
+    std::vector<double> total_time_fp;
+    // -----------------------------------------------------------------------------
+
+    auto startTimer = std::chrono::high_resolution_clock::now();
+    optimiser->verbose_output = true;
+
+    // Arbitrary number of trials
+    optimiser->keypoint_generator->ResetCache();
+    // Load the task from CSV file
+    yamlReader->LoadTaskFromFile(activeModelTranslator->model_name, 6, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
+    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    // Setup mj data objects
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    for(int i = 0; i < 100; i++){
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    }
+
+    if (!activeModelTranslator->MuJoCo_helper->CheckIfDataIndexExists(0)) {
+        activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(
+                activeModelTranslator->MuJoCo_helper->master_reset_data);
+    }
+    // Perform any setup controls for this task
+    std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data,
+                                                          activeModelTranslator->MuJoCo_helper->main_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    // Create init optimisation controls
+    std::vector<MatrixXd> init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(horizon);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data,
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(
+            activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+            activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    keypoint_method saved_method = optimiser->activeKeyPointMethod;
+
+    double old_cost;
+    double new_cost_exact;
+    std::vector<double> new_cost_approximated;
+    std::vector<int> contact;
+    std::string task_name = activeModelTranslator->model_name;
+
+    double lambda_save = optimiser->lambda;
+
+    // Rollout the nominal trajectory
+    old_cost = optimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                true, init_opt_controls);
+
+    // Compute dynamics derivatives fully.
+    optimiser->GenerateDerivatives();
+    yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
+                                      optimiser->X_old, optimiser->U_old,
+                                      task_name + "/exact_derivs");
+
+    // Save exact A and B matrices to file
+
+    // Compute dynamics derivatives using key-points
+    optimiser->activeKeyPointMethod.name = "adaptive_jerk";
+    optimiser->activeKeyPointMethod.min_N = 2;
+    optimiser->activeKeyPointMethod.max_N = 500;
+    optimiser->SetCurrentKeypointMethod(optimiser->activeKeyPointMethod);
+
+    optimiser->GenerateDerivatives();
+
+    // Save approximated dynamics derivatives to file
+    yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
+                                      optimiser->X_old, optimiser->U_old,
+                                      task_name + "/approx_derivs_adaptive_jerk");
+
+    yamlReader->SaveKeypointsToFile(task_name + "/keypoints_adaptive_jerk", 0, optimiser->keypoint_generator->keypoints);
+
+//    for (int i = 1; i < 100; i++) {
+//
+//        optimiser->lambda = lambda_save;
+//
+//        // Do the optimisation with interpolated derivatives
+//        // ------------------ Manual optimisation iteration - detect the contact change and suggest key-points based on this ------------------------
+//        old_cost = optimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+//                                                true, init_opt_controls);
+//
+//        // Get the contact change list
+//        contact.clear();
+//        for(int t = 0; t < horizon; t++){
+//            bool contact_found = activeModelTranslator->MuJoCo_helper->CheckPairForCollisions("goal", "piston_rod",
+//                                                                                              activeModelTranslator->MuJoCo_helper->saved_systems_state_list[t]);
+//            contact.push_back(contact_found);
+//        }
+//
+//        // Set the optimiser to smooth contact
+//        optimiser->smoothing_contact = true;
+//        optimiser->smoothing = i;
+//
+//        // -----------------------------
+//        std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
+//                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
+//                horizon);
+//
+//
+//        // Saving the data
+//        std::string file_prefix = task_name + "/iter_0" + "/smoothing_contact_" + std::to_string(i);
+//        yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
+//                                          optimiser->X_old, optimiser->U_old,
+//                                          file_prefix);
+//
+//        new_cost_approximated.push_back(optimiser->new_cost);
+//
+//        // Set keypoint method to set interval 1 for exact derivatives
+//        optimiser->activeKeyPointMethod.name = "set_interval";
+//        optimiser->activeKeyPointMethod.min_N = 1;
+//
+//        optimiser->SetCurrentKeypointMethod(optimiser->activeKeyPointMethod);
+//
+//        // Reset the optimiser back to exact derivatives
+//        optimiser->smoothing_contact = false;
+//        optimiser->smoothing = 0;
+//
+//        // Do the optimisation with exact derivatives!
+//        optimiser->lambda = lambda_save;
+//        optimised_controls = optimiser->Optimise(
+//                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
+//                horizon);
+//
+//        // Saving the data
+//        file_prefix = task_name + "/iter_0" + "/exact_derivs";
+//        yamlReader->SaveTrajecInformation(optimiser->A, optimiser->B,
+//                                          optimiser->X_old, optimiser->U_old,
+//                                          file_prefix);
+//
+//        new_cost_exact = optimiser->new_cost;
+//
+//        // Reset keypoint method
+//        optimiser->activeKeyPointMethod = saved_method;
+//        optimiser->SetCurrentKeypointMethod(optimiser->activeKeyPointMethod);
+//
+//        // Update the trajectory
+////        init_opt_controls = optimised_controls;
+//    }
+
+    // Save YAML file
+    // old cost, new cost exact, new cost_1, new_cost_2 .....
+    // contact list
+//    YAML::Emitter out;
+//
+//    out << YAML::BeginMap;
+//    out << YAML::Key << "old_cost";
+//    out << YAML::Value << old_cost;
+//
+//    out << YAML::Key << "new_cost_exact";
+//    out << YAML::Value << new_cost_exact;
+//
+//    out << YAML::Key << "new_cost_approx";
+//    out << YAML::Value << new_cost_approximated;
+//
+//    out << YAML::Key << "contact";
+//    out << YAML::Value << contact;
+//
+//    out << YAML::EndMap;
+//
+//    // Open a file for writing
+//    std::string file_name = project_parent_path + "/savedTrajecInfo" + task_name + "/iter_0" + "/performance.yaml";
+//
+//    std::ofstream fout(file_name);
+//    fout << out.c_str();
+//    fout.close();
 
     return EXIT_SUCCESS;
 }
