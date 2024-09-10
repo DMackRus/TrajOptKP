@@ -83,6 +83,8 @@ public:
 
     int AnalyseToyContact(int horizon);
 
+    int AnalyseToyContactKeypoints(int horizon);
+
     void SetParamsiLQR_SVR(int re_add_dofs, double threshold){
         optimiser->num_dofs_readd = re_add_dofs;
         optimiser->K_matrix_threshold = threshold;

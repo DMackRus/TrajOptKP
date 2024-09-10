@@ -792,12 +792,20 @@ void MuJoCoHelper::InitVisualisation() {
 //    cam.lookat[2] =  0.219;
 
     // Push heavy clutter
-    cam.distance = 1.16;
-    cam.azimuth = 146.1;
-    cam.elevation = -42.9;
-    cam.lookat[0] = 0.535744;
-    cam.lookat[1] = 0.155588;
-    cam.lookat[2] =  0.236069;
+//    cam.distance = 1.16;
+//    cam.azimuth = 146.1;
+//    cam.elevation = -42.9;
+//    cam.lookat[0] = 0.535744;
+//    cam.lookat[1] = 0.155588;
+//    cam.lookat[2] =  0.236069;
+
+    // Piston block 1D view
+    cam.distance = 1.449;
+    cam.azimuth = -174.7;
+    cam.elevation = 0.9;
+    cam.lookat[0] = 0.5177;
+    cam.lookat[1] = 1.038;
+    cam.lookat[2] =  0.1567;
 
     // create scene and context
     mjv_makeScene(model, &scn, 2000);

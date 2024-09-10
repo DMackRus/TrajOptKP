@@ -4,6 +4,7 @@
 
 # Task to be performed
 task: "pushing_moderate_clutter"
+
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
@@ -27,7 +28,7 @@ task: "pushing_moderate_clutter"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Generate_openloop_data"
+runMode: "Analyse_toy_contact_keypoints"
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
@@ -41,7 +42,8 @@ runMode: "Generate_openloop_data"
 # "Generate_dynamics_data"        - Loop thorugh 100 CSV files and generate A, B, X, U data over a horizon and save to file.
 
 # Special modes - possibly temporary
-# "Analyse_toy_contact"          - Analyse the derivatives in toy example with contact.
+# "Analyse_toy_contact"           - Analyse the derivatives in toy example with contact.
+# "Analyse_toy_contact_keypoints" - Analyse the derivatives in toy example with contact and keypoint method.
 
 taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 1                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
@@ -53,4 +55,4 @@ minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
-record: false
+record: true

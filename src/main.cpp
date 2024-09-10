@@ -236,6 +236,15 @@ int main(int argc, char **argv) {
         return myTestingObject.AnalyseToyContact(task_horizon);
     }
 
+    if(runMode == "Analyse_toy_contact_keypoints"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_horizon = activeModelTranslator->openloop_horizon;
+
+        return myTestingObject.AnalyseToyContactKeypoints(task_horizon);
+    }
+
     if(taskInitMode == "random"){
         activeModelTranslator->GenerateRandomGoalAndStartState();
     }
