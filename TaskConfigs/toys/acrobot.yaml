@@ -2,9 +2,9 @@ modelFile: "/mujoco_models/Acrobot/acrobot.xml"   # Path to the model xml file
 modelName: "/acrobot"                             # Name of the model, used for saving data
 timeStep: 0.01                                    # Time step for simulation
 openloop_horizon: 500
-keypointMethod: "iterative_error"                 # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+keypointMethod: "velocity_change"                 # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 minN: 1                                           # Minimum interval between key-points
-maxN: 10                                          # Maximum interval between key-points
+maxN: 100                                          # Maximum interval between key-points
 iterativeErrorThreshold: 0.0001                    # Threshold for iterative error method
 
 # stable down pos [3.1415, 0], half up unstable pos [3.14, 3.14], full up unstable pos [0, 0]
@@ -17,7 +17,7 @@ robots:
     startPos: [3.1415, 0.3]
     goalPos: [0, 0]
     jointJerkThresholds: [150, 150]
-    magVelThresholds: [1.0, 1.0]
+    magVelThresholds: [6.0, 6.0]
 
 residuals:
   joint_0:

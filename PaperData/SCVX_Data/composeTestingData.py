@@ -67,7 +67,7 @@ def main():
         for j in range(num_trajecs):
 
             # root = "home/davidrussell/cito_ws/src/cito/src"
-            file_name = "../testingData/data/" + methods[i] + "/" + str(j) + ".csv"
+            file_name = "data/" + methods[i] + "/" + str(j) + ".csv"
             tempData = np.genfromtxt(file_name, delimiter=",")
 
             data[j, i * len(labels) : (i + 1) * len(labels)] = tempData

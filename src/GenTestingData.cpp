@@ -66,24 +66,9 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    std::this_thread::sleep_for(std::chrono::seconds(30));
 //
 //    // ----------------- Adaptive jerk 1 50 ---------------------
-    keypoint_method.name = "adaptive_jerk";
-    keypoint_method.min_N = 1;
-    keypoint_method.max_N = 10;
-
-    // Set the keypoint method
-    optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-    if(this_test_fine != EXIT_SUCCESS){
-        tests_fine = this_test_fine;
-    }
-    // Sleep for 60 seconds - enforces file name change for different tests
-//    std::this_thread::sleep_for(std::chrono::seconds(60));
-
-//     ----------------- Velocity change 1 50 -------------------
-//    keypoint_method.name = "velocity_change";
+//    keypoint_method.name = "adaptive_jerk";
 //    keypoint_method.min_N = 1;
-//    keypoint_method.max_N = 100;
+//    keypoint_method.max_N = 10;
 //
 //    // Set the keypoint method
 //    optimiser->SetCurrentKeypointMethod(keypoint_method);
@@ -92,6 +77,21 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    if(this_test_fine != EXIT_SUCCESS){
 //        tests_fine = this_test_fine;
 //    }
+    // Sleep for 60 seconds - enforces file name change for different tests
+//    std::this_thread::sleep_for(std::chrono::seconds(60));
+
+//     ----------------- Velocity change 1 50 -------------------
+    keypoint_method.name = "velocity_change";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 100;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
 //    // Sleep for 60 seconds - enforces file name change for different tests
 //    std::this_thread::sleep_for(std::chrono::seconds(60));
 
@@ -796,7 +796,7 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
             keypoint_method_name = "SI_" + std::to_string(keypoint_method.min_N);
         }
         else if(keypoint_method.name == "velocity_change"){
-            keypoint_method_name = "VC_" +
+            keypoint_method_name = "*VC_" +
                           std::to_string(keypoint_method.min_N) + "_" +
                           std::to_string(keypoint_method.max_N);
         }

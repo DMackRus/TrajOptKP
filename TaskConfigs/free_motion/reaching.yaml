@@ -3,7 +3,7 @@ modelName: "/reaching"
 timeStep: 0.008
 openloop_horizon: 1500
 mpc_horizon: 50
-keypointMethod: "adaptive_jerk"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+keypointMethod: "velocity_change"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 minN: 1
 maxN: 50
 iterativeErrorThreshold: 0.001
@@ -15,7 +15,7 @@ robots:
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [-1, 0.5, 0, -1, 0, 0.6, 1]
     jointJerkThresholds: [10, 10, 10, 10, 10, 10, 10]
-    magVelThresholds: [1.0, 1.0, 1.0, 1.0, 0.1, 0.1, 0.1]
+    magVelThresholds: [2.0, 2.0, 2.0, 2.0, 0.5, 0.5, 0.5]
 
 residuals:
   EE_goal:

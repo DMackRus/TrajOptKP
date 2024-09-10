@@ -6,17 +6,22 @@ import csv
 import os
 import sys
 import yaml
+import math
 
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "push_ncl"
+task_name = "box_sweep"
 base_dir = ".."
 
 def main():
     global task_name
     
     names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task_name)
+    # Pre processing step, make optimisation times in seconds rather than milliseconds
+    # Loop through data frames
+    for dataframe in dataframes_iLQR:
+    	dataframe['Optimisation time (ms)'] /= 1000
     plot_openloop_data(names, dataframes_iLQR)
 
     
@@ -140,16 +145,20 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
         print(f'{graphs[i]}', end=' ')
         for j in range(len(names)):
             
-            print(f'{means[j,i]:.2f}', end=' ')
-            print(f' +- {confidence_intervals[j,i]:.2f}', end=' ')
+            mean_val = custom_round(means[j,i])
+            ci_value = custom_round(confidence_intervals[j,i])
+            print(f'{mean_val}', end=' ')
+            print(f' +- {ci_value}', end=' ')
             
         print('')
 
     # Print average time per iteration for each method (means[0,2] / means[2,2])
     print('Average time per iteration ', end='')
     for j in range(len(names)):
-        print(f'{means[j,0]/means[j,2]:.2f}', end=' ')
-        print(f' +- {confidence_intervals[j,0]/means[j,2]:.2f}', end=' ')
+        mean_val = custom_round(means[j,0]/means[j,2])
+        ci_val = custom_round(confidence_intervals[j,0]/means[j,2])
+        print(f'{mean_val}', end=' ')
+        print(f' +- {ci_val}', end=' ')
 
     print('')
     
@@ -212,6 +221,22 @@ def load_raw_data(task_name):
         
         
     return names, dataframes_iLQR, yamlfiles_iLQR
+
+def custom_round(value):
+    # Round to 2 decimal places
+    rounded_decimal = round(value, 2)
+    
+    # Round to 2 significant figures
+    if value == 0:
+        rounded_significant = 0
+    else:
+        rounded_significant = round(value, 2 - int(math.floor(math.log10(abs(value)))) - 1)
+
+    # Choose the one with more digits
+    if len(str(rounded_significant)) > len(str(rounded_decimal)):
+        return rounded_significant
+    else:
+        return rounded_decimal
     
 if __name__ == "__main__":
     main()
