@@ -654,7 +654,8 @@ void KeypointGenerator::GenerateKeyPointsVelocityChange(const std::vector<Matrix
     std::vector<double> last_vel_direction = std::vector<double>(dof, 0);
 
     for(int i = 0; i < dof; i++){
-        last_vel_value[i] = velocity_profile[0](i, 0);
+//        last_vel_value[i] = velocity_profile[0](i, 0);
+        last_vel_value[i] = 0.0;
 
         min_last_velocity[i] = velocity_profile[0](i, 0);
         max_last_velocity[i] = velocity_profile[0](i, 0);
@@ -669,13 +670,15 @@ void KeypointGenerator::GenerateKeyPointsVelocityChange(const std::vector<Matrix
 
             last_keypoint_counter[i]++;
             double current_vel_direction = velocity_profile[t](i, 0) - velocity_profile[t - 1](i, 0);
-            double current_vel_change_since_last_keypoint = velocity_profile[t](i, 0) - last_vel_value[i];
+//            double current_vel_change_since_last_keypoint = velocity_profile[t](i, 0) - last_vel_value[i];
+            last_vel_value[i] += abs(velocity_profile[t](i, 0));
 
             // If the vel change is above the required threshold
             if(last_keypoint_counter[i] >= current_keypoint_method.min_N){
-                if(abs(current_vel_change_since_last_keypoint) > current_keypoint_method.velocity_change_thresholds[i]){
+                if(abs(last_vel_value[i]) > current_keypoint_method.velocity_change_thresholds[i]){
                     row.push_back(i);
-                    last_vel_value[i] = velocity_profile[t](i, 0);
+//                    last_vel_value[i] = velocity_profile[t](i, 0);
+                    last_vel_value[i] = 0.0;
                     last_keypoint_counter[i] = 0;
                     continue;
                 }
@@ -686,7 +689,8 @@ void KeypointGenerator::GenerateKeyPointsVelocityChange(const std::vector<Matrix
                 // If the direction of the velocity has changed
                 if(current_vel_direction * last_vel_direction[i] < 0){
                     row.push_back(i);
-                    last_vel_value[i] = velocity_profile[t](i, 0);
+//                    last_vel_value[i] = velocity_profile[t](i, 0);
+                    last_vel_value[i] = 0.0;
                     last_keypoint_counter[i] = 0;
                     continue;
                 }
@@ -698,7 +702,8 @@ void KeypointGenerator::GenerateKeyPointsVelocityChange(const std::vector<Matrix
             // If interval is greater than max_N
             if(last_keypoint_counter[i] >= current_keypoint_method.max_N){
                 row.push_back(i);
-                last_vel_value[i] = velocity_profile[t](i, 0);
+//                last_vel_value[i] = velocity_profile[t](i, 0);
+                last_vel_value[i] = 0.0;
                 last_keypoint_counter[i] = 0;
                 continue;
             }

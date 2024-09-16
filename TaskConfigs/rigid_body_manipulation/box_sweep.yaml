@@ -13,9 +13,8 @@ robots:
     torqueControl: true
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [-0.178, 0.7, -0.0593, -1.73, 0, 0.722, -1.6]
-#    jointJerkThresholds: [1, 1, 1, 1, 1, 1, 1]
     jointJerkThresholds: [1, 1, 1, 1, 1, 1, 1]
-    magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
+    magVelThresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 bodies:
   goal:
     activeLinearDOF: [true, true, true]
@@ -27,7 +26,7 @@ bodies:
     linearJerkThreshold: [1, 1, 1]
     angularJerkThreshold: [ 0, 0, 0 ]
     linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
-    angularMagVelThreshold: [ 0.1, 0.1, 0.1 ]
+    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
 
 residuals:
   goal_pos:
