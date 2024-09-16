@@ -67,7 +67,7 @@ def main():
         for j in range(num_trajecs):
 
             # root = "home/davidrussell/cito_ws/src/cito/src"
-            file_name = "../testingData/data/" + methods[i] + "/" + str(j) + ".csv"
+            file_name = "data/" + methods[i] + "/" + str(j) + ".csv"
             tempData = np.genfromtxt(file_name, delimiter=",")
 
             data[j, i * len(labels) : (i + 1) * len(labels)] = tempData
@@ -154,6 +154,86 @@ def main():
 
     # Save data to new csv file
     np.savetxt("../testingData/data.csv", data, delimiter=",")
+    
+def breakdown_times_plots():
+    num_trajecs = 100
+    methods = ["baseline", "SI2", "SI20", "adaptive_jerk", "magvel_change", "iterative_error"]
+    labels = ["optTime", "costReduction", "Num iterations", "Time per iteration", "percent derivatives", "derivsTime", "qpTime"]
 
+    data = np.zeros((num_trajecs, len(labels) * len(methods)))
+
+
+    for i in range(len(methods)):
+        for j in range(num_trajecs):
+
+            # root = "home/davidrussell/cito_ws/src/cito/src"
+            file_name = "data/" + methods[i] + "/" + str(j) + ".csv"
+            tempData = np.genfromtxt(file_name, delimiter=",")
+
+            data[j, i * len(labels) : (i + 1) * len(labels)] = tempData
+
+
+    optTimes =              np.zeros((num_trajecs, len(methods)))
+    costReductions =        np.zeros((num_trajecs, len(methods)))
+    numIterations =         np.zeros((num_trajecs, len(methods)))
+    timePerIteration =      np.zeros((num_trajecs, len(methods)))
+    percentDerivatives =    np.zeros((num_trajecs, len(methods)))
+    derivsTime =            np.zeros((num_trajecs, len(methods)))
+    qpTime =                np.zeros((num_trajecs, len(methods)))
+
+    for i in range(len(methods)):
+        optTimes[:, i] = data[:, i * len(labels)]
+        costReductions[:, i] = data[:, i * len(labels) + 1]
+        numIterations[:, i] = data[:, i * len(labels) + 2]
+        timePerIteration[:, i] = data[:, i * len(labels) + 3]
+        percentDerivatives[:, i] = data[:, i * len(labels) + 4]
+        derivsTime[:, i] = data[:, i * len(labels) + 5]
+        qpTime[:, i] = data[:, i * len(labels) + 6]
+        
+    # compute mean times
+    
+    optTimesMeans = np.mean(optTimes, axis=0)
+    derivsTimeMeans = np.mean(derivsTime, axis=0)
+    qpTimesMeans = np.mean(qpTime, axis=0)
+    numIterationsMeans = np.mean(numIterations, axis=0)
+    
+    # only keep columns 0 -> 3 (baseline, SI2, SI20, adaptive jerk)
+    optTimesMeans = optTimesMeans[0:4]
+    derivsTimeMeans = derivsTimeMeans[0:4]
+    qpTimesMeans = qpTimesMeans[0:4]
+    numIterationsMeans = numIterationsMeans[0:4]
+    methods = methods[0:4]
+    methods = ["Baseline", "SI2", "SI20", "Adaptive Jerk"]
+    
+    indices = np.arange(optTimesMeans.shape[0])
+    other_timings_means = optTimesMeans - derivsTimeMeans - qpTimesMeans
+        
+    width = 0.35
+        
+    # ---------------- plot of total QP time and derivs time -----------------------
+    plt.bar(methods, derivsTimeMeans, width, label="derivs")
+    plt.bar(methods, qpTimesMeans, width, bottom = derivsTimeMeans, label="qp")
+    plt.bar(methods, other_timings_means, width, bottom = derivsTimeMeans + qpTimesMeans, label="other")
+    plt.legend()
+    plt.title("Breakdown of timings in SCVX for different key-point methdos")
+    plt.ylabel("Time (s)")
+    plt.xlabel("Method")
+    plt.show()
+    
+    # ---------------- plot of iteration time for qp and derivs time -------------
+    derivsTimeMeans = derivsTimeMeans / numIterationsMeans
+    qpTimesMeans = qpTimesMeans / numIterationsMeans
+    other_timings_means = other_timings_means / numIterationsMeans
+    plt.bar(methods, derivsTimeMeans, width, label="Computing Derivatives")
+    plt.bar(methods, qpTimesMeans, width, bottom = derivsTimeMeans, label="Solving QP's")
+    plt.bar(methods, other_timings_means, width, bottom = derivsTimeMeans + qpTimesMeans, label="Other")
+    plt.legend()
+    plt.title("Breakdown of timings in SCVX for different key-point methods")
+    plt.ylabel("Iteration time (s)")
+    plt.xlabel("Method")
+    plt.show()
+    
+    
 if __name__ == "__main__":
-    main()
+    breakdown_times_plots()
+    # main()
