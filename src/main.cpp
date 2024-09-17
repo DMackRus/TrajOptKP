@@ -227,6 +227,19 @@ int main(int argc, char **argv) {
         return myTestingObject.GenDataAsyncMPC(task_horizon, task_timeout);
     }
 
+    if(runMode == "Generate_syncronus_mpc_data"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_timeout = 2000;
+
+        if(argc > 2){
+            task_timeout = std::atoi(argv[2]);
+        }
+
+        return myTestingObject.GenDataMPCHorizons(task_timeout);
+    }
+
     if(runMode == "Analyse_toy_contact"){
         GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
@@ -542,7 +555,7 @@ void AsyncMPC(){
         int difference_ms = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() * 1000) - (time_taken / 1000.0f) + 1;
 
         if(difference_ms > 0) {
-            difference_ms += 20;
+//            difference_ms += 20;
             std::this_thread::sleep_for(std::chrono::milliseconds(difference_ms));
         }
     }

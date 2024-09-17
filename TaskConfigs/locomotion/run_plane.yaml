@@ -1,9 +1,9 @@
 modelFile: "/mujoco_models/walker/walker_plane.xml"
 modelName: "/walker_run"
 timeStep: 0.005
-keypointMethod: "set_interval"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "magvel_change"
+keypointMethod: "adaptive_jerk"   # Possible values: "setInterval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
-minN: 10
+minN: 1
 maxN: 20
 iterativeErrorThreshold: 0.1
 
@@ -14,11 +14,8 @@ robots:
     torqueControl: true
     torqueLimits: [1, 1, 1, 1, 1, 1]
     startPos: [0, 0, 0, 1, -1, 0.2, 0, 0, 0]
-    goalPos: [0.2, 0, 0, 0, 0, 0, 0, 0, 0]
-    goalVel: [0, 0.8, 0, 0, 0, 0, 0, 0, 0]
-    jointJerkThresholds: [1e-15, 1e-15, 0.01, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
-    #jointJerkThresholds: [0.1, 0.02, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-    magVelThresholds: [0.1, 0.1, 0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    jointJerkThresholds: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]
+    magVelThresholds: [0.5, 0.5, 0.5, 5, 5, 5, 5, 5, 5]
 
 residuals:
   body_height:
@@ -38,5 +35,5 @@ residuals:
     resid_dimension: 6
     #    weight: 0.0001
     #    weight_terminal: 0.0001
-    weight: 0
+    weight: 0.001
     weight_terminal: 0

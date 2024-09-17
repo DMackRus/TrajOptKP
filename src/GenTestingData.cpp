@@ -247,13 +247,72 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
 
-    return TestingAsynchronusMPC(keypoint_method, 100, task_horizon, task_timeout);
+    return TestingMPC(keypoint_method, true, 100, task_horizon, task_timeout);
 }
 
-int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method, int num_trials, int task_horzion, int task_timeout){
+int GenTestingData::GenDataMPCHorizons(int task_timeout){
+    std::cout << "Beginning testing, synchronous MPC for " << activeModelTranslator->model_name << std::endl;
 
+    std::vector<int> horizons = {20, 30, 40};
 
-    std::string method_directory = CreateTestName("asynchronus_mpc");
+    // Load keypoint method
+    keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
+    int num_trials = 10;
+
+    // -------------------- Set interval 1 ----------------------------
+    keypoint_method.name = "set_interval";
+    keypoint_method.min_N = 1;
+    for(int horizon : horizons){
+        TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
+    }
+
+    // ------------------- Set interval 5 -----------------------------
+    keypoint_method.min_N = 5;
+    for(int horizon : horizons){
+        TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
+    }
+
+    // ------------------- Set interval 20 ----------------------------
+    keypoint_method.min_N = 20;
+    for(int horizon : horizons){
+        TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
+    }
+
+    // ------------------- Adaptive Jerk ------------------------------
+    keypoint_method.name = "adaptive_jerk";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 20;
+    for(int horizon : horizons){
+        TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
+    }
+
+    // ------------------- Velocity change ----------------------------
+    keypoint_method.name = "velocity_change";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 20;
+    for(int horizon : horizons){
+        TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
+    }
+
+    // ------------------- Iterative error ----------------------------
+    keypoint_method.name = "iterative_error";
+    keypoint_method.min_N = 1;
+    for(int horizon : horizons){
+        TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
+    }
+
+}
+
+int GenTestingData::TestingMPC(const keypoint_method& keypoint_method, bool asynchronus,
+                                   int num_trials, int task_horzion, int task_timeout){
+
+    std::string method_directory;
+    if(asynchronus){
+        method_directory = CreateTestName("asynchronus_mpc");
+    }
+    else{
+        method_directory = CreateTestName("synchronus_mpc");
+    }
 
     // ------------------------- data storage -------------------------------------
     std::vector<double> final_costs;
@@ -279,7 +338,7 @@ int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method
 
         yamlReader->LoadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
         activeModelTranslator->ResetSVR();
-        std::cout << "current state vector: \n";
+        std::cout << "current state vector sizes: \n";
         std::cout << activeModelTranslator->current_state_vector.dof << " " << activeModelTranslator->current_state_vector.num_ctrl << "\n";
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
@@ -299,7 +358,7 @@ int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method
         activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
         // Perform the optimisation MPC test here asynchronously
-        SingleAsynchronusRun(true, method_directory, i, task_horzion, task_timeout);
+        SingleMPCRun(true, asynchronus, method_directory, i, task_horzion, task_timeout);
 
         // ------------------------- data storage -------------------------------------
         final_costs.push_back(final_cost);
@@ -338,7 +397,7 @@ int GenTestingData::TestingAsynchronusMPC(const keypoint_method& keypoint_method
     return EXIT_SUCCESS;
 }
 
-int GenTestingData::SingleAsynchronusRun(bool visualise,
+int GenTestingData::SingleMPCRun(bool visualise, bool asynchronus,
                                          const std::string& method_directory,
                                          int task_number,
                                          int task_horizon,
@@ -368,25 +427,24 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
     while(task_time < TASK_TIMEOUT){
         begin = std::chrono::steady_clock::now();
 
-        if(async_mpc || (!async_mpc && apply_next_control)){
-
-            if(!async_mpc){
-                apply_next_control = false;
-            }
-
-            if(activeVisualiser->current_control_index >= num_steps_replan){
-                // Applied correct number of controls so lets replan
-                {
-                    std::unique_lock<std::mutex> lock(mtx);
-                    reoptimise = true;
-                }
-            }
+        if(asynchronus || (!asynchronus && apply_next_control)){
 
             if(activeVisualiser->current_control_index < num_controls_apply && activeVisualiser->current_control_index < activeVisualiser->controlBuffer.size()){
 
                 next_control = activeVisualiser->controlBuffer[activeVisualiser->current_control_index];
                 // Increment the current control index
                 activeVisualiser->current_control_index++;
+
+                if(activeVisualiser->current_control_index >= num_steps_replan){
+                    // Applied correct number of controls so lets replan
+                    {
+                        std::unique_lock<std::mutex> lock(mtx);
+                        reoptimise = true;
+                        if(!asynchronus){
+                            apply_next_control = false;
+                        }
+                    }
+                }
 
                 MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
                 for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
@@ -444,7 +502,7 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
         }
 
         end = std::chrono::steady_clock::now();
-        // time takenf
+        // time taken
         auto time_taken = std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count();
 
         // compare how long we took versus the timestep of the model
@@ -499,8 +557,8 @@ int GenTestingData::SingleAsynchronusRun(bool visualise,
         MatrixXd residuals(activeModelTranslator->residual_list.size(), 1);
         activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, residuals);
         final_cost += activeModelTranslator->CostFunction(residuals,
-                                                          activeModelTranslator->full_state_vector, terminal);
-
+                                          activeModelTranslator->full_state_vector, terminal) *
+                                                  activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep();
     }
 
 //    if(1){
