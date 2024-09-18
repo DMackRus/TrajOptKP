@@ -253,11 +253,11 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
 int GenTestingData::GenDataMPCHorizons(int task_timeout){
     std::cout << "Beginning testing, synchronous MPC for " << activeModelTranslator->model_name << std::endl;
 
-    std::vector<int> horizons = {20, 30, 40};
+    std::vector<int> horizons = {20, 30, 40, 50, 60, 70, 80};
 
     // Load keypoint method
     keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
-    int num_trials = 10;
+    int num_trials = 100;
 
     // -------------------- Set interval 1 ----------------------------
     keypoint_method.name = "set_interval";
@@ -265,30 +265,30 @@ int GenTestingData::GenDataMPCHorizons(int task_timeout){
     for(int horizon : horizons){
         TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
     }
-
-    // ------------------- Set interval 5 -----------------------------
+//
+//    // ------------------- Set interval 5 -----------------------------
     keypoint_method.min_N = 5;
     for(int horizon : horizons){
         TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
     }
-
-    // ------------------- Set interval 20 ----------------------------
+//
+//    // ------------------- Set interval 20 ----------------------------
     keypoint_method.min_N = 20;
     for(int horizon : horizons){
         TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
     }
-
-    // ------------------- Adaptive Jerk ------------------------------
+//
+//    // ------------------- Adaptive Jerk ------------------------------
     keypoint_method.name = "adaptive_jerk";
-    keypoint_method.min_N = 1;
+    keypoint_method.min_N = 2;
     keypoint_method.max_N = 20;
     for(int horizon : horizons){
         TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
     }
-
-    // ------------------- Velocity change ----------------------------
+//
+//    // ------------------- Velocity change ----------------------------
     keypoint_method.name = "velocity_change";
-    keypoint_method.min_N = 1;
+    keypoint_method.min_N = 2;
     keypoint_method.max_N = 20;
     for(int horizon : horizons){
         TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
@@ -296,7 +296,7 @@ int GenTestingData::GenDataMPCHorizons(int task_timeout){
 
     // ------------------- Iterative error ----------------------------
     keypoint_method.name = "iterative_error";
-    keypoint_method.min_N = 1;
+    keypoint_method.min_N = 2;
     for(int horizon : horizons){
         TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
     }
@@ -557,8 +557,7 @@ int GenTestingData::SingleMPCRun(bool visualise, bool asynchronus,
         MatrixXd residuals(activeModelTranslator->residual_list.size(), 1);
         activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, residuals);
         final_cost += activeModelTranslator->CostFunction(residuals,
-                                          activeModelTranslator->full_state_vector, terminal) *
-                                                  activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep();
+                                          activeModelTranslator->full_state_vector, terminal);
     }
 
 //    if(1){
@@ -864,7 +863,7 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
                           std::to_string(keypoint_method.max_N);
         }
         else if(keypoint_method.name == "iterative_error"){
-            keypoint_method_name = "IE_" +
+            keypoint_method_name = "*IE_" +
                           std::to_string(keypoint_method.min_N) + "_" +
                           std::to_string(keypoint_method.max_N);
         }

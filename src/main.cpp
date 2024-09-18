@@ -231,7 +231,7 @@ int main(int argc, char **argv) {
         GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
 
-        int task_timeout = 2000;
+        int task_timeout = 1500;
 
         if(argc > 2){
             task_timeout = std::atoi(argv[2]);

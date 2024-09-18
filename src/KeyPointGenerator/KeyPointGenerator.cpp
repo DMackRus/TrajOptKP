@@ -475,7 +475,7 @@ std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsIteratively(in
     }
 
     // Loop through all dofs in the system
-    #pragma omp parallel for
+//    #pragma omp parallel for
     for(int i = 0; i < dof; i++){
 //        std::cout << "---------------------  Generating key points for dof --------------------------------- " << i << std::endl;
         std::vector<index_tuple> list_of_indices_check;

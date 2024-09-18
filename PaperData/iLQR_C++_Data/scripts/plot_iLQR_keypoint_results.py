@@ -24,7 +24,6 @@ def main():
     	dataframe['Optimisation time (ms)'] /= 1000
     plot_openloop_data(names, dataframes_iLQR)
 
-    
 def plot_openloop_data(names, dataframes_iLQR):
     
     # graphs_to_plot = ['Cost reduction', 'Optimisation time (ms)', 'Optimisation time (ms)', 'Number iterations', 'Average percent derivs']
