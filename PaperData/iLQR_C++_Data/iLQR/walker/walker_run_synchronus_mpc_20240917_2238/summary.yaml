@@ -1,0 +1,16 @@
+optimisation horizon: 60
+controls_noise: 0.5
+model timestep: 0.005
+keypoint_name: AJ_2_20
+keypoint_min_N: 2
+keypoint_max_N: 20
+jerk_thresholds:
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000
+  - 1000

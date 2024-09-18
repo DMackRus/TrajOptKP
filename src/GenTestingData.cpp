@@ -86,6 +86,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    std::this_thread::sleep_for(std::chrono::seconds(30));
 //
 //    // ----------------- Adaptive jerk 1 50 ---------------------
+<<<<<<< HEAD
 //    keypoint_method.name = "adaptive_jerk";
 //    keypoint_method.min_N = 1;
 //    keypoint_method.max_N = 10;
@@ -97,6 +98,19 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    if(this_test_fine != EXIT_SUCCESS){
 //        tests_fine = this_test_fine;
 //    }
+=======
+    keypoint_method.name = "adaptive_jerk";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 100;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+>>>>>>> 8c8f3695a6464337f02437b82f8ff3f3a56f8da0
     // Sleep for 60 seconds - enforces file name change for different tests
 //    std::this_thread::sleep_for(std::chrono::seconds(60));
 
