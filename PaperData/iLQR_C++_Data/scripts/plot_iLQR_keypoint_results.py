@@ -11,7 +11,7 @@ import math
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "box_sweep"
+task_name = "push_no_clutter"
 base_dir = ".."
 
 def main():
@@ -21,7 +21,8 @@ def main():
     # Pre processing step, make optimisation times in seconds rather than milliseconds
     # Loop through data frames
     for dataframe in dataframes_iLQR:
-    	dataframe['Optimisation time (ms)'] /= 1000
+        dataframe['Optimisation time (ms)'] /= 1000
+
     plot_openloop_data(names, dataframes_iLQR)
 
 def plot_openloop_data(names, dataframes_iLQR):
