@@ -6,7 +6,7 @@ mpc_horizon: 50
 keypointMethod: "adaptive_jerk"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
-maxN: 50
+maxN: 100
 iterativeErrorThreshold: 0.01
 robots:
   panda:
@@ -16,7 +16,7 @@ robots:
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
     goalPos: [ 0, 0, 0, 0, 0, 0, 0 ]
-    jointJerkThresholds: [1, 1, 1, 1, 1, 1, 1]
+    jointJerkThresholds: [10, 10, 10, 10, 10, 10, 10]
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   goal:
@@ -49,3 +49,5 @@ residuals:
     target: [0]
     weight: 0.01
     weight_terminal: 0.01
+#    weight: 0
+#    weight_terminal: 0

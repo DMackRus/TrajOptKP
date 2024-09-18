@@ -1,0 +1,6 @@
+optimisation horizon: 40
+controls_noise: 0.5
+model timestep: 0.005
+keypoint_name: SI_20
+keypoint_min_N: 20
+keypoint_max_N: 20
