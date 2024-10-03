@@ -1,0 +1,38 @@
+optimisation horizon: 1000
+controls_noise: 0.5
+model timestep: 0.01
+keypoint_name: "*VC_2_100"
+keypoint_min_N: 2
+keypoint_max_N: 100
+velocity_change_thresholds:
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.05
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
+  - 0.01
