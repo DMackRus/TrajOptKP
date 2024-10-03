@@ -28,11 +28,8 @@ task: "acrobot"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-<<<<<<< HEAD
 runMode: "Generate_openloop_data"
-=======
-runMode: "Optimise_once"
->>>>>>> 8c8f3695a6464337f02437b82f8ff3f3a56f8da0
+
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.

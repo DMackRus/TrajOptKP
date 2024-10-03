@@ -66,9 +66,6 @@ def plot_grouped_data(grouped_data):
             # If any horizon can't be converted to a float, fallback to sorting by string
             return sorted(horizons)
         
-    
-    
-
     for keypoint_method, horizons in grouped_data.items():
         x_values = []
         y_values = []
@@ -91,7 +88,7 @@ def plot_grouped_data(grouped_data):
     axs[0].set_ylabel("Final cost")
     axs[0].set_title(f'Final cost vs Optimisation Horizon by Keypoint Method')
     axs[0].legend()
-    axs[0].grid(True)
+    # axs[0].grid(True)
     
     for keypoint_method, horizons in grouped_data.items():
         x_values = []
@@ -115,22 +112,13 @@ def plot_grouped_data(grouped_data):
     axs[1].set_ylabel("Control frequency (Hz)")
     axs[1].set_title(f'Control frequency (Hz) vs Optimisation Horizon by Keypoint Method')
     axs[1].legend()
-    axs[1].grid(True)
+    # axs[1].grid(True)
     
     # Bottom graph needs to plot control frequency
     control_frequency = 1 / optimisation_time
     
-    
-    
-    
     plt.show()
 
-    # plt.xlabel('Optimisation Horizon')
-    # plt.ylabel(y_column)
-    # plt.title(f'{y_column} vs Optimisation Horizon by Keypoint Method')
-    # plt.legend()
-    # plt.grid(True)
-    # plt.show()
 
 if __name__ == "__main__":
     # Directory containing subdirectories

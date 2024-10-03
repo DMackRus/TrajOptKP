@@ -74,14 +74,16 @@ def plot_grouped_data(grouped_data, vel_change_thresoholds):
     grouped_data = list(sorted_list_of_dfs)
     vel_change_thresoholds = list(sorted_second_list)
     
-    fig, axs = plt.subplots(2, 1, figsize=(10, 12), sharex=True)
+    # fig, axs = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
+    
+    fig, ax1 = plt.subplots(figsize=(10, 5))
     
     x_values = []
     y_values = []
     for i, df in enumerate(grouped_data):
         
         x_values.append(vel_change_thresoholds[i])
-        y_values.append(df['Cost reduction'].mean())
+        y_values.append(1 - df['Cost reduction'].mean())
         
         # Sort the horizons
 
@@ -96,7 +98,17 @@ def plot_grouped_data(grouped_data, vel_change_thresoholds):
         # # Plot the line for this keypoint method
         # axs[0].plot(x_values, y_values, label=keypoint_method, marker='o')
         
-    axs[0].plot(x_values, y_values)
+    # Plot the first line (y1) with the left y-axis
+    ax1.plot(x_values, y_values, 'g-', label='Final cost', marker='o')  # 'g-' means green solid line
+    ax1.set_xlabel('Velocity change thresholds (m/s)')
+    # ax1.set_ylabel('Final Cost', color='g')
+    ax1.tick_params(axis='y', labelcolor='g')
+        
+    # axs[0].plot(x_values, y_values, marker='o')
+    # axs[0].set_ylabel("C.R")
+    
+    # Create a second y-axis on the right
+    ax2 = ax1.twinx()
     
     
     # Plot percentage of derivatives computed
@@ -107,10 +119,31 @@ def plot_grouped_data(grouped_data, vel_change_thresoholds):
         x_values.append(vel_change_thresoholds[i])
         y_values.append(df['Average percent derivs'].mean())
         
-    axs[1].plot(x_values, y_values)
+    # Plot the second line (y2) with the right y-axis
+    ax2.plot(x_values, y_values, 'b-', label='Percentage of derivatives', marker='o')  # 'b-' means blue solid line
+    # ax2.set_ylabel('Percentage of derivatives', color='b')
+    ax2.tick_params(axis='y', labelcolor='b')
     
+    # Add legends
+    fig.legend(loc='upper right', bbox_to_anchor=(0.5, 0.85))
+    # Set title
+    fig.suptitle("Optimisation performance of Acrobot versus velocity change threshold")
+        
+    # axs[1].plot(x_values, y_values, marker='o')
+    # axs[1].set_ylabel("Average percentage of derivatives")
     
-    
+    # Plot number of optimisation iterations
+    # x_values = []
+    # y_values = []
+    # for i, df in enumerate(grouped_data):
+        
+    #     x_values.append(vel_change_thresoholds[i])
+    #     y_values.append(df['Number iterations'].mean())
+        
+    # axs[2].plot(x_values, y_values, marker='o')
+    # axs[2].set_ylabel("Number of iterations")
+    # axs[2].set_xlabel("Velcocity change threshold (m/s)")
+    # axs[0].set_title("Acrobot optimisation performance verus velocity change threshold")
     
     plt.show()
 

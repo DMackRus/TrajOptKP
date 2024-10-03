@@ -26,7 +26,9 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     keypoint_method.min_N = 1;
     keypoint_method.max_N = 1000;
 //    vector<double> vel_change_thresholds = {0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1000.0};
-    vector<double> vel_change_thresholds = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+//    vector<double> vel_change_thresholds = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+//    vector<double> vel_change_thresholds = {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
+    vector<double> vel_change_thresholds = {20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0};
     for(int i = 0; i < vel_change_thresholds.size(); i++){
         keypoint_method.velocity_change_thresholds[0] = vel_change_thresholds[i];
         keypoint_method.velocity_change_thresholds[1] = vel_change_thresholds[i];
@@ -86,10 +88,9 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    std::this_thread::sleep_for(std::chrono::seconds(30));
 //
 //    // ----------------- Adaptive jerk 1 50 ---------------------
-<<<<<<< HEAD
-//    keypoint_method.name = "adaptive_jerk";
+    keypoint_method.name = "adaptive_jerk";
 //    keypoint_method.min_N = 1;
-//    keypoint_method.max_N = 10;
+//    keypoint_method.max_N = 100;
 //
 //    // Set the keypoint method
 //    optimiser->SetCurrentKeypointMethod(keypoint_method);
@@ -98,19 +99,6 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    if(this_test_fine != EXIT_SUCCESS){
 //        tests_fine = this_test_fine;
 //    }
-=======
-    keypoint_method.name = "adaptive_jerk";
-    keypoint_method.min_N = 1;
-    keypoint_method.max_N = 100;
-
-    // Set the keypoint method
-    optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-    if(this_test_fine != EXIT_SUCCESS){
-        tests_fine = this_test_fine;
-    }
->>>>>>> 8c8f3695a6464337f02437b82f8ff3f3a56f8da0
     // Sleep for 60 seconds - enforces file name change for different tests
 //    std::this_thread::sleep_for(std::chrono::seconds(60));
 
