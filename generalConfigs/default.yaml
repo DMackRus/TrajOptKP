@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "acrobot"
+task: "pushing_moderate_clutter"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -28,7 +28,7 @@ task: "acrobot"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Generate_openloop_data"
+runMode: "Analyse_toy_contact_keypoints"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
@@ -48,7 +48,7 @@ runMode: "Generate_openloop_data"
 # "Analyse_toy_contact_keypoints" - Analyse the derivatives in toy example with contact and keypoint method.
 
 taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 1                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
@@ -57,4 +57,4 @@ minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
-record: false
+record: true

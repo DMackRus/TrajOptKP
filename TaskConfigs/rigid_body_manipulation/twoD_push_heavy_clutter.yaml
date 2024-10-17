@@ -5,7 +5,7 @@ openloop_horizon: 1000
 mpc_horizon: 50
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
-minN: 1000
+minN: 1
 maxN: 50
 iterativeErrorThreshold: 0.0001
 robots:
@@ -15,7 +15,8 @@ robots:
     torqueControl: true
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
-    jointJerkThresholds: [1, 1, 1, 1, 1, 1, 1]
+#    jointJerkThresholds: [1, 1, 1, 1, 1, 1, 1]
+    jointJerkThresholds: [10, 10, 10, 10, 10, 10, 10]
     magVelThresholds: [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1]
 bodies:
   goal:

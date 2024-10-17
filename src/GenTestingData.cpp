@@ -1218,7 +1218,7 @@ int GenTestingData::AnalyseToyContactKeypoints(int horizon){
     // Compute dynamics derivatives using key-points
     optimiser->activeKeyPointMethod.name = "adaptive_jerk";
     optimiser->activeKeyPointMethod.min_N = 2;
-    optimiser->activeKeyPointMethod.max_N = 500;
+    optimiser->activeKeyPointMethod.max_N = 50;
     optimiser->SetCurrentKeypointMethod(optimiser->activeKeyPointMethod);
 
     optimiser->GenerateDerivatives();
