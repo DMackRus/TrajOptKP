@@ -1,0 +1,42 @@
+modelFile: "/mujoco_models/Franka_panda/scene.xml"
+modelName: "/box_sweep"
+timeStep: 0.008
+openloop_horizon: 1500
+keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+minN: 1
+maxN: 100
+iterativeErrorThreshold: 0.00001
+robots:
+  panda:
+    jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
+    actuatorNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]
+    torqueControl: true
+    torqueLimits: [87, 87, 87, 87, 12, 12, 12]
+    startPos: [-0.178, 0.7, -0.0593, -1.73, 0, 0.722, -1.6]
+    jointJerkThresholds: [1, 1, 1, 1, 1, 1, 1]
+    magVelThresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+bodies:
+  goal:
+    activeLinearDOF: [true, true, true]
+    activeAngularDOF: [false, false, false]
+    startLinearPos: [ 0.65, 0, 0.0 ]
+    startAngularPos: [ 0, 0, 0 ]
+    goalLinearPos: [ 0.65, 0.4, 0.0 ]
+    linearJerkThreshold: [1, 1, 1]
+    angularJerkThreshold: [ 0, 0, 0 ]
+    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
+    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
+
+residuals:
+  goal_pos:
+    target: [0.65, 0.4]
+    weight: 0
+    weight_terminal: 1000
+  goal_vel:
+    target: [0, 0]
+    weight: 0.2
+    weight_terminal: 100
+  reach:
+    target: [0]
+    weight: 0
+    weight_terminal: 0
