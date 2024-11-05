@@ -28,7 +28,7 @@ task: "pushing_moderate_clutter"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Analyse_toy_contact_keypoints"
+runMode: "MPC_until_completion"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
@@ -57,4 +57,4 @@ minIter: 3                # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
-record: true
+record: false
