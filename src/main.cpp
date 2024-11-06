@@ -20,6 +20,7 @@
 #include "ModelTranslator/PushSoft.h"
 //#include "Hopper.h"
 #include "ModelTranslator/Humanoid.h"
+#include "ModelTranslator/PlaceObject.h"
 
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
@@ -111,9 +112,9 @@ int main(int argc, char **argv) {
 
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
 
-    for(int j = 0; j < 5; j++){
-        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
-    }
+//    for(int j = 0; j < 5; j++){
+//        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+//    }
     activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     //Instantiate my visualiser
@@ -821,6 +822,10 @@ int assign_task(){
     else if(task == "humanoid"){
         std::shared_ptr<Humanoid> my_humanoid = std::make_shared<Humanoid>();
         activeModelTranslator = my_humanoid;
+    }
+    else if(task == "place"){
+        std::shared_ptr<PlaceObject> my_place_object = std::make_shared<PlaceObject>("end_effector", "goal");
+        activeModelTranslator = my_place_object;
     }
     else{
         std::cout << "invalid scene selected, " << task << " does not exist" << std::endl;

@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_moderate_clutter"
+task: "place"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -18,6 +18,8 @@ task: "pushing_moderate_clutter"
 # "pushing_moderate_clutter_constrained",
 # "box_sweep", "3D_pushing", "sweep_multiple"
 # "push_soft_into_rigid", "push_soft"
+#
+# "place"
 #
 # ---- Locomotion ----
 # "walker_walk", "walker_run", "walker_uneven", "humanoid"
@@ -47,13 +49,13 @@ runMode: "MPC_until_completion"
 # "Analyse_toy_contact"           - Analyse the derivatives in toy example with contact.
 # "Analyse_toy_contact_keypoints" - Analyse the derivatives in toy example with contact and keypoint method.
 
-taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+taskInitMode: "fromYAML"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
-minIter: 3                # Minimum number of iterations to run Optimiser for
+minIter: 8               # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true

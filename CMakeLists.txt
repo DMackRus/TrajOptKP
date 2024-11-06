@@ -81,7 +81,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/PistonBlock.cpp
             src/Optimiser/iLQR_SVR.cpp
             src/ModelTranslator/PushSoft.cpp
-            src/ModelTranslator/SweepMultiple.cpp)
+            src/ModelTranslator/SweepMultiple.cpp
+            src/ModelTranslator/PlaceObject.cpp)
 
 include_directories(
         include
