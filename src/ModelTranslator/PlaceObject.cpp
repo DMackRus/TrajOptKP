@@ -38,8 +38,8 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     int resid_index = 0;
 
     // Compute kinematics chain to compute site poses
-//    mj_kinematics(MuJoCo_helper->model, d);
-    mj_forwardSkip(MuJoCo_helper->model, d, mjSTAGE_NONE, 1);
+    mj_kinematics(MuJoCo_helper->model, d);
+//    mj_forwardSkip(MuJoCo_helper->model, d, mjSTAGE_NONE, 1);
 
     pose_6 goal_pose;
     pose_6 goal_velocity;
@@ -99,5 +99,5 @@ void PlaceObject::SetGoalVisuals(mjData *d) {
     // TODO - not sure about this
     // Activate pump adhesion - Pump adhesion is not a decision variable currently in optimisation
     int pump_id = mj_name2id(MuJoCo_helper->model, mjOBJ_ACTUATOR, "adhere_pump");
-    d->ctrl[pump_id] = 4.0;
+    d->ctrl[pump_id] = 5.0;
 }

@@ -20,7 +20,7 @@ bodies:
   goal:
     activeLinearDOF: [true, true, true]
     activeAngularDOF: [false, false, false]
-    startLinearPos: [ 0.55, 0, 0.5 ]
+    startLinearPos: [ 0.55, 0, 0.52 ]
     startAngularPos: [ 0, 0, 0 ]
     linearJerkThreshold: [1, 1, 1]
     angularJerkThreshold: [ 0, 0, 0 ]
@@ -30,13 +30,13 @@ bodies:
 residuals:
   goal_pos:
     target: [0.7, 0.1, 0.1]
-    weight: 0.1
-    weight_terminal: 1
+    weight: 1.0
+    weight_terminal: 100
   goal_vel:
     target: [0, 0, 0]
-    weight: 0
-    weight_terminal: 0
+    weight: 0.01
+    weight_terminal: 100
   ee:
     target: [0.1]
-    weight: 10
-    weight_terminal: 100
+    weight: 0.0
+    weight_terminal: 0
