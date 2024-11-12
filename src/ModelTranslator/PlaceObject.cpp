@@ -52,13 +52,26 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
         ee_pose.position(i) = d->site_xpos[site_id * 3 + i];
     }
 
-    // --------------- Residual 0: Body goal position -----------------
+    // --------------- Residual 0: Body goal position x -----------------
     double diff_x = goal_pose.position(0) - residual_list[0].target[0];
-    double diff_y = goal_pose.position(1) - residual_list[0].target[1];
-    double diff_z = goal_pose.position(2) - residual_list[0].target[2];
-    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
-                                       + pow(diff_y, 2)
-                                       + pow(diff_z, 2));
+    residuals(resid_index++, 0) = diff_x;
+
+    // --------------- Residual 1: Body goal position y -----------------
+    double diff_y = goal_pose.position(1) - residual_list[1].target[0];
+    residuals(resid_index++, 0) = diff_y;
+
+    // --------------- Residual 2: Body goal position z -----------------
+    double diff_z = goal_pose.position(2) - residual_list[2].target[0];
+    residuals(resid_index++, 0) = diff_z;
+
+
+    // --------------- Residual 0: Body goal position -----------------
+//    double diff_x = goal_pose.position(0) - residual_list[0].target[0];
+//    double diff_y = goal_pose.position(1) - residual_list[0].target[1];
+//    double diff_z = goal_pose.position(2) - residual_list[0].target[2];
+//    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
+//                                       + pow(diff_y, 2)
+//                                       + pow(diff_z, 2));
 
     // --------------- Residual 1: Body goal velocity -----------------
     diff_x = goal_velocity.position(0);
@@ -68,13 +81,13 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
                                        + pow(diff_y, 2)
                                        + pow(diff_z, 2));
 
-    // --------------- Residual 2: EE - body -----------------
-    diff_x = goal_pose.position(0) - ee_pose.position(0);
-    diff_y = goal_pose.position(1) - ee_pose.position(1);
-    diff_z = goal_pose.position(2) - ee_pose.position(2);
-    residuals(resid_index++, 0) = pow(sqrt(pow(diff_x, 2)
-                                       + pow(diff_y, 2)
-                                       + pow(diff_z, 2)) - residual_list[2].target[0], 2);
+//    // --------------- Residual 2: EE - body -----------------
+//    diff_x = goal_pose.position(0) - ee_pose.position(0);
+//    diff_y = goal_pose.position(1) - ee_pose.position(1);
+//    diff_z = goal_pose.position(2) - ee_pose.position(2);
+//    residuals(resid_index++, 0) = pow(sqrt(pow(diff_x, 2)
+//                                       + pow(diff_y, 2)
+//                                       + pow(diff_z, 2)) - residual_list[2].target[0], 2);
 
     if(resid_index != residual_list.size()){
         std::cerr << "Error: Residuals size mismatch\n";
@@ -92,12 +105,12 @@ void PlaceObject::SetGoalVisuals(mjData *d) {
 
     // Set the goal object position
     goal_pose.position(0) = residual_list[0].target[0];
-    goal_pose.position(1) = residual_list[0].target[1];
+    goal_pose.position(1) = residual_list[1].target[0];
     goal_pose.position(2) = 0.032;
     MuJoCo_helper->SetBodyPoseAngle("target", goal_pose, d);
 
     // TODO - not sure about this
     // Activate pump adhesion - Pump adhesion is not a decision variable currently in optimisation
-    int pump_id = mj_name2id(MuJoCo_helper->model, mjOBJ_ACTUATOR, "adhere_pump");
-    d->ctrl[pump_id] = 5.0;
+//    int pump_id = mj_name2id(MuJoCo_helper->model, mjOBJ_ACTUATOR, "adhere_pump");
+//    d->ctrl[pump_id] = 5.0;
 }

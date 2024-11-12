@@ -28,15 +28,19 @@ bodies:
     angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
 
 residuals:
-  goal_pos:
-    target: [0.7, 0.1, 0.1]
+  goal_x:
+    target: [0.55]
+    weight: 2.0
+    weight_terminal: 2.0
+  goal_y:
+    target: [-0.15]
+    weight: 2.0
+    weight_terminal: 2.0
+  goal_z:
+    target: [0.1]
     weight: 1.0
-    weight_terminal: 100
+    weight_terminal: 1.0
   goal_vel:
     target: [0, 0, 0]
     weight: 0.01
-    weight_terminal: 100
-  ee:
-    target: [0.1]
-    weight: 0.0
-    weight_terminal: 0
+    weight_terminal: 0.0
