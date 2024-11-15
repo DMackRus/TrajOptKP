@@ -96,6 +96,23 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
 }
 
 bool PlaceObject::TaskComplete(mjData *d, double &dist) {
+
+    // Get the pose of the goal object
+    pose_6 goal_pose;
+    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
+
+    // Compute distance to the target
+    double diffx, diffy, diffz;
+    diffx = goal_pose.position(0) - residual_list[0].target[0];
+    diffy = goal_pose.position(1) - residual_list[1].target[0];
+    diffz = goal_pose.position(2) - residual_list[2].target[0];
+
+    dist = sqrt(pow(diffx,2) + pow(diffy,2) + pow(diffz,2));
+
+    if (dist < 0.02){
+        return true;
+    }
+
     return false;
 }
 
