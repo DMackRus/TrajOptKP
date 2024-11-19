@@ -19,7 +19,7 @@ robots:
 bodies:
   goal:
     activeLinearDOF: [true, true, true]
-    activeAngularDOF: [false, false, false]
+    activeAngularDOF: [true, true, true]
     startLinearPos: [ 0.55, 0, 0.52 ]
     startAngularPos: [ 0, 0, 0 ]
     linearJerkThreshold: [1, 1, 1]
@@ -27,6 +27,7 @@ bodies:
     linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
     angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
 
+# MPC residuals
 residuals:
   goal_x:
     target: [0.55]
@@ -37,10 +38,37 @@ residuals:
     weight: 2.0
     weight_terminal: 2.0
   goal_z:
-    target: [0.1]
+    target: [0.04]
     weight: 1.0
     weight_terminal: 1.0
-  goal_vel:
-    target: [0, 0, 0]
-    weight: 0.01
-    weight_terminal: 0.0
+  upright:
+    target: [0]
+    weight: 1.0
+    weight_terminal: 1.0
+#  robot_vel:
+#    target: [0]
+#    resid_dimension: 7
+#    weight: 0.01
+#    weight_terminal: 0.01
+
+#residuals:
+#  goal_x:
+#    target: [0.55]
+#    weight: 0.01
+#    weight_terminal: 500
+#  goal_y:
+#    target: [-0.15]
+#    weight: 0.01
+#    weight_terminal: 500
+#  goal_z:
+#    target: [0]
+#    weight: 0.01
+#    weight_terminal: 500
+#  upright:
+#    target: [0]
+#    weight: 0
+#    weight_terminal: 1000
+#  goal_vel:
+#    target: [0, 0, 0]
+#    weight: 0.01
+#    weight_terminal: 0.0

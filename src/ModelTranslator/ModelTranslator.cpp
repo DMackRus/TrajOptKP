@@ -1775,9 +1775,6 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 //            MuJoCo_helper->SetSoftBodyVertexPos(soft_body.name, i, body_pose, d);
 //        }
 //    }
-
-
-
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {

@@ -55,7 +55,7 @@ csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
-minIter: 8               # Minimum number of iterations to run Optimiser for
+minIter: 5               # Minimum number of iterations to run Optimiser for
 maxIter: 10               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true

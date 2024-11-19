@@ -792,12 +792,12 @@ void MuJoCoHelper::InitVisualisation() {
 //    cam.lookat[2] =  0.219;
 
     // Push heavy clutter
-    cam.distance = 0.7472;
-    cam.azimuth = -131.1;
-    cam.elevation = -52.1;
-    cam.lookat[0] = 0.5686;
-    cam.lookat[1] = -0.08433;
-    cam.lookat[2] =  -0.05125;
+    cam.distance = 1.589;
+    cam.azimuth = -82.7;
+    cam.elevation = -44.7;
+    cam.lookat[0] = 0.5353;
+    cam.lookat[1] = -0.08989;
+    cam.lookat[2] =  -0.01922;
 
     // Piston block 1D view
 //    cam.distance = 1.449;
@@ -820,7 +820,7 @@ void MuJoCoHelper::UpdateScene(GLFWwindow *window, const char* label){
 //    opt.flags[mjVIS_JOINT] = true;
     opt.flags[mjVIS_FLEXFACE] = false;
     opt.flags[mjVIS_FLEXVERT] = true;
-//    opt.frame = mjFRAME_BODY;
+    opt.frame = mjFRAME_BODY;
     mjv_updateScene(model, vis_data, &opt, nullptr, &cam, mjCAT_ALL, &scn);
 
     mjr_render(viewport, &scn, &con);
