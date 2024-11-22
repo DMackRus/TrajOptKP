@@ -3,7 +3,7 @@ modelName: "/place_single"
 timeStep: 0.008
 openloop_horizon: 1500
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
-minN: 1
+minN: 5
 maxN: 100
 iterativeErrorThreshold: 0.00001
 robots:
@@ -31,25 +31,25 @@ bodies:
 residuals:
   goal_x:
     target: [0.55]
-    weight: 2.0
-    weight_terminal: 2.0
+    weight: 2
+    weight_terminal: 2
   goal_y:
     target: [-0.15]
-    weight: 2.0
-    weight_terminal: 2.0
+    weight: 2
+    weight_terminal: 2
   goal_z:
-    target: [0.04]
-    weight: 1.0
-    weight_terminal: 1.0
+    target: [0.1]
+    weight: 0
+    weight_terminal: 0
   upright:
     target: [0]
-    weight: 1.0
-    weight_terminal: 1.0
-#  robot_vel:
-#    target: [0]
-#    resid_dimension: 7
-#    weight: 0.01
-#    weight_terminal: 0.01
+    weight: 0
+    weight_terminal: 0
+  robot_vel:
+    target: [0]
+    resid_dimension: 7
+    weight: 0.01
+    weight_terminal: 0.01
 
 #residuals:
 #  goal_x:

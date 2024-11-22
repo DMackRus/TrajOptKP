@@ -103,12 +103,12 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     residuals(resid_index++, 0) = axis_diff(2);
 
     // ------------- Residual 4-11: robot joint velocities ---------------
-//    std::vector<double> robot_joint_velocities;
-//    MuJoCo_helper->GetRobotJointsVelocities("panda", robot_joint_velocities, d);
-//
-//    for(int i = 0; i < 7; i++){
-//        residuals(resid_index++, 0) = robot_joint_velocities[i];
-//    }
+    std::vector<double> robot_joint_velocities;
+    MuJoCo_helper->GetRobotJointsVelocities("panda", robot_joint_velocities, d);
+
+    for(int i = 0; i < 7; i++){
+        residuals(resid_index++, 0) = robot_joint_velocities[i];
+    }
 
 
     // --------------- Residual 0: Body goal position -----------------
