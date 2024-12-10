@@ -97,6 +97,14 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
 
         if(robot_it->second["root_name"]){
             root_name = robot_it->second["root_name"].as<std::string>();
+
+            // If the robot has a root, then we add 6 joint names
+            // root_name_x, _y, _z, _roll, _pitch, _yaw]
+//            std::string suffixes[6] = {"_x", "_y", "_z", "_roll", "_pitch", "_yaw"};
+//            for(int i = 0; i < 6; i++){
+//                std::string joint_name = robot_it->second["root_name"].as<std::string>() + suffixes[i];
+//                jointNames.push_back(joint_name);
+//            }
         }
         else{
             root_name = "-";

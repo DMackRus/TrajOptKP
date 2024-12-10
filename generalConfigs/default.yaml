@@ -8,7 +8,7 @@ task: "place"
 # -----------------------------  Task list ------------------------------------
 #
 # ----- Toy tasks -----
-# "acrobot", "piston_block", "pentabot"
+# "acrobot", "piston_block", "pentabot", "floating_cube"
 #
 # --- Free robot arm motion ---
 # "reaching"

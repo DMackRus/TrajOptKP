@@ -21,6 +21,7 @@
 //#include "Hopper.h"
 #include "ModelTranslator/Humanoid.h"
 #include "ModelTranslator/PlaceObject.h"
+#include "ModelTranslator/FloatingCube.h"
 
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
@@ -826,6 +827,10 @@ int assign_task(){
     else if(task == "place"){
         std::shared_ptr<PlaceObject> my_place_object = std::make_shared<PlaceObject>("end_effector", "goal");
         activeModelTranslator = my_place_object;
+    }
+    else if(task == "floating_cube"){
+        std::shared_ptr<FloatingCube> my_floating_cube_object = std::make_shared<FloatingCube>();
+        activeModelTranslator = my_floating_cube_object;
     }
     else{
         std::cout << "invalid scene selected, " << task << " does not exist" << std::endl;

@@ -18,7 +18,13 @@ bool MuJoCoHelper::IsValidRobotName(const string& robot_name, int &robot_index, 
     for(int i = 0; i < robots.size(); i++){
         if(robots[i].name == robot_name){
             valid_robot = true;
-            robot_base_joint_name = robots[i].joint_names[0];
+            if(robots[i].joint_names.size() > 0){
+                robot_base_joint_name = robots[i].joint_names[0];
+            }
+            else{
+                robot_base_joint_name = "";
+            }
+
             robot_index = i;
         }
     }
@@ -236,22 +242,23 @@ void MuJoCoHelper::GetRobotControlLimits(const string& robot_name, vector<double
     }
 
     // Get the body id of the base link of the robot
-    int joint_id = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
+//    int joint_id = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
 
     control_limits.resize(2 * robots[robot_index].actuator_names.size());
 
-    if(joint_id == -1){
-        std::cerr << "Base link of robot not found\n";
-        exit(1);
-    }
+//    if(joint_id == -1){
+//        std::cerr << "Base link of robot not found\n";
+//        exit(1);
+//    }
 
-    int start_index = model->jnt_dofadr[joint_id];
+//    int start_index = model->jnt_dofadr[joint_id];
+//
+//    if(start_index == -1){
+//        std::cerr << "Invalid bodyId for robot\n";
+//        exit(1);
+//    }
 
-    if(start_index == -1){
-        std::cerr << "Invalid bodyId for robot\n";
-        exit(1);
-    }
-
+    // TOD_ (dmackrus) I think this doesnt accomadate for multiple robots
     for(int i = 0; i < 2 * robots[robot_index].actuator_names.size(); i++){
         control_limits[i] = model->actuator_ctrlrange[i];
     }

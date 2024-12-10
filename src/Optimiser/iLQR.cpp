@@ -439,7 +439,6 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
         if(lambda_exit){
             break;
         }
-
     }
 
     time_backwards_pass_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
@@ -464,9 +463,15 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
         std::vector<std::future<double>> futures;
         std::vector<double> alphas;
 
-        for(int i = 0; i < num_parallel_rollouts; i++){
-            alphas.push_back(1.0 - (double)i/num_parallel_rollouts);
+        for(int i = 1; i < num_parallel_rollouts + 1; i++){
+            double linearValue = static_cast<double>(i) / (num_parallel_rollouts); // Evenly spaced values between 0 and 1
+            double compressed_vals = linearValue * linearValue;
+            alphas.push_back(compressed_vals);
         }
+
+//        for(int i = 0; i < num_parallel_rollouts; i++){
+//            alphas.push_back(1.0 - (double)i/num_parallel_rollouts);
+//        }
 //        std::cout << "setup threads: " << duration_cast<microseconds>(high_resolution_clock::now() - temp_timer).count() / 1000.0f << "ms \n";
 
         // Create tasks and push them into the vector
@@ -523,9 +528,6 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     }
 
     cost_history.push_back(new_cost);
-
-
-
 }
 
 

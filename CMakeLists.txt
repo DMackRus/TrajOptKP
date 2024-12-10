@@ -82,7 +82,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/Optimiser/iLQR_SVR.cpp
             src/ModelTranslator/PushSoft.cpp
             src/ModelTranslator/SweepMultiple.cpp
-            src/ModelTranslator/PlaceObject.cpp)
+            src/ModelTranslator/PlaceObject.cpp
+            src/ModelTranslator/FloatingCube.cpp)
 
 include_directories(
         include

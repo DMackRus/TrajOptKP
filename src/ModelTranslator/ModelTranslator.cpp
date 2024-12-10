@@ -40,13 +40,16 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     vector<string> bodyNames;
     for(auto & robot : taskConfig.robots){
         bodyNames.push_back(robot.name);
-        for(int j = 0; j < robot.joint_names.size(); j++){
+        int root_offset = 0;
+        if(robot.root_name != "-"){
+            root_offset = 6;
+        }
+        for(int j = 0; j < robot.joint_names.size() + root_offset; j++){
             jerk_thresholds.push_back(robot.jerk_thresholds[j]);
             // TODO fix this duplicate jerk thresholds
             accel_thresholds.push_back(robot.jerk_thresholds[j]);
             velocity_change_thresholds.push_back(robot.vel_change_thresholds[j]);
         }
-
     }
 
     for(auto & bodiesState : taskConfig.rigid_bodies){
@@ -1027,8 +1030,8 @@ MatrixXd ModelTranslator::ReturnPositionVector(mjData* d, const struct stateVect
             position_vector(current_state_index + 5, 0) = root_position.orientation[2];
 
             current_state_index += 6;
-        }
 
+        }
         vector<double> jointPositions;
         MuJoCo_helper->GetRobotJointsPositions(robot.name, jointPositions, d);
 
@@ -1103,8 +1106,8 @@ MatrixXd ModelTranslator::ReturnPositionVectorQuat(mjData *d, const struct state
             position_vector(current_state_index + 6, 0) = root_position.quat[3];
 
             current_state_index += 7;
-        }
 
+        }
         vector<double> jointPositions;
         MuJoCo_helper->GetRobotJointsPositions(robot.name, jointPositions, d);
 
@@ -1196,6 +1199,7 @@ MatrixXd ModelTranslator::ReturnVelocityVector(mjData* d, const struct stateVect
 
         // Increment the current state index by the number of joints in the robot
         current_state_index += static_cast<int>(robot.joint_names.size());
+
     }
 
     // ------------------- Rigid body velocity elements -------------------
@@ -1307,7 +1311,6 @@ bool ModelTranslator::SetPositionVector(MatrixXd position_vector, mjData* d, con
 
             current_state_index += 6;
         }
-
         vector<double> joint_positions;
 
         for(int j = 0; j < robot.joint_names.size(); j++){

@@ -14,8 +14,6 @@ robots:
     jointNames: ["abdomen_z", "abdomen_y", "abdomen_x", "hip_x_right", "hip_z_right", "hip_y_right", "knee_right", "ankle_y_right", "ankle_x_right", "hip_x_left", "hip_z_left", "hip_y_left", "knee_left", "ankle_y_left", "ankle_x_left", "shoulder1_right", "shoulder2_right", "elbow_right", "shoulder1_left", "shoulder2_left", "elbow_left"]
     actuatorNames: ["abdomen_y", "abdomen_z", "abdomen_x", "hip_x_right", "hip_z_right", "hip_y_right", "knee_right", "ankle_x_right", "ankle_y_right", "hip_x_left", "hip_z_left", "hip_y_left", "knee_left", "ankle_x_left", "ankle_y_left", "shoulder1_right", "shoulder2_right", "elbow_right", "shoulder1_left", "shoulder2_left", "elbow_left"]
     startPos: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    goalPos: [0.2, 0, 0, 0, 0, 0, 0, 0, 0]
-    goalVel: [0, 0.8, 0, 0, 0, 0, 0, 0, 0]
     jointJerkThresholds: [1e-15, 1e-15, 0.01, 5.0, 5.0, 5.0, 5.0, 5.0, 5.0]
     #jointJerkThresholds: [0.1, 0.02, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     magVelThresholds: [0.1, 0.1, 0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
