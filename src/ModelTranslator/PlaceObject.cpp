@@ -44,8 +44,8 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     pose_6 goal_pose;
     pose_6 goal_velocity;
     pose_6 ee_pose;
-    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
-    MuJoCo_helper->GetBodyVelocity("goal", goal_velocity, d);
+    MuJoCo_helper->GetBodyPoseAngle("Tomato_Sauce", goal_pose, d);
+    MuJoCo_helper->GetBodyVelocity("Tomato_Sauce", goal_velocity, d);
 
     int site_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SITE, "end_effector");
     for(int i = 0; i < 3; i++){

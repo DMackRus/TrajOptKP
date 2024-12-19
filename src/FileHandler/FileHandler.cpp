@@ -290,7 +290,9 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
 
 void FileHandler::ReadSettingsFile(const std::string& settingsFilePath){
 
+    std::cout << "Reading settings file: " << projectParentPath + settingsFilePath << std::endl;
     YAML::Node node = YAML::LoadFile(projectParentPath + settingsFilePath);
+
 
     optimiser = node["optimiser"].as<std::string>();
     project_run_mode = node["runMode"].as<std::string>();

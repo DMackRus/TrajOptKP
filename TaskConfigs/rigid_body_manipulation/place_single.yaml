@@ -3,7 +3,7 @@ modelName: "/place_single"
 timeStep: 0.008
 openloop_horizon: 1500
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
-minN: 1
+minN: 2
 maxN: 100
 iterativeErrorThreshold: 0.00001
 robots:
@@ -17,7 +17,7 @@ robots:
     jointJerkThresholds: [1, 1, 1, 1, 1, 1, 1]
     magVelThresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 bodies:
-  goal:
+  Tomato_Sauce:
     activeLinearDOF: [true, true, true]
     activeAngularDOF: [true, true, true]
     startLinearPos: [ 0.55, 0, 0.5 ]
@@ -26,49 +26,72 @@ bodies:
     angularJerkThreshold: [ 0, 0, 0 ]
     linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
     angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
-  obstacle_1:
-    activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
-    startLinearPos: [ 0.48, -0.15, 0 ]
-    startAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 1, 1, 1 ]
-    angularJerkThreshold: [ 0, 0, 0 ]
-    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
-    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
-  obstacle_2:
-    activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
-    startLinearPos: [ 0.57, -0.13, 0 ]
-    startAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 1, 1, 1 ]
-    angularJerkThreshold: [ 0, 0, 0 ]
-    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
-    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
-  obstacle_3:
-    activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
-    startLinearPos: [ 0.6, -0.2, 0 ]
-    startAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [ 1, 1, 1 ]
-    angularJerkThreshold: [ 0, 0, 0 ]
-    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
-    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
+#  obstacle_1:
+#    activeLinearDOF: [ true, true, true ]
+#    activeAngularDOF: [ true, true, true ]
+#    startLinearPos: [ 0.48, -0.15, 0 ]
+#    startAngularPos: [ 0, 0, 0 ]
+#    linearJerkThreshold: [ 1, 1, 1 ]
+#    angularJerkThreshold: [ 0, 0, 0 ]
+#    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
+#    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
+#  obstacle_2:
+#    activeLinearDOF: [ true, true, true ]
+#    activeAngularDOF: [ true, true, true ]
+#    startLinearPos: [ 0.57, -0.13, 0 ]
+#    startAngularPos: [ 0, 0, 0 ]
+#    linearJerkThreshold: [ 1, 1, 1 ]
+#    angularJerkThreshold: [ 0, 0, 0 ]
+#    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
+#    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
+#  obstacle_3:
+#    activeLinearDOF: [ true, true, true ]
+#    activeAngularDOF: [ true, true, true ]
+#    startLinearPos: [ 0.6, -0.2, 0 ]
+#    startAngularPos: [ 0, 0, 0 ]
+#    linearJerkThreshold: [ 1, 1, 1 ]
+#    angularJerkThreshold: [ 0, 0, 0 ]
+#    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
+#    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
 
 
 # MPC residuals
+#residuals:
+#  goal_x:
+#    target: [0.6]
+#    weight: 2
+#    weight_terminal: 2
+#  goal_y:
+#    target: [-0.15]
+#    weight: 2
+#    weight_terminal: 2
+#  goal_z:
+#    target: [0.05]
+#    weight: 0.1
+#    weight_terminal: 0.1
+#  upright:
+#    target: [0]
+#    weight: 0
+#    weight_terminal: 0
+#  robot_vel:
+#    target: [0]
+#    resid_dimension: 7
+#    weight: 0
+#    weight_terminal: 0
+
 residuals:
   goal_x:
-    target: [0.55]
-    weight: 2
-    weight_terminal: 2
+    target: [0.6]
+    weight: 0.01
+    weight_terminal: 500
   goal_y:
-    target: [-0.15]
-    weight: 2
-    weight_terminal: 2
+    target: [0.15]
+    weight: 0.01
+    weight_terminal: 500
   goal_z:
-    target: [0.05]
-    weight: 0.1
-    weight_terminal: 0.1
+    target: [0.1]
+    weight: 0.01
+    weight_terminal: 500
   upright:
     target: [0]
     weight: 0
@@ -76,28 +99,5 @@ residuals:
   robot_vel:
     target: [0]
     resid_dimension: 7
-    weight: 0
-    weight_terminal: 0
-
-#residuals:
-#  goal_x:
-#    target: [0.55]
-#    weight: 0.01
-#    weight_terminal: 500
-#  goal_y:
-#    target: [-0.15]
-#    weight: 0.01
-#    weight_terminal: 500
-#  goal_z:
-#    target: [0.1]
-#    weight: 0.01
-#    weight_terminal: 500
-#  upright:
-#    target: [0]
-#    weight: 0
-#    weight_terminal: 1000
-#  robot_vel:
-#    target: [0]
-#    resid_dimension: 7
-#    weight: 0.01
-#    weight_terminal: 0.01
+    weight: 0.01
+    weight_terminal: 0.01
