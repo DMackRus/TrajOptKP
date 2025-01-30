@@ -3,7 +3,7 @@ modelName: "/place_single"
 timeStep: 0.008
 openloop_horizon: 1500
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
-minN: 1
+minN: 2
 maxN: 100
 iterativeErrorThreshold: 0.00001
 robots:
@@ -23,6 +23,24 @@ bodies:
     startLinearPos: [ 0.55, 0, 0.5 ]
     startAngularPos: [ 0, 0, 0 ]
     linearJerkThreshold: [1, 1, 1]
+    angularJerkThreshold: [ 0, 0, 0 ]
+    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
+    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
+  Hot_Chocolate:
+    activeLinearDOF: [ true, true, true ]
+    activeAngularDOF: [ true, true, true ]
+    startLinearPos: [ 0.65, 0, 0.5 ]
+    startAngularPos: [ 0, 0, 0 ]
+    linearJerkThreshold: [ 1, 1, 1 ]
+    angularJerkThreshold: [ 0, 0, 0 ]
+    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
+    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
+  Tomato_Soup:
+    activeLinearDOF: [ true, true, true ]
+    activeAngularDOF: [ true, true, true ]
+    startLinearPos: [ 0.75, 0, 0.5 ]
+    startAngularPos: [ 0, 0, 0 ]
+    linearJerkThreshold: [ 1, 1, 1 ]
     angularJerkThreshold: [ 0, 0, 0 ]
     linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
     angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
@@ -58,12 +76,12 @@ bodies:
 # MPC residuals
 residuals:
   goal_x:
-    target: [0.56]
-    weight: 0.5
+    target: [0.39]
+    weight: 1.0
     weight_terminal: 1.0
   goal_y:
-    target: [-0.36]
-    weight: 0.5
+    target: [0.35]
+    weight: 1.0
     weight_terminal: 1.0
   goal_z:
     target: [0.05] # 0.05
@@ -73,11 +91,15 @@ residuals:
     target: [0]
     weight: 0
     weight_terminal: 0
-  robot_vel:
+  body_vel:
     target: [0]
-    resid_dimension: 7
-    weight: 1 #was 1
+    weight: 5.0
     weight_terminal: 0
+#  robot_vel:
+#    target: [0]
+#    resid_dimension: 7
+#    weight: 1.0 #was 1
+#    weight_terminal: 0
 
 #residuals:
 #  goal_x:

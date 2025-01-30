@@ -102,13 +102,22 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
 //    residuals(resid_index++, 0) = acos(dot_x);
     residuals(resid_index++, 0) = axis_diff(2);
 
-    // ------------- Residual 4-11: robot joint velocities ---------------
-    std::vector<double> robot_joint_velocities;
-    MuJoCo_helper->GetRobotJointsVelocities("panda", robot_joint_velocities, d);
+    // Residual 4: Grasped object velocity
+    pose_6 body_vel;
+    MuJoCo_helper->GetBodyVelocity("", body_vel, d);
+    double total_vel = sqrt(pow(body_vel.position(0),2)
+            + pow(body_vel.position(1),2) + pow(body_vel.position(2),2));
+//    std::cout << "total vel: " << total_vel << std::endl;
+    residuals(resid_index++, 0) = total_vel;
 
-    for(int i = 0; i < 7; i++){
-        residuals(resid_index++, 0) = pow(robot_joint_velocities[i],2);
-    }
+
+    // ------------- Residual 4-11: robot joint velocities ---------------
+//    std::vector<double> robot_joint_velocities;
+//    MuJoCo_helper->GetRobotJointsVelocities("panda", robot_joint_velocities, d);
+//
+//    for(int i = 0; i < 7; i++){
+//        residuals(resid_index++, 0) = pow(robot_joint_velocities[i],2);
+//    }
 
 
     // --------------- Residual 0: Body goal position -----------------
@@ -145,7 +154,7 @@ bool PlaceObject::TaskComplete(mjData *d, double &dist) {
 
     // Get the pose of the goal object
     pose_6 goal_pose;
-    MuJoCo_helper->GetBodyPoseAngle("goal", goal_pose, d);
+    MuJoCo_helper->GetBodyPoseAngle("Tomato_Sauce", goal_pose, d);
 
     // Compute distance to the target
     double diffx, diffy, diffz;
@@ -155,7 +164,7 @@ bool PlaceObject::TaskComplete(mjData *d, double &dist) {
 
     dist = sqrt(pow(diffx,2) + pow(diffy,2) + pow(diffz,2));
 
-    if (dist < 0.02){
+    if (dist < 0.01){
         return true;
     }
 
