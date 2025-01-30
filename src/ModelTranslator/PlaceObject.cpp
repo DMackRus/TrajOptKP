@@ -44,10 +44,10 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     pose_6 goal_pose;
     pose_6 goal_velocity;
     pose_6 ee_pose;
-    MuJoCo_helper->GetBodyPoseAngle("Tomato_Sauce", goal_pose, d);
-    MuJoCo_helper->GetBodyVelocity("Tomato_Sauce", goal_velocity, d);
+    MuJoCo_helper->GetBodyPoseAngle(body_name, goal_pose, d);
+    MuJoCo_helper->GetBodyVelocity(body_name, goal_velocity, d);
 
-    int site_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SITE, "end_effector");
+    int site_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SITE, EE_name.c_str());
     for(int i = 0; i < 3; i++){
         ee_pose.position(i) = d->site_xpos[site_id * 3 + i];
     }
@@ -99,12 +99,14 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
 //        current_rot_mat(1, 0) * desired_rot_mat(1, 0) +
 //        current_rot_mat(2, 0) * desired_rot_mat(2, 0);
 
+    std::cout << "axis_diff: " << axis_diff(0) << ", " << axis_diff(1) << ", " << axis_diff(2) << std::endl;
+
 //    residuals(resid_index++, 0) = acos(dot_x);
-    residuals(resid_index++, 0) = axis_diff(2);
+    residuals(resid_index++, 0) = axis_diff(2); // Was axis_diff(2) before
 
     // Residual 4: Grasped object velocity
     pose_6 body_vel;
-    MuJoCo_helper->GetBodyVelocity("", body_vel, d);
+    MuJoCo_helper->GetBodyVelocity(body_name, body_vel, d);
     double total_vel = sqrt(pow(body_vel.position(0),2)
             + pow(body_vel.position(1),2) + pow(body_vel.position(2),2));
 //    std::cout << "total vel: " << total_vel << std::endl;
@@ -154,7 +156,7 @@ bool PlaceObject::TaskComplete(mjData *d, double &dist) {
 
     // Get the pose of the goal object
     pose_6 goal_pose;
-    MuJoCo_helper->GetBodyPoseAngle("Tomato_Sauce", goal_pose, d);
+    MuJoCo_helper->GetBodyPoseAngle(body_name, goal_pose, d);
 
     // Compute distance to the target
     double diffx, diffy, diffz;
@@ -163,6 +165,7 @@ bool PlaceObject::TaskComplete(mjData *d, double &dist) {
     diffz = goal_pose.position(2) - residual_list[2].target[0];
 
     dist = sqrt(pow(diffx,2) + pow(diffy,2) + pow(diffz,2));
+//    std::cout << "dist: " << dist << "\n";
 
     if (dist < 0.01){
         return true;

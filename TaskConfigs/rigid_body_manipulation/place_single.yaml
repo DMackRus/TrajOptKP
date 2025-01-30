@@ -89,17 +89,12 @@ residuals:
     weight_terminal: 0.5
   upright:
     target: [0]
-    weight: 0
+    weight: 1.0
     weight_terminal: 0
   body_vel:
     target: [0]
-    weight: 5.0
+    weight: 0.1 #0.1 works well
     weight_terminal: 0
-#  robot_vel:
-#    target: [0]
-#    resid_dimension: 7
-#    weight: 1.0 #was 1
-#    weight_terminal: 0
 
 #residuals:
 #  goal_x:
