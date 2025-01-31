@@ -41,10 +41,10 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     mj_kinematics(MuJoCo_helper->model, d);
 //    mj_forwardSkip(MuJoCo_helper->model, d, mjSTAGE_NONE, 1);
 
-    pose_6 goal_pose;
+    pose_7 goal_pose;
     pose_6 goal_velocity;
     pose_6 ee_pose;
-    MuJoCo_helper->GetBodyPoseAngle(body_name, goal_pose, d);
+    MuJoCo_helper->GetBodyPoseQuat(body_name, goal_pose, d);
     MuJoCo_helper->GetBodyVelocity(body_name, goal_velocity, d);
 
     int site_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SITE, EE_name.c_str());
@@ -65,44 +65,65 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     residuals(resid_index++, 0) = diff_z;
 
     // ------------- Residual 3: Body orientation upright ---------------
-    Eigen::Matrix3d current_rot_mat = eul2RotMat(goal_pose.orientation);
+
+    // Convert quat to eul and eul to rotation matrix
+    m_point temp_eul = quat2Eul(goal_pose.quat);
+    Eigen::Matrix3d current_rot_mat = eul2RotMat(temp_eul);
+
+    // TODO - Temporary, unit quaternion (z facing down)
+    m_quat desired = {0, 0, 1, 0};
+    temp_eul = quat2Eul(desired);
+    Eigen::Matrix3d desired_rot_mat = eul2RotMat(temp_eul);
+
+    double dot_x, dot_y, dot_z;
+    dot_x = acos(current_rot_mat(0, 0) * desired_rot_mat(0, 0)
+            + current_rot_mat(1, 0) * desired_rot_mat(1, 0)
+            + current_rot_mat(2, 0) * desired_rot_mat(2, 0));
+    dot_y = acos(current_rot_mat(0, 1) * desired_rot_mat(0, 1)
+            + current_rot_mat(1, 1) * desired_rot_mat(1, 1)
+            + current_rot_mat(2, 1) * desired_rot_mat(2, 1));
+    dot_z = acos(current_rot_mat(0, 2) * desired_rot_mat(0, 2)
+            + current_rot_mat(1, 2) * desired_rot_mat(1, 2)
+            + current_rot_mat(2, 2) * desired_rot_mat(2, 2));
+
+//    std::cout << "dot_z: " << dot_z << std::endl;
+
+    residuals(resid_index++, 0) = pow(dot_z,2);
+
 
 //    Eigen::Matrix3d desired_rot_mat = eul2RotMat(desired_eul);
 
-    m_point desired_axis;
-    desired_axis(0) = 0;
-    desired_axis(1) = 0;
-    desired_axis(2) = 0;
+//    m_point desired_axis;
+//    desired_axis(0) = 0;
+//    desired_axis(1) = 0;
+//    desired_axis(2) = 0;
+//
+//    m_quat current, desired, inv_current, diff;
+//    current = axis2Quat(goal_pose.orientation);
+//    desired = axis2Quat(desired_axis);
+//
+//    inv_current = invQuat(current);
+//    diff = multQuat(inv_current, desired);
+//
+//    // temp mujoco quat2vel methodology?
+//    double axis[3] = {diff[1], diff[2], diff[3]};
+//    double sin_a_2 = sin(sqrt(pow(axis[0], 2) + pow(axis[1], 2) + pow(axis[2], 2)));
+//    double speed = 2 * atan2(sin_a_2, diff[0]);
+//
+//    // When axis angle > pi rot is in other direction
+//    if(speed > PI) speed -= 2*PI;
+//
+//    axis[0] *= speed;
+//    axis[1] *= speed;
+//    axis[2] *= speed;
+//
+//    m_point axis_diff = quat2Axis(diff);
 
-    m_quat current, desired, inv_current, diff;
-    current = axis2Quat(goal_pose.orientation);
-    desired = axis2Quat(desired_axis);
 
-    inv_current = invQuat(current);
-    diff = multQuat(inv_current, desired);
-
-    // temp mujoco quat2vel methodology?
-    double axis[3] = {diff[1], diff[2], diff[3]};
-    double sin_a_2 = sin(sqrt(pow(axis[0], 2) + pow(axis[1], 2) + pow(axis[2], 2)));
-    double speed = 2 * atan2(sin_a_2, diff[0]);
-
-    // When axis angle > pi rot is in other direction
-    if(speed > PI) speed -= 2*PI;
-
-    axis[0] *= speed;
-    axis[1] *= speed;
-    axis[2] *= speed;
-
-    m_point axis_diff = quat2Axis(diff);
-
-//    double dot_x = current_rot_mat(0, 0) * desired_rot_mat(0, 0) +
-//        current_rot_mat(1, 0) * desired_rot_mat(1, 0) +
-//        current_rot_mat(2, 0) * desired_rot_mat(2, 0);
-
-    std::cout << "axis_diff: " << axis_diff(0) << ", " << axis_diff(1) << ", " << axis_diff(2) << std::endl;
+//    std::cout << "axis_diff: " << axis_diff(0) << ", " << axis_diff(1) << ", " << axis_diff(2) << std::endl;
 
 //    residuals(resid_index++, 0) = acos(dot_x);
-    residuals(resid_index++, 0) = axis_diff(2); // Was axis_diff(2) before
+//    residuals(resid_index++, 0) = axis_diff(2); // Was axis_diff(2) before
 
     // Residual 4: Grasped object velocity
     pose_6 body_vel;
