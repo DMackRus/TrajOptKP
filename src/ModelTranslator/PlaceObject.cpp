@@ -88,7 +88,8 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
 
 //    std::cout << "dot_z: " << dot_z << std::endl;
 
-    residuals(resid_index++, 0) = pow(dot_z,2);
+//    residuals(resid_index++, 0) = pow(dot_z,2);
+    residuals(resid_index++, 0) = dot_z;
 
 
 //    Eigen::Matrix3d desired_rot_mat = eul2RotMat(desired_eul);
@@ -133,40 +134,6 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
 //    std::cout << "total vel: " << total_vel << std::endl;
     residuals(resid_index++, 0) = total_vel;
 
-
-    // ------------- Residual 4-11: robot joint velocities ---------------
-//    std::vector<double> robot_joint_velocities;
-//    MuJoCo_helper->GetRobotJointsVelocities("panda", robot_joint_velocities, d);
-//
-//    for(int i = 0; i < 7; i++){
-//        residuals(resid_index++, 0) = pow(robot_joint_velocities[i],2);
-//    }
-
-
-    // --------------- Residual 0: Body goal position -----------------
-//    double diff_x = goal_pose.position(0) - residual_list[0].target[0];
-//    double diff_y = goal_pose.position(1) - residual_list[0].target[1];
-//    double diff_z = goal_pose.position(2) - residual_list[0].target[2];
-//    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
-//                                       + pow(diff_y, 2)
-//                                       + pow(diff_z, 2));
-
-    // --------------- Residual 1: Body goal velocity -----------------
-//    diff_x = goal_velocity.position(0);
-//    diff_y = goal_velocity.position(1);
-//    diff_z = goal_velocity.position(2);
-//    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
-//                                       + pow(diff_y, 2)
-//                                       + pow(diff_z, 2));
-
-//    // --------------- Residual 2: EE - body -----------------
-//    diff_x = goal_pose.position(0) - ee_pose.position(0);
-//    diff_y = goal_pose.position(1) - ee_pose.position(1);
-//    diff_z = goal_pose.position(2) - ee_pose.position(2);
-//    residuals(resid_index++, 0) = pow(sqrt(pow(diff_x, 2)
-//                                       + pow(diff_y, 2)
-//                                       + pow(diff_z, 2)) - residual_list[2].target[0], 2);
-
     if(resid_index != residual_list.size()){
         std::cerr << "Error: Residuals size mismatch\n";
         exit(1);
@@ -188,7 +155,7 @@ bool PlaceObject::TaskComplete(mjData *d, double &dist) {
     dist = sqrt(pow(diffx,2) + pow(diffy,2) + pow(diffz,2));
 //    std::cout << "dist: " << dist << "\n";
 
-    if (dist < 0.01){
+    if (dist < 0.015){
         return true;
     }
 
