@@ -38,7 +38,9 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     int resid_index = 0;
 
     // Compute kinematics chain to compute site poses
-    mj_kinematics(MuJoCo_helper->model, d);
+//    mj_kinematics(MuJoCo_helper->model, d);
+//    mj_sensorVel(MuJoCo_helper->model, d);
+//    mj_fwdVelocity(MuJoCo_helper->model, d);
 //    mj_forwardSkip(MuJoCo_helper->model, d, mjSTAGE_NONE, 1);
 
     pose_7 goal_pose;
@@ -47,10 +49,10 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     MuJoCo_helper->GetBodyPoseQuat(body_name, goal_pose, d);
     MuJoCo_helper->GetBodyVelocity(body_name, goal_velocity, d);
 
-    int site_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SITE, EE_name.c_str());
-    for(int i = 0; i < 3; i++){
-        ee_pose.position(i) = d->site_xpos[site_id * 3 + i];
-    }
+//    int site_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SITE, EE_name.c_str());
+//    for(int i = 0; i < 3; i++){
+//        ee_pose.position(i) = d->site_xpos[site_id * 3 + i];
+//    }
 
     // --------------- Residual 0: Body goal position x -----------------
     double diff_x = goal_pose.position(0) - residual_list[0].target[0];
@@ -70,7 +72,7 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     m_point temp_eul = quat2Eul(goal_pose.quat);
     Eigen::Matrix3d current_rot_mat = eul2RotMat(temp_eul);
 
-    // TODO - Temporary, unit quaternion (z facing down)
+    // TODO - Temporary, unit quaternion
     m_quat desired = {0, 0, 1, 0};
     temp_eul = quat2Eul(desired);
     Eigen::Matrix3d desired_rot_mat = eul2RotMat(temp_eul);
@@ -90,41 +92,6 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
 
 //    residuals(resid_index++, 0) = pow(dot_z,2);
     residuals(resid_index++, 0) = dot_z;
-
-
-//    Eigen::Matrix3d desired_rot_mat = eul2RotMat(desired_eul);
-
-//    m_point desired_axis;
-//    desired_axis(0) = 0;
-//    desired_axis(1) = 0;
-//    desired_axis(2) = 0;
-//
-//    m_quat current, desired, inv_current, diff;
-//    current = axis2Quat(goal_pose.orientation);
-//    desired = axis2Quat(desired_axis);
-//
-//    inv_current = invQuat(current);
-//    diff = multQuat(inv_current, desired);
-//
-//    // temp mujoco quat2vel methodology?
-//    double axis[3] = {diff[1], diff[2], diff[3]};
-//    double sin_a_2 = sin(sqrt(pow(axis[0], 2) + pow(axis[1], 2) + pow(axis[2], 2)));
-//    double speed = 2 * atan2(sin_a_2, diff[0]);
-//
-//    // When axis angle > pi rot is in other direction
-//    if(speed > PI) speed -= 2*PI;
-//
-//    axis[0] *= speed;
-//    axis[1] *= speed;
-//    axis[2] *= speed;
-//
-//    m_point axis_diff = quat2Axis(diff);
-
-
-//    std::cout << "axis_diff: " << axis_diff(0) << ", " << axis_diff(1) << ", " << axis_diff(2) << std::endl;
-
-//    residuals(resid_index++, 0) = acos(dot_x);
-//    residuals(resid_index++, 0) = axis_diff(2); // Was axis_diff(2) before
 
     // Residual 4: Grasped object velocity
     pose_6 body_vel;

@@ -150,9 +150,9 @@ void Optimiser::GenerateDerivatives(){
 //    ComputeCostDerivatives();
 //
 //    std::cout << "l_x[0]: " << std::endl;
-//    std:: cout << l_x[0] << std::endl;
+//    std:: cout << l_x[1] << std::endl;
 //    std::cout << "l_xx[0]: " << std::endl;
-//    std:: cout << l_xx[0] << std::endl;
+//    std:: cout << l_xx[1] << std::endl;
 //    std::cout << "l_u[0]: " << std::endl;
 //    std:: cout << l_u[0] << std::endl;
 //    std::cout << "l_uu[0]: " << std::endl;

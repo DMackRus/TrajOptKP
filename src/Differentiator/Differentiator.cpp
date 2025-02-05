@@ -598,7 +598,7 @@ void Differentiator::ResidualDerivatives(vector<MatrixXd> &r_x, vector<MatrixXd>
             // perturb velocity vector negatively
             perturbed_velocities = unperturbed_velocities.replicate(1, 1);
             perturbed_velocities(i) -= eps;
-            model_translator->SetVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector); model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
+            model_translator->SetVelocityVector(perturbed_velocities, MuJoCo_helper->fd_data[tid], model_translator->current_state_vector);
 
             model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_dec);
 
@@ -633,7 +633,7 @@ void Differentiator::ResidualDerivatives(vector<MatrixXd> &r_x, vector<MatrixXd>
         model_translator->Residuals(MuJoCo_helper->fd_data[tid], residuals_inc);
 
         if(central_diff){
-            // reset the data state back to initial data statedataIndex
+            // reset the data state back to initial data state dataIndex
             MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[tid], MuJoCo_helper->saved_systems_state_list[data_index]);
 
             // perturb position vector negatively
