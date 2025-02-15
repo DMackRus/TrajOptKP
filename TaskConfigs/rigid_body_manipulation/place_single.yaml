@@ -17,15 +17,15 @@ robots:
     jointJerkThresholds: [1, 1, 1, 1, 1, 1, 1]
     magVelThresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 bodies:
-  Tomato_Sauce:
-    activeLinearDOF: [true, true, true]
-    activeAngularDOF: [true, true, true]
-    startLinearPos: [ 0.55, 0, 0.5 ]
-    startAngularPos: [ 0, 0, 0 ]
-    linearJerkThreshold: [1, 1, 1]
-    angularJerkThreshold: [ 0, 0, 0 ]
-    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
-    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
+#  Tomato_Sauce:
+#    activeLinearDOF: [true, true, true]
+#    activeAngularDOF: [true, true, true]
+#    startLinearPos: [ 0.55, 0, 0.5 ]
+#    startAngularPos: [ 0, 0, 0 ]
+#    linearJerkThreshold: [1, 1, 1]
+#    angularJerkThreshold: [ 0, 0, 0 ]
+#    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
+#    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
   Hot_Chocolate:
     activeLinearDOF: [ true, true, true ]
     activeAngularDOF: [ true, true, true ]
@@ -72,28 +72,27 @@ bodies:
 #    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
 #    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
 
-
 # MPC residuals
 residuals:
   goal_x:
     target: [0.39]
-    weight: 2.0
+    weight: 2.0 # was 2.0
     weight_terminal: 2.0
   goal_y:
     target: [0.35]
-    weight: 2.0
+    weight: 2.0 # was 2.0
     weight_terminal: 2.0
   goal_z:
-    target: [0.15] # 0.05
-    weight: 1.0
+    target: [0.05] # 0.05
+    weight: 1.0 # was 1.0
     weight_terminal: 0.5
   upright:
     target: [0]
-    weight: 0.2 # 0.1 - 0.5 work well
+    weight: 0.5 # 0.1 - 0.5 work well
     weight_terminal: 0
   body_vel:
     target: [0]
-    weight: 0.2 #0.1 - 0.5 works well
+    weight: 0.7  #0.1 - 0.5 works well
     weight_terminal: 0
 
 #residuals:

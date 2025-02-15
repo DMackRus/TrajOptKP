@@ -38,21 +38,65 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     int resid_index = 0;
 
     // Compute kinematics chain to compute site poses
-//    mj_kinematics(MuJoCo_helper->model, d);
+    mj_kinematics(MuJoCo_helper->model, d);
 //    mj_sensorVel(MuJoCo_helper->model, d);
 //    mj_fwdVelocity(MuJoCo_helper->model, d);
 //    mj_forwardSkip(MuJoCo_helper->model, d, mjSTAGE_NONE, 1);
 
+
+    // TODO - new dea using sensors
+    mj_sensorPos(MuJoCo_helper->model, d);
+    mj_sensorVel(MuJoCo_helper->model, d);
+    int site_pos_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SENSOR, "site_position_sensor");
+    int site_quat_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SENSOR, "site_orientation_sensor");
+    int site_velp_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SENSOR, "site_linear_velocity_sensor");
+//    int site_velr_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SENSOR, "site_angular_velocity_sensor");
+
+    const mjtNum* site_pos = d->sensordata + MuJoCo_helper->model->sensor_adr[site_pos_id];
+    const mjtNum* site_quat = d->sensordata + MuJoCo_helper->model->sensor_adr[site_quat_id];
+    const mjtNum* site_velp = d->sensordata + MuJoCo_helper->model->sensor_adr[site_velp_id];
+//    const mjtNum* site_velr = d->sensordata + MuJoCo_helper->model->sensor_adr[site_velr_id];
+
     pose_7 goal_pose;
     pose_6 goal_velocity;
     pose_6 ee_pose;
-    MuJoCo_helper->GetBodyPoseQuat(body_name, goal_pose, d);
-    MuJoCo_helper->GetBodyVelocity(body_name, goal_velocity, d);
-
-//    int site_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SITE, EE_name.c_str());
+//    MuJoCo_helper->GetBodyPoseQuatViaXpos(body_name, goal_pose, d);
+////    MuJoCo_helper->GetBodyVelocity(body_name, goal_velocity, d);
+//
+//    int body_id = mj_name2id(MuJoCo_helper->model, mjOBJ_BODY, body_name.c_str());
 //    for(int i = 0; i < 3; i++){
-//        ee_pose.position(i) = d->site_xpos[site_id * 3 + i];
+//        goal_velocity.position(i) = d->cvel[body_id * 6 + i];
+//        goal_velocity.orientation(i) = d->cvel[body_id * 6 + 3 + i];
 //    }
+
+    for(int i = 0; i < 3; i++){
+        goal_pose.position(i) = site_pos[i];
+        goal_velocity.position(i) = site_velp[i];
+        goal_velocity.orientation(i) = 0.0;
+    }
+
+    goal_pose.quat(0) = site_quat[0];
+    goal_pose.quat(1) = site_quat[1];
+    goal_pose.quat(2) = site_quat[2];
+    goal_pose.quat(3) = site_quat[3];
+
+//    std::cout << "body velocity: " << goal_velocity.position(0) << ", " << goal_velocity.position(1) << ", " << goal_velocity.position(2) << std::endl;
+
+    // TODO - temp code to not consider a grapsed object
+//    int site_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SITE, "force_sensor");
+//    if (site_id == -1) {
+//        std::cerr << "Error: Site " << "force_sensor" << " not found in the model.\n";
+//        return;
+//    }
+//
+//    double diff_x = d->site_xpos[site_id * 3] - residual_list[0].target[0];
+//    residuals(resid_index++, 0) = diff_x;
+//    double diff_y = d->site_xpos[site_id * 3 + 1] - residual_list[1].target[0];
+//    residuals(resid_index++, 0) = diff_y;
+//    double diff_z = d->site_xpos[site_id * 3 + 2] - residual_list[2].target[0];
+//    residuals(resid_index++, 0) = diff_z;
+//    // --------------------------------------------------------------
+
 
     // --------------- Residual 0: Body goal position x -----------------
     double diff_x = goal_pose.position(0) - residual_list[0].target[0];
@@ -109,18 +153,19 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
 
 bool PlaceObject::TaskComplete(mjData *d, double &dist) {
 
-    // Get the pose of the goal object
-    pose_6 goal_pose;
-    MuJoCo_helper->GetBodyPoseAngle(body_name, goal_pose, d);
+    mj_kinematics(MuJoCo_helper->model, d);
+    mj_sensorPos(MuJoCo_helper->model, d);
+    int site_pos_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SENSOR, "site_position_sensor");
+    const mjtNum* site_pos = d->sensordata + MuJoCo_helper->model->sensor_adr[site_pos_id];
 
     // Compute distance to the target
     double diffx, diffy, diffz;
-    diffx = goal_pose.position(0) - residual_list[0].target[0];
-    diffy = goal_pose.position(1) - residual_list[1].target[0];
-    diffz = goal_pose.position(2) - residual_list[2].target[0];
+    diffx = site_pos[0] - residual_list[0].target[0];
+    diffy = site_pos[1] - residual_list[1].target[0];
+    diffz = site_pos[2] - residual_list[2].target[0];
 
-    dist = sqrt(pow(diffx,2) + pow(diffy,2) + pow(diffz,2));
-//    std::cout << "dist: " << dist << "\n";
+    dist = sqrt(pow(diffx,2) + pow(diffy,2) + 0.5 * pow(diffz,2));
+    std::cout << "dist: " << dist << "\n";
 
     if (dist < 0.015){
         return true;
@@ -131,6 +176,8 @@ bool PlaceObject::TaskComplete(mjData *d, double &dist) {
 
 void PlaceObject::SetGoalVisuals(mjData *d) {
     pose_6 goal_pose;
+
+
     MuJoCo_helper->GetBodyPoseAngle("target", goal_pose, d);
 
     // Set the goal object position
