@@ -31,6 +31,7 @@ public:
 protected:
     std::string EE_name;
     std::string body_name;
+    int complete_counter = 0;
 private:
 
 };

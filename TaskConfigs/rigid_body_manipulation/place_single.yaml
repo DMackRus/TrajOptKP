@@ -2,6 +2,7 @@ modelFile: "/mujoco_models/Franka_panda/scene.xml"
 modelName: "/place_single"
 timeStep: 0.008
 openloop_horizon: 1500
+mpc_horizon: 300
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 minN: 2
 maxN: 100
@@ -75,45 +76,57 @@ bodies:
 # MPC residuals
 residuals:
   goal_x:
-    target: [0.39]
-    weight: 2.0 # was 2.0
+    target: [0.626]
+    weight: 1.0 # was 2.0
     weight_terminal: 2.0
   goal_y:
-    target: [0.35]
-    weight: 2.0 # was 2.0
+    target: [0.229]
+    weight: 1.0 # was 2.0
     weight_terminal: 2.0
   goal_z:
-    target: [0.05] # 0.05
+    target: [0.038] # 0.05
     weight: 1.0 # was 1.0
     weight_terminal: 0.5
   upright:
     target: [0]
-    weight: 0.5 # 0.1 - 0.5 work well
+    weight: 0.2 # 0.1 - 0.5 work well
     weight_terminal: 0
   body_vel:
     target: [0]
-    weight: 0.7  #0.1 - 0.5 works well
+    weight: 1.5  #0.1 - 0.5 works well
     weight_terminal: 0
+#  aligned:
+#    target: [ 0 ]
+#    weight: 0.5  #0.1 - 0.5 works well
+#    weight_terminal: 0
+
+# Testing zones are:
+#1 [0.360,  0.373, 0.038]
+#2 [0.626, -0.287, 0.038]
+#3 [0.626,  0.229, 0.038]
 
 #residuals:
 #  goal_x:
-#    target: [0.6]
-#    weight: 0.01
+#    target: [0.626]
+#    weight: 0.0 # was 2.0
 #    weight_terminal: 500
 #  goal_y:
-#    target: [0.15]
-#    weight: 0.01
+#    target: [-0.287]
+#    weight: 0.0 # was 2.0
 #    weight_terminal: 500
 #  goal_z:
-#    target: [0.1]
-#    weight: 0.01
-#    weight_terminal: 500
+#    target: [0.038] # 0.05
+#    weight: 0.0 # was 1.0
+#    weight_terminal: 200
 #  upright:
 #    target: [0]
-#    weight: 0
-#    weight_terminal: 0
-#  robot_vel:
+#    weight: 0 # 0.1 - 0.5 work well
+#    weight_terminal: 10
+#  body_vel:
 #    target: [0]
-#    resid_dimension: 7
-#    weight: 0.01
-#    weight_terminal: 0.01
+#    weight: 0.5  #0.1 - 0.5 works well
+#    weight_terminal: 0
+#  aligned:
+#    target: [ 0 ]
+#    weight: 0.5  #0.1 - 0.5 works well
+#    weight_terminal: 0

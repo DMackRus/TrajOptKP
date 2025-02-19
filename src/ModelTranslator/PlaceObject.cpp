@@ -44,7 +44,7 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
 //    mj_forwardSkip(MuJoCo_helper->model, d, mjSTAGE_NONE, 1);
 
 
-    // TODO - new dea using sensors
+    // TODO - new idea using sensors
     mj_sensorPos(MuJoCo_helper->model, d);
     mj_sensorVel(MuJoCo_helper->model, d);
     int site_pos_id = mj_name2id(MuJoCo_helper->model, mjOBJ_SENSOR, "site_position_sensor");
@@ -145,6 +145,8 @@ void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
 //    std::cout << "total vel: " << total_vel << std::endl;
     residuals(resid_index++, 0) = total_vel;
 
+//    residuals(resid_index++, 0) = dot_x;
+
     if(resid_index != residual_list.size()){
         std::cerr << "Error: Residuals size mismatch\n";
         exit(1);
@@ -168,7 +170,13 @@ bool PlaceObject::TaskComplete(mjData *d, double &dist) {
     std::cout << "dist: " << dist << "\n";
 
     if (dist < 0.015){
-        return true;
+        complete_counter++;
+        if(complete_counter > 10){
+            return true;
+        }
+    }
+    else{
+        complete_counter = 0;
     }
 
     return false;
@@ -176,7 +184,6 @@ bool PlaceObject::TaskComplete(mjData *d, double &dist) {
 
 void PlaceObject::SetGoalVisuals(mjData *d) {
     pose_6 goal_pose;
-
 
     MuJoCo_helper->GetBodyPoseAngle("target", goal_pose, d);
 
