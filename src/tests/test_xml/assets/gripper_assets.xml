@@ -54,15 +54,15 @@
 <!--        <mesh file="meshes/collision/finger_0.obj"/>-->
 <!--        <mesh file="meshes/collision/finger_1.obj"/>-->
         <mesh file="meshes/visual/finger.obj"/>
-        <mesh file="meshes/visual/finger.obj"/>
+<!--        <mesh file="meshes/visual/finger.obj"/>-->
 
     </asset>
 
-    <sensor>
+    <!--<sensor>
         <jointpos name="fr_fin_jp1" joint="panda0_finger_joint1"/>
         <jointpos name="fr_fin_jp2" joint="panda0_finger_joint2"/>
         <jointvel name="fr_fin_jv1" joint="panda0_finger_joint1"/>
         <jointvel name="fr_fin_jv2" joint="panda0_finger_joint2"/>
-    </sensor>
+    </sensor>-->
 
 </mujocoinclude>

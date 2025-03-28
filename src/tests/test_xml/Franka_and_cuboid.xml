@@ -1,4 +1,4 @@
-<mujoco model="object pushing - franka_panda">
+<mujoco model="cylinder pushing into clutter - franka_panda">
     <!-- =================================================
             Copyright 2018 Vikash Kumar
             Model   :: Franka (MuJoCoV2.0)
@@ -14,20 +14,30 @@
     <worldbody>
         <!-- Include the franka_panda robot arm model -->
         <include file="assets/chain0.xml"/>
-
         <body pos="0.7 0.02 0.041" name="goal">
             <joint type="free" />
-            <geom type = "box" pos = "0 0 0" size = "0.04 0.06 0.085" mass="1" rgba = "0 1 0 1" solimp="0 0.99 0.005 0.5 2" solref = "0.06 0.8" condim="1" margin = "0.001" contype = "3" conaffinity = "3"/>
+            <geom type = "cylinder" pos = "0 0 0" size = "0.06 0.08" mass="0.74" rgba = "0 1 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
         </body>
 
-        <body pos="0.8 0.02 0.041" name="obstacle_1">
+        <body pos="1.5 0.02 0.041" name="obstacle_1">
             <joint type="free" />
-            <geom type = "cylinder" pos = "0 0 0" size = "0.04 0.06" mass="1" rgba = "0 1 0 1" solimp="0 0.99 0.005 0.5 2" solref = "0.06 0.8" condim="1" margin = "0.001" contype = "3" conaffinity = "3"/>
+            <geom type = "box" pos = "0 0 0" size = "0.04 0.04 0.06" mass="0.8" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
         </body>
 
-        <body pos="0.8 0.15 0.041" name="obstacle_2">
+        <body pos="1 0.02 0.041" name="obstacle_2">
             <joint type="free" />
-            <geom type = "cylinder" pos = "0 0 0" size = "0.04 0.06" mass="1" rgba = "0 1 0 1" solimp="0 0.99 0.005 0.5 2" solref = "0.06 0.8" condim="1" margin = "0.001" contype = "3" conaffinity = "3"/>
+            <geom type = "cylinder" pos = "0 0 0" size = "0.05 0.06" mass="1" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="1.5 0.02 0.041" name="obstacle_3">
+            <joint type="free" />
+            <geom type = "cylinder" pos = "0 0 0" size = "0.05 0.04" mass="0.9" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="1 0 0" name="display_goal">
+            <joint type="free" />
+            <geom type = "box" pos = "0 0 0" size = ".1 .1 .1" rgba = "0 0 0 0" mass="1" margin = "0.001" contype = "4" conaffinity = "4" />
+            <site type="cylinder" pos="0 0 0.085" size="0.06 0.085" rgba="0 1 0 0.4"/>
         </body>
 
     </worldbody>

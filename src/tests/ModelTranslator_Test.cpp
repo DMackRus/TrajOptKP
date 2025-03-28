@@ -26,6 +26,7 @@ bool check_state_vectors_match(std::vector<std::string> expected, std::vector<st
 
 TEST(ModelTranslator, default_state_vector_names){
 
+    std::cout << "start of test default state vector names \n";
     std::shared_ptr<threeDTestClass> threeD_test = std::make_shared<threeDTestClass>();
     model_translator = threeD_test;
 
@@ -39,7 +40,6 @@ TEST(ModelTranslator, default_state_vector_names){
     std::vector<std::string> actual_state_names = model_translator->current_state_vector.state_names;
 
     ASSERT_TRUE(check_state_vectors_match(expected_state_names, actual_state_names));
-
 }
 
 TEST(ModelTranslator, set_state_vector){

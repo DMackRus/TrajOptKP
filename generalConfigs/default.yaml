@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "place"
+task: "pushing_no_clutter"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -30,7 +30,7 @@ task: "place"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "MPC_until_completion"
+runMode: "Optimise_once"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
@@ -43,7 +43,7 @@ runMode: "MPC_until_completion"
 # "Generate_asynchronus_mpc_data" - Loop through all the tests scenes, using current optimiser and perform asyncronus MPC optimisation.
 # "Generate_syncronus_mpc_data"   - Loop through all the tests scenes, using current optimiser and perform syncronus MPC optimisation.
 # "Generate_filtering_data"       - Loop through all test scenes and evaluate baseline optimisation with and without filtering.
-# "Generate_dynamics_data"        - Loop thorugh 100 CSV files and generate A, B, X, U data over a horizon and save to file.
+# "Generate_dynamics_data"        - Loop through 100 CSV files and generate A, B, X, U data over a horizon and save to file.
 
 # Special modes - possibly temporary
 # "Analyse_toy_contact"           - Analyse the derivatives in toy example with contact.

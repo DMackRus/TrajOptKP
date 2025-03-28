@@ -889,6 +889,8 @@ void MuJoCoHelper::InitSimulator(double timestep, const char* file_name, bool us
         printf("%s\n", error);
     }
 
+    std::cout << "Error" << error << "\n";
+
     // defaults 100 , 1e-8
     model->opt.timestep = timestep;
 //    model->opt.iterations = 30;

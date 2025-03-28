@@ -90,7 +90,7 @@
                                         <!-- quat="0.3843 0 0 0.9232" -->
                                         <body name="panda0_rightfinger" pos="0 0 0.1654" euler="0 0 2.356" childclass='panda_finger'>
                                             <inertial pos="1.57863e-05 -0.0118731 0.0434103" quat="0.705868 -0.0310348 0.0314925 0.706962" mass="0.0927059" diaginertia="6.57134e-05 6.09611e-05 1.09932e-05" />
-                                            <joint name="panda0_finger_joint2" axis="0 -1 0" type="slide" range="0 0.04" class="panda_finger"/>
+                                            <joint name="panda0_finger_joint2" axis="0 1 0" type="slide" range="0 0.04" class="panda_finger"/>
                                             <geom class="panda_viz" mesh="finger_viz"/>
                                             <geom class="panda_col" type="mesh" mesh="finger_viz"/>
                                         </body>
