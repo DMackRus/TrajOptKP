@@ -99,7 +99,7 @@ public:
      * @param new_num_ctrl - The new number of controls
      * @param new_horizon - New horizon of the trajectory
      */
-    virtual void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon);
+    virtual void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) = 0;
 
     /**
      * Returns the current active keypoint method, and its associating parameters.

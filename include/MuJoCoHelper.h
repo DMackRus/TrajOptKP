@@ -51,7 +51,8 @@ public:
 
     // Utility functions -- rigid bodies
     bool BodyExists(const string& body_name, int &body_index);
-    void SetBodyColor(const string& body_name, const float color[4]) const;
+    void SetBodyColor(const string& body_name, const double color[4]) const;
+    std::array<double, 4> ReturnBodyColor(const string &body_name) const;
 
     void SetBodyPoseQuat(const string& body_name, pose_7 pose, mjData *d) const;
     void SetBodyPoseAngle(const string& body_name, pose_6 pose, mjData *d) const;

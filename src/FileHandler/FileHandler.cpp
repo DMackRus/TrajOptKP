@@ -22,15 +22,15 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
     YAML::Node node = YAML::LoadFile(projectParentPath + yamlFilePath);
 
     // General task settings
-    _taskConfig.modelFilePath = projectParentPath + node["modelFile"].as<std::string>();
-    _taskConfig.modelName = node["modelName"].as<std::string>();
+    _taskConfig.model_filepath = projectParentPath + node["modelFile"].as<std::string>();
+    _taskConfig.model_name = node["modelName"].as<std::string>();
 
     // model timestep
     if(node["timeStep"]){
-        _taskConfig.modelTimeStep = node["timeStep"].as<double>();
+        _taskConfig.model_time_step = node["timeStep"].as<double>();
     }
     else{
-        _taskConfig.modelTimeStep = 0.004;
+        _taskConfig.model_time_step = 0.004;
     }
 
     // Open loop horizon
@@ -201,6 +201,10 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             _rigid_body.angular_jerk_threshold[i] = angularJerkThreshold[i];
             _rigid_body.linear_vel_change_threshold[i] = linearMagVelThreshold[i];
             _rigid_body.angular_vel_change_threshold[i] = angularMagVelThreshold[i];
+            _rigid_body.base_color[0] = 0;
+            _rigid_body.base_color[1] = 0;
+            _rigid_body.base_color[2] = 0;
+            _rigid_body.base_color[3] = 1;
         }
         _taskConfig.rigid_bodies.push_back(_rigid_body);
     }

@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_no_clutter"
+task: "place"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -30,7 +30,7 @@ task: "pushing_no_clutter"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Optimise_once"
+runMode: "MPC_until_completion"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.

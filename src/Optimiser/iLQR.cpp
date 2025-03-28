@@ -1,7 +1,12 @@
 #include <iomanip>
 #include "Optimiser/iLQR.h"
 
-iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> MuJoCo_helper, std::shared_ptr<Differentiator> _differentiator, int horizon, std::shared_ptr<Visualiser> _visualizer, std::shared_ptr<FileHandler> _yamlReader) :
+iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator,
+           std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
+           std::shared_ptr<Differentiator> _differentiator,
+           int horizon,
+           std::shared_ptr<Visualiser> _visualizer,
+           std::shared_ptr<FileHandler> _yamlReader) :
         Optimiser(_modelTranslator, MuJoCo_helper, _yamlReader, _differentiator){
 
     active_visualiser = _visualizer;
@@ -30,7 +35,10 @@ iLQR::iLQR(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<Mu
     // Whether to do some low pass filtering over A and B matrices
     filteringMethod = activeYamlReader->filtering;
 
-    Resize(activeModelTranslator->current_state_vector.dof, activeModelTranslator->current_state_vector.num_ctrl, horizon);
+    // Resize internal data variables
+    Resize(activeModelTranslator->current_state_vector.dof,
+           activeModelTranslator->current_state_vector.num_ctrl,
+           horizon);
 
 }
 
@@ -216,12 +224,14 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
     for(int i = 0; i < horizon_length; i++){
 
         // set controls
-        activeModelTranslator->SetControlVector(initial_controls[i], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+        activeModelTranslator->SetControlVector(initial_controls[i],
+                                                          MuJoCo_helper->main_data,
+                                                             activeModelTranslator->full_state_vector);
 
         // Integrate simulator
         mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
-        // return cost for this state
+        // Return cost for this state
         double state_cost;
         activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[i]);
         if(i == horizon_length - 1){
@@ -247,7 +257,6 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
         cost += state_cost;
     }
 
-    initial_cost = cost;
     cost_history.push_back(cost);
 
     return cost;
@@ -274,9 +283,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
            activeModelTranslator->current_state_vector.num_ctrl,
            horizon_length);
 
-    // Make sure all matrices used in iLQR are correctly sized
-    Resize(dof, num_ctrl, horizon_length);
-    
+
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls(horizon_length);
 
@@ -322,7 +329,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     initial_cost = old_cost;
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
-    // Optimise for a set number of iterations
+    // ------------------- Main optimisation iteration loop ------------------------
     cost_reduced_last_iter = true;
     for(int i = 0; i < max_iterations; i++) {
         num_iterations++;
@@ -914,9 +921,8 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
         mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[thread_id]);
 
         // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-        if(t != 0){
-            SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t);
-        }
+
+        SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t);
     }
 
     // Compute expected costreduction

@@ -17,11 +17,7 @@ struct robot{
     std::string root_name;
     std::vector<std::string> joint_names;
     std::vector<std::string> actuator_names;
-
     std::vector<double> start_pos;
-//    std::vector<double> goal_pos;
-//    std::vector<double> goal_vel;
-
     std::vector<double> jerk_thresholds;
     std::vector<double> vel_change_thresholds;
 };
@@ -32,20 +28,11 @@ struct rigid_body{
     bool active_angular_dof[3];
     double start_linear_pos[3];
     double start_angular_pos[3];
-//    double goal_linear_pos[3];
-//    double goal_angular_pos[3];
-//    double linearPosCost[3];
-//    double terminal_linear_pos_cost[3];
-//    double linear_vel_cost[3];
-//    double terminal_linear_vel_cost[3];
-//    double angular_pos_cost[3];
-//    double terminal_angular_pos_cost[3];
-//    double angular_vel_cost[3];
-//    double terminal_angular_vel_cost[3];
     double linear_jerk_threshold[3];
     double angular_jerk_threshold[3];
     double linear_vel_change_threshold[3];
     double angular_vel_change_threshold[3];
+    double base_color[4];
 };
 
 struct vertex{
@@ -63,16 +50,6 @@ struct soft_body{
     // Centroid of the soft body
     double start_linear_pos[3];
     double start_angular_pos[3];
-//    double goal_linear_pos[3];
-//    double goal_angular_pos[3];
-//    double linearPosCost[3];
-//    double terminal_linear_pos_cost[3];
-//    double linear_vel_cost[3];
-//    double terminal_linear_vel_cost[3];
-//    double angular_pos_cost[3];
-//    double terminal_angular_pos_cost[3];
-//    double angular_vel_cost[3];
-//    double terminal_angular_vel_cost[3];
 
     // Individual vertices specific
 //    std::vector<double> linear_jerk_threshold;
@@ -91,11 +68,11 @@ struct task{
     std::vector<robot> robots;
     std::vector<rigid_body> rigid_bodies;
     std::vector<soft_body> soft_bodies;
-    double modelTimeStep;
+    double model_time_step;
     int openloop_horizon;
     int mpc_horizon;
-    std::string modelName;
-    std::string modelFilePath;
+    std::string model_name;
+    std::string model_filepath;
     std::string keypointMethod;
     bool auto_adjust;
     int minN;

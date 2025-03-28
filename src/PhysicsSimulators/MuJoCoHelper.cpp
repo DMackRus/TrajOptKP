@@ -283,7 +283,21 @@ bool MuJoCoHelper::BodyExists(const string& body_name, int &body_index){
     return body_exists;
 }
 
-void MuJoCoHelper::SetBodyColor(const string& body_name, const float color[4]) const{
+std::array<double, 4> MuJoCoHelper::ReturnBodyColor(const string &body_name) const{
+    std::array<double, 4> body_color;
+
+    int body_id = mj_name2id(model, mjOBJ_BODY, body_name.c_str());
+    int geom_id = model->body_geomadr[body_id];
+
+    body_color[0] = model->geom_rgba[geom_id * 4];
+    body_color[1] = model->geom_rgba[geom_id * 4 + 1];
+    body_color[2] = model->geom_rgba[geom_id * 4 + 2];
+    body_color[3] = model->geom_rgba[geom_id * 4 + 3];
+
+    return body_color;
+}
+
+void MuJoCoHelper::SetBodyColor(const string& body_name, const double color[4]) const{
     int body_id = mj_name2id(model, mjOBJ_BODY, body_name.c_str());
     int geom_id = model->body_geomadr[body_id];
 
@@ -888,8 +902,6 @@ void MuJoCoHelper::InitSimulator(double timestep, const char* file_name, bool us
     if( !model ) {
         printf("%s\n", error);
     }
-
-    std::cout << "Error" << error << "\n";
 
     // defaults 100 , 1e-8
     model->opt.timestep = timestep;

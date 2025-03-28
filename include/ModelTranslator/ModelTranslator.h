@@ -103,26 +103,6 @@ public:
 
     virtual void UpdateSceneVisualisation();
 
-    double CostFunctionBody(const rigid_body& body, mjData *d, bool terminal);
-
-    double CostFuntionSoftBody(const soft_body& soft_body, mjData *d, bool terminal);
-
-    /**
-     * Returns the current cost derivatives (1st and 2nd order) of the system with respect to the
-     * state and control vectors at the given data index.
-     *
-     * @param data_index The data index of the system to calculate the cost for.
-     * @param state_vector The state vector object to use to get cost elements
-     * @param l_x The first order cost derivative with respect to the state vector. Passed by reference.
-     * @param l_xx The second order cost derivative with respect to the state vector. Passed by reference.
-     * @param l_u The first order cost derivative with respect to the control vector. Passed by reference.
-     * @param l_uu The second order cost derivative with respect to the control vector. Passed by reference.
-     * @param terminal Whether or not this is the terminal state or not.
-     *
-     */
-    virtual void CostDerivatives(mjData* d, const struct stateVectorList &state_vector,
-            MatrixXd &l_x, MatrixXd &l_xx, MatrixXd &l_u, MatrixXd &l_uu, bool terminal);
-
     /**
      * Returns the current cost derivatives (1st and 2nd order) of the system with respect to the
      * state and control vectors at the given data index. For the given state vector representation.
@@ -422,10 +402,7 @@ public:
     double iterative_error_threshold;
     std::vector<double> velocity_change_thresholds;
 
-    // openloop_horizon
     int openloop_horizon;
-
-    // MPC horizon
     int MPC_horizon;
 
     vector<residual> residual_list;
@@ -436,21 +413,21 @@ public:
 
     // num of dofs considered between 0 and 6
 
-    color distractor_colors[7] = {{0.4, 0.48,    0.48, 1},
-                                  {0.5, 0.4, 0.4, 1},
-                                  {0.6, 0.32, 0.32, 1},
-                                  {0.7, 0.24, 0.24, 1},
-                                  {0.8, 0.17, 0.17, 1},
-                                  {0.91, 0.08, 0.08, 1},
-                                  {1, 0,    0, 1}};
-
-    color goal_colors[7] =       {{0, 0.4, 0, 1},
-                                  {0, 0.5, 0, 1},
-                                  {0, 0.6, 0, 1},
-                                  {0, 0.7, 0, 1},
-                                  {0, 0.8, 0, 1},
-                                  {0, 0.9, 0, 1},
-                                  {0, 1.0, 0, 1}};
+//    color distractor_colors[7] = {{0.4, 0.48,    0.48, 1},
+//                                  {0.5, 0.4, 0.4, 1},
+//                                  {0.6, 0.32, 0.32, 1},
+//                                  {0.7, 0.24, 0.24, 1},
+//                                  {0.8, 0.17, 0.17, 1},
+//                                  {0.91, 0.08, 0.08, 1},
+//                                  {1, 0,    0, 1}};
+//
+//    color goal_colors[7] =       {{0, 0.4, 0, 1},
+//                                  {0, 0.5, 0, 1},
+//                                  {0, 0.6, 0, 1},
+//                                  {0, 0.7, 0, 1},
+//                                  {0, 0.8, 0, 1},
+//                                  {0, 0.9, 0, 1},
+//                                  {0, 1.0, 0, 1}};
 
 protected:
 

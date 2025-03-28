@@ -1,7 +1,10 @@
 
 #include "Optimiser/Optimiser.h"
 
-Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator, std::shared_ptr<MuJoCoHelper> _MuJoCo_helper, std::shared_ptr<FileHandler> _yamlReader, std::shared_ptr<Differentiator> _differentiator){
+Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator,
+                     std::shared_ptr<MuJoCoHelper> _MuJoCo_helper,
+                     std::shared_ptr<FileHandler> _yamlReader,
+                     std::shared_ptr<Differentiator> _differentiator){
     activeModelTranslator = _modelTranslator;
     MuJoCo_helper = _MuJoCo_helper;
     activeYamlReader = _yamlReader;
@@ -34,10 +37,6 @@ bool Optimiser::CheckForConvergence(double old_cost, double new_cost){
         return true;
     }
     return false;
-}
-
-void Optimiser::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
-
 }
 
 keypoint_method Optimiser::ReturnCurrentKeypointMethod(){
@@ -290,20 +289,6 @@ void Optimiser::ComputeDynamicsDerivativesAtKeypoints(std::vector<std::vector<in
     MuJoCo_helper->ResetModelAfterFiniteDifferencing();
 
     auto time_cost_start = std::chrono::high_resolution_clock::now();
-
-//    if(!activeYamlReader->costDerivsFD){
-//        for(int i = 0; i < horizon_length; i++){
-//            activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[i],
-//                                                   activeModelTranslator->current_state_vector,
-//                                                   l_x[i], l_xx[i], l_u[i], l_uu[i], false);
-//        }
-//        activeModelTranslator->CostDerivatives(MuJoCo_helper->saved_systems_state_list[horizon_length - 1],
-//                                               activeModelTranslator->current_state_vector,
-//                                               l_x[horizon_length - 1], l_xx[horizon_length - 1],
-//                                               l_u[horizon_length - 1], l_uu[horizon_length - 1], true);
-//    }
-
-//    std::cout << "time cost derivs: " << duration_cast<microseconds>(high_resolution_clock::now() - time_cost_start).count() / 1000.0f << " ms\n";
 }
 
 void Optimiser::WorkerComputeDerivatives(int threadId) {
@@ -438,20 +423,19 @@ void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_
 }
 
 void Optimiser::SaveBestRollout(int thread_id){
-    // TODO - this needs fixing i suspect!!!!!!!!!!! Do it first thing please future david!
     for(int t = 0; t < horizon_length; t++){
 
-        MuJoCo_helper->saved_systems_state_list[t+1]->time = rollout_data[thread_id][t+1].time;
+        MuJoCo_helper->saved_systems_state_list[t]->time = rollout_data[thread_id][t].time;
 
         for(int i = 0; i < MuJoCo_helper->model->nq; i++){
-            MuJoCo_helper->saved_systems_state_list[t+1]->qpos[i] = rollout_data[thread_id][t+1].q_pos[i];
+            MuJoCo_helper->saved_systems_state_list[t]->qpos[i] = rollout_data[thread_id][t].q_pos[i];
         }
 
         for(int i = 0; i < MuJoCo_helper->model->nv; i++){
-            MuJoCo_helper->saved_systems_state_list[t+1]->qvel[i]           = rollout_data[thread_id][t+1].q_vel[i];
-            MuJoCo_helper->saved_systems_state_list[t+1]->qacc[i]           = rollout_data[thread_id][t+1].q_acc[i];
-            MuJoCo_helper->saved_systems_state_list[t+1]->qacc_warmstart[i] = rollout_data[thread_id][t+1].q_acc_warmstart[i];
-            MuJoCo_helper->saved_systems_state_list[t+1]->qfrc_applied[i]   = rollout_data[thread_id][t+1].qfrc_applied[i];
+            MuJoCo_helper->saved_systems_state_list[t]->qvel[i]           = rollout_data[thread_id][t].q_vel[i];
+            MuJoCo_helper->saved_systems_state_list[t]->qacc[i]           = rollout_data[thread_id][t].q_acc[i];
+            MuJoCo_helper->saved_systems_state_list[t]->qacc_warmstart[i] = rollout_data[thread_id][t].q_acc_warmstart[i];
+            MuJoCo_helper->saved_systems_state_list[t]->qfrc_applied[i]   = rollout_data[thread_id][t].qfrc_applied[i];
         }
 
         for(int i = 0; i < MuJoCo_helper->model->nu; i++){
@@ -459,11 +443,10 @@ void Optimiser::SaveBestRollout(int thread_id){
         }
 
         for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
-            MuJoCo_helper->saved_systems_state_list[t+1]->xfrc_applied[i] = rollout_data[thread_id][t+1].xfrc_applied[i];
+            MuJoCo_helper->saved_systems_state_list[t]->xfrc_applied[i] = rollout_data[thread_id][t].xfrc_applied[i];
         }
 
         // Update the residuals of the nominal trajectory
-        // TODO (DMackRus) - is this indexing correct, lets double check
-        activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t+1], residuals[t+1]);
+        activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t], residuals[t]);
     }
 }
