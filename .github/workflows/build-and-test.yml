@@ -40,4 +40,5 @@ jobs:
 
       - name: Run container and tests
         run:
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           singularity exec --fakeroot -B ${GITHUB_WORKSPACE}:$HOME/TrajOptKP library://dmackrus/collections/trajoptkp:latest /scripts/run_script_static.sh
