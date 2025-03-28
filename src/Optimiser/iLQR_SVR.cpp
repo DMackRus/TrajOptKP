@@ -100,7 +100,7 @@ void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     int num_dof = activeModelTranslator->current_state_vector.dof;
     int num_dof_quat = activeModelTranslator->current_state_vector.dof_quat;
 
-    for(int t = 0; t < this->horizon_length; t++){
+    for(int t = 0; t <= this->horizon_length; t++){
         // Cost matrices
 
         if(update_dof){
@@ -178,7 +178,7 @@ void iLQR_SVR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
             rollout_data[i] = data_horizon;
         }
 
-        for(int t = 0; t < horizon_length; t++){
+        for(int t = 0; t <= horizon_length; t++){
             residuals.push_back(MatrixXd(activeModelTranslator->residual_list.size(), 1));
         }
 

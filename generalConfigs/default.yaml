@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "place"
+task: "pushing_moderate_clutter"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -27,7 +27,7 @@ task: "place"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
+optimiser: "iLQR_SVR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
 runMode: "MPC_until_completion"
@@ -49,7 +49,7 @@ runMode: "MPC_until_completion"
 # "Analyse_toy_contact"           - Analyse the derivatives in toy example with contact.
 # "Analyse_toy_contact_keypoints" - Analyse the derivatives in toy example with contact and keypoint method.
 
-taskInitMode: "fromYAML"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
