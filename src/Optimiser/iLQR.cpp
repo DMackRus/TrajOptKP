@@ -202,9 +202,9 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     // Resize Keypoint generator class
     keypoint_generator->Resize(dof, num_ctrl, horizon_length);
 
-    std::cout << "iLQR time to allocate memory: " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
-
-//    std::cout << "length of A: " << A.size() << ", size of A is: " << A[0].cols() << "\n";
+    if(verbose_output){
+        std::cout << "iLQR time to allocate memory: " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
+    }
 }
 
 double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd> initial_controls){
@@ -320,7 +320,9 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     auto time_start = high_resolution_clock::now();
     old_cost = RolloutTrajectory(d, true, initial_controls);
-    std::cout << "cost from rollout: " << old_cost << "\n";
+    if(verbose_output){
+        std::cout << "cost from rollout: " << old_cost << "\n";
+    }
     auto time_end = high_resolution_clock::now();
     auto duration = duration_cast<microseconds>(time_end - time_start);
     if(verbose_output) {
@@ -410,8 +412,6 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     for(int i = 0; i < horizon_length; i++){
         optimisedControls[i] = U_old[i];
     }
-
-    std::cout << "optimised control[0] " << optimisedControls[0].transpose() << "\n";
 
     return optimisedControls;
 }

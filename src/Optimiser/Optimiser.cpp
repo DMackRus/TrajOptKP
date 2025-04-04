@@ -187,12 +187,12 @@ void Optimiser::ComputeDynamicsDerivatives(){
 
 
     // Interpolate the dynamics derivatives
-    auto start_interp_time = high_resolution_clock::now();
+//    auto start_interp_time = high_resolution_clock::now();
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, horizon_length,
                                                A, B, r_x, r_u, activeYamlReader->costDerivsFD,
                                                activeModelTranslator->current_state_vector.num_ctrl);
-    auto end_interp_time = high_resolution_clock::now();
-    std::cout << "interpolation time: " << duration_cast<microseconds>(end_interp_time - start_interp_time).count() / 1000.0 << " ms \n";
+//    auto end_interp_time = high_resolution_clock::now();
+//    std::cout << "interpolation time: " << duration_cast<microseconds>(end_interp_time - start_interp_time).count() / 1000.0 << " ms \n";
 }
 
 void Optimiser::ComputeCostDerivatives(){
@@ -212,7 +212,7 @@ void Optimiser::ComputeCostDerivatives(){
                                                         residuals[horizon_length - 1], r_x[horizon_length - 1], r_u[horizon_length - 1], true);
 
     auto time_stop_residual_derivs = high_resolution_clock::now();
-    std::cout << "time resid derivs: " << duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0f << " ms\n";
+//    std::cout << "time resid derivs: " << duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0f << " ms\n";
 }
 
 void Optimiser::ComputeResidualDerivatives(){

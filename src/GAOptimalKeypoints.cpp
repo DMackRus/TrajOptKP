@@ -18,17 +18,19 @@ int GAOptimalKeypoints::Run(){
     vector<vector<double>> genomes(population_size, vector<double>(genome_size));
     RandomlyInitPopulation(genomes);
 
+    vector<double> average_pop_fitness, best_pop_fitness, worst_pop_fitness;
+
     // Loop for a number of generations
     for(int i = 0; i < num_generations; i++){
         // Loop through the population
         vector<double> population_fitness(population_size);
         for(int j = 0; j < population_size; j++){
-            vector<double> costs(num_tasks);
+            vector<double> cost_reductions(num_tasks);
             vector<double> percentage_derivatives(num_tasks);
 
-            EvaluateKeypointMethodOverTasks(costs, percentage_derivatives, genomes[j]);
+            EvaluateKeypointMethodOverTasks(cost_reductions, percentage_derivatives, genomes[j]);
 
-            population_fitness[j] = EvaluateFitness(costs, percentage_derivatives);
+            population_fitness[j] = EvaluateFitness(cost_reductions, percentage_derivatives);
         }
 
         std::cout << "pop fitnesses: ";
@@ -42,8 +44,8 @@ int GAOptimalKeypoints::Run(){
 
         // Generate children
         vector<vector<double>> new_genomes;
-        for (size_t i = 0; i + 1 < parents.size(); i += 2) {
-            auto [child1, child2] = Crossover(parents[i], parents[i+1]);
+        for (size_t k = 0; k + 1 < parents.size(); k += 2) {
+            auto [child1, child2] = Crossover(parents[k], parents[k+1]);
             Mutation(child1);
             Mutation(child2);
             new_genomes.push_back(child1);
@@ -53,20 +55,80 @@ int GAOptimalKeypoints::Run(){
         // Elitism: copy best genome to next generation
         int best_idx = std::min_element(population_fitness.begin(), population_fitness.end()) - population_fitness.begin();
         new_genomes[0] = genomes[best_idx]; // Replace first genome with elite
-
         genomes = new_genomes;
-        // Create new population (elitism plus children)
+
+        // Data logging
+        int worst_idx = std::max_element(population_fitness.begin(), population_fitness.end()) - population_fitness.begin();
+        double average_fitness = std::accumulate(population_fitness.begin(), population_fitness.end(), 0.0) / population_fitness.size();
+
+        best_pop_fitness.push_back(population_fitness[best_idx]);
+        worst_pop_fitness.push_back(population_fitness[worst_idx]);
+        average_pop_fitness.push_back(average_fitness);
+
+        // ----------- Print best keypoint methods ------------------------
+        keypoint_method genome_method;
+        genome_method.name = "velocity_change";
+        genome_method.min_N = 1;
+        genome_method.max_N = 100;
+        genome_method.velocity_change_thresholds.resize(genome_size);
+        for(int k = 0; k < genome_size; k++){
+            genome_method.velocity_change_thresholds[k] = genomes[best_idx][k];
+        }
+        optimiser->keypoint_generator->SetKeypointMethod(genome_method);
+        optimiser->keypoint_generator->PrintKeypointMethod();
+        // -----------------------------------------------------------------
     }
+
+    // ----------------------- Save data to file -------------------------------------
+    // Go back two directories
+    std::string project_parent_path = __FILE__;
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+
+    std::string task_prefix = model_translator->model_name;
+
+    std::string root_path = project_parent_path + "/TestingData";
+
+    // Check if optimiser directory exists
+    if (!filesystem::exists(root_path)) {
+        if (!filesystem::create_directories(root_path)) {
+            std::cerr << "Failed to create directory: " << root_path << std::endl;
+        }
+    }
+
+//    std::string method_directory = root_path + "/" + task_prefix + "_fitness_tracking.csv";
+
+    // Check if method directory exists, if not create it
+//    if (!filesystem::exists(method_directory)) {
+//        if (!filesystem::create_directories(method_directory)) {
+//            std::cerr << "Failed to create directory: " << method_directory << std::endl;
+//            exit(1);
+//        }
+//    }
+    std::string filename = root_path + "/" + task_prefix + "_fitness_tracking.csv";
+
+    ofstream file_output;
+    file_output.open(filename);
+
+    // Make header
+    file_output << "Best fitness" << "," << "Average fitness" << "," << "Worst fitness" << std::endl;
+
+    // Loop through rows
+    for(int i = 0; i < best_pop_fitness.size(); i++){
+        file_output << best_pop_fitness[i] << "," << average_pop_fitness[i] << "," << worst_pop_fitness[i] << std::endl;
+    }
+
+    file_output.close();
 
     return EXIT_SUCCESS;
 }
 
-void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(vector<double> &costs,
+void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(vector<double> &cost_reductions,
                                      vector<double> &percentage_derivs,
                                      const vector<double> &genome){
 
 //    int opt_horizon = yamlReader.
-    // Todo - temp, make it from yaml reader later
+    // TODO - temp, make it from yaml reader later
     int task_horizon = 100;
 
     // ---------- Set Keypoint method (genome) --------------------------
@@ -136,7 +198,7 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(vector<double> &costs,
                 model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
                 task_horizon);
 
-        costs[i] = optimiser->new_cost;
+        cost_reductions[i] = optimiser->cost_reduction;
         percentage_derivs[i] = optimiser->avg_percent_derivs;
     }
 }
@@ -144,7 +206,7 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(vector<double> &costs,
 vector<vector<double>> GAOptimalKeypoints::TournamentSelectParents(const vector<vector<double>>& genomes,
                                                const vector<double>& fitnesses,
                                                int tournament_size){
-    // Todo - validate this code works
+    // TODO - validate this code works
     vector<vector<double>> selected_parents;
 
     for (int i = 0; i < genomes.size(); ++i) {
@@ -178,10 +240,6 @@ void GAOptimalKeypoints::RandomGenome(vector<double> &genome){
     }
 }
 
-void GAOptimalKeypoints::EvaluateGenomes(vector<vector<double>> genomes){
-
-}
-
 pair<vector<double>, vector<double>>  GAOptimalKeypoints::Crossover(const vector<double> &parent1, const vector<double> &parent2){
     vector<double> child1(genome_size);
     vector<double> child2(genome_size);
@@ -212,17 +270,30 @@ void GAOptimalKeypoints::Mutation(vector<double> &child){
         if(randFloat(0, 1) < mutate_chance){
             // TODO - Is this the best method to mutate my genomes?
             child[i] += randFloat(-1, 1);
+
+            if(child[i] < 0){
+                child[i] = 0;
+            }
         }
     }
 }
 
-double GAOptimalKeypoints::EvaluateFitness(vector<double> costs, vector<double> percentage_derivs) {
+double GAOptimalKeypoints::EvaluateFitness(vector<double> cost_reductions, vector<double> percentage_derivs) {
     double fitness = 0.0;
 
     // Turn two optimisation variables into a single one, via weightings
-    for(int i = 0; i < costs.size(); i++){
-        fitness += (cost_fitness_scalar * (1.0/costs[i])) + (derivatives_fitness_scalar * (1.0 / percentage_derivs[i]));
+    for(int i = 0; i < cost_reductions.size(); i++){
+        // Penalise poor cost reduction (non-linear)
+        double cost_term = cost_fitness_scalar * std::pow(cost_reductions[i], 2.0);
+
+        // Penalise high derivative usage (log scale for stability)
+        double deriv_term = derivatives_fitness_scalar * std::log(1.0 + percentage_derivs[i]);
+
+//        fitness += (cost_fitness_scalar * cost_reductions[i]) + (derivatives_fitness_scalar * (1.0 / percentage_derivs[i]));
+        fitness += cost_term + deriv_term;
     }
+
+    fitness /= cost_reductions.size();
 
     return fitness;
 }
