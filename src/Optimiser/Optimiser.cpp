@@ -187,10 +187,12 @@ void Optimiser::ComputeDynamicsDerivatives(){
 
 
     // Interpolate the dynamics derivatives
-//    auto start_interp_time = high_resolution_clock::now();
+    auto start_interp_time = high_resolution_clock::now();
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, horizon_length,
                                                A, B, r_x, r_u, activeYamlReader->costDerivsFD,
                                                activeModelTranslator->current_state_vector.num_ctrl);
+    auto end_interp_time = high_resolution_clock::now();
+    std::cout << "interpolation time: " << duration_cast<microseconds>(end_interp_time - start_interp_time).count() / 1000.0 << " ms \n";
 }
 
 void Optimiser::ComputeCostDerivatives(){

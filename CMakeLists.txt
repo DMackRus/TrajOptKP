@@ -83,7 +83,7 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/PushSoft.cpp
             src/ModelTranslator/SweepMultiple.cpp
             src/ModelTranslator/PlaceObject.cpp
-            src/ModelTranslator/FloatingCube.cpp)
+            src/ModelTranslator/FloatingCube.cpp src/GAOptimalKeypoints.cpp)
 
 include_directories(
         include

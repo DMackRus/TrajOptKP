@@ -31,6 +31,7 @@
 
 //----------------------- Testing methods ---------------------------
 #include "GenTestingData.h"
+#include "GAOptimalKeypoints.h"
 
 // --------------------- other -----------------------
 #include <mutex>
@@ -68,6 +69,8 @@ void MPCUntilComplete(int OPT_HORIZON);
 
 void AsyncMPC();
 void worker();
+
+void GASearchOptimalKeypoints();
 
 void change_cost_func_push_soft();
 
@@ -163,6 +166,12 @@ int main(int argc, char **argv) {
     else{
         std::cerr << "invalid Optimiser selected, exiting" << endl;
         return -1;
+    }
+
+    if(runMode == "GA_keypoint_search"){
+        GAOptimalKeypoints myGASearch(activeModelTranslator, activeModelTranslator->MuJoCo_helper,
+                                      yamlReader, activeOptimiser);
+        return myGASearch.Run();
     }
 
     if(runMode == "Generate_dynamics_data"){
@@ -866,9 +875,39 @@ int assign_task(){
     return EXIT_SUCCESS;
 }
 
-void change_cost_func_push_soft(){
-//    for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
-//        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-//        activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-//    }
+void GASearchOptimalKeypoints(){
+
+    // Setup Genomes
+
+    int population_size = 50;
+
+    // For loop to run through generations
+    int num_generations = 100;
+    for(int i = 0; i < num_generations; i++){
+
+
+        // Loop through the population
+        for(int j = 0; j < population_size; j++){
+
+            // Sample N tasks
+            int N = 100;
+
+            for(int k = 0; k < N; k++){
+                // Perform optimisation iteration per task
+
+                //
+            }
+
+        }
+
+        // Fitness evaluation over the genomes
+
+        // Select parents (winners)
+
+        // Apply crossover operation to mutate genomes
+
+        // Apply mutation to children (random chance)
+
+        // Create new population (elitism plus children)
+    }
 }

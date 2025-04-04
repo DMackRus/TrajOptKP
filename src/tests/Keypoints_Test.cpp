@@ -266,16 +266,12 @@ TEST(Interpolate, basic_interpolation){
 
     // Assert that t = 1 is interpolated correctly
     // Check some timesteps computed via interpolation
-//    std::cout << "A[0] \n" << A[0] << "\n";
-//    std::cout << "A[1] \n" << A[1] << "\n";
-//    std::cout << "A[2] \n" << A[2] << "\n";
     int minN = keypoint_method.min_N;
     for(int i = 0; i < model_translator->current_state_vector.dof*2; i++){
         for(int j = 0; j < model_translator->current_state_vector.dof*2; j++){
             double diff = (A[minN](i, j) - A[0](i, j)) / (double)minN;
             double desired = A[0](i, j) + diff;
             ASSERT_EQ(A[1](i, j), desired);
-
         }
     }
 
@@ -284,7 +280,6 @@ TEST(Interpolate, basic_interpolation){
             double diff = (B[minN](i, j) - B[0](i, j)) / (double)minN;
             double desired = B[0](i, j) + diff;
             ASSERT_EQ(B[1](i, j), desired);
-
         }
     }
 
@@ -302,12 +297,11 @@ TEST(Interpolate, basic_interpolation){
             double diff = (B[99](i, j) - B[96](i, j)) / (double)minN;
             double desired = B[96](i, j) + diff + diff;
             ASSERT_NEAR(B[98](i, j), desired, 1.0e-6);
-
         }
     }
 }
 
-TEST(Interpolate, different_columns_interpolate){
+TEST(Interpolate, different_columns_interpolation){
     std::shared_ptr<Acrobot> acrobot = std::make_shared<Acrobot>();
     model_translator = acrobot;
 

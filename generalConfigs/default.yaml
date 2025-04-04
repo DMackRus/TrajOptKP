@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_no_clutter"
+task: "acrobot"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -30,12 +30,14 @@ task: "pushing_no_clutter"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Optimise_once"
+runMode: "GA_keypoint_search"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
 # "Optimise_once"           - Optimise the trajectory open loop, display the optimised controls and initial controls repeatedly.
 # "MPC_until_completion"    - Perform MPC until the task is completed. Display current state of the system.
+
+# "GA_keypoint_search"      - Perform a Genetic algorithm search strategy to find optimal key-point parameters for a task.
 
 # Extra testing modes for debugging/generating testing data
 # "Generate_test_scenes"          - Generate a set of randomly generated test scenes for the task.
