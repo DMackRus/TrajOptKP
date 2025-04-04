@@ -6,7 +6,7 @@ mpc_horizon: 50
 keypointMethod: "adaptive_jerk"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
 minN: 1
-maxN: 100
+maxN: 10
 iterativeErrorThreshold: 0.01
 robots:
   panda:

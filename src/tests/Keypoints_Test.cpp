@@ -307,6 +307,106 @@ TEST(Interpolate, basic_interpolation){
     }
 }
 
+TEST(Interpolate, different_columns_interpolate){
+    std::shared_ptr<Acrobot> acrobot = std::make_shared<Acrobot>();
+    model_translator = acrobot;
+
+    int T = 10;
+
+    std::shared_ptr<Differentiator> differentiator =
+            std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
+
+    std::shared_ptr<KeypointGenerator> keypoint_generator =
+            std::make_shared<KeypointGenerator>(differentiator,
+                                                model_translator->MuJoCo_helper,
+                                                model_translator->current_state_vector.dof, T);
+
+    MatrixXd start_state(model_translator->current_state_vector.dof*2, 1);
+    start_state << 0.5, 0.1, 0, 0;
+    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data,
+                                     model_translator->current_state_vector);
+
+    std::vector<MatrixXd> trajectory_states;
+    std::vector<MatrixXd> A;
+    std::vector<MatrixXd> B;
+    std::vector<std::vector<MatrixXd>> r_x;
+    std::vector<std::vector<MatrixXd>> r_u;
+
+    // Allocate heap memory
+    for(int t = 0; t < T; t++){
+        A.push_back(MatrixXd(model_translator->current_state_vector.dof*2,
+                             model_translator->current_state_vector.dof*2));
+        B.push_back(MatrixXd(model_translator->current_state_vector.dof*2,
+                             model_translator->current_state_vector.num_ctrl));
+    }
+
+    CreateTrajectory(trajectory_states, T, true);
+
+    // Dof 0 - {0, 1, 5, 9}
+    // Dof 1 - {0, 4, 7, 9}
+    keypoint_generator->keypoints = {{0, 1},
+                                     {0},
+                                     {},
+                                     {},
+                                     {1},
+                                     {0},
+                                     {},
+                                     {1},
+                                     {},
+                                     {0, 1}};
+
+    // Compute derivatives at the keypoints
+    for(int t = 0; t < T; t++){
+        // Skip this time-step if no key-points
+        if(keypoint_generator->keypoints[t].empty()){
+            continue;
+        }
+        differentiator->DynamicsDerivatives(A[t], B[t], keypoint_generator->keypoints[t],
+                                            t, 0,
+                                            false, 1.0e-6);
+    }
+
+    // Print A matrices over horizon
+    for(int t = 0; t < T; t++){
+        std::cout << A[t] << "\n";
+        std::cout << "-----------------------------------\n";
+    }
+    std::cout << "------------------ Interpolated derivatives ---------------- \n";
+
+    // Call Interpolate derivatives
+    keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, T, A, B,
+                                               r_x, r_u, false,
+                                               model_translator->current_state_vector.num_ctrl);
+
+    // Print A matrices over horizon
+    for(int t = 0; t < T; t++){
+        std::cout << A[t] << "\n";
+        std::cout << "-----------------------------------\n";
+    }
+
+    // Check if interpolation is done correctly colum by column
+
+    for(int t = 2; t < 5; t++){
+        for(int i = 0; i < model_translator->current_state_vector.dof*2; i++) {
+            for (int j = 0; j < model_translator->current_state_vector.dof; j++) {
+                double diff = (A[5](i, j*2) - A[1](i, j*2)) / double(5-1);
+                double desired = A[1](i, j*2) + (diff * (t-1));
+                ASSERT_NEAR(A[t](i, j*2), desired, 1e-7);
+            }
+        }
+    }
+
+    for(int t = 6; t < 7; t++){
+        for(int i = 0; i < model_translator->current_state_vector.dof*2; i++) {
+            for (int j = 0; j < model_translator->current_state_vector.dof; j++) {
+                double diff = (A[7](i, (j*2)+1) - A[5](i, (j*2)+1)) / double(7-5);
+                double desired = A[5](i, (j*2)+1) + (diff * (t-5));
+                ASSERT_NEAR(A[t](i, (j*2)+1), desired, 1e-7);
+            }
+        }
+    }
+}
+
 // TODO - Write a test for auto adjust keypoint methods.
 //TEST(keypoints, auto_adjust){
 //

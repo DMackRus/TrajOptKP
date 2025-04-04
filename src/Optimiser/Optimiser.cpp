@@ -314,9 +314,6 @@ void Optimiser::WorkerComputeResidualDerivatives(int threadId){
             break;  // All iterations done
         }
 
-//        int timeIndex = timeIndicesGlobal[iteration];
-
-        std::vector<int> keyPoints;
         (activeDifferentiator.get()->*(tasks_residual_derivs[iteration]))(r_x[iteration], r_u[iteration],
                                                                           iteration, threadId, true, 1e-6);
     }
