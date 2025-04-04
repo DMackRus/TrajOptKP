@@ -8,8 +8,9 @@ GAOptimalKeypoints::GAOptimalKeypoints(std::shared_ptr<ModelTranslator> _model_t
     MuJoCo_helper = _MuJoCo_helper;
     yamlReader = _yamlReader;
     optimiser = _optimiser;
-//    keypoint_generator = _keypoint_generator;
-    genome_size = model_translator->full_state_vector.dof;
+
+    // Genome size = number of dofs (threshhold limits) + minN + maxN
+    genome_size = model_translator->full_state_vector.dof + 2;
 
 }
 
@@ -54,7 +55,15 @@ int GAOptimalKeypoints::Run(){
 
         // Elitism: copy best genome to next generation
         int best_idx = std::min_element(population_fitness.begin(), population_fitness.end()) - population_fitness.begin();
+        // TODO enable elitism of arbritary number
         new_genomes[0] = genomes[best_idx]; // Replace first genome with elite
+
+        // Add random survivors - Better for exploration
+        for (int k = 1; k < explorer_count+1; ++k) {
+            int idx = rand() % genomes.size();
+            new_genomes[k] = genomes[idx];
+        }
+
         genomes = new_genomes;
 
         // Data logging
@@ -68,11 +77,11 @@ int GAOptimalKeypoints::Run(){
         // ----------- Print best keypoint methods ------------------------
         keypoint_method genome_method;
         genome_method.name = "velocity_change";
-        genome_method.min_N = 1;
-        genome_method.max_N = 100;
+        genome_method.min_N = static_cast<int>(genomes[best_idx][0]);
+        genome_method.max_N = static_cast<int>(genomes[best_idx][1]);
         genome_method.velocity_change_thresholds.resize(genome_size);
-        for(int k = 0; k < genome_size; k++){
-            genome_method.velocity_change_thresholds[k] = genomes[best_idx][k];
+        for(int k = 2; k < genome_size; k++){
+            genome_method.velocity_change_thresholds[k-2] = genomes[best_idx][k];
         }
         optimiser->keypoint_generator->SetKeypointMethod(genome_method);
         optimiser->keypoint_generator->PrintKeypointMethod();
@@ -132,13 +141,13 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(vector<double> &cost_re
     int task_horizon = 100;
 
     // ---------- Set Keypoint method (genome) --------------------------
-    keypoint_method genome_method;
+    keypoint_method genome_method = optimiser->ReturnCurrentKeypointMethod();
     genome_method.name = "velocity_change";
-    genome_method.min_N = 1;
-    genome_method.max_N = 100;
-    genome_method.velocity_change_thresholds.resize(genome_size);
-    for(int i = 0; i < genome_size; i++){
-        genome_method.velocity_change_thresholds[i] = genome[i];
+    genome_method.min_N = static_cast<int>(genome[0]);
+    genome_method.max_N = static_cast<int>(genome[1]);
+//    genome_method.velocity_change_thresholds.resize(genome_size - 2);
+    for(int i = 0; i < genome_size - 2; i++){
+        genome_method.velocity_change_thresholds[i] = genome[i + 2];
     }
     optimiser->keypoint_generator->SetKeypointMethod(genome_method);
 
@@ -234,7 +243,9 @@ void GAOptimalKeypoints::RandomlyInitPopulation(vector<vector<double>> &genomes)
 }
 
 void GAOptimalKeypoints::RandomGenome(vector<double> &genome){
-    for(int i = 0; i < genome_size; i++){
+    genome[0] = randFloat(1, 5);
+    genome[1] = genome[0] * 2;
+    for(int i = 2; i < genome_size; i++){
         // TODO - not sure about this as a method for random genome specification either.
         genome[i] = randFloat(0, 100);
     }
@@ -264,12 +275,20 @@ pair<vector<double>, vector<double>>  GAOptimalKeypoints::Crossover(const vector
 }
 
 void GAOptimalKeypoints::Mutation(vector<double> &child){
+
+    child[0] += randFloat(-2, 2);
+    child[1] += randFloat(-2, 2);
+
+    if(child[0] < 1){
+        child[0] = 1;
+    }
+
     // Randomly mutate genome variables
-    for(int i = 0; i < genome_size; i++){
+    for(int i = 2; i < genome_size; i++){
         // Random chance check
         if(randFloat(0, 1) < mutate_chance){
             // TODO - Is this the best method to mutate my genomes?
-            child[i] += randFloat(-1, 1);
+            child[i] += randFloat(-3, 3);
 
             if(child[i] < 0){
                 child[i] = 0;

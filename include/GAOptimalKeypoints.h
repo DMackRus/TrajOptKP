@@ -37,7 +37,6 @@ private:
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
     std::shared_ptr<FileHandler> yamlReader;
     std::shared_ptr<Optimiser> optimiser;
-//    std::shared_ptr<KeypointGenerator> keypoint_generator;
     int genome_size;
 
     double cost_fitness_scalar = 1;
@@ -46,5 +45,8 @@ private:
     int population_size = 20;
     int num_tasks = 10;
     double mutate_chance = 5;
+
+    int elite_count = 1;
+    int explorer_count = 3;
 
 };
