@@ -243,10 +243,6 @@ void Visualiser::render(const char* label) {
         unsigned char* pixels = new unsigned char[3 * width * height]; // assuming RGB channels
         auto timer_start = std::chrono::steady_clock::now();
         glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-//        std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - timer_start).count() << std::endl;
-
-//        glPixelStorei(GL_PACK_ALIGNMENT, 1); // Ensure byte alignment
-//        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels.data());
 
         // Write pixel data to a file
         std::string filename = video_filename + "/frame_" + std::to_string(frame_count) + ".png";

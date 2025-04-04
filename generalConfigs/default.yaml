@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_moderate_clutter"
+task: "acrobot"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -27,10 +27,10 @@ task: "pushing_moderate_clutter"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "iLQR_SVR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
+optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "MPC_until_completion"
+runMode: "Optimise_once"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
@@ -50,13 +50,13 @@ runMode: "MPC_until_completion"
 # "Analyse_toy_contact_keypoints" - Analyse the derivatives in toy example with contact and keypoint method.
 
 taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 5                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+csvRow: 0                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
 minIter: 5               # Minimum number of iterations to run Optimiser for
-maxIter: 10               # Maximum number of iterations to run Optimiser for
+maxIter: 100               # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
 record: false

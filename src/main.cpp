@@ -62,7 +62,7 @@ bool apply_next_control = false;
 
 int assign_task();
 
-void InitControls();
+void InitControls(int opt_horizon);
 void OpenLoopOptimisation(int opt_horizon);
 void MPCUntilComplete(int OPT_HORIZON);
 
@@ -108,6 +108,7 @@ int main(int argc, char **argv) {
 
     // Instantiate model translator as specified by the config file.
     if(assign_task() == EXIT_FAILURE){
+        std::cout << "Task specified does not exist \n";
         return EXIT_FAILURE;
     }
 
@@ -278,7 +279,7 @@ int main(int argc, char **argv) {
     // Methods of control / visualisation
     if(runMode == "Init_controls"){
         cout << "SHOWING INIT CONTROLS MODE \n";
-        InitControls();
+        InitControls(activeModelTranslator->openloop_horizon);
     }
     else if(runMode == "Optimise_once"){
         cout << "OPTIMISE TRAJECTORY ONCE AND DISPLAY MODE \n";
@@ -297,53 +298,66 @@ int main(int argc, char **argv) {
     return EXIT_SUCCESS;
 }
 
-void InitControls(){
-    int setupHorizon = 1000;
-    int optHorizon = 2500;
+void InitControls(int opt_horizon){
+    int setup_horizon = 1000;
     int controlCounter = 0;
     int visualCounter = 0;
 
     std::vector<MatrixXd> initControls;
 
-    std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(setupHorizon);
+    std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(setup_horizon);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
-    std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(optHorizon);
+    std::vector<MatrixXd> initOptimisationControls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     //Stitch setup and optimisation controls together
     initControls.insert(initControls.end(), initOptimisationControls.begin(), initOptimisationControls.end());
 
-
     if(record_trajectory){
         activeVisualiser->StartRecording(task + "_init_controls");
     }
 
+    auto time_start = std::chrono::steady_clock::now();
+    auto time_end = std::chrono::steady_clock::now();
+
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
     while(activeVisualiser->windowOpen()){
+        time_start = std::chrono::steady_clock::now();
 
-        activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->main_data,
+        activeModelTranslator->SetControlVector(initControls[controlCounter], activeModelTranslator->MuJoCo_helper->vis_data,
                                                 activeModelTranslator->current_state_vector);
-        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->main_data);
 
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
 
         controlCounter++;
         visualCounter++;
 
         if(controlCounter >= initControls.size()){
             controlCounter = 0;
-            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
             activeVisualiser->StopRecording();
         }
 
-        if(visualCounter > 5){
+
+        if(visualCounter >= 2){
             visualCounter = 0;
-            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
-            activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
+
             if(record_trajectory){
                 activeVisualiser->render("");
             }
             else{
                 activeVisualiser->render("show init controls");
             }
+        }
+
+        // ------------------ Real-time synchronisation -----------------------------
+        time_end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> real_elapsed = time_end - time_start;
+        int delay = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() - real_elapsed.count()) * 1000;
+
+        if (delay > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay));
         }
     }
 }
@@ -379,7 +393,12 @@ void OpenLoopOptimisation(int opt_horizon){
         activeVisualiser->StartRecording(task + "_optimised_controls");
         label = "";
     }
+
+    auto time_start = std::chrono::steady_clock::now();
+    auto time_end = std::chrono::steady_clock::now();
+
     while(activeVisualiser->windowOpen()){
+        time_start = std::chrono::steady_clock::now();
 
         if(show_opt_controls){
             activeModelTranslator->SetControlVector(optimised_controls[control_counter], activeModelTranslator->MuJoCo_helper->main_data,
@@ -414,6 +433,15 @@ void OpenLoopOptimisation(int opt_horizon){
             activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->main_data);
             activeModelTranslator->MuJoCo_helper->ForwardSimulator(activeModelTranslator->MuJoCo_helper->vis_data);
             activeVisualiser->render(label);
+        }
+
+        // ------------------ Real-time synchronisation -----------------------------
+        time_end = std::chrono::steady_clock::now();
+        std::chrono::duration<double> real_elapsed = time_end - time_start;
+        int delay = (activeModelTranslator->MuJoCo_helper->ReturnModelTimeStep() - real_elapsed.count()) * 1000;
+
+        if (delay > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(delay));
         }
     }
 }
