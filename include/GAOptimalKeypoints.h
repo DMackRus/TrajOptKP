@@ -19,7 +19,7 @@ public:
 
     void EvaluateGenomes(vector<vector<double>> genomes);
 
-    vector<double> Crossover(const vector<double> &parent1, const vector<double> &parent2);
+    pair<vector<double>, vector<double>>  Crossover(const vector<double> &parent1, const vector<double> &parent2);
 
     void Mutation(vector<double> &child);
 
@@ -28,6 +28,10 @@ public:
     void EvaluateKeypointMethodOverTasks(vector<double> &costs,
                                          vector<double> &percentage_derivs,
                                          const vector<double> &genome);
+
+    vector<vector<double>> TournamentSelectParents(const vector<vector<double>>& genomes,
+                                                   const vector<double>& fitnesses,
+                                                   int tournament_size);
 
 private:
 
@@ -40,8 +44,8 @@ private:
 
     double cost_fitness_scalar = 1;
     double derivatives_fitness_scalar = 1;
-    int num_generations = 1;
-    int population_size = 100;
+    int num_generations = 2;
+    int population_size = 10;
     int num_tasks = 5;
     double mutate_chance = 5;
 

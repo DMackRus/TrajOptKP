@@ -37,14 +37,24 @@ int GAOptimalKeypoints::Run(){
         }
         std::cout << endl;
 
-
-
         // Select parents (winners)
+        vector<vector<double>> parents = TournamentSelectParents(genomes, population_fitness, 3);
 
-        // Apply crossover operation to mutate genomes
+        // Generate children
+        vector<vector<double>> new_genomes;
+        for (size_t i = 0; i + 1 < parents.size(); i += 2) {
+            auto [child1, child2] = Crossover(parents[i], parents[i+1]);
+            Mutation(child1);
+            Mutation(child2);
+            new_genomes.push_back(child1);
+            new_genomes.push_back(child2);
+        }
 
-        // Apply mutation to children (random chance)
+        // Elitism: copy best genome to next generation
+        int best_idx = std::min_element(population_fitness.begin(), population_fitness.end()) - population_fitness.begin();
+        new_genomes[0] = genomes[best_idx]; // Replace first genome with elite
 
+        genomes = new_genomes;
         // Create new population (elitism plus children)
     }
 
@@ -70,71 +80,9 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(vector<double> &costs,
     }
     optimiser->keypoint_generator->SetKeypointMethod(genome_method);
 
-    // Test the keypoint method performance over the number of tasks
-//    for (int i = 0; i < 100; i++) {
-////        std::cout << "trial: " << i << "\n";
-//
-//        // Reset internal optimisation data and clear key-points cache
-//        optimiser->Reset();
-//        optimiser->keypoint_generator->ResetCache();
-//
-//        // Load the task from CSV file
-//        yamlReader->LoadTaskFromFile(model_translator->model_name,
-//                                     i, model_translator->full_state_vector,
-//                                     model_translator->residual_list);
-//
-//        // Reset state vector (only really applicable for iLQR_SVR method)
-//        model_translator->ResetSVR();
-//        model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
-//
-//        // Setup mj data objects
-//        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->main_data,
-//                                                         model_translator->MuJoCo_helper->master_reset_data);
-//        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->vis_data,
-//                                                              model_translator->MuJoCo_helper->master_reset_data);
-//
-////        MatrixXd test_state_start = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->master_reset_data,
-////                                                                             activeModelTranslator->full_state_vector);
-////        std::cout << "state vector after initialised: " << test_state_start.transpose() << "\n";
-//
-//        mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data);
-////        test_state_start = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->master_reset_data,
-////                                                                    activeModelTranslator->full_state_vector);
-////        std::cout << "state vector after step: " << test_state_start.transpose() << "\n";
-//
-//        if (!model_translator->MuJoCo_helper->CheckIfDataIndexExists(0)) {
-//            model_translator->MuJoCo_helper->AppendSystemStateToEnd(
-//                    model_translator->MuJoCo_helper->master_reset_data);
-//        }
-//
-//        // Perform any setup controls for this task
-//        std::vector<MatrixXd> initSetupControls = model_translator->CreateInitSetupControls(1000);
-//        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->master_reset_data,
-//                                                              model_translator->MuJoCo_helper->main_data);
-//        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->main_data,
-//                                                         model_translator->MuJoCo_helper->master_reset_data);
-//        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->vis_data,
-//                                                              model_translator->MuJoCo_helper->master_reset_data);
-//
-//        // Create init optimisation controls
-//        std::vector<MatrixXd> init_opt_controls = model_translator->CreateInitOptimisationControls(task_horizon);
-//        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->main_data,
-//                                                              model_translator->MuJoCo_helper->master_reset_data);
-//        model_translator->MuJoCo_helper->CopySystemState(
-//                model_translator->MuJoCo_helper->saved_systems_state_list[0],
-//                model_translator->MuJoCo_helper->master_reset_data);
-//
-//        // Do the optimisation!
-//        optimiser->lambda = 0.01;   // Make sure lambda is the same value is important!
-//        std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
-//                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
-//                task_horizon);
-//
-//
-//        // ------------------------- Update the data storages -------------------------------------
-//        costs[i] = optimiser->new_cost;
-//        percentage_derivs[i] = optimiser->avg_percent_derivs;
-//    }
+    // Suppress terminal output
+    optimiser->verbose_output = false;
+
     for (int i = 0; i < num_tasks; i++) {
 
         // Reset internal optimisation data and clear key-points cache
@@ -193,6 +141,30 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(vector<double> &costs,
     }
 }
 
+vector<vector<double>> GAOptimalKeypoints::TournamentSelectParents(const vector<vector<double>>& genomes,
+                                               const vector<double>& fitnesses,
+                                               int tournament_size){
+    // Todo - validate this code works
+    vector<vector<double>> selected_parents;
+
+    for (int i = 0; i < genomes.size(); ++i) {
+        double best_fitness = std::numeric_limits<double>::infinity();
+        int best_index = -1;
+
+        for (int t = 0; t < tournament_size; ++t) {
+            int idx = rand() % genomes.size();
+            if (fitnesses[idx] < best_fitness) {
+                best_fitness = fitnesses[idx];
+                best_index = idx;
+            }
+        }
+
+        selected_parents.push_back(genomes[best_index]);
+    }
+
+    return selected_parents;
+}
+
 void GAOptimalKeypoints::RandomlyInitPopulation(vector<vector<double>> &genomes){
     for(int i = 0; i < population_size; i++){
         RandomGenome(genomes[i]);
@@ -210,15 +182,27 @@ void GAOptimalKeypoints::EvaluateGenomes(vector<vector<double>> genomes){
 
 }
 
-vector<double> GAOptimalKeypoints::Crossover(const vector<double> &parent1, const vector<double> &parent2){
-    vector<double> child(genome_size);
+pair<vector<double>, vector<double>>  GAOptimalKeypoints::Crossover(const vector<double> &parent1, const vector<double> &parent2){
+    vector<double> child1(genome_size);
+    vector<double> child2(genome_size);
+    int crossover_point = rand() % genome_size;
 
-    // Simple averaging crossover method
-    for(int i = 0; i < genome_size; i++){
-        child[i] = (parent1[i] + parent2[i]) / 2;
+    for (int i = 0; i < genome_size; ++i) {
+        if (i < crossover_point) {
+            child1[i] = parent1[i];
+            child2[i] = parent2[i];
+        } else {
+            child1[i] = parent2[i];
+            child2[i] = parent1[i];
+        }
     }
 
-    return child;
+    // Simple averaging crossover method
+//    for(int i = 0; i < genome_size; i++){
+//        child[i] = (parent1[i] + parent2[i]) / 2;
+//    }
+
+    return {child1, child2};
 }
 
 void GAOptimalKeypoints::Mutation(vector<double> &child){
@@ -237,7 +221,7 @@ double GAOptimalKeypoints::EvaluateFitness(vector<double> costs, vector<double> 
 
     // Turn two optimisation variables into a single one, via weightings
     for(int i = 0; i < costs.size(); i++){
-        fitness += (cost_fitness_scalar * costs[i]) + (derivatives_fitness_scalar * percentage_derivs[i]);
+        fitness += (cost_fitness_scalar * (1.0/costs[i])) + (derivatives_fitness_scalar * (1.0 / percentage_derivs[i]));
     }
 
     return fitness;
