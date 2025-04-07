@@ -5,6 +5,13 @@
 #include "Differentiator.h"
 #include "Optimiser/Optimiser.h"
 
+struct solution{
+    vector<double> genome;
+    vector<double> cost_reductions;
+    vector<double> percentage_derivatives;
+    double fitness;
+};
+
 class GAOptimalKeypoints{
 public:
     GAOptimalKeypoints(std::shared_ptr<ModelTranslator> _modelTranslator,
@@ -14,21 +21,18 @@ public:
 
     int Run();
 
-    void RandomlyInitPopulation(vector<vector<double>> &genomes);
+    void RandomlyInitPopulation(vector<solution> &solutions);
     void RandomGenome(vector<double> &genome);
 
-    pair<vector<double>, vector<double>>  Crossover(const vector<double> &parent1, const vector<double> &parent2);
+    pair<solution, solution>  Crossover(const solution &parent1, const solution &parent2);
 
-    void Mutation(vector<double> &child);
+    void Mutation(solution &child);
 
-    double EvaluateCost(vector<double> cost_reductions, vector<double> percentage_derivs);
+    void EvaluateSolutionCost(solution &solutions);
 
-    void EvaluateKeypointMethodOverTasks(vector<double> &cost_reductions,
-                                         vector<double> &percentage_derivs,
-                                         const vector<double> &genome);
+    void EvaluateKeypointMethodOverTasks(solution &solution);
 
-    vector<vector<double>> TournamentSelectParents(const vector<vector<double>>& genomes,
-                                                   const vector<double>& fitnesses,
+    vector<solution> TournamentSelectParents(const vector<solution>& solutions,
                                                    int tournament_size);
 
 private:
