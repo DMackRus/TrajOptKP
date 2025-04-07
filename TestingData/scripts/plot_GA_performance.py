@@ -1,43 +1,104 @@
+# import pandas as pd
+# import matplotlib.pyplot as plt
+
+# # Load CSV
+# df = pd.read_csv("../acrobot_fitness_tracking.csv")
+
+# # Set the number of rows as the x-axis (e.g., iterations or generations)
+# x = range(len(df))
+
+# # Define colour themes
+# fitness_colors = {'Best': '#A6CEE3', 'Average': '#1F78B4', 'Worst': '#B2DF8A'}
+# cost_colors = {'Best': '#FB9A99', 'Average': '#E31A1C', 'Worst': '#FDBF6F'}
+# deriv_colors = {'Best': '#CAB2D6', 'Average': '#6A3D9A', 'Worst': '#FFFF99'}
+
+# # Create plot
+# plt.figure(figsize=(14, 8))
+
+# # Fitness plots
+# plt.plot(x, df["Best fitness"], label="Best Fitness", color=fitness_colors['Best'], linestyle='--', alpha=0.6)
+# plt.plot(x, df["Average fitness"], label="Average Fitness", color=fitness_colors['Average'], linewidth=3)
+# plt.plot(x, df["Worst fitness"], label="Worst Fitness", color=fitness_colors['Worst'], linestyle='--', alpha=0.6)
+
+# # Cost reduction plots
+# plt.plot(x, df["Best cost reduction"], label="Best Cost Reduction", color=cost_colors['Best'], linestyle='--', alpha=0.6)
+# plt.plot(x, df["Average cost reduction"], label="Average Cost Reduction", color=cost_colors['Average'], linewidth=3)
+# plt.plot(x, df["Worst cost reduction"], label="Worst Cost Reduction", color=cost_colors['Worst'], linestyle='--', alpha=0.6)
+
+# # Percent derivatives plots
+# plt.plot(x, df["Best percent derivatives"], label="Best % Derivatives", color=deriv_colors['Best'], linestyle='--', alpha=0.6)
+# plt.plot(x, df["Average percent derivatives"], label="Average % Derivatives", color=deriv_colors['Average'], linewidth=3)
+# plt.plot(x, df["Worst percent derivatives"], label="Worst % Derivatives", color=deriv_colors['Worst'], linestyle='--', alpha=0.6)
+
+# # Add labels and legend
+# plt.xlabel("Iteration")
+# plt.ylabel("Value")
+# plt.title("Performance Metrics Over Time")
+# plt.legend(loc='upper right', fontsize='small')
+# plt.grid(True)
+# plt.tight_layout()
+
+# # Show plot
+# # plt.show()
+# plt.savefig("GA_performance_plot.png", dpi=300)
+
 import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load CSV
 df = pd.read_csv("../acrobot_fitness_tracking.csv")
 
-# Set the number of rows as the x-axis (e.g., iterations or generations)
+# Normalise fitness columns between 0 and 1
+fitness_cols = ["Best fitness", "Average fitness", "Worst fitness"]
+df[fitness_cols] = df[fitness_cols].apply(lambda col: (col - col.min()) / (col.max() - col.min()))
+
+# x-axis
 x = range(len(df))
 
-# Define colour themes
+# Define colours
 fitness_colors = {'Best': '#A6CEE3', 'Average': '#1F78B4', 'Worst': '#B2DF8A'}
 cost_colors = {'Best': '#FB9A99', 'Average': '#E31A1C', 'Worst': '#FDBF6F'}
 deriv_colors = {'Best': '#CAB2D6', 'Average': '#6A3D9A', 'Worst': '#FFFF99'}
 
-# Create plot
-plt.figure(figsize=(14, 8))
+# Create figure and left axis
+fig, ax1 = plt.subplots(figsize=(14, 8))
 
-# Fitness plots
-plt.plot(x, df["Best fitness"], label="Best Fitness", color=fitness_colors['Best'], linestyle='--', alpha=0.6)
-plt.plot(x, df["Average fitness"], label="Average Fitness", color=fitness_colors['Average'], linewidth=3)
-plt.plot(x, df["Worst fitness"], label="Worst Fitness", color=fitness_colors['Worst'], linestyle='--', alpha=0.6)
+# Left axis (fitness and cost reduction) — range 0 to 1
+ax1.set_ylim(0, 1)
 
-# Cost reduction plots
-plt.plot(x, df["Best cost reduction"], label="Best Cost Reduction", color=cost_colors['Best'], linestyle='--', alpha=0.6)
-plt.plot(x, df["Average cost reduction"], label="Average Cost Reduction", color=cost_colors['Average'], linewidth=3)
-plt.plot(x, df["Worst cost reduction"], label="Worst Cost Reduction", color=cost_colors['Worst'], linestyle='--', alpha=0.6)
+# Plot fitness
+ax1.plot(x, df["Best fitness"], label="Best Fitness", color=fitness_colors['Best'], linestyle='--', alpha=0.6)
+ax1.plot(x, df["Average fitness"], label="Average Fitness", color=fitness_colors['Average'], linewidth=3)
+ax1.plot(x, df["Worst fitness"], label="Worst Fitness", color=fitness_colors['Worst'], linestyle='--', alpha=0.6)
 
-# Percent derivatives plots
-plt.plot(x, df["Best percent derivatives"], label="Best % Derivatives", color=deriv_colors['Best'], linestyle='--', alpha=0.6)
-plt.plot(x, df["Average percent derivatives"], label="Average % Derivatives", color=deriv_colors['Average'], linewidth=3)
-plt.plot(x, df["Worst percent derivatives"], label="Worst % Derivatives", color=deriv_colors['Worst'], linestyle='--', alpha=0.6)
+# Plot cost reduction
+ax1.plot(x, df["Best cost reduction"], label="Best Cost Reduction", color=cost_colors['Best'], linestyle='--', alpha=0.6)
+ax1.plot(x, df["Average cost reduction"], label="Average Cost Reduction", color=cost_colors['Average'], linewidth=3)
+ax1.plot(x, df["Worst cost reduction"], label="Worst Cost Reduction", color=cost_colors['Worst'], linestyle='--', alpha=0.6)
 
-# Add labels and legend
-plt.xlabel("Iteration")
-plt.ylabel("Value")
-plt.title("Performance Metrics Over Time")
-plt.legend(loc='upper right', fontsize='small')
-plt.grid(True)
+ax1.set_xlabel("Iteration")
+ax1.set_ylabel("Fitness & Cost Reduction (Normalised)")
+
+# Right axis (percent derivatives) — range 0 to 100
+ax2 = ax1.twinx()
+ax2.set_ylim(0, 100)
+
+# Plot percent derivatives
+ax2.plot(x, df["Best percent derivatives"], label="Best % Derivatives", color=deriv_colors['Best'], linestyle='--', alpha=0.6)
+ax2.plot(x, df["Average percent derivatives"], label="Average % Derivatives", color=deriv_colors['Average'], linewidth=3)
+ax2.plot(x, df["Worst percent derivatives"], label="Worst % Derivatives", color=deriv_colors['Worst'], linestyle='--', alpha=0.6)
+
+ax2.set_ylabel("Percent Derivatives (%)")
+
+# Combine legends from both axes
+lines_1, labels_1 = ax1.get_legend_handles_labels()
+lines_2, labels_2 = ax2.get_legend_handles_labels()
+ax1.legend(lines_1 + lines_2, labels_1 + labels_2, loc='upper right', fontsize='small')
+
+# Grid and layout
+ax1.grid(True)
+plt.title("GA Performance Over Iterations")
 plt.tight_layout()
 
-# Show plot
-# plt.show()
-plt.savefig("GA_performance_plot.png", dpi=300)
+# Save the plot
+plt.savefig("GA_dual_axis_plot.png", dpi=300)
