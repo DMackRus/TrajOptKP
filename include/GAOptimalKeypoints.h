@@ -57,11 +57,11 @@ private:
     std::shared_ptr<Optimiser> optimiser;
     int genome_size;
 
-    double cost_fitness_scalar = 1;
+    double cost_fitness_scalar = 4;
     double derivatives_fitness_scalar = 1;
-    int num_generations = 20;
-    int population_size = 20;
-    int num_tasks = 10;
+    int num_generations = 50;
+    int population_size = 30;
+    int num_tasks = 20;
     double mutate_chance = 5;
 
     int elite_count = 1;

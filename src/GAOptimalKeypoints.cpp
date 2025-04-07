@@ -15,16 +15,17 @@ GAOptimalKeypoints::GAOptimalKeypoints(std::shared_ptr<ModelTranslator> _model_t
 
 int GAOptimalKeypoints::Run(){
 
+    // Make sure population is even
+    if(population_size % 2 != 0){
+        population_size--;
+    }
+
     // Initialise data logging
     data_logging data;
 
     // Initialise Solutions
     vector<solution> solutions(population_size);
     RandomlyInitPopulation(solutions);
-
-//    vector<double> average_pop_fitness, best_pop_fitness, worst_pop_fitness;
-//    vector<double> average_pop_cost_reduction, best_pop_cost_reduction, worst_pop_cost_reduction;
-//    vector<double> average_pop_percent_derivs, best_pop_percent_derivs, worst_pop_percent_derivs;
 
     // Loop for a number of generations
     for(int i = 0; i < num_generations; i++){
@@ -67,18 +68,6 @@ int GAOptimalKeypoints::Run(){
                                         });
 
         int best_idx = std::distance(solutions.begin(), best_it);
-        // TODO enable elitism of arbritary number
-        new_solutions[0] = solutions[best_idx]; // Replace first genome with elite
-
-        // Add random survivors - Better for exploration
-        for (int k = 1; k < explorer_count+1; ++k) {
-            int idx = rand() % solutions.size();
-            new_solutions[k] = solutions[idx];
-        }
-
-        solutions = new_solutions;
-
-
 
         // ----------- Print best keypoint methods ------------------------
         keypoint_method genome_method;
@@ -92,6 +81,19 @@ int GAOptimalKeypoints::Run(){
         optimiser->keypoint_generator->SetKeypointMethod(genome_method);
         optimiser->keypoint_generator->PrintKeypointMethod();
         // -----------------------------------------------------------------
+
+
+        // TODO enable elitism of arbritary number
+        new_solutions[0] = solutions[best_idx]; // Replace first genome with elite
+
+        // Add random survivors - Better for exploration
+        for (int k = 1; k < explorer_count+1; ++k) {
+            int idx = rand() % solutions.size();
+            new_solutions[k] = solutions[idx];
+        }
+
+        solutions = std::move(new_solutions);
+//        solutions = new_solutions;
     }
 
     // ----------------------- Save data to file -------------------------------------
@@ -200,7 +202,7 @@ void GAOptimalKeypoints::UpdateDataLogging(data_logging& data, const vector<solu
 
     data.average_pop_percent_derivs.push_back(average_pd_population);
     data.best_pop_percent_derivs.push_back(average_percent_derivatives[best_idx]);
-    data.worst_pop_percent_derivs.push_back(average_percent_derivatives[best_idx]);
+    data.worst_pop_percent_derivs.push_back(average_percent_derivatives[worst_idx]);
 }
 
 void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution){
@@ -228,12 +230,24 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution){
         // Reset internal optimisation data and clear key-points cache
         optimiser->Reset();
         optimiser->keypoint_generator->ResetCache();
-        // Load start and desired state from csv file
+
+        // Load the task - use random function to prevent over-fitting
+        model_translator->GenerateRandomGoalAndStartState();
 
         // Load the task from CSV file
-        yamlReader->LoadTaskFromFile(model_translator->model_name,
-                                     i, model_translator->full_state_vector,
-                                     model_translator->residual_list);
+//        yamlReader->LoadTaskFromFile(model_translator->model_name,
+//                                     i, model_translator->full_state_vector,
+//                                     model_translator->residual_list);
+
+//        std::cout << model_translator->full_state_vector.robots[0].start_pos[0] << ", ";
+//        std::cout << model_translator->full_state_vector.robots[0].start_pos[1] << ", ";
+//        std::cout << std::endl;
+//        std::cout << model_translator->residual_list[0].target[0] << ", ";
+//        std::cout << model_translator->residual_list[1].target[0] << ", ";
+//        std::cout << model_translator->residual_list[2].target[0] << ", ";
+//        std::cout << model_translator->residual_list[3].target[0] << ", ";
+//        std::cout << model_translator->residual_list[4].target[0] << ", ";
+//        std::cout << std::endl;
 
         // Reset state vector (only really applicable for iLQR_SVR method)
         model_translator->ResetSVR();
@@ -273,7 +287,7 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution){
         // Do the optimisation!
         optimiser->lambda = 0.01;
         std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
-                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
+                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 2, 2,
                 task_horizon);
 
         solution.cost_reductions[i] = optimiser->cost_reduction;
@@ -386,7 +400,8 @@ void GAOptimalKeypoints::EvaluateSolutionCost(solution &solutions) {
         double cost_term = cost_fitness_scalar * (1.0 /(solutions.cost_reductions[i] + 1));
 
         // Penalise high derivative usage (log scale as closer to zero the better)
-        double deriv_term = derivatives_fitness_scalar * std::log(1.0 + (solutions.percentage_derivatives[i]));
+        double deriv_term = derivatives_fitness_scalar * std::log(1.0 + (solutions.percentage_derivatives[i]/100));
+//        double deriv_term = derivatives_fitness_scalar * (solutions.percentage_derivatives[i] / 100);
 
         double task_fitness = cost_term + deriv_term;
         fitness += task_fitness;
