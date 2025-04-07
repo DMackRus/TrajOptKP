@@ -12,6 +12,18 @@ struct solution{
     double fitness;
 };
 
+struct data_logging{
+    vector<double> average_pop_fitness;
+    vector<double> best_pop_fitness;
+    vector<double> worst_pop_fitness;
+    vector<double> average_pop_cost_reduction;
+    vector<double> best_pop_cost_reduction;
+    vector<double> worst_pop_cost_reduction;
+    vector<double> average_pop_percent_derivs;
+    vector<double> best_pop_percent_derivs;
+    vector<double> worst_pop_percent_derivs;
+};
+
 class GAOptimalKeypoints{
 public:
     GAOptimalKeypoints(std::shared_ptr<ModelTranslator> _modelTranslator,
@@ -34,6 +46,8 @@ public:
 
     vector<solution> TournamentSelectParents(const vector<solution>& solutions,
                                                    int tournament_size);
+
+    void UpdateDataLogging(data_logging& data, const vector<solution>& solutions);
 
 private:
 

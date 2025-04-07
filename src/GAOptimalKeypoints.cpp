@@ -15,11 +15,16 @@ GAOptimalKeypoints::GAOptimalKeypoints(std::shared_ptr<ModelTranslator> _model_t
 
 int GAOptimalKeypoints::Run(){
 
+    // Initialise data logging
+    data_logging data;
+
     // Initialise Solutions
     vector<solution> solutions(population_size);
     RandomlyInitPopulation(solutions);
 
-    vector<double> average_pop_fitness, best_pop_fitness, worst_pop_fitness;
+//    vector<double> average_pop_fitness, best_pop_fitness, worst_pop_fitness;
+//    vector<double> average_pop_cost_reduction, best_pop_cost_reduction, worst_pop_cost_reduction;
+//    vector<double> average_pop_percent_derivs, best_pop_percent_derivs, worst_pop_percent_derivs;
 
     // Loop for a number of generations
     for(int i = 0; i < num_generations; i++){
@@ -38,6 +43,9 @@ int GAOptimalKeypoints::Run(){
             std::cout << solutions[j].fitness << " ";
         }
         std::cout << endl;
+
+        // Data logging
+        UpdateDataLogging(data, solutions);
 
         // Select parents (winners)
         vector<solution> parents = TournamentSelectParents(solutions, 3);
@@ -70,22 +78,7 @@ int GAOptimalKeypoints::Run(){
 
         solutions = new_solutions;
 
-        // Data logging
-        auto worst_it = std::min_element(solutions.begin(), solutions.end(),
-                                        [](const solution& a, const solution& b) {
-                                            return a.fitness > b.fitness;
-                                        });
-        int worst_idx = std::distance(solutions.begin(), worst_it);
 
-        double average_fitness = std::accumulate(
-                solutions.begin(), solutions.end(), 0.0,
-                [](double sum, const solution& s) {
-                    return sum + s.fitness;
-                }) / solutions.size();
-
-        best_pop_fitness.push_back(solutions[best_idx].fitness);
-        worst_pop_fitness.push_back(solutions[worst_idx].fitness);
-        average_pop_fitness.push_back(average_fitness);
 
         // ----------- Print best keypoint methods ------------------------
         keypoint_method genome_method;
@@ -133,16 +126,81 @@ int GAOptimalKeypoints::Run(){
     file_output.open(filename);
 
     // Make header
-    file_output << "Best fitness" << "," << "Average fitness" << "," << "Worst fitness" << std::endl;
+    file_output << "Best fitness" << "," << "Average fitness" << "," << "Worst fitness" << ",";
+    file_output << "Best cost reduction" << "," << "Average cost reduction" << "," << "Worst cost reduction" << ",";
+    file_output << "Best percent derivatives" << "," << "Average percent derivatives" << "," << "Worst percent derivatives" << std::endl;
 
     // Loop through rows
-    for(int i = 0; i < best_pop_fitness.size(); i++){
-        file_output << best_pop_fitness[i] << "," << average_pop_fitness[i] << "," << worst_pop_fitness[i] << std::endl;
+    for(int i = 0; i < data.best_pop_fitness.size(); i++){
+        file_output << data.best_pop_fitness[i] << "," << data.average_pop_fitness[i] << "," << data.worst_pop_fitness[i] << ",";
+        file_output << data.best_pop_cost_reduction[i] << "," << data.average_pop_cost_reduction[i] << "," << data.worst_pop_cost_reduction[i] << ",";
+        file_output << data.best_pop_percent_derivs[i] << "," << data.average_pop_percent_derivs[i] << "," << data.worst_pop_percent_derivs[i] << std::endl;
     }
 
     file_output.close();
 
     return EXIT_SUCCESS;
+}
+
+void GAOptimalKeypoints::UpdateDataLogging(data_logging& data, const vector<solution>& solutions){
+
+    //--------------------------- Fitness calculations --------------------------------
+
+    auto best_it = std::min_element(solutions.begin(), solutions.end(),
+                                    [](const solution& a, const solution& b) {
+                                        return a.fitness < b.fitness;
+                                    });
+
+    int best_idx = std::distance(solutions.begin(), best_it);
+
+    // Data logging
+    auto worst_it = std::min_element(solutions.begin(), solutions.end(),
+                                     [](const solution& a, const solution& b) {
+                                         return a.fitness > b.fitness;
+                                     });
+    int worst_idx = std::distance(solutions.begin(), worst_it);
+
+    double average_fitness = std::accumulate(
+            solutions.begin(), solutions.end(), 0.0,
+            [](double sum, const solution& s) {
+                return sum + s.fitness;
+            }) / static_cast<double>(solutions.size());
+
+    data.best_pop_fitness.push_back(solutions[best_idx].fitness);
+    data.worst_pop_fitness.push_back(solutions[worst_idx].fitness);
+    data.average_pop_fitness.push_back(average_fitness);
+
+    // ------------------------ Cost reduction calculations --------------------------
+    vector<double> average_cost_reductions, average_percent_derivatives;
+    // Compute average cost reduction for each solutions
+    for(auto solution : solutions){
+
+        double average_cr = std::accumulate(solution.cost_reductions.begin(),
+                                                         solution.cost_reductions.end(),
+                                                         0.0) / static_cast<double>(solution.cost_reductions.size());
+        average_cost_reductions.push_back(average_cr);
+
+        double average_pd = std::accumulate(solution.percentage_derivatives.begin(),
+                                            solution.percentage_derivatives.end(),
+                                            0.0) / static_cast<double>(solution.percentage_derivatives.size());
+        average_percent_derivatives.push_back(average_pd);
+    }
+
+    double average_cr_population = std::accumulate(average_cost_reductions.begin(),
+                                                   average_cost_reductions.end(),
+                                                   0.0) / static_cast<double>(average_cost_reductions.size());
+
+    double average_pd_population = std::accumulate(average_percent_derivatives.begin(),
+                                                   average_percent_derivatives.end(),
+                                                   0.0) / static_cast<double>(average_percent_derivatives.size());
+
+    data.average_pop_cost_reduction.push_back(average_cr_population);
+    data.best_pop_cost_reduction.push_back(average_cost_reductions[best_idx]);
+    data.worst_pop_cost_reduction.push_back(average_cost_reductions[worst_idx]);
+
+    data.average_pop_percent_derivs.push_back(average_pd_population);
+    data.best_pop_percent_derivs.push_back(average_percent_derivatives[best_idx]);
+    data.worst_pop_percent_derivs.push_back(average_percent_derivatives[best_idx]);
 }
 
 void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution){
