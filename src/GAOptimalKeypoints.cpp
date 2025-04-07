@@ -9,9 +9,8 @@ GAOptimalKeypoints::GAOptimalKeypoints(std::shared_ptr<ModelTranslator> _model_t
     yamlReader = _yamlReader;
     optimiser = _optimiser;
 
-    // Genome size = number of dofs (threshhold limits) + minN + maxN
+    // Genome size = number of dofs (threshold limits) + minN + maxN
     genome_size = model_translator->full_state_vector.dof + 2;
-
 }
 
 int GAOptimalKeypoints::Run(){
@@ -31,7 +30,7 @@ int GAOptimalKeypoints::Run(){
 
             EvaluateKeypointMethodOverTasks(cost_reductions, percentage_derivatives, genomes[j]);
 
-            population_fitness[j] = EvaluateFitness(cost_reductions, percentage_derivatives);
+            population_fitness[j] = EvaluateCost(cost_reductions, percentage_derivatives);
         }
 
         std::cout << "pop fitnesses: ";
@@ -297,19 +296,24 @@ void GAOptimalKeypoints::Mutation(vector<double> &child){
     }
 }
 
-double GAOptimalKeypoints::EvaluateFitness(vector<double> cost_reductions, vector<double> percentage_derivs) {
+double GAOptimalKeypoints::EvaluateCost(vector<double> cost_reductions, vector<double> percentage_derivs) {
     double fitness = 0.0;
+
+
 
     // Turn two optimisation variables into a single one, via weightings
     for(int i = 0; i < cost_reductions.size(); i++){
         // Penalise poor cost reduction (non-linear)
-        double cost_term = cost_fitness_scalar * std::pow(cost_reductions[i], 2.0);
+        double cost_term = cost_fitness_scalar * (1.0 /(cost_reductions[i] + 1));
 
         // Penalise high derivative usage (log scale for stability)
-        double deriv_term = derivatives_fitness_scalar * std::log(1.0 + percentage_derivs[i]);
+        double deriv_term = derivatives_fitness_scalar * std::log(1.0 + (percentage_derivs[i]));
 
 //        fitness += (cost_fitness_scalar * cost_reductions[i]) + (derivatives_fitness_scalar * (1.0 / percentage_derivs[i]));
-        fitness += cost_term + deriv_term;
+        double task_fitness = cost_term + deriv_term;
+        fitness += task_fitness;
+
+//        std::cout << "cost reduction: " << cost_reductions[i] << " PD: " << percentage_derivs[i] << " fitness: " << task_fitness << "\n";
     }
 
     fitness /= cost_reductions.size();

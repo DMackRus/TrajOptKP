@@ -21,7 +21,7 @@ public:
 
     void Mutation(vector<double> &child);
 
-    double EvaluateFitness(vector<double> cost_reductions, vector<double> percentage_derivs);
+    double EvaluateCost(vector<double> cost_reductions, vector<double> percentage_derivs);
 
     void EvaluateKeypointMethodOverTasks(vector<double> &cost_reductions,
                                          vector<double> &percentage_derivs,
@@ -41,7 +41,7 @@ private:
 
     double cost_fitness_scalar = 1;
     double derivatives_fitness_scalar = 1;
-    int num_generations = 100;
+    int num_generations = 20;
     int population_size = 20;
     int num_tasks = 10;
     double mutate_chance = 5;
