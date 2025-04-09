@@ -29,14 +29,26 @@ int GAOptimalKeypoints::Run(){
 
     // Loop for a number of generations
     for(int i = 0; i < num_generations; i++){
+        // Randomly create task instantiations
+        // Random start states and goal states
+        // TODO - might need to refactor how random start state and goal generation is performed
+        vector<vector<double>> tasks(num_tasks, vector<double>(model_translator->full_state_vector.dof));
+        for(int j = 0; j < num_tasks; j++){
+            for(int k = 0; k < model_translator->full_state_vector.dof; k++){
+                tasks[j][k] = randFloat(-1, 1);
+            }
+        }
+
+        vector<double> baseline_cost_reductions = EvaluateBaselineMethodOverTasks(tasks);
+
         // Loop through the population
         for(int j = 0; j < population_size; j++){
             vector<double> cost_reductions(num_tasks);
             vector<double> percentage_derivatives(num_tasks);
 
             // TODO - think about the naming of these two functions
-            EvaluateKeypointMethodOverTasks(solutions[j]);
-            EvaluateSolutionCost(solutions[j]);
+            EvaluateKeypointMethodOverTasks(solutions[j], tasks);
+            EvaluateSolutionCost(solutions[j], baseline_cost_reductions);
         }
 
         std::cout << "pop fitnesses: ";
@@ -48,8 +60,11 @@ int GAOptimalKeypoints::Run(){
         // Data logging
         UpdateDataLogging(data, solutions);
 
+        std::cout << " Average baseline CR " << std::accumulate(baseline_cost_reductions.begin(),
+                baseline_cost_reductions.end(), 0.0) / static_cast<double>(baseline_cost_reductions.size()) << std::endl;
+
         // Select parents (winners)
-        vector<solution> parents = TournamentSelectParents(solutions, 3);
+        vector<solution> parents = TournamentSelectParents(solutions, 10);
 
         // Generate children
         vector<solution> new_solutions;
@@ -203,9 +218,111 @@ void GAOptimalKeypoints::UpdateDataLogging(data_logging& data, const vector<solu
     data.average_pop_percent_derivs.push_back(average_pd_population);
     data.best_pop_percent_derivs.push_back(average_percent_derivatives[best_idx]);
     data.worst_pop_percent_derivs.push_back(average_percent_derivatives[worst_idx]);
+
+    std::cout << "cost reduction: ";
+    for(int i = 0; i < solutions.size(); i++){
+        std::cout << average_cost_reductions[i] << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "percent derivatives: ";
+    for(int i = 0; i < solutions.size(); i++){
+        std::cout << average_percent_derivatives[i] << " ";
+    }
+    std::cout << std::endl;
+    
 }
 
-void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution){
+vector<double> GAOptimalKeypoints::EvaluateBaselineMethodOverTasks(vector<vector<double>> &tasks){
+    // TODO - temp, make it from yaml reader later
+    int task_horizon = 100;
+
+    vector<double> baseline_cost_reductions;
+
+    // ---------- Set Keypoint method (baseline) --------------------------
+    keypoint_method genome_method = optimiser->ReturnCurrentKeypointMethod();
+    genome_method.name = "set_interval";
+    genome_method.min_N = static_cast<int>(1);
+    genome_method.max_N = static_cast<int>(1);
+    for(int i = 0; i < genome_size - 2; i++){
+        genome_method.velocity_change_thresholds[i] = 0;
+    }
+    optimiser->keypoint_generator->SetKeypointMethod(genome_method);
+
+    for (int i = 0; i < num_tasks; i++) {
+        optimiser->verbose_output = false;
+
+//        if(i == 0){
+//            std::cout << "BASELINE evaluation task " << i << std::endl;
+//            optimiser->verbose_output = true;
+//        }
+
+
+        // Reset internal optimisation data and clear key-points cache
+        optimiser->Reset();
+        optimiser->keypoint_generator->ResetCache();
+        // Load the task - use random function to prevent over-fitting
+//        model_translator->GenerateRandomGoalAndStartState();
+
+        // Load the task from CSV file
+//        yamlReader->LoadTaskFromFile(model_translator->model_name,
+//                                     i, model_translator->full_state_vector,
+//                                     model_translator->residual_list);
+
+        // Load the task from vector
+        model_translator->full_state_vector.robots[0].start_pos[0] = tasks[i][0];
+        model_translator->full_state_vector.robots[0].start_pos[1] = tasks[i][1];
+
+        // Reset state vector (only really applicable for iLQR_SVR method)
+        model_translator->ResetSVR();
+        model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
+        // Setup mj data objects
+        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->main_data,
+                                                         model_translator->MuJoCo_helper->master_reset_data);
+        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->vis_data,
+                                                         model_translator->MuJoCo_helper->master_reset_data);
+
+
+        mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data);
+
+        if (!model_translator->MuJoCo_helper->CheckIfDataIndexExists(0)) {
+            model_translator->MuJoCo_helper->AppendSystemStateToEnd(
+                    model_translator->MuJoCo_helper->master_reset_data);
+        }
+
+        // Perform any setup controls for this task
+        std::vector<MatrixXd> initSetupControls = model_translator->CreateInitSetupControls(1000);
+        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->master_reset_data,
+                                                         model_translator->MuJoCo_helper->main_data);
+        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->main_data,
+                                                         model_translator->MuJoCo_helper->master_reset_data);
+        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->vis_data,
+                                                         model_translator->MuJoCo_helper->master_reset_data);
+
+        // Create init optimisation controls
+        std::vector<MatrixXd> init_opt_controls = model_translator->CreateInitOptimisationControls(task_horizon);
+        model_translator->MuJoCo_helper->CopySystemState(model_translator->MuJoCo_helper->main_data,
+                                                         model_translator->MuJoCo_helper->master_reset_data);
+        model_translator->MuJoCo_helper->CopySystemState(
+                model_translator->MuJoCo_helper->saved_systems_state_list[0],
+                model_translator->MuJoCo_helper->master_reset_data);
+
+        // Do the optimisation!
+        optimiser->lambda = 0.01;
+        std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
+                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
+                task_horizon);
+
+//        solution.cost_reductions[i] = optimiser->cost_reduction;
+//        solution.percentage_derivatives[i] = optimiser->avg_percent_derivs;
+        baseline_cost_reductions.push_back(optimiser->cost_reduction);
+    }
+
+    return baseline_cost_reductions;
+}
+
+void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution, vector<vector<double>> &tasks){
 
 //    int opt_horizon = yamlReader.
     // TODO - temp, make it from yaml reader later
@@ -227,17 +344,32 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution){
 
     for (int i = 0; i < num_tasks; i++) {
 
-        // Reset internal optimisation data and clear key-points cache
+        optimiser->verbose_output = false;
+
+//        if(i == 0){
+//            std::cout << "genome evaluation task " << i << std::endl;
+//            optimiser->verbose_output = true;
+//        }
+
+        // - Optimise once with set interval 1 so we have something to compare against -
         optimiser->Reset();
         optimiser->keypoint_generator->ResetCache();
 
+
+        // Reset internal optimisation data and clear key-points cache
+        optimiser->Reset();
+        optimiser->keypoint_generator->ResetCache();
         // Load the task - use random function to prevent over-fitting
-        model_translator->GenerateRandomGoalAndStartState();
+//        model_translator->GenerateRandomGoalAndStartState();
 
         // Load the task from CSV file
 //        yamlReader->LoadTaskFromFile(model_translator->model_name,
 //                                     i, model_translator->full_state_vector,
 //                                     model_translator->residual_list);
+
+        // Load the task from vector
+        model_translator->full_state_vector.robots[0].start_pos[0] = tasks[i][0];
+        model_translator->full_state_vector.robots[0].start_pos[1] = tasks[i][1];
 
 //        std::cout << model_translator->full_state_vector.robots[0].start_pos[0] << ", ";
 //        std::cout << model_translator->full_state_vector.robots[0].start_pos[1] << ", ";
@@ -287,7 +419,7 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution){
         // Do the optimisation!
         optimiser->lambda = 0.01;
         std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
-                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 2, 2,
+                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
                 task_horizon);
 
         solution.cost_reductions[i] = optimiser->cost_reduction;
@@ -329,7 +461,7 @@ void GAOptimalKeypoints::RandomlyInitPopulation(vector<solution> &solutions){
 }
 
 void GAOptimalKeypoints::RandomGenome(vector<double> &genome){
-    genome[0] = randFloat(1, 5);
+    genome[0] = randFloat(0, 50);
     genome[1] = genome[0] * 2;
     for(int i = 2; i < genome_size; i++){
         // TODO - not sure about this as a method for random genome specification either.
@@ -359,6 +491,10 @@ pair<solution, solution>  GAOptimalKeypoints::Crossover(const solution &parent1,
             child1.genome[i] = parent2.genome[i];
             child2.genome[i] = parent1.genome[i];
         }
+
+        // Temporarily disbaled crossover
+//        child1.genome[i] = parent1.genome[i];
+//        child2.genome[i] = parent2.genome[i];
     }
 
     return {child1, child2};
@@ -366,8 +502,11 @@ pair<solution, solution>  GAOptimalKeypoints::Crossover(const solution &parent1,
 
 void GAOptimalKeypoints::Mutation(solution &child){
 
-    child.genome[0] += randFloat(-2, 2);
-    child.genome[1] += randFloat(-2, 2);
+    if(randFloat(0, 1) < mutate_chance){
+        child.genome[0] += randFloat(-10, 10);
+        child.genome[1] += randFloat(-10, 10);
+    }
+
 
     if(child.genome[0] < 1){
         child.genome[0] = 1;
@@ -391,13 +530,15 @@ void GAOptimalKeypoints::Mutation(solution &child){
     }
 }
 
-void GAOptimalKeypoints::EvaluateSolutionCost(solution &solutions) {
+void GAOptimalKeypoints::EvaluateSolutionCost(solution &solutions, vector<double> baseline_cost_reductions) {
     double fitness = 0.0;
 
     // Turn two optimisation variables into a single one, via weightings
     for(int i = 0; i < solutions.cost_reductions.size(); i++){
         // Penalise Low cost reduction
-        double cost_term = cost_fitness_scalar * (1.0 /(solutions.cost_reductions[i] + 1));
+        double cost_reduction_diff = baseline_cost_reductions[i] - solutions.cost_reductions[i];
+//        double cost_term = cost_fitness_scalar * (1.0 /(solutions.cost_reductions[i] + 1));
+        double cost_term = cost_fitness_scalar * cost_reduction_diff;
 
         // Penalise high derivative usage (log scale as closer to zero the better)
         double deriv_term = derivatives_fitness_scalar * std::log(1.0 + (solutions.percentage_derivatives[i]/100));

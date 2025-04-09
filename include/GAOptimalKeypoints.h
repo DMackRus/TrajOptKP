@@ -40,9 +40,11 @@ public:
 
     void Mutation(solution &child);
 
-    void EvaluateSolutionCost(solution &solutions);
+    void EvaluateSolutionCost(solution &solutions, vector<double> baseline_cost_reductions);
 
-    void EvaluateKeypointMethodOverTasks(solution &solution);
+    void EvaluateKeypointMethodOverTasks(solution &solution, vector<vector<double>> &tasks);
+
+    vector<double> EvaluateBaselineMethodOverTasks(vector<vector<double>> &tasks);
 
     vector<solution> TournamentSelectParents(const vector<solution>& solutions,
                                                    int tournament_size);
@@ -57,12 +59,12 @@ private:
     std::shared_ptr<Optimiser> optimiser;
     int genome_size;
 
-    double cost_fitness_scalar = 4;
-    double derivatives_fitness_scalar = 1;
-    int num_generations = 50;
+    double cost_fitness_scalar = 5;
+    double derivatives_fitness_scalar = 0;
+    int num_generations = 100;
     int population_size = 30;
-    int num_tasks = 20;
-    double mutate_chance = 5;
+    int num_tasks = 50;
+    double mutate_chance = 0.5;
 
     int elite_count = 1;
     int explorer_count = 3;
