@@ -26,27 +26,53 @@ bool Acrobot::TaskComplete(mjData *d, double &dist){
 void Acrobot::Residuals(mjData *d, MatrixXd &residuals){
     int resid_index = 0;
 
-    std::vector<double> acrobot_joints;
+    mj_kinematics(MuJoCo_helper->model, d);
+
+//    std::vector<double> acrobot_joints;
     std::vector<double> acrobot_velocities;
     std::vector<double> acrobot_control;
-    MuJoCo_helper->GetRobotJointsPositions("acrobot", acrobot_joints, d);
+//    MuJoCo_helper->GetRobotJointsPositions("acrobot", acrobot_joints, d);
     MuJoCo_helper->GetRobotJointsVelocities("acrobot", acrobot_velocities, d);
     MuJoCo_helper->GetRobotJointsControls("acrobot", acrobot_control, d);
 
-    // --------------- Residual 0: Joint 0 position -----------------
-    residuals(resid_index++, 0) = acrobot_joints[0] - residual_list[0].target[0];
+//    mjtNum* goal_xpos = &data->site_xpos[3 * 0];
+//    mjtNum* tip_xpos = &data->site_xpos[3 * 1];
+//    residual[0] = goal_xpos[2] - tip_xpos[2];
+//    residual[1] = goal_xpos[0] - tip_xpos[0];
+//
+//    // ---------- Residual (2-3) ----------
+//    residual[2] = data->qvel[0];
+//    residual[3] = data->qvel[1];
+//
+//    // ---------- Residual (4) ----------
+//    residual[4] = data->ctrl[0];
+
+    pose_6 goal_pose;
+    MuJoCo_helper->GetBodyPoseAngle("target", goal_pose, d);
+
+    double tip_x = d->site_xpos[3*1];
+    double tip_z = d->site_xpos[3*1+2];
+//    d->site_xpos[0]
+//    pose_6 tip_pose;
+//    MuJoCo_helper->
+
+    double diff_x = tip_x - goal_pose.position(0);
+    double diff_z = tip_z - goal_pose.position(2);
+
+    // --------------- Residual 0: Tip position -----------------
+    residuals(resid_index++, 0) = sqrt(pow(diff_x,2) + pow(diff_z,2));
 
     // --------------- Residual 1: Joint 1 position -----------------
-    residuals(resid_index++, 0) = acrobot_joints[1] - residual_list[1].target[0];
+//    residuals(resid_index++, 0) = tip_z - goal_pose.position(2);
 
     // --------------- Residual 2: Joint 0 velocity -----------------
-    residuals(resid_index++, 0) = acrobot_velocities[0] - residual_list[2].target[0];
+    residuals(resid_index++, 0) = acrobot_velocities[0];
 
     // --------------- Residual 3: Joint 1 velocity -----------------
-    residuals(resid_index++, 0) = acrobot_velocities[1] - - residual_list[3].target[0];
+    residuals(resid_index++, 0) = acrobot_velocities[1];
 
     // --------------- Residual 4: Joint 0 control -----------------
-    residuals(resid_index++, 0) = acrobot_control[0] - residual_list[4].target[0];
+    residuals(resid_index++, 0) = acrobot_control[0];
 
     if(resid_index != residual_list.size()){
         std::cerr << "Error: Residuals size mismatch\n";
@@ -92,5 +118,16 @@ void Acrobot::ReturnRandomGoalState(){
     // Control of the acrobot motor
     residual_list[4].target[0] = 0.0;
 
+}
 
+void Acrobot::SetGoalVisuals(mjData *d) {
+    pose_6 goal_pose;
+
+    MuJoCo_helper->GetBodyPoseAngle("target", goal_pose, d);
+
+    // Set the goal object position
+    goal_pose.position(0) = 0;
+    goal_pose.position(0) = 0;
+    goal_pose.position(2) = 4.5;
+    MuJoCo_helper->SetBodyPoseAngle("target", goal_pose, d);
 }

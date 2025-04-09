@@ -80,6 +80,9 @@ void pandaReaching::SetGoalVisuals(mjData *d){
     EE_target_pose.position(0) = EE_pose.position(0);
     EE_target_pose.position(1) = EE_pose.position(1);
     EE_target_pose.position(2) = EE_pose.position(2);
+    EE_target_pose.orientation(0) = 0;
+    EE_target_pose.orientation(1) = 0;
+    EE_target_pose.orientation(2) = 0;
 
     MuJoCo_helper->SetBodyPoseAngle("target", EE_target_pose, d);
 }

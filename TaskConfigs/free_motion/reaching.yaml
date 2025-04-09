@@ -3,7 +3,7 @@ modelName: "/reaching"
 timeStep: 0.008
 openloop_horizon: 1500
 mpc_horizon: 50
-keypointMethod: "velocity_change"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 minN: 1
 maxN: 50
 iterativeErrorThreshold: 0.001
@@ -20,11 +20,11 @@ robots:
 residuals:
   EE_goal:
     target: [1, 0.5, 2, -1.4, 0, 0.6, 1]
-    weight: 0.1
-    weight_terminal: 10
+    weight: 0.05
+    weight_terminal: 1000
     resid_dimension: 7
   joint_velocities:
     target: [0, 0, 0, 0, 0, 0, 0]
     weight: 0.01
-    weight_terminal: 1
+    weight_terminal: 100
     resid_dimension: 7

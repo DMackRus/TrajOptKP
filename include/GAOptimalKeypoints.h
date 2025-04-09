@@ -61,7 +61,7 @@ private:
 
     double cost_fitness_scalar = 5;
     double derivatives_fitness_scalar = 0;
-    int num_generations = 100;
+    int num_generations = 20;
     int population_size = 30;
     int num_tasks = 50;
     double mutate_chance = 0.5;

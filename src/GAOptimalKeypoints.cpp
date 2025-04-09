@@ -34,9 +34,11 @@ int GAOptimalKeypoints::Run(){
         // TODO - might need to refactor how random start state and goal generation is performed
         vector<vector<double>> tasks(num_tasks, vector<double>(model_translator->full_state_vector.dof));
         for(int j = 0; j < num_tasks; j++){
-            for(int k = 0; k < model_translator->full_state_vector.dof; k++){
-                tasks[j][k] = randFloat(-1, 1);
-            }
+            tasks[j][0] = randFloat(PI - 0.1, PI + 0.1);
+            tasks[j][1] = randFloat(-0.1, 0.1);
+//            for(int k = 0; k < model_translator->full_state_vector.dof; k++){
+//                tasks[j][k] = randFloat(-1, 1);
+//            }
         }
 
         vector<double> baseline_cost_reductions = EvaluateBaselineMethodOverTasks(tasks);
@@ -219,6 +221,8 @@ void GAOptimalKeypoints::UpdateDataLogging(data_logging& data, const vector<solu
     data.best_pop_percent_derivs.push_back(average_percent_derivatives[best_idx]);
     data.worst_pop_percent_derivs.push_back(average_percent_derivatives[worst_idx]);
 
+    std::cout << "best pop fitness: " << solutions[best_idx].fitness << " average pop fitness: " << average_fitness << " worst pop fitness: " << solutions[worst_idx].fitness << std::endl;
+
     std::cout << "cost reduction: ";
     for(int i = 0; i < solutions.size(); i++){
         std::cout << average_cost_reductions[i] << " ";
@@ -235,7 +239,7 @@ void GAOptimalKeypoints::UpdateDataLogging(data_logging& data, const vector<solu
 
 vector<double> GAOptimalKeypoints::EvaluateBaselineMethodOverTasks(vector<vector<double>> &tasks){
     // TODO - temp, make it from yaml reader later
-    int task_horizon = 100;
+    int task_horizon = 900;
 
     vector<double> baseline_cost_reductions;
 
@@ -311,7 +315,7 @@ vector<double> GAOptimalKeypoints::EvaluateBaselineMethodOverTasks(vector<vector
         // Do the optimisation!
         optimiser->lambda = 0.01;
         std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
-                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
+                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 5, 5,
                 task_horizon);
 
 //        solution.cost_reductions[i] = optimiser->cost_reduction;
@@ -326,7 +330,7 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution, vec
 
 //    int opt_horizon = yamlReader.
     // TODO - temp, make it from yaml reader later
-    int task_horizon = 100;
+    int task_horizon = 900;
 
     // ---------- Set Keypoint method (genome) --------------------------
     keypoint_method genome_method = optimiser->ReturnCurrentKeypointMethod();
@@ -419,7 +423,7 @@ void GAOptimalKeypoints::EvaluateKeypointMethodOverTasks(solution &solution, vec
         // Do the optimisation!
         optimiser->lambda = 0.01;
         std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
-                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 1, 1,
+                model_translator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 5, 5,
                 task_horizon);
 
         solution.cost_reductions[i] = optimiser->cost_reduction;
@@ -483,19 +487,30 @@ pair<solution, solution>  GAOptimalKeypoints::Crossover(const solution &parent1,
 
     int crossover_point = rand() % genome_size;
 
-    for (int i = 0; i < genome_size; ++i) {
-        if (i < crossover_point) {
-            child1.genome[i] = parent1.genome[i];
-            child2.genome[i] = parent2.genome[i];
-        } else {
-            child1.genome[i] = parent2.genome[i];
-            child2.genome[i] = parent1.genome[i];
-        }
-
-        // Temporarily disbaled crossover
-//        child1.genome[i] = parent1.genome[i];
-//        child2.genome[i] = parent2.genome[i];
+    // Blend Crossover (BLX-α)
+    for(int i = 0; i < genome_size; i++){
+        float alpha = randFloat(0, 1);
+        child1.genome[i] = (alpha * parent1.genome[i]) + ((1-alpha)*parent2.genome[i]);
+        child2.genome[i] = (alpha * parent2.genome[i]) + ((1-alpha)*parent1.genome[i]);
     }
+
+    // Enforce max_N > min_N
+    if(child1.genome[1] < child1.genome[0]){
+        child1.genome[1] = child1.genome[0] + 1;
+    } if(child2.genome[1] < child2.genome[0]){
+        child2.genome[1] = child2.genome[0] + 1;
+    }
+
+    // Crossover genome point - maybe bad for this domain
+//    for (int i = 0; i < genome_size; ++i) {
+//        if (i < crossover_point) {
+//            child1.genome[i] = parent1.genome[i];
+//            child2.genome[i] = parent2.genome[i];
+//        } else {
+//            child1.genome[i] = parent2.genome[i];
+//            child2.genome[i] = parent1.genome[i];
+//        }
+//    }
 
     return {child1, child2};
 }
