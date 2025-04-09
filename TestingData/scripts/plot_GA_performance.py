@@ -2,7 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load CSV
-df = pd.read_csv("../acrobot_fitness_tracking.csv")
+# df = pd.read_csv("../acrobot_fitness_tracking.csv")
+# df = pd.read_csv("../reaching_fitness_tracking.csv")
+df = pd.read_csv("../box_sweep_fitness_tracking.csv")
 
 # Normalise fitness columns between 0 and 1
 fitness_cols = ["Best fitness", "Average fitness", "Worst fitness"]
