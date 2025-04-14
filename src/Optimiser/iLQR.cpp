@@ -222,12 +222,10 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
     }
 
     for(int i = 0; i < horizon_length; i++){
-
         // set controls
         activeModelTranslator->SetControlVector(initial_controls[i],
                                                           MuJoCo_helper->main_data,
                                                              activeModelTranslator->full_state_vector);
-
         // Integrate simulator
         mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 

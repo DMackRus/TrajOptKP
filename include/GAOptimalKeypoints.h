@@ -61,10 +61,13 @@ private:
 
     double cost_fitness_scalar = 5;
     double derivatives_fitness_scalar = 0;
-    int num_generations = 20;
-    int population_size = 30;
-    int num_tasks = 50;
+    int num_generations = 30;
+    int population_size = 40;
+    int num_tasks = 30;
     double mutate_chance = 0.5;
+
+    int task_horizon = 900;
+    int opt_iters = 1;
 
     int elite_count = 1;
     int explorer_count = 3;

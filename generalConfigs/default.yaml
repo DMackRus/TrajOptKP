@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "reaching"
+task: "box_sweep"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -30,7 +30,7 @@ task: "reaching"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Optimise_once"
+runMode: "GA_keypoint_search"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
