@@ -1,11 +1,11 @@
 modelFile: "/mujoco_models/Franka_emika_scenes_V1/cylinder_pushing_heavyClutter.xml"
 modelName: "/push_mcl"
-timeStep: 0.01
+timeStep: 0.005
 openloop_horizon: 1000
-mpc_horizon: 50
+mpc_horizon: 100
 keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 auto_adjust: false
-minN: 1
+minN: 10
 maxN: 50
 iterativeErrorThreshold: 0.0001
 robots:
@@ -97,10 +97,10 @@ residuals:
   goal_pos:
     target: [0.7, 0.0]
     weight: 0.1
-    weight_terminal: 0  # 1000 when long horizon
+    weight_terminal: 1  # 1000 when long horizon
   goal_vel:
     target: [0, 0]
-    weight: 0.5
+    weight: 0.05
     weight_terminal: 0
   obstacle_1_pos:
     target: [ 0.65, 0.45 ]
@@ -136,7 +136,7 @@ residuals:
     weight_terminal: 0.1
   reach:
     target: [0]
-    weight: 0
+    weight: 0.1
     weight_terminal: 0
 
 #residuals:
