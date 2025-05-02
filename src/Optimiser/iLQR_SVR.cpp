@@ -899,7 +899,7 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
     std::vector<double> K_dofs_sums(dof, 0.0);
 
     // ---------------------------- Eigen vector method ---------------------------------------------
-    if(eigen_vector_method){
+    if(state_reduction_method == "SVD"){
         for(int t = 0; t < horizon_length; t += sampling_k_interval) {
             Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeFullV);
             if (!svd.computeV()) {
@@ -950,7 +950,7 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
         }
     }
     //------------------------ Sampling and summing method ----------------------------
-    else{
+    else if(state_reduction_method == "Sum"){
         for(int t = 0; t < horizon_length; t += sampling_k_interval){
 
             for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
@@ -970,17 +970,17 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
         std::vector<int> sorted_indices = SortIndices(K_dofs_sums, true);
         std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
 
-//        std::cout << "States: ";
-//        for(int i = 0; i < dof; i++){
-//            std::cout << state_vector_name[sorted_indices[i]] << " ";
-//        }
-//        std::cout << "\n";
-//
-//        std::cout << "K_sums in order: ";
-//        for(int i = 0; i < dof; i++){
-//            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
-//        }
-//        std::cout << "\n";
+        std::cout << "States: ";
+        for(int i = 0; i < dof; i++){
+            std::cout << state_vector_name[sorted_indices[i]] << " ";
+        }
+        std::cout << "\n";
+
+        std::cout << "K_sums in order: ";
+        for(int i = 0; i < dof; i++){
+            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+        }
+        std::cout << "\n";
 
 
         for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++) {
@@ -988,6 +988,68 @@ std::vector<std::string> iLQR_SVR::LeastImportantDofs(){
                 remove_dofs.push_back(state_vector_name[i]);
             }
         }
+    }
+    else if(state_reduction_method == "SetSize"){
+        for(int t = 0; t < horizon_length; t += sampling_k_interval) {
+            Eigen::JacobiSVD<Eigen::MatrixXd> svd(K[t], Eigen::ComputeFullV);
+            if (!svd.computeV()) {
+                std::cerr << "SVD decomposition failed!" << std::endl;
+                break;
+            }
+
+            // Loop over controls
+            for (int j = 0; j < dof; j++) {
+                // Loop over first N rows of SVD
+                for(int m = 0; m < 3; m++){
+                    K_dofs_sums[j] += abs(svd.matrixV()(j, m) * svd.singularValues()(m));
+                    K_dofs_sums[j] += abs(svd.matrixV()(j + dof, m) * svd.singularValues()(m));
+                }
+            }
+        }
+
+//        for(int t = 0; t < horizon_length; t += sampling_k_interval){
+//            for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
+//                for(int j = 0; j < num_ctrl; j++){
+//                    K_dofs_sums[i] += abs(K[t](j, i));
+//                    K_dofs_sums[i] += abs(K[t](j, i + activeModelTranslator->current_state_vector.dof));
+//                }
+//            }
+//        }
+
+        // Normalise K_dofs_sum by horizon_length
+        for(int i = 0; i < activeModelTranslator->current_state_vector.dof; i++){
+            K_dofs_sums[i] /= horizon_length;
+        }
+
+        std::vector<int> sorted_indices = SortIndices(K_dofs_sums, false);
+        std::vector<std::string> state_vector_name = activeModelTranslator->current_state_vector.state_names;
+
+        std::cout << "States: ";
+        for(int i = 0; i < dof; i++){
+            std::cout << state_vector_name[sorted_indices[i]] << " ";
+        }
+        std::cout << "\n";
+
+        std::cout << "K_sums in order: ";
+        for(int i = 0; i < dof; i++){
+            std::cout << K_dofs_sums[sorted_indices[i]] << " ";
+        }
+        std::cout << "\n";
+
+        for(int i = state_vector_size; i < activeModelTranslator->current_state_vector.dof; i++) {
+            // Remove least important DoFs
+            remove_dofs.push_back(state_vector_name[sorted_indices[i]]);
+        }
+
+        std::cout << "Removed DoFs: ";
+        for(int i = 0; i < remove_dofs.size(); i++){
+            std::cout << remove_dofs[i] << " ";
+        }
+        std::cout << "\n";
+    }
+    else{
+        std::cerr << "Unknown state reduction method: " << state_reduction_method << std::endl;
+        return remove_dofs;
     }
 
     return remove_dofs;

@@ -945,8 +945,8 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
         out << YAML::Key << "K_matrix_threshold";
         out << YAML::Value << optimiser->K_matrix_threshold;
 
-        out << YAML::Key << "Eigen vector method";
-        out << YAML::Value << optimiser->eigen_vector_method;
+        out << YAML::Key << "State reduction method";
+        out << YAML::Value << optimiser->state_reduction_method;
     }
     out << YAML::EndMap;
 

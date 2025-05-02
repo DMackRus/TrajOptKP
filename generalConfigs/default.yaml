@@ -27,7 +27,7 @@ task: "pushing_moderate_clutter"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
+optimiser: "iLQR_SVR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
 runMode: "MPC_until_completion"

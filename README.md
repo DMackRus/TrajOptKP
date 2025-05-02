@@ -205,6 +205,8 @@ interval is reached.
 - [ ] Add more examples
 - [ ] starting camera variables in model file
 - [ ] improved parallelisation on iterative error method
+- [ ] Get to the bottom of why there is deviation between reduction in derivatives and reudciton in derivs times
+, compare this with some unit tests.
 
 ## Citing
 Coming soon.
