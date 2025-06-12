@@ -4,7 +4,7 @@
     Author: David Russell
     Date: January 18, 2024
     Description:
-        KeypointGenerator is a class that is sued to generate key-points over a
+        KeypointGenerator is a class that is used to generate key-points over a
         trajectory by a variety of methods. These key-points determine where the
         dynamics / cost derivatives will be computed via finite-differencing.
 
@@ -100,6 +100,8 @@ public:
                                    bool residual_derivs, int num_ctrl);
 
     void ResetCache();
+
+    void UpdateLastPercentageDerivatives(std::vector<std::vector<int>> &keypoints);
 
     double surprise_lower = 0.2;
 
@@ -199,8 +201,6 @@ private:
      * @param velocity_profile A velocity profile (per degree of freedom) over the trajectory.
      */
     void GenerateKeyPointsVelocityChange(const std::vector<MatrixXd> &velocity_profile);
-
-    void UpdateLastPercentageDerivatives(std::vector<std::vector<int>> &keypoints);
 
     std::vector<double> ComputePercentageDerivatives(std::vector<std::vector<int>> &keypoints);
 

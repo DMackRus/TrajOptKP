@@ -166,8 +166,6 @@ public:
     double initial_cost = 0.0;
     double cost_reduction = 0.0;
 
-    int numberOfTotalDerivs = 0;
-
     int num_iterations;
 
     std::string filteringMethod = "none";

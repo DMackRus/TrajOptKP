@@ -16,7 +16,7 @@ void compare_dynamics_derivatives(){
     int dof = dim_state_derivative / 2;
     int dim_action = model_translator->MuJoCo_helper->model->nu;
     int dim_sensor = model_translator->MuJoCo_helper->model->nsensordata;
-    int T = 1;
+    int T = 1000;
 
     std::vector<double> A;
     std::vector<double> B;
@@ -30,6 +30,7 @@ void compare_dynamics_derivatives(){
 
     bool flg_centred = false;
 
+    // Call the mjd_transitionFD function to compute the derivatives
     std::cout << "start of mjd_transitionFD \n";
     auto start = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < T; i++){
@@ -57,10 +58,8 @@ void compare_dynamics_derivatives(){
         cols[i] = i;
     }
 
-    vector<MatrixXd> r_x, r_u;
-    r_x.push_back(MatrixXd(dof_model_translator*2, 1));
-    r_u.push_back(MatrixXd(dim_action, 1));
-    double time = 0.0f;
+    // My code for computing dynamics derivatives
+    double time = 0.0;
     start = std::chrono::high_resolution_clock::now();
     for(int i = 0; i < T; i++){
         differentiator->DynamicsDerivatives(A_mine[0], B_mine[0], cols,
@@ -80,6 +79,7 @@ void compare_dynamics_derivatives(){
     B_diff.resize(dim_state_derivative, dim_action);
     B_theirs.resize(dim_state_derivative, dim_action);
 
+    // Check that my dynamics derivatives and those compute by mjd_transitionFD are similar.
     for(int i = 0; i < dim_state_derivative; i++){
         for(int j = 0; j < dim_state_derivative; j++){
             EXPECT_NEAR(A_mine[0](i, j), A[i * dim_state_derivative + j], 1.0e-5);
@@ -88,61 +88,60 @@ void compare_dynamics_derivatives(){
         }
     }
 
-    std::cout << "A_mine \n";
-    std::cout << A_mine[0] << "\n";
-    std::cout << "A theirs \n";
-    std::cout << A_theirs << "\n";
-    std::cout << "A diff \n";
-    std::cout << A_diff << "\n";
-
-
     for(int i = 0; i < dim_state_derivative; i++){
         for(int j = 0; j < dim_action; j++){
             EXPECT_NEAR(B_mine[0](i, j), B[i * dim_action + j], 1.0e-5);
             B_diff(i, j) = abs(B[i * dim_action + j] - B_mine[0](i, j));
-//            if(B_diff(i, j) < 1e-6) B_diff(i, j) = 0;
+            B_theirs(i, j) = B[i * dim_action + j];
         }
     }
 
-    std::cout << "B_mine \n";
-    std::cout << B_mine[0] << "\n";
-    std::cout << "B theirs \n";
-    std::cout << B_theirs << "\n";
-    std::cout << "B diff \n";
-    std::cout << B_diff << "\n";
+//    std::cout << "A_mine \n";
+//    std::cout << A_mine[0] << "\n";
+//    std::cout << "A theirs \n";
+//    std::cout << A_theirs << "\n";
+//    std::cout << "A diff \n";
+//    std::cout << A_diff << "\n";
+//
+//    std::cout << "B_mine \n";
+//    std::cout << B_mine[0] << "\n";
+//    std::cout << "B theirs \n";
+//    std::cout << B_theirs << "\n";
+//    std::cout << "B diff \n";
+//    std::cout << B_diff << "\n";
 
     // Temp print out C matrix
-    std::cout << "--------------- C Matrix ---------------- \n";
-    for(int i = 0; i < dim_sensor; i++){
-        for(int j = 0; j < dim_state_derivative; j++){
-            std::cout << C[i * dim_state_derivative + j] << " ";
-        }
-        std::cout << "\n";
-    }
+//    std::cout << "--------------- C Matrix ---------------- \n";
+//    for(int i = 0; i < dim_sensor; i++){
+//        for(int j = 0; j < dim_state_derivative; j++){
+//            std::cout << C[i * dim_state_derivative + j] << " ";
+//        }
+//        std::cout << "\n";
+//    }
 }
 
-//TEST(Derivatives, acrobot)
-//{
-//    std::cout << "Begin test - Compare derivatives acrobot \n";
-//    std::shared_ptr<Acrobot> acrobot = std::make_shared<Acrobot>();
-//    model_translator = acrobot;
-//
-//    differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
-//
-//    // Initialise a state for the simulator
-//    MatrixXd start_state(model_translator->current_state_vector.dof*2, 1);
-//    start_state << 0, 0, 0, 0;
-//    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data, model_translator->current_state_vector);
-//
-//    // Step the similar to stabilise things
-//    for(int j = 0; j < 5; j++){
-//        mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data);
-//    }
-//    // Append data to save systems state list
-//    model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
-//
-//    compare_dynamics_derivatives();
-//}
+TEST(Derivatives, acrobot)
+{
+    std::cout << "Begin test - Compare derivatives acrobot \n";
+    std::shared_ptr<Acrobot> acrobot = std::make_shared<Acrobot>();
+    model_translator = acrobot;
+
+    differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
+
+    // Initialise a state for the simulator
+    MatrixXd start_state(model_translator->current_state_vector.dof*2, 1);
+    start_state << 0, 0, 0, 0;
+    model_translator->SetStateVector(start_state, model_translator->MuJoCo_helper->master_reset_data, model_translator->current_state_vector);
+
+    // Step the similar to stabilise things
+    for(int j = 0; j < 5; j++){
+        mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data);
+    }
+    // Append data to save systems state list
+    model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
+
+    compare_dynamics_derivatives();
+}
 
 //TEST(Derivatives, pushing_3D)
 //{
@@ -177,7 +176,6 @@ TEST(Derivatives, humanoid)
     differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
 
     model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
-//    std::cout << "Initialised system to start state \n";
 
     MatrixXd control_vector(model_translator->current_state_vector.num_ctrl, 1);
     control_vector.setZero();
