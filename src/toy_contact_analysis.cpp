@@ -145,7 +145,7 @@ int main(){
 
     for(int k = 0; k < 100; k++){
         // Alter the control signal u
-//        activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] = 0.1 * k; // Alter the first control signal
+//        activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] += 0.01; // Alter the first control signal
         activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[1] += 0.01; // Alter the first control signal
         // Compute the dynamics derivatives
         activeDifferentiator->DynamicsDerivatives(A[0], B[0], cols, 0, 0, false, 1e-6);
