@@ -96,10 +96,23 @@ add_executable(benchmark_derivatives src/benchmark_derivatives.cpp
         src/Differentiator/Differentiator.cpp
         src/Optimiser/Optimiser.cpp
         src/Optimiser/iLQR.cpp
-        src/ModelTranslator/Walker.cpp
         src/FileHandler/FileHandler.cpp
         src/KeyPointGenerator/KeyPointGenerator.cpp
         src/ModelTranslator/PushBaseClass.cpp)
+
+# Toy contact problem analysis script
+add_executable(toy_contact_analysis src/toy_contact_analysis.cpp
+        src/StdInclude/StdInclude.cpp
+        src/PhysicsSimulators/MuJoCoHelper.cpp
+        src/ModelTranslator/ModelTranslator.cpp
+        src/Visualiser/Visualiser.cpp
+        src/Differentiator/Differentiator.cpp
+        src/Optimiser/Optimiser.cpp
+        src/Optimiser/iLQR.cpp
+        src/FileHandler/FileHandler.cpp
+        src/KeyPointGenerator/KeyPointGenerator.cpp
+        src/ModelTranslator/PistonBlock.cpp
+        src/ModelTranslator/Acrobot.cpp)
 
 include_directories(
         include
@@ -111,6 +124,10 @@ target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.s
 
 target_include_directories(benchmark_derivatives PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 target_link_libraries(benchmark_derivatives Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+
+target_include_directories(toy_contact_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+target_link_libraries(toy_contact_analysis Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+
 
 enable_testing()
 
