@@ -108,49 +108,74 @@ int main(){
     projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
     projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
 //    projectParentPath = projectParentPath.substr(0, projectParentPath.find_last_of("/\\"));
-    std::string filename = projectParentPath + "/Gah.csv";
-    std::cout << "filename: " << filename << std::endl;
-    ofstream file_output;
-    file_output.open(filename);
+    std::string dir_name = projectParentPath + "/TestingData/" + activeModelTranslator->model_name;
 
-    // Create the headers
-    for(int i = 0; i < dim_action; i++){
-        file_output << "u" << i << ",";
+    //Create directory if it does not exist
+    if(!std::filesystem::exists(dir_name)) {
+        std::filesystem::create_directories(dir_name);
     }
-    for(int i = 0; i < dof_model_translator*2; i++){
-        for(int j = 0; j < dof_model_translator*2; j++){
-            file_output << "A" << i << j << ",";
+
+    // Loops iterate u[0], q[0], q[1], dotq[0], dotq[1]
+    std::string test_name_suffixes[5] = {"u0", "q0", "q1", "dotq0", "dotq1"};
+
+    for(int i = 0; i < 5; i++){
+        std::string filename = dir_name + "/" + test_name_suffixes[i] + ".csv";
+        std::cout << "filename: " << filename << std::endl;
+        ofstream file_output;
+        file_output.open(filename);
+
+        // Create the headers - dependant on outerloop iteration
+        if(i == 0){
+            file_output << "u0" << ",";
         }
-    }
-    for(int i = 0; i < dim_action; i++){
-        for(int j = 0; j < dof_model_translator*2; j++){
-            file_output << "B" << i << j << ",";
+        else if(i == 1){
+            file_output << "q0" << ",";
         }
-    }
-    file_output << endl;
+        else if(i == 2){
+            file_output << "q1" << ",";
+        }
+        else if(i == 3){
+            file_output << "dotq0" << ",";
+        }
+        else if(i == 4){
+            file_output << "dotq1" << ",";
+        }
 
-    std::vector<double> A_m;
-    std::vector<double> B_m;
-    std::vector<double> C;
-    std::vector<double> D;
+        for(int j = 0; j < dof_model_translator*2; j++){
+            for(int k = 0; k < dof_model_translator*2; k++){
+                file_output << "A" << j << k << ",";
+            }
+        }
+        for(int j = 0; j < dim_action; j++){
+            for(int k = 0; k < dof_model_translator*2; k++){
+                file_output << "B" << j << k << ",";
+            }
+        }
+        file_output << endl;
 
-    std::cout << "dim state_derivative: " << dim_state_derivative << std::endl;
-    std::cout << "dim action: " << dim_action << std::endl;
-    std::cout << "dim sensor: " << dim_sensor << std::endl;
+        for(int j = 0; j < 100; j++){
 
-    A_m.resize(dim_state_derivative * dim_state_derivative * 1);
-    B_m.resize(dim_state_derivative * dim_action * 1);
-    C.resize(dim_sensor * dim_state_derivative * 1);
-    D.resize(dim_sensor * dim_action * 1);
+            // Alter the state / control signal
+            if(i == 0){
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] += 0.01; // Alter the first control signal
+            }
+            else if(i == 1){
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[0] += 0.01; // Alter the first state variable
+            }
+            else if(i == 2){
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[1] += 0.01; // Alter the second state variable
+            }
+            else if(i == 3){
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qvel[0] += 0.01; // Alter the first velocity variable
+            }
+            else if(i == 4){
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qvel[1] += 0.01; // Alter the second velocity variable
+            }
 
-    for(int k = 0; k < 100; k++){
-        // Alter the control signal u
-//        activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] += 0.01; // Alter the first control signal
-        activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[1] += 0.01; // Alter the first control signal
-        // Compute the dynamics derivatives
-        activeDifferentiator->DynamicsDerivatives(A[0], B[0], cols, 0, 0, false, 1e-6);
-        std::cout << "State vector: " << activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
-                                                          activeModelTranslator->current_state_vector) << endl;
+            // Compute the dynamics derivatives
+            activeDifferentiator->DynamicsDerivatives(A[0], B[0], cols, 0, 0, false, 1e-6);
+//            std::cout << "State vector: " << activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+//                                                                                      activeModelTranslator->current_state_vector) << endl;
 
 //        bool flg_centred = false;
 
@@ -161,8 +186,8 @@ int main(){
 //                nullptr);
 
 
-        std::cout << "iteration " << k << " - control signal: " << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] << endl;
-        std::cout << "A: " << A[0] << endl;
+//            std::cout << "iteration " << k << " - control signal: " << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] << endl;
+//            std::cout << "A: " << A[0] << endl;
 //        std::cout << "A_m: ";
 //        for(int i = 0; i < dim_state_derivative; i++){
 //            for(int j = 0; j < dim_state_derivative; j++){
@@ -170,23 +195,38 @@ int main(){
 //            }
 //            std::cout << endl;
 //        }
-        std::cout << "B: " << B[0] << endl;
+//            std::cout << "B: " << B[0] << endl;
 
-        // Save the data
-        file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] << ",";
-        for(int i = 0; i < dof_model_translator*2; i++){
-            for(int j = 0; j < dof_model_translator*2; j++){
-                file_output << A[0](i,j) << ",";
+            // Save the data
+            if(i == 0){
+                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] << ",";
             }
-        }
-        for(int i = 0; i < dof_model_translator*2; i++){
-            for(int j = 0; j < dim_action; j++){
-                file_output << B[0](i,j) << ",";
+            else if(i == 1){
+                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[0] << ",";
             }
-        }
-        file_output << endl;
+            else if(i == 2){
+                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[1] << ",";
+            }
+            else if(i == 3){
+                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qvel[0] << ",";
+            }
+            else if(i == 4){
+                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qvel[1] << ",";
+            }
 
-        // Compute mass matrix
+            for(int k = 0; k < dof_model_translator*2; k++){
+                for(int m = 0; m < dof_model_translator*2; m++){
+                    file_output << A[0](k,m) << ",";
+                }
+            }
+            for(int k = 0; k < dof_model_translator*2; k++){
+                for(int m = 0; m < dim_action; m++){
+                    file_output << B[0](k,m) << ",";
+                }
+            }
+            file_output << endl;
+
+            // Compute mass matrix
 //        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]);
 //        Eigen::MatrixXd mass_matrix = getMassMatrix(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]);
 //
@@ -195,14 +235,29 @@ int main(){
 
 
 
-        //Render and sleep
+            //Render and sleep
 //        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]);
 //        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
 //        activeVisualiser->render("");
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        file_output.close();
     }
-    file_output.close();
+
+//    std::vector<double> A_m;
+//    std::vector<double> B_m;
+//    std::vector<double> C;
+//    std::vector<double> D;
+//
+//    std::cout << "dim state_derivative: " << dim_state_derivative << std::endl;
+//    std::cout << "dim action: " << dim_action << std::endl;
+//    std::cout << "dim sensor: " << dim_sensor << std::endl;
+//
+//    A_m.resize(dim_state_derivative * dim_state_derivative * 1);
+//    B_m.resize(dim_state_derivative * dim_action * 1);
+//    C.resize(dim_sensor * dim_state_derivative * 1);
+//    D.resize(dim_sensor * dim_action * 1);
 
     return 0;
 }
