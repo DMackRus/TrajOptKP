@@ -1,0 +1,36 @@
+modelFile: "/mujoco_models/Piston_block/articulated_contact.xml"   # Path to the model xml file
+modelName: "/articualted_contact"                             # Name of the model, used for saving data
+timeStep: 0.01                                    # Time step for simulation
+openloop_horizon: 1000
+keypointMethod: "set_interval"                 # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+minN: 1                                           # Minimum interval between key-points
+maxN: 1                                         # Maximum interval between key-points
+iterativeErrorThreshold: 0.0001                   # Threshold for iterative error method
+
+# stable down pos [3.1415, 0], half up unstable pos [3.14, 3.14], full up unstable pos [0, 0]
+robots:
+  acrobot:
+    jointNames: [shoulder, elbow]
+    actuatorNames: [shoulder]
+    torqueControl: true
+    torqueLimits: [100]
+    startPos: [3.1415, 0.3]
+    goalPos: [0, 0]
+    jointJerkThresholds: [150, 150]
+    magVelThresholds: [18.994, 5.44213]
+bodies:
+  goal:
+    activeLinearDOF: [false, true, false]
+    activeAngularDOF: [false, false, false]
+    startLinearPos: [ 0, 0.9, 0.0 ]
+    startAngularPos: [ 0, 0, 0 ]
+    linearJerkThreshold: [ 0, 1, 0 ]
+    angularJerkThreshold: [ 0, 0, 0 ]
+    linearMagVelThreshold: [ 0, 0.1, 0 ]
+    angularMagVelThreshold: [ 0, 0, 0 ]
+
+residuals:
+  joint_0:
+    target: [0]
+    weight: 0
+    weight_terminal: 0.1

@@ -84,7 +84,7 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/PushSoft.cpp
             src/ModelTranslator/SweepMultiple.cpp
             src/ModelTranslator/PlaceObject.cpp
-            src/ModelTranslator/FloatingCube.cpp src/GAOptimalKeypoints.cpp)
+            src/ModelTranslator/FloatingCube.cpp src/GAOptimalKeypoints.cpp include/ModelTranslator/ArticulatedContact.h src/ModelTranslator/ArticulatedContact.cpp)
 
 # Benchmark computing dynamics derivatives code
 add_executable(benchmark_derivatives src/benchmark_derivatives.cpp
@@ -112,7 +112,8 @@ add_executable(toy_contact_analysis src/toy_contact_analysis.cpp
         src/FileHandler/FileHandler.cpp
         src/KeyPointGenerator/KeyPointGenerator.cpp
         src/ModelTranslator/PistonBlock.cpp
-        src/ModelTranslator/Acrobot.cpp)
+        src/ModelTranslator/Acrobot.cpp
+        src/ModelTranslator/ArticulatedContact.cpp)
 
 include_directories(
         include
