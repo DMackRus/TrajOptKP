@@ -372,6 +372,8 @@ public:
         ComputeStateDofAdrIndices(MuJoCo_helper->master_reset_data, full_state_vector);
     }
 
+    void GetContacts(mjData *d, std::vector<std::pair<int, int>> &contact_pairs);
+
     // State vector objects and names
     struct stateVectorList current_state_vector;
     struct stateVectorList full_state_vector;

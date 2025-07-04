@@ -200,14 +200,17 @@ This iterative process is repeated until all segments satisfy the error requirem
 interval is reached.
 
 ## To-Do
+- [ ] Add kinematic tree info to state vector struct
+- [ ] Add logic for contact changes to key-point methods
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.
 - [ ] Add more examples
 - [ ] starting camera variables in model file
 - [ ] improved parallelisation on iterative error method
-- [ ] Get to the bottom of why there is deviation between reduction in derivatives and reudciton in derivs times
-, compare this with some unit tests.
+- [ ] Create keypoint method to detect contact changes and use this logic to determine key-points
+- [ ] Add key-point logic for kinematic chain analysis, change in certain values in a kinematic chain may affect others.
+- [ ] Split up derivative computation over the three subblocks of dynamics derivatives
 
 ## Citing
-Coming soon.
+When the work is published, I will add the citation here!
 

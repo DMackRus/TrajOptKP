@@ -98,6 +98,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
     if(update_horizon){
         residuals.clear();
+        contact_list.clear();
     }
 
     // dependant on both dofs and num_ctrl
@@ -195,6 +196,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
         for(int t = 0; t < horizon_length+1; t++){
             residuals.push_back(MatrixXd(activeModelTranslator->residual_list.size(), 1));
+            contact_list.emplace_back();
         }
 
     }
@@ -221,6 +223,9 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
         MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
     }
 
+    // Get contact
+    activeModelTranslator->GetContacts(MuJoCo_helper->main_data, contact_list[0]);
+
     for(int i = 0; i < horizon_length; i++){
         // set controls
         activeModelTranslator->SetControlVector(initial_controls[i],
@@ -228,6 +233,9 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
                                                              activeModelTranslator->full_state_vector);
         // Integrate simulator
         mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
+
+        // Get contacts
+        activeModelTranslator->GetContacts(MuJoCo_helper->main_data, contact_list[i+1]);
 
         // Return cost for this state
         double state_cost;
@@ -251,7 +259,6 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
             }
         }
 
-//        cost += (stateCost * active_physics_simulator->returnModelTimeStep());
         cost += state_cost;
     }
 

@@ -1,6 +1,6 @@
 modelFile: "/mujoco_models/Piston_block/articulated_contact.xml"   # Path to the model xml file
-modelName: "/articualted_contact"                             # Name of the model, used for saving data
-timeStep: 0.01                                    # Time step for simulation
+modelName: "/articulated_contact"                             # Name of the model, used for saving data
+timeStep: 0.005                                    # Time step for simulation
 openloop_horizon: 1000
 keypointMethod: "set_interval"                 # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
 minN: 1                                           # Minimum interval between key-points
@@ -20,7 +20,7 @@ robots:
     magVelThresholds: [18.994, 5.44213]
 bodies:
   goal:
-    activeLinearDOF: [false, true, false]
+    activeLinearDOF: [true, false, false]
     activeAngularDOF: [false, false, false]
     startLinearPos: [ 0, 0.9, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]

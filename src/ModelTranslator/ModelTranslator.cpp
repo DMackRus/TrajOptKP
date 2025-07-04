@@ -1267,6 +1267,26 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 //    }
 }
 
+void ModelTranslator::GetContacts(mjData *d, std::vector<std::pair<int, int>> &contact_pairs){
+    // Return vector of all contact pairs, ignore contact with plane
+    int num_contacts = d->ncon;
+
+    for(int i = 0; i < num_contacts; i++){
+        auto contact = d->contact[i];
+
+        int body_contact_1 = MuJoCo_helper->model->body_rootid[MuJoCo_helper->model->geom_bodyid[contact.geom1]];
+        int body_contact_2 = MuJoCo_helper->model->body_rootid[MuJoCo_helper->model->geom_bodyid[contact.geom2]];
+
+        // Checks if bodies in contact are the plane.
+        if(body_contact_1 == 0 || body_contact_2 == 0 || (body_contact_1 == body_contact_2)){
+        }
+        else{
+            // Add contact pair to vector
+            contact_pairs.emplace_back(body_contact_1, body_contact_2);
+        }
+    }
+}
+
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {
     std::vector<MatrixXd> init_controls;
 

@@ -327,21 +327,42 @@ int main(){
         cols[i] = i;
     }
 
-    // Initialise scene such that the piston is in contact with the block
-    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    vector<MatrixXd> init_controls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+
     MatrixXd state_vector = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->master_reset_data,
                                                                      activeModelTranslator->current_state_vector);
-    state_vector(0) = 0.1;  //qpos0
-    state_vector(1) = 0.3;  //qpos1
-    state_vector(2) = 0.0;  //qvel0
-    state_vector(3) = 0.0;  //qvel1
+
+    std::cout << "model integrator: " << activeModelTranslator->MuJoCo_helper->model->opt.integrator << std::endl;
+    if (activeModelTranslator->MuJoCo_helper->model->opt.integrator == mjINT_EULER) {
+        std::cout << "Anitescu integrator is used, setting the state vector to zero." << std::endl;
+        // Set the state vector to zero for Anitescu integrator
+        state_vector.setZero();
+    } else {
+        std::cout << "Using default integrator, setting the state vector to non-zero values." << std::endl;
+    }
+
+    std::cout << "State vector: " << state_vector << std::endl;
+    state_vector(0) = PI;  //qpos0
+    state_vector(1) = 0.2;  //qpos1
+    state_vector(2) = 0.0;  //qpos2
+    state_vector(3) = 0.0;  //qvel0
+    state_vector(4) = 0.0;  //qvel1
+    state_vector(5) = 0.0;  //qvel2
     activeModelTranslator->SetStateVector(state_vector, activeModelTranslator->MuJoCo_helper->master_reset_data,
                                           activeModelTranslator->current_state_vector);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
                                                           activeModelTranslator->MuJoCo_helper->master_reset_data
     );
 
-    //-------------------- Test 1: Alter control Signal and alter control signal and compute dynamics derivatives ------
+    // Test contact list generation
+    iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], false, init_controls);
+    for(int i = 0; i < opt_horizon; i++){
+        std::cout << "Contact list at step " << i << ": ";
+        for( const auto& contact_pair : iLQROptimiser->contact_list[i] ) {
+            std::cout << "(" << contact_pair.first << ", " << contact_pair.second << ") ";
+        }
+        std::cout << "\n";
+    }
 
     // Open the file
     std::string projectParentPath = __FILE__;
@@ -355,9 +376,13 @@ int main(){
     }
 
     // Loops iterate u[0], q[0], q[1], dotq[0], dotq[1]
-    std::string test_name_suffixes[5] = {"u0", "q0", "q1", "dotq0", "dotq1"};
+    std::string test_name_suffixes[7] = {"u0", "q0", "q1", "q2", "dotq0", "dotq1", "dotq2"};
 
-    for(int i = 0; i < 5; i++){
+    for(int i = 0; i < 7; i++){
+        // Reset system state
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                              activeModelTranslator->MuJoCo_helper->master_reset_data);
+        // File directory creation
         std::string filename = dir_name + "/" + test_name_suffixes[i] + ".csv";
         std::cout << "filename: " << filename << std::endl;
         ofstream file_output;
@@ -374,10 +399,16 @@ int main(){
             file_output << "q1" << ",";
         }
         else if(i == 3){
-            file_output << "dotq0" << ",";
+            file_output << "q2" << ",";
         }
         else if(i == 4){
+            file_output << "dotq0" << ",";
+        }
+        else if(i == 5){
             file_output << "dotq1" << ",";
+        }
+        else if(i == 6){
+            file_output << "dotq2" << ",";
         }
 
         for(int j = 0; j < dof_model_translator*2; j++){
@@ -395,39 +426,20 @@ int main(){
             // Alter the state / control signal
             if(i == 0){
                 activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] += 0.01; // Alter the first control signal
+                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] << ","; // Save the control variable
             }
-            else if(i == 1){
-                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[0] += 0.01; // Alter the first state variable
-            }
-            else if(i == 2){
-                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[1] += 0.01; // Alter the second state variable
-            }
-            else if(i == 3){
-                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qvel[0] += 0.01; // Alter the first velocity variable
-            }
-            else if(i == 4){
-                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qvel[1] += 0.01; // Alter the second velocity variable
+            else{
+                // Alter the state vector
+                MatrixXd new_state_vector = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                                      activeModelTranslator->current_state_vector);
+                new_state_vector(i-1) += 0.01; // Alter the i-th state variable
+                activeModelTranslator->SetStateVector(new_state_vector, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                      activeModelTranslator->current_state_vector);
+                file_output << new_state_vector(i-1) << ",";    // Save the control variable
             }
 
             // Compute the dynamics derivatives
             activeDifferentiator->DynamicsDerivatives(A[0], B[0], cols, 0, 0, false, 1e-6);
-
-            // Save the data
-            if(i == 0){
-                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->ctrl[0] << ",";
-            }
-            else if(i == 1){
-                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[0] << ",";
-            }
-            else if(i == 2){
-                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qpos[1] << ",";
-            }
-            else if(i == 3){
-                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qvel[0] << ",";
-            }
-            else if(i == 4){
-                file_output << activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]->qvel[1] << ",";
-            }
 
             // Write the A and B matrices to the file
             for(int k = 0; k < dof_model_translator*2; k++){
@@ -441,22 +453,12 @@ int main(){
                 }
             }
             file_output << endl;
-            // Compute mass matrix
-//        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]);
-//        Eigen::MatrixXd mass_matrix = getMassMatrix(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]);
-//
-//        std::cout << "Mass Matrix: " << mass_matrix << endl;
-
-//            std::cout << "state vector: " << activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->current_state_vector) << std::endl;
-//            Eigen::MatrixXd coriolis_matrix = getCoriolisMatrix(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]);
-//            std::cout << "Coriolis Matrix: \n" << coriolis_matrix << std::endl;
-
 
             //Render and sleep
-        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]);
-        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
-        activeVisualiser->render("");
-        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0]);
+            mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+            activeVisualiser->render("");
+//            std::this_thread::sleep_for(std::chrono::milliseconds(20));
         }
         file_output.close();
     }

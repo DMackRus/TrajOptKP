@@ -245,6 +245,8 @@ public:
     bool smoothing_contact = false;
     void SmoothDerivativesAtContact(int smoothing);
 
+    vector<vector<std::pair<int, int>>> contact_list; // List of contacts for each rollout, used to save the contact forces and positions
+
 protected:
     std::shared_ptr<ModelTranslator> activeModelTranslator;
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
