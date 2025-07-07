@@ -200,8 +200,11 @@ This iterative process is repeated until all segments satisfy the error requirem
 interval is reached.
 
 ## To-Do
+- [ ] Bug test dimensionality reduction stateIndex to qpos index code?? This is possibly the bug from iLQR-SVR work.
 - [ ] Add kinematic tree info to state vector struct
 - [ ] Add logic for contact changes to key-point methods
+- [ ] Write tests for new keypoint methods using contact and kinematic chains
+- [ ]Make keypoints selective to the three submatrices of dynamics derivatives?
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.
 - [ ] Add more examples

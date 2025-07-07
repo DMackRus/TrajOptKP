@@ -81,6 +81,7 @@ void Optimiser::GenerateDerivatives(){
     // Compute key-points at which we compute expensive dynamics derivatives
     ComputeKeypoints();
 
+    // This is a option for purely evaluating a 1D contact example - not for general use.
     if(smoothing_contact){
         SmoothDerivativesAtContact(smoothing);
     }
@@ -169,7 +170,9 @@ void Optimiser::GenerateDerivatives(){
 
 void Optimiser::ComputeKeypoints(){
     //auto start_keypoint_time = high_resolution_clock::now();
-    keypoint_generator->GenerateKeyPoints(X_old, A, B);
+    keypoint_generator->GenerateKeyPoints(X_old, U_old,
+                                          contact_list, activeModelTranslator->current_state_vector.kinematic_chains,
+                                          A, B);
     keypoint_generator->ResetCache();
     //std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
 }
@@ -183,8 +186,6 @@ void Optimiser::ComputeDynamicsDerivatives(){
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
     }
-
-
 
     // Interpolate the dynamics derivatives
 //    auto start_interp_time = high_resolution_clock::now();

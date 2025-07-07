@@ -13,6 +13,7 @@
 
 // --------------------- other -----------------------
 #include <mutex>
+//#include <queue>
 
 // --------------------- Global variables -----------------------
 std::shared_ptr<ModelTranslator> activeModelTranslator;
@@ -279,9 +280,81 @@ Eigen::MatrixXd getCoriolisMatrix(const mjModel* m, mjData* d){
 //    return 0;
 //}
 
+void TestKeypointMethod(){
+    std::cout << "Keypoint method testing" << std::endl;
 
-// Articulated Contact Script
-int main(){
+    // Doesnt actually do anything for this program
+    yamlReader = std::make_shared<FileHandler>();
+
+    // Instantiate the model translator
+    std::shared_ptr<ArticulatedContact> articulated_contact = std::make_shared<ArticulatedContact>();
+    activeModelTranslator = articulated_contact;
+
+    // Instantiate the differentiator
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
+
+    activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    //Instantiate the visualiser
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
+
+    // Setup the initial horizon, based on open loop or mpc method
+    int opt_horizon = 2000;
+
+    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
+                                           activeModelTranslator->MuJoCo_helper,
+                                           activeDifferentiator,
+                                           opt_horizon, activeVisualiser, yamlReader);
+
+    iLQROptimiser->Resize(activeModelTranslator->current_state_vector.dof,
+                          activeModelTranslator->current_state_vector.num_ctrl,
+                          opt_horizon);
+
+    vector<MatrixXd> init_controls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+
+    MatrixXd state_vector = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->master_reset_data,
+                                                                     activeModelTranslator->current_state_vector);
+
+    std::cout << "State vector: " << state_vector << std::endl;
+    state_vector(0) = PI;  //qpos0
+    state_vector(1) = 0.2;  //qpos1
+    state_vector(2) = 0.0;  //qpos2
+    state_vector(3) = 0.0;  //qvel0
+    state_vector(4) = 0.0;  //qvel1
+    state_vector(5) = 0.0;  //qvel2
+    activeModelTranslator->SetStateVector(state_vector, activeModelTranslator->MuJoCo_helper->master_reset_data,
+                                          activeModelTranslator->current_state_vector);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data
+    );
+
+    // Test contact list generation
+    iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], false, init_controls);
+    for(int i = 0; i < opt_horizon; i++){
+        std::cout << "Contact list at step " << i << ": ";
+        for( const auto& contact_pair : iLQROptimiser->contact_list[i] ) {
+            std::cout << "(" << contact_pair.first << ", " << contact_pair.second << ") ";
+        }
+        std::cout << "\n";
+    }
+
+    // Test keypoint generation
+    iLQROptimiser->keypoint_generator->ContactAwareKeyPoints(iLQROptimiser->X_old,iLQROptimiser->U_old,
+                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector.kinematic_chains);
+
+    //Print out the key points
+    std::cout << "Keypoints: \n";
+    for(int t = 0; t < opt_horizon; t++){
+        if(!iLQROptimiser->keypoint_generator->keypoints[t].empty()){
+            std::cout << "time " << t << " :";
+            for(int i = 0; i < iLQROptimiser->keypoint_generator->keypoints[t].size(); i++){
+                std::cout << iLQROptimiser->keypoint_generator->keypoints[t][i] << " ";
+            }
+            std::cout << "\n";
+        }
+    }
+}
+
+void ArticulatedContactSaveDerivs(){
     std::cout << "Articulated Contact Derivative Analysis" << std::endl;
 
     // Doesnt actually do anything for this program
@@ -431,7 +504,7 @@ int main(){
             else{
                 // Alter the state vector
                 MatrixXd new_state_vector = activeModelTranslator->ReturnStateVector(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
-                                                                      activeModelTranslator->current_state_vector);
+                                                                                     activeModelTranslator->current_state_vector);
                 new_state_vector(i-1) += 0.01; // Alter the i-th state variable
                 activeModelTranslator->SetStateVector(new_state_vector, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
                                                       activeModelTranslator->current_state_vector);
@@ -462,5 +535,13 @@ int main(){
         }
         file_output.close();
     }
+}
+
+// Articulated Contact Script
+int main(){
+
+    TestKeypointMethod();
+
+//    ArticulatedContactSaveDerivs();
     return 0;
 }

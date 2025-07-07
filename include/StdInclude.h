@@ -44,16 +44,11 @@ struct vertex{
 struct soft_body{
     std::string name;
     int num_vertices;
-//    std::vector<bool> active_linear_dof;
     std::vector<vertex> vertices;
 
     // Centroid of the soft body
     double start_linear_pos[3];
     double start_angular_pos[3];
-
-    // Individual vertices specific
-//    std::vector<double> linear_jerk_threshold;
-//    std::vector<double> linear_vel_change_threshold;
 };
 
 struct residual{
@@ -92,6 +87,7 @@ struct stateVectorList{
     std::vector<robot> robots;
     std::vector<rigid_body> rigid_bodies;
     std::vector<soft_body> soft_bodies;
+    std::vector<std::vector<int>> kinematic_chains;
 
     void Update(){
         dof = 0;

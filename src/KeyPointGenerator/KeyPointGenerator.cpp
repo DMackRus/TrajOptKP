@@ -73,8 +73,117 @@ void KeypointGenerator::PrintKeypointMethod(){
     std::cout << "------------------------------------------------------------------------------------ \n";
 }
 
+// Static inline helper function for considering kinematic chains
+static inline void AddKeypointsFromContact(const std::pair<int, int>& contact,
+                                           const std::vector<std::vector<int>>& kinematic_chains,
+                                           std::vector<int>& row) {
+    // Add all links in the kinematic chains for both contacts
+
+    // Contact 1
+    bool found = false;
+    for(auto &chain : kinematic_chains) {
+        for(int link : chain) {
+            if(link == contact.first) {
+                // Add all elements in this chain to row and then break
+                found = true;
+                for(int link_in_chain : chain) {
+                    row.push_back(link_in_chain);
+                }
+            }
+        }
+        if(found){
+            break;
+        }
+    }
+
+    // Contact 2
+    found = false;
+    for(auto &chain : kinematic_chains) {
+        for(int link : chain) {
+            if(link == contact.second) {
+                // Add all elements in this chain to row and then break
+                found = true;
+                for(int link_in_chain : chain) {
+                    row.push_back(link_in_chain);
+                }
+            }
+        }
+        if(found){
+            break;
+        }
+    }
+}
+
+void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &trajectory_states,
+                           const std::vector<MatrixXd> &trajectory_controls,
+                           const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
+                           const std::vector<std::vector<int>> &kinematic_chains){
+    // Enforce first time-step must have all keypoints
+    std::vector<int> full_row(dof, 0);
+
+    for(int i = 0; i < dof; i++){
+        full_row[i] = i;
+    }
+    keypoints.push_back(full_row);
+
+    std::vector<std::pair<int, int>> current_contacts = trajectory_contacts[0];
+
+    //Start with just considering contact considerations
+    for(int t = 1; t < horizon - 1; t++){
+        // Initialise empty row object to be populated
+        std::vector<int> row;
+
+        // ---------------- Contact made / broken rules ----------------------
+        std::vector<std::pair<int, int>> new_contacts = trajectory_contacts[t];
+
+        // Check for new contacts
+        for(const auto & contact : new_contacts){
+            bool found = false;
+            for(const auto & old_contact : current_contacts){
+                if(contact == old_contact){
+                    found = true;
+                    break;
+                }
+            }
+            if(!found){
+                // Add keypoint at this time-step as well as the previous time-step
+                // Consider both kinematic chains when adding keypoints
+                AddKeypointsFromContact(contact, kinematic_chains, row);
+            }
+        }
+
+        // Check for lost contacts
+        for(const auto & contact : current_contacts){
+            bool found = false;
+            for(const auto & new_contact : new_contacts){
+                if(contact == new_contact){
+                    found = true;
+                    break;
+                }
+            }
+            if(!found){
+                // Add keypoint at this time-step as well as the previous time-step
+                // Consider both kinematic chains when adding keypoints
+                AddKeypointsFromContact(contact, kinematic_chains, row);
+            }
+        }
+
+        // Update current contact list
+        current_contacts = new_contacts;
+
+        keypoints.push_back(row);
+    }
+
+    // Manually enforce last keypoint for all dofs at horizon - 1
+    keypoints.push_back(full_row);
+
+}
+
 void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
-                                               std::vector<MatrixXd> &A, std::vector<MatrixXd> &B){
+                       const std::vector<MatrixXd> &trajectory_controls,
+                       const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
+                       const std::vector<std::vector<int>> &kinematic_chains,
+                       std::vector<MatrixXd> &A, std::vector<MatrixXd> &B){
 
     if(keypoints_computed){
         return;

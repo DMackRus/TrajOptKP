@@ -1,3 +1,4 @@
+#include <queue>
 #include "ModelTranslator/ModelTranslator.h"
 
 void ModelTranslator::GenerateRandomGoalAndStartState() {
@@ -94,7 +95,11 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
         body.base_color[3] = base_color[3];
     }
 
+    // Create kinematic chain for full state vector
+    CreateKinematicChain(MuJoCo_helper->model, full_state_vector);
+
     // Clear optimiser dof and num ctrl so matrices are properly sized
+    // Sets current state vector to full state vector
     ResetSVR();
 }
 
@@ -225,8 +230,7 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
     // Update the number of dofs in the state vector
     current_state_vector.Update();
     // Compute state vector address indices
-    state_dof_adr_indices.clear();
-    ComputeStateDofAdrIndices(MuJoCo_helper->master_reset_data, full_state_vector);
+    ComputeStateDofAdrIndices(MuJoCo_helper->master_reset_data, full_state_vector); // TODO - Shouldnt this be current_state_vector????
 
     // if readding dofs, dont update scene vis yet
     if(!add_extra_states){
@@ -1034,9 +1038,10 @@ bool ModelTranslator::SetVelocityVector(MatrixXd velocity_vector, mjData* d, con
 
 void ModelTranslator::ComputeStateDofAdrIndices(mjData* d, const struct stateVectorList &state_vector){
 
-    std::string lin_suffixes[3] = {"_x", "_y", "_z"};
-    std::string ang_suffixes[3] = {"_roll", "_pitch", "_yaw"};
+    state_dof_adr_indices.clear();
+    state_body_adr_indices.clear();
 
+    // State index -> Qpos Index mapping
     for(auto & robot : state_vector.robots){
         // Check if robot has a free root joint?
         if(robot.root_name != "-"){
@@ -1095,104 +1100,44 @@ void ModelTranslator::ComputeStateDofAdrIndices(mjData* d, const struct stateVec
             }
         }
     }
-//
-//    std::string state_name = state_vector.state_names[state_index];
-//    int joint_index;
-//    int body_index_offset = 0;
-//    std::string rigid_body_tags[6]{"_x", "_y", "_z", "_roll", "_pitch", "_yaw"};
-//    bool found_rigid_body_tag = false;
-//
-//    // Determine whether the state_name is a robot, rigid body or soft body
-//
-//    // -------------------------- Soft body checker ---------------------------------
-//    // First check for '_V', which determins whether its a soft body.
-//    // TODO - fix this, it seems to be working, but im not sure
-//    size_t found = state_name.find('_V');
-//    // If we find _V, its a soft body
-//    if(found != std::string::npos){
-//
-//        // Remove _V_{x,y,z}
-//        std::string flex_name = state_name.substr(0, found);
-//
-//        // --------- Compute vertex number -------------
-//        // Find the position of the second underscore
-//        size_t secondUnderscorePos = state_name.find('_', found + 2);
-//
-//        std::string numberString = state_name.substr(found + 1, secondUnderscorePos - (found + 1));
-//        int vertex_number = std::atoi(numberString.c_str());
-//
-//        // Get flex id
-//        int flex_id = mj_name2id(MuJoCo_helper->model, mjOBJ_FLEX, flex_name.c_str());
-//        int first_vertex_adr = MuJoCo_helper->model->flex_vertadr[flex_id];
-//
-//        int body_id = MuJoCo_helper->model->flex_vertbodyid[first_vertex_adr + vertex_number];
-//        joint_index = MuJoCo_helper->model->body_jntadr[body_id];
-//        const int start = MuJoCo_helper->model->jnt_dofadr[joint_index];
-//
-//        // offset index {x, y, z}
-//        for(int i = 0; i < 3; i++){
-//            found_rigid_body_tag = endsWith(state_name, rigid_body_tags[i]);
-//
-//            if(found_rigid_body_tag){
-//                body_index_offset = i;
-//                break;
-//            }
-//        }
-//
-//        return start + body_index_offset;
-//    }
-//
-//
-//    // ----------------------------- Rigid body checker --------------------------------
-//    for(int i = 0; i < 6; i++){
-//        found_rigid_body_tag = endsWith(state_name, rigid_body_tags[i]);
-//
-//        if(found_rigid_body_tag){
-//            // Remove body tag from string
-//            state_name.erase(state_name.length() - rigid_body_tags[i].length(), rigid_body_tags[i].length());
-//            body_index_offset = i;
-//            break;
-//        }
-//    }
-//
-//    if(found_rigid_body_tag){
-//        // Remove body tag suffix
-//        int bodyId = mj_name2id(MuJoCo_helper->model, mjOBJ_BODY, state_name.c_str());
-//        joint_index = MuJoCo_helper->model->jnt_dofadr[MuJoCo_helper->model->body_jntadr[bodyId]];
-//
-//        return joint_index + body_index_offset;
-//    }
-//
-//    // if not a soft or rigid body, its a robot joint
-//    return mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_name.c_str());
 
+    // // Body index -> State Index Mapping
+    for(int i = 0; i < MuJoCo_helper->model->nbody; i++){
+        int qpos_id = MuJoCo_helper->model->body_jntadr[i];
 
-//    std::string joint_name;
-//
-//    for(int i = 0; i < 6; i++){
-//        found_rigid_body_tag = endsWith(state_name, body_tags[i]);
-//
-//        if(found_rigid_body_tag){
-//            // Remove body tag from string
-//            state_name.erase(state_name.length() - body_tags[i].length(), body_tags[i].length());
-//            body_index_offset = i;
-//            break;
-//        }
-//    }
-//
-//    if(found_rigid_body_tag){
-//        int bodyId = mj_name2id(MuJoCo_helper->model, mjOBJ_BODY, state_name.c_str());
-//        joint_index = MuJoCo_helper->model->jnt_dofadr[MuJoCo_helper->model->body_jntadr[bodyId]];
-//    }
-//    else{
-//        joint_index = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_name.c_str());
-//    }
-//
-//    return joint_index + body_index_offset;
+        for(int j = 0; j < state_dof_adr_indices.size(); j++){
+
+            // find qpos in state_dof and reverse mapping
+            if(state_dof_adr_indices[j] == qpos_id){
+                state_body_adr_indices.push_back(j);
+                break;
+            }
+        }
+    }
+
+    // TEMP code print out both mappins
+    cout << "State DOF ADR Indices: ";
+    for(auto & index : state_dof_adr_indices){
+        cout << index << " ";
+    }
+    cout << "\n";
+
+    cout << "State Body ADR Indices: ";
+    for(auto & index : state_body_adr_indices){
+        cout << index << " ";
+    }
+    cout << "\n";
 }
 
 int ModelTranslator::StateIndexToQposIndex(int state_index, const struct stateVectorList &state_vector){
     return state_dof_adr_indices[state_index];
+}
+
+int ModelTranslator::BodyIndexToStateIndex(int body_index){
+    // Each robot link is a body, each rigid body is a body
+    // TODO - figure out soft bodies
+//    return state_body_adr_indices[body_index];
+    return MuJoCo_helper->model->body_jntadr[body_index];
 }
 
 void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
@@ -1282,7 +1227,32 @@ void ModelTranslator::GetContacts(mjData *d, std::vector<std::pair<int, int>> &c
         }
         else{
             // Add contact pair to vector
-            contact_pairs.emplace_back(body_contact_1, body_contact_2);
+            contact_pairs.emplace_back(BodyIndexToStateIndex(body_contact_1), BodyIndexToStateIndex(body_contact_2));
+        }
+    }
+}
+
+void ModelTranslator::CreateKinematicChain(mjModel *m, stateVectorList &state_vector){
+    state_vector.kinematic_chains.clear();
+    for (int i = 1; i < MuJoCo_helper->model->nbody; i++) {  // skip world (body 0) TODO - This might be problematic for models with no plane??
+        // Create a new chain if parent ID is the world body (0)
+        if (MuJoCo_helper->model->body_parentid[i] == 0) {
+            vector<int> chain;
+            queue<int> q;
+            q.push(i);
+
+            while (!q.empty()) {
+                int body = q.front();
+                q.pop();
+                chain.push_back(MuJoCo_helper->model->body_jntadr[body]);
+
+                for (int j = 1; j < MuJoCo_helper->model->nbody; j++) {
+                    if (MuJoCo_helper->model->body_parentid[j] == body) {
+                        q.push(j);
+                    }
+                }
+            }
+            state_vector.kinematic_chains.push_back(chain);
         }
     }
 }
