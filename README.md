@@ -205,6 +205,7 @@ interval is reached.
 - [ ] Add logic for contact changes to key-point methods
 - [ ] Write tests for new keypoint methods using contact and kinematic chains
 - [ ] Make keypoints selective to the three submatrices of dynamics derivatives?
+- [ ] Figure out why compute contacts takes so long and increases rollout time by 30x.
 - [ ] Make a sharp bitys section to ReadMe, talk about issues in this project. One issue is certain joint types might not be supported (ball joints).
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.

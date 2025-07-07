@@ -278,7 +278,6 @@ std::vector<MatrixXd> iLQR_SVR::Optimise(mjData *d, std::vector<MatrixXd> initia
     // - Initialise variables
     std::vector<MatrixXd> optimisedControls(horizon_length);
     this->horizon_length = horizon_length;
-    numberOfTotalDerivs = horizon_length * dof;
 
     // TODO - code to adjust max horizon if opt horizon > max_horizon
 //    std::cout << "horizon is " << horizon_length << "\n";

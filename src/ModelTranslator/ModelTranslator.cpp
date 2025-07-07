@@ -1107,33 +1107,6 @@ void ModelTranslator::ComputeStateDofAdrIndices(struct stateVectorList &state_ve
             }
         }
     }
-
-    // // Body index -> State Index Mapping
-//    for(int i = 0; i < MuJoCo_helper->model->nbody; i++){
-//        int qpos_id = MuJoCo_helper->model->body_jntadr[i];
-//
-//        for(int j = 0; j < state_dof_adr_indices.size(); j++){
-//
-//            // find qpos in state_dof and reverse mapping
-//            if(state_dof_adr_indices[j] == qpos_id){
-//                state_body_adr_indices.push_back(j);
-//                break;
-//            }
-//        }
-//    }
-//
-//    // TEMP code print out both mappins
-//    cout << "State DOF ADR Indices: ";
-//    for(auto & index : state_dof_adr_indices){
-//        cout << index << " ";
-//    }
-//    cout << "\n";
-//
-//    cout << "State Body ADR Indices: ";
-//    for(auto & index : state_body_adr_indices){
-//        cout << index << " ";
-//    }
-//    cout << "\n";
 }
 
 int ModelTranslator::StateIndexToQposIndex(int state_index, const struct stateVectorList &state_vector){
