@@ -348,9 +348,9 @@ public:
      */
     int StateIndexToQposIndex(int state_index, const struct stateVectorList &state_vector);
 
-    int BodyIndexToStateIndex(int body_index);
+    int QPosIndexToStateIndex(int qpos_index, const struct stateVectorList &state_vector);
 
-    void ComputeStateDofAdrIndices(mjData* d, const struct stateVectorList &state_vector);
+    void ComputeStateDofAdrIndices(struct stateVectorList &state_vector);
 
     void InitialiseSystemToStartState(mjData* d);
 
@@ -370,13 +370,12 @@ public:
         unused_state_vector_elements.clear();
         candidates_for_removal.clear();
 
-        state_dof_adr_indices.clear();
-        ComputeStateDofAdrIndices(MuJoCo_helper->master_reset_data, full_state_vector);
+        ComputeStateDofAdrIndices(full_state_vector);
     }
 
     void GetContacts(mjData *d, std::vector<std::pair<int, int>> &contact_pairs);
 
-    void CreateKinematicChain(mjModel *m, stateVectorList &state_vector);
+    void CreateKinematicChain(stateVectorList &state_vector);
 
     // State vector objects and names
     struct stateVectorList current_state_vector;
@@ -387,8 +386,8 @@ public:
 
     std::vector<std::string> iteration_readded_state_elements;
 
-    std::vector<int> state_dof_adr_indices;
-    std::vector<int> state_body_adr_indices;
+//    std::vector<int> state_dof_adr_indices;
+//    std::vector<int> state_body_adr_indices;
 
     // mujoco helper object
     std::shared_ptr<MuJoCoHelper> MuJoCo_helper;

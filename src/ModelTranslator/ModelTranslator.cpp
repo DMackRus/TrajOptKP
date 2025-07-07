@@ -95,8 +95,9 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
         body.base_color[3] = base_color[3];
     }
 
-    // Create kinematic chain for full state vector
-    CreateKinematicChain(MuJoCo_helper->model, full_state_vector);
+    // Create Q pos address mappings and then kinematic chains
+    ComputeStateDofAdrIndices(full_state_vector);
+    CreateKinematicChain(full_state_vector);
 
     // Clear optimiser dof and num ctrl so matrices are properly sized
     // Sets current state vector to full state vector
@@ -187,7 +188,7 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
         }
     }
 
-    // Remove or add states for sodt bodies in the simulator
+    // Remove or add states for soft bodies in the simulator
     for( auto & soft_body : current_state_vector.soft_bodies){
         std::string body_name = soft_body.name;
         for(auto & state_vector_name : state_vector_names){
@@ -230,7 +231,7 @@ void ModelTranslator::UpdateCurrentStateVector(std::vector<std::string> state_ve
     // Update the number of dofs in the state vector
     current_state_vector.Update();
     // Compute state vector address indices
-    ComputeStateDofAdrIndices(MuJoCo_helper->master_reset_data, full_state_vector); // TODO - Shouldnt this be current_state_vector????
+    ComputeStateDofAdrIndices(current_state_vector); // TODO - Check this code to ensure its not wrong
 
     // if readding dofs, dont update scene vis yet
     if(!add_extra_states){
@@ -1036,10 +1037,11 @@ bool ModelTranslator::SetVelocityVector(MatrixXd velocity_vector, mjData* d, con
     return true;
 }
 
-void ModelTranslator::ComputeStateDofAdrIndices(mjData* d, const struct stateVectorList &state_vector){
+void ModelTranslator::ComputeStateDofAdrIndices(struct stateVectorList &state_vector){
 
-    state_dof_adr_indices.clear();
-    state_body_adr_indices.clear();
+    state_vector.q_pos_adr.clear();
+//    state_dof_adr_indices.clear();
+//    state_body_adr_indices.clear();
 
     // State index -> Qpos Index mapping
     for(auto & robot : state_vector.robots){
@@ -1052,7 +1054,8 @@ void ModelTranslator::ComputeStateDofAdrIndices(mjData* d, const struct stateVec
 
             // TODO - enable this to be programatic, i.e not all elements of root in the state vector
             for(int i = 0; i < 6; i++){
-                state_dof_adr_indices.push_back(dof_adr + i);
+//                state_dof_adr_indices.push_back(dof_adr + i);
+                state_vector.q_pos_adr.push_back(dof_adr + i);
             }
         }
 
@@ -1060,7 +1063,8 @@ void ModelTranslator::ComputeStateDofAdrIndices(mjData* d, const struct stateVec
         for(const auto & joint_name : robot.joint_names){
             int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, joint_name.c_str());
             int dof_adr = MuJoCo_helper->model->jnt_dofadr[joint_id];
-            state_dof_adr_indices.push_back(dof_adr);
+//            state_dof_adr_indices.push_back(dof_adr);
+            state_vector.q_pos_adr.push_back(dof_adr);
         }
     }
 
@@ -1071,13 +1075,15 @@ void ModelTranslator::ComputeStateDofAdrIndices(mjData* d, const struct stateVec
         int dof_adr = MuJoCo_helper->model->jnt_dofadr[joint_id];
         for(int i = 0; i < 3; i++) {
             if(body.active_linear_dof[i]) {
-                state_dof_adr_indices.push_back(dof_adr + i);
+//                state_dof_adr_indices.push_back(dof_adr + i);
+                state_vector.q_pos_adr.push_back(dof_adr + i);
             }
         }
 
         for(int i = 0; i < 3; i++){
             if(body.active_angular_dof[i]){
-                state_dof_adr_indices.push_back(dof_adr + 3 + i);
+//                state_dof_adr_indices.push_back(dof_adr + 3 + i);
+                state_vector.q_pos_adr.push_back(dof_adr + 3 + i);
             }
         }
     }
@@ -1095,49 +1101,53 @@ void ModelTranslator::ComputeStateDofAdrIndices(mjData* d, const struct stateVec
                     int joint_index = MuJoCo_helper->model->body_jntadr[body_id];
                     const int start = MuJoCo_helper->model->jnt_dofadr[joint_index];
 
-                    state_dof_adr_indices.push_back(start + j);
+//                    state_dof_adr_indices.push_back(start + j);
+                    state_vector.q_pos_adr.push_back(start + j);
                 }
             }
         }
     }
 
     // // Body index -> State Index Mapping
-    for(int i = 0; i < MuJoCo_helper->model->nbody; i++){
-        int qpos_id = MuJoCo_helper->model->body_jntadr[i];
-
-        for(int j = 0; j < state_dof_adr_indices.size(); j++){
-
-            // find qpos in state_dof and reverse mapping
-            if(state_dof_adr_indices[j] == qpos_id){
-                state_body_adr_indices.push_back(j);
-                break;
-            }
-        }
-    }
-
-    // TEMP code print out both mappins
-    cout << "State DOF ADR Indices: ";
-    for(auto & index : state_dof_adr_indices){
-        cout << index << " ";
-    }
-    cout << "\n";
-
-    cout << "State Body ADR Indices: ";
-    for(auto & index : state_body_adr_indices){
-        cout << index << " ";
-    }
-    cout << "\n";
+//    for(int i = 0; i < MuJoCo_helper->model->nbody; i++){
+//        int qpos_id = MuJoCo_helper->model->body_jntadr[i];
+//
+//        for(int j = 0; j < state_dof_adr_indices.size(); j++){
+//
+//            // find qpos in state_dof and reverse mapping
+//            if(state_dof_adr_indices[j] == qpos_id){
+//                state_body_adr_indices.push_back(j);
+//                break;
+//            }
+//        }
+//    }
+//
+//    // TEMP code print out both mappins
+//    cout << "State DOF ADR Indices: ";
+//    for(auto & index : state_dof_adr_indices){
+//        cout << index << " ";
+//    }
+//    cout << "\n";
+//
+//    cout << "State Body ADR Indices: ";
+//    for(auto & index : state_body_adr_indices){
+//        cout << index << " ";
+//    }
+//    cout << "\n";
 }
 
 int ModelTranslator::StateIndexToQposIndex(int state_index, const struct stateVectorList &state_vector){
-    return state_dof_adr_indices[state_index];
+    return state_vector.q_pos_adr[state_index];
+//    return state_dof_adr_indices[state_index];
 }
 
-int ModelTranslator::BodyIndexToStateIndex(int body_index){
-    // Each robot link is a body, each rigid body is a body
-    // TODO - figure out soft bodies
-//    return state_body_adr_indices[body_index];
-    return MuJoCo_helper->model->body_jntadr[body_index];
+int ModelTranslator::QPosIndexToStateIndex(int qpos_index, const struct stateVectorList &state_vector){
+    // Simple O(n) search, maybe optimise later with a map?
+    for(int i = 0; i < state_vector.q_pos_adr.size(); i++){
+        if(state_vector.q_pos_adr[i] == qpos_index){
+            return i;
+        }
+    }
 }
 
 void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
@@ -1227,12 +1237,13 @@ void ModelTranslator::GetContacts(mjData *d, std::vector<std::pair<int, int>> &c
         }
         else{
             // Add contact pair to vector
-            contact_pairs.emplace_back(BodyIndexToStateIndex(body_contact_1), BodyIndexToStateIndex(body_contact_2));
+            contact_pairs.emplace_back(QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body_contact_1], current_state_vector),
+                                       QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body_contact_2], current_state_vector));
         }
     }
 }
 
-void ModelTranslator::CreateKinematicChain(mjModel *m, stateVectorList &state_vector){
+void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
     state_vector.kinematic_chains.clear();
     for (int i = 1; i < MuJoCo_helper->model->nbody; i++) {  // skip world (body 0) TODO - This might be problematic for models with no plane??
         // Create a new chain if parent ID is the world body (0)
@@ -1244,7 +1255,26 @@ void ModelTranslator::CreateKinematicChain(mjModel *m, stateVectorList &state_ve
             while (!q.empty()) {
                 int body = q.front();
                 q.pop();
-                chain.push_back(MuJoCo_helper->model->body_jntadr[body]);
+
+                // Check if body is a free joint
+                if(MuJoCo_helper->model->jnt_type[MuJoCo_helper->model->body_jntadr[body]] == mjJNT_FREE) {
+                    // If it is a free joint, we need to add the DoFs that are active in the state vector
+                    for (int j = 0; j < 6; j++) {
+
+                        // check if the qpos address is inside the statevecoter q pos list
+                        for(int k = 0; k < state_vector.q_pos_adr.size(); k++) {
+                            if(MuJoCo_helper->model->jnt_dofadr[MuJoCo_helper->model->body_jntadr[body]] + j == state_vector.q_pos_adr[k]) {
+                                // If the DoF is active in the state vector, add it to the chain
+                                chain.push_back(QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body] + j, state_vector));
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    // Otherwise, just add the joint address
+//                    chain.push_back(MuJoCo_helper->model->body_jntadr[body]);
+                    chain.push_back(QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body], state_vector));
+                }
 
                 for (int j = 1; j < MuJoCo_helper->model->nbody; j++) {
                     if (MuJoCo_helper->model->body_parentid[j] == body) {
@@ -1252,6 +1282,8 @@ void ModelTranslator::CreateKinematicChain(mjModel *m, stateVectorList &state_ve
                     }
                 }
             }
+
+            // Need to check if a joint is a free joint, and i so, check what DoFs are active in the state vector
             state_vector.kinematic_chains.push_back(chain);
         }
     }

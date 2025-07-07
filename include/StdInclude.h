@@ -84,6 +84,7 @@ struct stateVectorList{
     int dof_quat = 0;
     int num_ctrl = 0;
     std::vector<std::string> state_names;
+    std::vector<int> q_pos_adr;
     std::vector<robot> robots;
     std::vector<rigid_body> rigid_bodies;
     std::vector<soft_body> soft_bodies;

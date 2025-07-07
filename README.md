@@ -204,7 +204,8 @@ interval is reached.
 - [ ] Add kinematic tree info to state vector struct
 - [ ] Add logic for contact changes to key-point methods
 - [ ] Write tests for new keypoint methods using contact and kinematic chains
-- [ ]Make keypoints selective to the three submatrices of dynamics derivatives?
+- [ ] Make keypoints selective to the three submatrices of dynamics derivatives?
+- [ ] Make a sharp bitys section to ReadMe, talk about issues in this project. One issue is certain joint types might not be supported (ball joints).
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
 - [ ] Improve README readability.
 - [ ] Add more examples

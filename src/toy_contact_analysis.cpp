@@ -315,7 +315,7 @@ void TestKeypointMethod(){
                                                                      activeModelTranslator->current_state_vector);
 
     std::cout << "State vector: " << state_vector << std::endl;
-    state_vector(0) = PI;  //qpos0
+    state_vector(0) = PI;   //qpos0
     state_vector(1) = 0.2;  //qpos1
     state_vector(2) = 0.0;  //qpos2
     state_vector(3) = 0.0;  //qvel0
@@ -328,11 +328,33 @@ void TestKeypointMethod(){
     );
 
     // Test contact list generation
-    iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], false, init_controls);
-    for(int i = 0; i < opt_horizon; i++){
-        std::cout << "Contact list at step " << i << ": ";
-        for( const auto& contact_pair : iLQROptimiser->contact_list[i] ) {
-            std::cout << "(" << contact_pair.first << ", " << contact_pair.second << ") ";
+    iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true, init_controls);
+//    for(int i = 0; i < opt_horizon; i++){
+//        std::cout << "Contact list at step " << i << ": ";
+//        for( const auto& contact_pair : iLQROptimiser->contact_list[i] ) {
+//            std::cout << "(" << contact_pair.first << ", " << contact_pair.second << ") ";
+//        }
+//        std::cout << "\n";
+//    }
+
+    // Print the state vector names and q pos addresses
+    std::cout << "State vector names: \n";
+    for(int i = 0; i < activeModelTranslator->current_state_vector.state_names.size(); i++){
+        std::cout << activeModelTranslator->current_state_vector.state_names[i] << " ";
+    }
+    std::cout << "\n";
+    std::cout << "State vector qpos addresses: \n";
+    for(int i = 0; i < activeModelTranslator->current_state_vector.q_pos_adr.size(); i++){
+        std::cout << activeModelTranslator->current_state_vector.q_pos_adr[i] << " ";
+    }
+    std::cout << "\n";
+
+    // Print kinematic chains
+    std::cout << "Kinematic chains: \n";
+    for(int i = 0; i < activeModelTranslator->current_state_vector.kinematic_chains.size(); i++){
+        std::cout << "Chain " << i << ": ";
+        for(int j = 0; j < activeModelTranslator->current_state_vector.kinematic_chains[i].size(); j++){
+            std::cout << activeModelTranslator->current_state_vector.kinematic_chains[i][j] << " ";
         }
         std::cout << "\n";
     }
@@ -352,6 +374,18 @@ void TestKeypointMethod(){
             std::cout << "\n";
         }
     }
+
+    // Playback the trajectory
+//    for(int t = 0; t < opt_horizon; t++){
+//        // Copy the system state to the visualiser
+//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+//                                                              activeModelTranslator->MuJoCo_helper->saved_systems_state_list[t]);
+//        // Forward the model
+//        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+//        // Render the visualiser
+//        activeVisualiser->render("Keypoint Method Test");
+//        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+//    }
 }
 
 void ArticulatedContactSaveDerivs(){
