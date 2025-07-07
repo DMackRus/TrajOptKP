@@ -114,6 +114,31 @@ static inline void AddKeypointsFromContact(const std::pair<int, int>& contact,
     }
 }
 
+static inline void AddLastRowKeypointsContact(std::vector<int>& new_last_row,
+                                              std::vector<int>& row,
+                                              const std::vector<std::vector<int>>& keypoints,
+                                              int t){
+    // Also need to add keypoints for the previous time-step...
+    // Add keypoints for the previous time-step
+    std::vector<int> prev_row = keypoints[t - 1];
+    // Insertion sort extra key-points from row into previous row
+    for(int link : row){
+        // Check if the link is already in the previous row
+        bool already_exists = false;
+        for(int prev_link : prev_row){
+            if(prev_link == link){
+                already_exists = true;
+                break;
+            }
+        }
+        // If it does not exist, add it
+        if(!already_exists){
+            prev_row.push_back(link);
+        }
+    }
+    new_last_row = prev_row; // Update the new last row with the previous row
+}
+
 void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &trajectory_states,
                            const std::vector<MatrixXd> &trajectory_controls,
                            const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
@@ -135,6 +160,8 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
 
         // ---------------- Contact made / broken rules ----------------------
         std::vector<std::pair<int, int>> new_contacts = trajectory_contacts[t];
+        bool change_in_contact = false;
+        std::vector<int> new_last_row;
 
         // Check for new contacts
         for(const auto & contact : new_contacts){
@@ -146,9 +173,14 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
                 }
             }
             if(!found){
+                change_in_contact = true;
                 // Add keypoint at this time-step as well as the previous time-step
                 // Consider both kinematic chains when adding keypoints
                 AddKeypointsFromContact(contact, kinematic_chains, row);
+
+                // Also need to add keypoints for the previous time-step...
+                // Add keypoints for the previous time-step
+                AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
             }
         }
 
@@ -162,21 +194,30 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
                 }
             }
             if(!found){
+                change_in_contact = true;
                 // Add keypoint at this time-step as well as the previous time-step
                 // Consider both kinematic chains when adding keypoints
                 AddKeypointsFromContact(contact, kinematic_chains, row);
+                // Also need to add keypoints for the previous time-step...
+                // Add keypoints for the previous time-step
+                AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
             }
         }
 
         // Update current contact list
         current_contacts = new_contacts;
 
+        if(change_in_contact){
+            // Sort the row to ensure keypoints are in order
+            std::sort(row.begin(), row.end());
+
+            keypoints[t - 1] = new_last_row; // Update the previous row with the new keypoints
+        }
         keypoints.push_back(row);
     }
 
     // Manually enforce last keypoint for all dofs at horizon - 1
     keypoints.push_back(full_row);
-
 }
 
 void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
