@@ -88,7 +88,8 @@ struct stateVectorList{
     std::vector<robot> robots;
     std::vector<rigid_body> rigid_bodies;
     std::vector<soft_body> soft_bodies;
-    std::vector<std::vector<int>> kinematic_chains;
+    std::vector<std::vector<int>> kinematic_chains_bodies;
+    std::vector<std::vector<int>> kinematic_chain_state_indices;
 
     void Update(){
         dof = 0;

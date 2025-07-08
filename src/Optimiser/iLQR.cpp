@@ -168,7 +168,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     }
 
     if(update_horizon){
-        // Clear old rollout datas
+        // Clear old rollout data
         for(int i = 0; i < num_parallel_rollouts; i++){
             rollout_data[i].clear();
         }
@@ -197,6 +197,11 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         for(int t = 0; t < horizon_length+1; t++){
             residuals.push_back(MatrixXd(activeModelTranslator->residual_list.size(), 1));
             contact_list.emplace_back();
+
+            // Empty contact data lists for all parallel rollouts
+            for(int i = 0; i < num_parallel_rollouts; i++){
+                rollout_data[i][t].contacts.clear();
+            }
         }
 
     }

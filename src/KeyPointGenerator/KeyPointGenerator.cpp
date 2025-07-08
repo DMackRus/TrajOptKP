@@ -74,44 +74,58 @@ void KeypointGenerator::PrintKeypointMethod(){
 }
 
 // Static inline helper function for considering kinematic chains
-static inline void AddKeypointsFromContact(const std::pair<int, int>& contact,
-                                           const std::vector<std::vector<int>>& kinematic_chains,
-                                           std::vector<int>& row) {
+static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>& contact,
+                                           const stateVectorList &state_vector_list) {
     // Add all links in the kinematic chains for both contacts
+    int relevant_kinematic_chains[2];
+    std::vector<int> contact_state_indices;
 
-    // Contact 1
+    // Contact body 1
     bool found = false;
-    for(auto &chain : kinematic_chains) {
-        for(int link : chain) {
-            if(link == contact.first) {
-                // Add all elements in this chain to row and then break
+    for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
+        const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
+        for (int body : body_chain) {
+            if (body == contact.first) {
+                // Store the index of the chain instead of the body
+                relevant_kinematic_chains[0] = i;
                 found = true;
-                for(int link_in_chain : chain) {
-                    row.push_back(link_in_chain);
-                }
+                break; // break the inner loop
             }
         }
-        if(found){
-            break;
+        if (found) {
+            break; // break the outer loop
         }
     }
 
     // Contact 2
     found = false;
-    for(auto &chain : kinematic_chains) {
-        for(int link : chain) {
-            if(link == contact.second) {
-                // Add all elements in this chain to row and then break
+    for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
+        const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
+        for (int body : body_chain) {
+            if (body == contact.second) {
+                // Store the index of the chain instead of the body
+                relevant_kinematic_chains[1] = i;
                 found = true;
-                for(int link_in_chain : chain) {
-                    row.push_back(link_in_chain);
-                }
+                break; // break the inner loop
             }
         }
-        if(found){
-            break;
+        if (found) {
+            break; // break the outer loop
         }
     }
+
+    // Stage 2 - convert all bodies to state vector indices
+    for(int i = 0; i < state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[0]].size(); i++){
+        contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[0]][i]);
+    }
+
+    if(relevant_kinematic_chains[0] != relevant_kinematic_chains[1]) {
+        for (int i = 0; i < state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[1]].size(); i++) {
+            contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[1]][i]);
+        }
+    }
+
+    return contact_state_indices;
 }
 
 static inline void AddLastRowKeypointsContact(std::vector<int>& new_last_row,
@@ -142,7 +156,7 @@ static inline void AddLastRowKeypointsContact(std::vector<int>& new_last_row,
 void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &trajectory_states,
                            const std::vector<MatrixXd> &trajectory_controls,
                            const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
-                           const std::vector<std::vector<int>> &kinematic_chains){
+                           const stateVectorList &state_vector_list){
     // Enforce first time-step must have all keypoints
     std::vector<int> full_row(dof, 0);
 
@@ -176,7 +190,7 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
                 change_in_contact = true;
                 // Add keypoint at this time-step as well as the previous time-step
                 // Consider both kinematic chains when adding keypoints
-                AddKeypointsFromContact(contact, kinematic_chains, row);
+                row = AddKeypointsFromContact(contact, state_vector_list);
 
                 // Also need to add keypoints for the previous time-step...
                 // Add keypoints for the previous time-step
@@ -197,7 +211,7 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
                 change_in_contact = true;
                 // Add keypoint at this time-step as well as the previous time-step
                 // Consider both kinematic chains when adding keypoints
-                AddKeypointsFromContact(contact, kinematic_chains, row);
+                row = AddKeypointsFromContact(contact, state_vector_list);
                 // Also need to add keypoints for the previous time-step...
                 // Add keypoints for the previous time-step
                 AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
@@ -223,7 +237,7 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
 void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
                        const std::vector<MatrixXd> &trajectory_controls,
                        const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
-                       const std::vector<std::vector<int>> &kinematic_chains,
+                       const stateVectorList &state_vector_list,
                        std::vector<MatrixXd> &A, std::vector<MatrixXd> &B){
 
     if(keypoints_computed){
@@ -259,6 +273,9 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
     else if(current_keypoint_method.name == "velocity_change"){
         GenerateVelocityProfile(trajectory_states);
         GenerateKeyPointsVelocityChange(velocity_profile);
+    }
+    else if(current_keypoint_method.name == "contact_change"){
+        ContactAwareKeyPoints(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list);
     }
     else{
         std::cerr << "ERROR: keyPointsMethod not recognised \n";

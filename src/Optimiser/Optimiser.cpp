@@ -171,7 +171,7 @@ void Optimiser::GenerateDerivatives(){
 void Optimiser::ComputeKeypoints(){
     //auto start_keypoint_time = high_resolution_clock::now();
     keypoint_generator->GenerateKeyPoints(X_old, U_old,
-                                          contact_list, activeModelTranslator->current_state_vector.kinematic_chains,
+                                          contact_list, activeModelTranslator->current_state_vector,
                                           A, B);
     keypoint_generator->ResetCache();
     //std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";

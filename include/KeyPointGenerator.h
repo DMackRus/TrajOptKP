@@ -76,7 +76,7 @@ public:
      * @param  trajectory_states A sequence of states of the system over a trajectory.
      * @param  trajectory_controls A sequence of controls applied to the system over a trajectory.
      * @param  trajectory_contacts A sequence of contacts between bodies over a trajectory.
-     * @param  kinematic_chains A vector of kinematic chains, each chain is a vector of integers
+     * @param  state_vector_list State vector object that contains relevant kinematic chain mappings
      * @param  A A vector of matrices containing the dynamics gradients per time-step with respect
      *           to the state vector. Passed by reference so they can be updated by the "Iterative Error" method.
      * @param  B A vector of matrices containing the dynamics gradients per time-step with respect
@@ -88,13 +88,13 @@ public:
     void GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
                            const std::vector<MatrixXd> &trajectory_controls,
                            const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
-                           const std::vector<std::vector<int>> &kinematic_chains,
+                           const stateVectorList &state_vector_list,
                            std::vector<MatrixXd> &A, std::vector<MatrixXd> &B);
 
     void ContactAwareKeyPoints(const std::vector<MatrixXd> &trajectory_states,
                                const std::vector<MatrixXd> &trajectory_controls,
                                const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
-                               const std::vector<std::vector<int>> &kinematic_chains);
+                               const stateVectorList &state_vector_list);
 
     void AdjustKeyPointMethod(double expected, double actual,
                               std::vector<MatrixXd> &trajectory_states,

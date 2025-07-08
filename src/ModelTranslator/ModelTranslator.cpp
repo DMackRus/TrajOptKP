@@ -1121,6 +1121,7 @@ int ModelTranslator::QPosIndexToStateIndex(int qpos_index, const struct stateVec
             return i;
         }
     }
+    return -1;
 }
 
 void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
@@ -1210,14 +1211,17 @@ void ModelTranslator::GetContacts(mjData *d, std::vector<std::pair<int, int>> &c
         }
         else{
             // Add contact pair to vector
-            contact_pairs.emplace_back(QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body_contact_1], current_state_vector),
-                                       QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body_contact_2], current_state_vector));
+            contact_pairs.emplace_back(body_contact_1, body_contact_2);
         }
     }
 }
 
 void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
-    state_vector.kinematic_chains.clear();
+
+    state_vector.kinematic_chains_bodies.clear();
+    state_vector.kinematic_chain_state_indices.clear();
+
+    // Stage 1 - Create kinematic chain of body Ids
     for (int i = 1; i < MuJoCo_helper->model->nbody; i++) {  // skip world (body 0) TODO - This might be problematic for models with no plane??
         // Create a new chain if parent ID is the world body (0)
         if (MuJoCo_helper->model->body_parentid[i] == 0) {
@@ -1228,26 +1232,7 @@ void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
             while (!q.empty()) {
                 int body = q.front();
                 q.pop();
-
-                // Check if body is a free joint
-                if(MuJoCo_helper->model->jnt_type[MuJoCo_helper->model->body_jntadr[body]] == mjJNT_FREE) {
-                    // If it is a free joint, we need to add the DoFs that are active in the state vector
-                    for (int j = 0; j < 6; j++) {
-
-                        // check if the qpos address is inside the statevecoter q pos list
-                        for(int k = 0; k < state_vector.q_pos_adr.size(); k++) {
-                            if(MuJoCo_helper->model->jnt_dofadr[MuJoCo_helper->model->body_jntadr[body]] + j == state_vector.q_pos_adr[k]) {
-                                // If the DoF is active in the state vector, add it to the chain
-                                chain.push_back(QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body] + j, state_vector));
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    // Otherwise, just add the joint address
-//                    chain.push_back(MuJoCo_helper->model->body_jntadr[body]);
-                    chain.push_back(QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body], state_vector));
-                }
+                chain.push_back(body);
 
                 for (int j = 1; j < MuJoCo_helper->model->nbody; j++) {
                     if (MuJoCo_helper->model->body_parentid[j] == body) {
@@ -1256,9 +1241,47 @@ void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
                 }
             }
 
-            // Need to check if a joint is a free joint, and i so, check what DoFs are active in the state vector
-            state_vector.kinematic_chains.push_back(chain);
+            if(!chain.empty()) {
+                state_vector.kinematic_chains_bodies.push_back(chain);
+            }
         }
+    }
+
+    // Stage 2 - Create kinematic chains of state indices
+    for(auto &chain_body : state_vector.kinematic_chains_bodies) {
+        vector<int> qpos_chain;
+        for (const auto &body : chain_body) {
+            int joint_id = MuJoCo_helper->model->body_jntadr[body];
+
+            if(joint_id == -1) {
+                // If the body has no joint, skip it
+                continue;
+            }
+
+            if(MuJoCo_helper->model->jnt_type[MuJoCo_helper->model->body_jntadr[body]] == mjJNT_FREE) {
+                // If it is a free joint, we need to add the DoFs that are active in the state vector
+                for (int j = 0; j < 6; j++) {
+                    // check if the qpos address is inside the statevecoter q pos list
+                    for(int k = 0; k < state_vector.q_pos_adr.size(); k++) {
+                        if(MuJoCo_helper->model->jnt_dofadr[MuJoCo_helper->model->body_jntadr[body]] + j == state_vector.q_pos_adr[k]) {
+                            // If the DoF is active in the state vector, add it to the chain
+                            int index = QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body] + j, state_vector);
+                            if(index >= 0){
+                                qpos_chain.push_back(index);
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                // Otherwise, just add the joint address
+                int index = QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body], state_vector);
+                if(index >= 0){
+                    qpos_chain.push_back(index);
+                }
+            }
+        }
+        state_vector.kinematic_chain_state_indices.push_back(qpos_chain);
     }
 }
 

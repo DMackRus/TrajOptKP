@@ -7,6 +7,7 @@
 #include "ModelTranslator/PistonBlock.h"
 #include "ModelTranslator/Acrobot.h"
 #include "ModelTranslator/ArticulatedContact.h"
+#include "ModelTranslator/BoxSweep.h"
 
 #include "Optimiser/Optimiser.h"
 #include "Optimiser/iLQR.h"
@@ -351,17 +352,17 @@ void TestKeypointMethod(){
 
     // Print kinematic chains
     std::cout << "Kinematic chains: \n";
-    for(int i = 0; i < activeModelTranslator->current_state_vector.kinematic_chains.size(); i++){
+    for(int i = 0; i < activeModelTranslator->current_state_vector.kinematic_chains_bodies.size(); i++){
         std::cout << "Chain " << i << ": ";
-        for(int j = 0; j < activeModelTranslator->current_state_vector.kinematic_chains[i].size(); j++){
-            std::cout << activeModelTranslator->current_state_vector.kinematic_chains[i][j] << " ";
+        for(int j = 0; j < activeModelTranslator->current_state_vector.kinematic_chains_bodies[i].size(); j++){
+            std::cout << activeModelTranslator->current_state_vector.kinematic_chains_bodies[i][j] << " ";
         }
         std::cout << "\n";
     }
 
     // Test keypoint generation
     iLQROptimiser->keypoint_generator->ContactAwareKeyPoints(iLQROptimiser->X_old,iLQROptimiser->U_old,
-                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector.kinematic_chains);
+                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector);
 
     //Print out the key points
     std::cout << "Keypoints: \n";
@@ -376,16 +377,134 @@ void TestKeypointMethod(){
     }
 
     // Playback the trajectory
-//    for(int t = 0; t < opt_horizon; t++){
-//        // Copy the system state to the visualiser
-//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
-//                                                              activeModelTranslator->MuJoCo_helper->saved_systems_state_list[t]);
-//        // Forward the model
-//        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
-//        // Render the visualiser
-//        activeVisualiser->render("Keypoint Method Test");
-//        std::this_thread::sleep_for(std::chrono::milliseconds(20));
-//    }
+    for(int t = 0; t < opt_horizon; t++){
+        // Copy the system state to the visualiser
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                              activeModelTranslator->MuJoCo_helper->saved_systems_state_list[t]);
+        // Forward the model
+        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+        // Render the visualiser
+        activeVisualiser->render("Keypoint Method Test");
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
+}
+
+void BoxSweepTest(){
+    std::cout << "Keypoint method testing" << std::endl;
+
+    // Doesnt actually do anything for this program
+    yamlReader = std::make_shared<FileHandler>();
+
+    // Instantiate the model translator
+    std::shared_ptr<BoxSweep> box_sweep = std::make_shared<BoxSweep>();
+    activeModelTranslator = box_sweep;
+
+    // Instantiate the differentiator
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
+
+    activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    //Instantiate the visualiser
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
+
+    // Setup the initial horizon, based on open loop or mpc method
+    int opt_horizon = 2000;
+
+    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
+                                           activeModelTranslator->MuJoCo_helper,
+                                           activeDifferentiator,
+                                           opt_horizon, activeVisualiser, yamlReader);
+
+    iLQROptimiser->Resize(activeModelTranslator->current_state_vector.dof,
+                          activeModelTranslator->current_state_vector.num_ctrl,
+                          opt_horizon);
+
+    // Initialise scene to random state
+    std::string task_prefix = activeModelTranslator->model_name;
+    yamlReader->LoadTaskFromFile(task_prefix, yamlReader->csvRow, activeModelTranslator->full_state_vector,
+                                 activeModelTranslator->residual_list);
+    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    // Do any setup
+    std::vector<MatrixXd> init_setup_controls = activeModelTranslator->CreateInitSetupControls(1000);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+
+    std::vector<MatrixXd> init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    vector<MatrixXd> init_controls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+
+
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                                                          activeModelTranslator->MuJoCo_helper->master_reset_data
+    );
+
+    // Test contact list generation
+    iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], true, init_controls);
+
+    // Print the state vector names and q pos addresses
+    std::cout << "State vector names: \n";
+    for(int i = 0; i < activeModelTranslator->current_state_vector.state_names.size(); i++){
+        std::cout << activeModelTranslator->current_state_vector.state_names[i] << " ";
+    }
+    std::cout << "\n";
+    std::cout << "State vector qpos addresses: \n";
+    for(int i = 0; i < activeModelTranslator->current_state_vector.q_pos_adr.size(); i++){
+        std::cout << activeModelTranslator->current_state_vector.q_pos_adr[i] << " ";
+    }
+    std::cout << "\n";
+
+    // Print kinematic chains
+    std::cout << "Kinematic chain bodies: \n";
+    for(int i = 0; i < activeModelTranslator->current_state_vector.kinematic_chains_bodies.size(); i++){
+        std::cout << "Chain " << i << ": ";
+        for(int j = 0; j < activeModelTranslator->current_state_vector.kinematic_chains_bodies[i].size(); j++){
+            std::cout << activeModelTranslator->current_state_vector.kinematic_chains_bodies[i][j] << " ";
+        }
+        std::cout << "\n";
+    }
+
+    std::cout << "Kinematic chain state indices: \n";
+    for(int i = 0; i < activeModelTranslator->current_state_vector.kinematic_chain_state_indices.size(); i++){
+        std::cout << "Chain " << i << ": ";
+        for(int j = 0; j < activeModelTranslator->current_state_vector.kinematic_chain_state_indices[i].size(); j++){
+            std::cout << activeModelTranslator->current_state_vector.kinematic_chain_state_indices[i][j] << " ";
+        }
+        std::cout << "\n";
+    }
+
+    // Print out the contact sequence
+    std::cout << "Contact sequence: \n";
+
+
+    // Test keypoint generation
+    iLQROptimiser->keypoint_generator->ContactAwareKeyPoints(iLQROptimiser->X_old,iLQROptimiser->U_old,
+                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector);
+
+    //Print out the key points
+    std::cout << "Keypoints: \n";
+    for(int t = 0; t < opt_horizon; t++){
+        if(!iLQROptimiser->keypoint_generator->keypoints[t].empty()){
+            std::cout << "time " << t << ": ";
+            for(int i = 0; i < iLQROptimiser->keypoint_generator->keypoints[t].size(); i++){
+                std::cout << iLQROptimiser->keypoint_generator->keypoints[t][i] << " ";
+            }
+            std::cout << "\n";
+        }
+    }
+
+    // Playback the trajectory
+    for(int t = 0; t < opt_horizon; t++){
+        // Copy the system state to the visualiser
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                              activeModelTranslator->MuJoCo_helper->saved_systems_state_list[t]);
+        // Forward the model
+        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+        // Render the visualiser
+        activeVisualiser->render("Keypoint Method Test");
+        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    }
 }
 
 void ArticulatedContactSaveDerivs(){
@@ -574,7 +693,9 @@ void ArticulatedContactSaveDerivs(){
 // Articulated Contact Script
 int main(){
 
-    TestKeypointMethod();
+//    TestKeypointMethod();
+
+    BoxSweepTest();
 
 //    ArticulatedContactSaveDerivs();
     return 0;

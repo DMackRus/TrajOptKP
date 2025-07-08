@@ -113,7 +113,9 @@ add_executable(toy_contact_analysis src/toy_contact_analysis.cpp
         src/KeyPointGenerator/KeyPointGenerator.cpp
         src/ModelTranslator/PistonBlock.cpp
         src/ModelTranslator/Acrobot.cpp
-        src/ModelTranslator/ArticulatedContact.cpp)
+        src/ModelTranslator/ArticulatedContact.cpp
+        src/ModelTranslator/BoxSweep.cpp
+        src/ModelTranslator/PushBaseClass.cpp)
 
 include_directories(
         include

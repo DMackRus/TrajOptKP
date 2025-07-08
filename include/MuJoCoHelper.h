@@ -28,6 +28,7 @@ struct mujoco_data_min{
     std::vector<double> qfrc_applied;
     std::vector<double> xfrc_applied;
     std::vector<double> ctrl;
+    std::vector<std::vector<int>> contacts;
 };
 
 class MuJoCoHelper {
