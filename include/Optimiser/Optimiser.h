@@ -175,6 +175,14 @@ public:
     double opt_time_ms;
     std::vector<double> time_get_derivs_ms;
     double avg_time_get_derivs_ms = 0.0;
+    std::vector<double> time_keypoints_ms;
+    double avg_time_keypoints_ms = 0.0;
+    std::vector<double> time_FD_derivs_ms;
+    double avg_time_FD_derivs_ms = 0.0;
+    std::vector<double> time_interpolation_ms;
+    double avg_time_interpolation_ms = 0.0;
+    std::vector<double> time_cost_derivs_ms;
+    double avg_time_cost_derivs_ms = 0.0;
     std::vector<double> time_backwards_pass_ms;
     double avg_time_backwards_pass_ms = 0.0;
     std::vector<double> time_forwardsPass_ms;

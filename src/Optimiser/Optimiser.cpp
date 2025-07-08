@@ -169,12 +169,13 @@ void Optimiser::GenerateDerivatives(){
 }
 
 void Optimiser::ComputeKeypoints(){
-    //auto start_keypoint_time = high_resolution_clock::now();
+    auto start_keypoint_time = high_resolution_clock::now();
     keypoint_generator->GenerateKeyPoints(X_old, U_old,
                                           contact_list, activeModelTranslator->current_state_vector,
                                           A, B);
     keypoint_generator->ResetCache();
-    //std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
+    time_keypoints_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0);
+    std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
 }
 
 void Optimiser::ComputeDynamicsDerivatives(){
@@ -185,15 +186,17 @@ void Optimiser::ComputeDynamicsDerivatives(){
         ComputeDynamicsDerivativesAtKeypoints(keypoint_generator->keypoints);
         auto stop_fd_time = high_resolution_clock::now();
         auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
+        time_FD_derivs_ms.push_back(duration_fd_time.count() / 1000.0);
     }
 
     // Interpolate the dynamics derivatives
-//    auto start_interp_time = high_resolution_clock::now();
+    auto start_interp_time = high_resolution_clock::now();
     keypoint_generator->InterpolateDerivatives(keypoint_generator->keypoints, horizon_length,
                                                A, B, r_x, r_u, activeYamlReader->costDerivsFD,
                                                activeModelTranslator->current_state_vector.num_ctrl);
-//    auto end_interp_time = high_resolution_clock::now();
-//    std::cout << "interpolation time: " << duration_cast<microseconds>(end_interp_time - start_interp_time).count() / 1000.0 << " ms \n";
+    auto end_interp_time = high_resolution_clock::now();
+    time_interpolation_ms.push_back(duration_cast<microseconds>(end_interp_time - start_interp_time).count() / 1000.0);
+    std::cout << "interpolation time: " << duration_cast<microseconds>(end_interp_time - start_interp_time).count() / 1000.0 << " ms \n";
 }
 
 void Optimiser::ComputeCostDerivatives(){
@@ -213,7 +216,8 @@ void Optimiser::ComputeCostDerivatives(){
                                                         residuals[horizon_length - 1], r_x[horizon_length - 1], r_u[horizon_length - 1], true);
 
     auto time_stop_residual_derivs = high_resolution_clock::now();
-//    std::cout << "time resid derivs: " << duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0f << " ms\n";
+    time_cost_derivs_ms.push_back(duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0);
+    std::cout << "time resid derivs: " << duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0f << " ms\n";
 }
 
 void Optimiser::ComputeResidualDerivatives(){
@@ -420,6 +424,10 @@ void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_
     for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
         rollout_data[thread_id][data_index].xfrc_applied[i] = d->xfrc_applied[i];
     }
+
+    // Save contacts
+    rollout_data[thread_id][data_index].contacts.clear();
+    activeModelTranslator->GetContacts(d, rollout_data[thread_id][data_index].contacts);
 }
 
 void Optimiser::SaveBestRollout(int thread_id){
@@ -448,5 +456,8 @@ void Optimiser::SaveBestRollout(int thread_id){
 
         // Update the residuals of the nominal trajectory
         activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t], residuals[t]);
+
+        // Update the contact list sequence of the trajectory
+        contact_list[t] = rollout_data[thread_id][t].contacts;
     }
 }

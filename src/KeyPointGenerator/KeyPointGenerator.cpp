@@ -221,6 +221,7 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
         // Update current contact list
         current_contacts = new_contacts;
 
+        // TODO - Do we need to sort the key-points?
         if(change_in_contact){
             // Sort the row to ensure keypoints are in order
             std::sort(row.begin(), row.end());
@@ -275,6 +276,14 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
         GenerateKeyPointsVelocityChange(velocity_profile);
     }
     else if(current_keypoint_method.name == "contact_change"){
+        // Print out contact sequence
+//        for(int t = 0; t < horizon; t++){
+//            std::cout << "time " << t << " :";
+//            for(const auto & contact : trajectory_contacts[t]){
+//                std::cout << " (" << contact.first << ", " << contact.second << ") ";
+//            }
+//            std::cout << "\n";
+//        }
         ContactAwareKeyPoints(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list);
     }
     else{
@@ -284,6 +293,7 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 
     //Print out the key points
 //    for(int t = 0; t < horizon; t++){
+//        if(keypoints[t].empty()) continue; // Skip empty keypoint rows
 //        std::cout << "time " << t << " :";
 //        for(int i = 0; i < keypoints[t].size(); i++){
 //            std::cout << keypoints[t][i] << " ";

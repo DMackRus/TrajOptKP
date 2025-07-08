@@ -310,6 +310,10 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     opt_time_ms = 0.0;
     avg_time_get_derivs_ms = 0.0;
+    avg_time_keypoints_ms = 0.0;
+    avg_time_FD_derivs_ms = 0.0;
+    avg_time_interpolation_ms = 0.0;
+    avg_time_cost_derivs_ms = 0.0;
     avg_time_forwards_pass_ms = 0.0;
     avg_time_backwards_pass_ms = 0.0;
     avg_surprise = 0.0;
@@ -324,6 +328,10 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     time_backwards_pass_ms.clear();
     time_forwardsPass_ms.clear();
     time_get_derivs_ms.clear();
+    time_keypoints_ms.clear();
+    time_FD_derivs_ms.clear();
+    time_interpolation_ms.clear();
+    time_cost_derivs_ms.clear();
     surprises.clear();
     expecteds.clear();
     // ------------------------------------------------------------------------
@@ -359,11 +367,10 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     }
 
     // --------------------  Computing testing results ---------------------------
-
     cost_reduction = 1 - (new_cost / initial_cost);
     auto optFinish = high_resolution_clock::now();
     auto optDuration = duration_cast<microseconds>(optFinish - optStart);
-    opt_time_ms = optDuration.count() / 1000.0f;
+    opt_time_ms = optDuration.count() / 1000.0;
 
     if(verbose_output){
         cout << setprecision(4);
@@ -381,6 +388,26 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         avg_time_get_derivs_ms += time_get_derivs_m;
     }
 
+    // Time keypoints
+    for(double time_keypoints_m : time_keypoints_ms){
+        avg_time_keypoints_ms += time_keypoints_m;
+    }
+
+    // Time FD derivs
+    for(double time_FD_derivs_m : time_FD_derivs_ms){
+        avg_time_FD_derivs_ms += time_FD_derivs_m;
+    }
+
+    // Time interpolation
+    for(double time_interpolation_m : time_interpolation_ms){
+        avg_time_interpolation_ms += time_interpolation_m;
+    }
+
+    // Time cost derivs
+    for(double time_cost_derivs_m : time_cost_derivs_ms){
+        avg_time_cost_derivs_ms += time_cost_derivs_m;
+    }
+
     // Percent derivs
     for(double i : percentage_derivs_per_iteration){
         avg_percent_derivs += i;
@@ -388,6 +415,10 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     avg_time_get_derivs_ms /= static_cast<int>(time_get_derivs_ms.size());
     avg_percent_derivs /= static_cast<int>(percentage_derivs_per_iteration.size());
+    avg_time_keypoints_ms /= static_cast<int>(time_keypoints_ms.size());
+    avg_time_FD_derivs_ms /= static_cast<int>(time_FD_derivs_ms.size());
+    avg_time_interpolation_ms /= static_cast<int>(time_interpolation_ms.size());
+    avg_time_cost_derivs_ms /= static_cast<int>(time_cost_derivs_ms.size());
 
     // Time backwards pass
     for(double time_backwards_pass_m : time_backwards_pass_ms){

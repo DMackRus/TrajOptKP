@@ -28,35 +28,50 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    vector<double> vel_change_thresholds = {0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1000.0};
 //    vector<double> vel_change_thresholds = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
 //    vector<double> vel_change_thresholds = {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
-    vector<double> vel_change_thresholds = {20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0};
-    for(int i = 0; i < vel_change_thresholds.size(); i++){
-        keypoint_method.velocity_change_thresholds[0] = vel_change_thresholds[i];
-        keypoint_method.velocity_change_thresholds[1] = vel_change_thresholds[i];
-
-        optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-        this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-        if(this_test_fine != EXIT_SUCCESS){
-            tests_fine = this_test_fine;
-        }
-        // Sleep for 60 seconds - enforces file name change for different tests
-        std::this_thread::sleep_for(std::chrono::seconds(55));
-    }
+//    vector<double> vel_change_thresholds = {20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0};
+//    for(int i = 0; i < vel_change_thresholds.size(); i++){
+//        keypoint_method.velocity_change_thresholds[0] = vel_change_thresholds[i];
+//        keypoint_method.velocity_change_thresholds[1] = vel_change_thresholds[i];
+//
+//        optimiser->SetCurrentKeypointMethod(keypoint_method);
+//
+//        this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+//        if(this_test_fine != EXIT_SUCCESS){
+//            tests_fine = this_test_fine;
+//        }
+//        // Sleep for 60 seconds - enforces file name change for different tests
+//        std::this_thread::sleep_for(std::chrono::seconds(55));
+//    }
 
     // ----------------- Set interval 1 -------------------
-//    keypoint_method.name = "set_interval";
-//    keypoint_method.min_N = 1;
-//    keypoint_method.max_N = 1;
-//
-//    // Set the keypoint method
-//    optimiser->SetCurrentKeypointMethod(keypoint_method);
-//
-//    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-//    if(this_test_fine != EXIT_SUCCESS){
-//        tests_fine = this_test_fine;
-//    }
-//    // Sleep for 60 seconds - enforces file name change for different tests
-//    std::this_thread::sleep_for(std::chrono::seconds(60));
+    keypoint_method.name = "set_interval";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 1;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+    // Sleep for 60 seconds - enforces file name change for different tests
+    std::this_thread::sleep_for(std::chrono::seconds(60));
+
+    // ----------------- Contact aware case -------------------
+    keypoint_method.name = "contact_change";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 1;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+    // Sleep for 60 seconds - enforces file name change for different tests
+    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Set interval 5 ---------------------
 //    keypoint_method.name = "set_interval";
@@ -88,7 +103,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    std::this_thread::sleep_for(std::chrono::seconds(30));
 //
 //    // ----------------- Adaptive jerk 1 50 ---------------------
-    keypoint_method.name = "adaptive_jerk";
+//    keypoint_method.name = "adaptive_jerk";
 //    keypoint_method.min_N = 1;
 //    keypoint_method.max_N = 100;
 //
@@ -154,6 +169,10 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     std::vector<double> avg_num_dofs;
     std::vector<double> avg_percent_derivs;
     std::vector<double> total_time_derivs;
+    std::vector<double> total_time_keypoint_generation;
+    std::vector<double> total_time_FD;
+    std::vector<double> total_time_interpolation;
+    std::vector<double> total_time_residuals;
     std::vector<double> total_time_bp;
     std::vector<double> total_time_fp;
     // -----------------------------------------------------------------------------
@@ -161,7 +180,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     auto startTimer = std::chrono::high_resolution_clock::now();
     optimiser->verbose_output = true;
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 2; i++) {
         std::cout << "trial: " << i << "\n";
 
         // Reset internal optimisation data and clear key-points cache
@@ -226,6 +245,10 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
         num_iterations.push_back(optimiser->num_iterations);
         avg_num_dofs.push_back(optimiser->avg_dofs);
         avg_percent_derivs.push_back(optimiser->avg_percent_derivs);
+        total_time_keypoint_generation.push_back(std::accumulate(optimiser->time_keypoints_ms.begin(), optimiser->time_keypoints_ms.end(), 0));
+        total_time_FD.push_back(std::accumulate(optimiser->time_FD_derivs_ms.begin(), optimiser->time_FD_derivs_ms.end(), 0));
+        total_time_interpolation.push_back(std::accumulate(optimiser->time_interpolation_ms.begin(), optimiser->time_interpolation_ms.end(), 0));
+        total_time_residuals.push_back(std::accumulate(optimiser->time_cost_derivs_ms.begin(), optimiser->time_cost_derivs_ms.end(), 0));
         total_time_derivs.push_back(std::accumulate(optimiser->time_get_derivs_ms.begin(), optimiser->time_get_derivs_ms.end(), 0));
         total_time_bp.push_back(std::accumulate(optimiser->time_backwards_pass_ms.begin(), optimiser->time_backwards_pass_ms.end(), 0));
         total_time_fp.push_back(std::accumulate(optimiser->time_forwardsPass_ms.begin(), optimiser->time_forwardsPass_ms.end(), 0));
@@ -239,13 +262,16 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
 
     // Make header
     file_output << "Cost reduction" << "," << "Optimisation time (ms)" << "," << "Number iterations" << ",";
-    file_output << "Average num dofs" << "," << "Average percent derivs" << "," << "Average time derivs (ms)" << ",";
-    file_output << "Average time BP (ms)" << "," << "Average time FP (ms)" << std::endl;
+    file_output << "Average num dofs" << "," << "Average percent derivs" << "," << "Total time derivs (ms)" << ",";
+    file_output << "Total time keypoints (ms)" << "," << "Total time FD (ms)" << "," << "Total time interpolation (ms)" << ",";
+    file_output << "Total time cost derivs (ms)" << "," << "Total time BP (ms)" << "," << "Total time FP (ms)" << std::endl;
 
     // Loop through rows
     for(int i = 0; i < cost_reductions.size(); i++){
         file_output << cost_reductions[i] << "," << optimisation_times[i] << "," << num_iterations[i] << ",";
         file_output << avg_num_dofs[i] << "," << avg_percent_derivs[i] << "," << total_time_derivs[i] << ",";
+        file_output << total_time_keypoint_generation[i] << "," << total_time_FD[i] << ",";
+        file_output << total_time_interpolation[i] << "," << total_time_residuals[i] << ",";
         file_output << total_time_bp[i] << "," << total_time_fp[i] << std::endl;
     }
 
