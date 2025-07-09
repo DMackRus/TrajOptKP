@@ -44,34 +44,34 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    }
 
     // ----------------- Set interval 1 -------------------
-    keypoint_method.name = "set_interval";
-    keypoint_method.min_N = 1;
-    keypoint_method.max_N = 1;
-
-    // Set the keypoint method
-    optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-    if(this_test_fine != EXIT_SUCCESS){
-        tests_fine = this_test_fine;
-    }
+//    keypoint_method.name = "set_interval";
+//    keypoint_method.min_N = 1;
+//    keypoint_method.max_N = 1;
+//
+//    // Set the keypoint method
+//    optimiser->SetCurrentKeypointMethod(keypoint_method);
+//
+//    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+//    if(this_test_fine != EXIT_SUCCESS){
+//        tests_fine = this_test_fine;
+//    }
     // Sleep for 60 seconds - enforces file name change for different tests
-    std::this_thread::sleep_for(std::chrono::seconds(60));
+//    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Contact aware case -------------------
-    keypoint_method.name = "contact_change";
-    keypoint_method.min_N = 1;
-    keypoint_method.max_N = 1;
-
-    // Set the keypoint method
-    optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-    if(this_test_fine != EXIT_SUCCESS){
-        tests_fine = this_test_fine;
-    }
-    // Sleep for 60 seconds - enforces file name change for different tests
-    std::this_thread::sleep_for(std::chrono::seconds(60));
+//    keypoint_method.name = "contact_change";
+//    keypoint_method.min_N = 1;
+//    keypoint_method.max_N = 1;
+//
+//    // Set the keypoint method
+//    optimiser->SetCurrentKeypointMethod(keypoint_method);
+//
+//    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+//    if(this_test_fine != EXIT_SUCCESS){
+//        tests_fine = this_test_fine;
+//    }
+//    // Sleep for 60 seconds - enforces file name change for different tests
+//    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Set interval 5 ---------------------
 //    keypoint_method.name = "set_interval";
@@ -88,17 +88,17 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //    // Sleep for 60 seconds - enforces file name change for different tests
 //    std::this_thread::sleep_for(std::chrono::seconds(60));
 //    // ----------------- Set interval 1000 ---------------------
-//    keypoint_method.name = "set_interval";
-//    keypoint_method.min_N = 1000;
-//    keypoint_method.max_N = 1;
-//
-//    // Set the keypoint method
-//    optimiser->SetCurrentKeypointMethod(keypoint_method);
-//
-//    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-//    if(this_test_fine != EXIT_SUCCESS){
-//        tests_fine = this_test_fine;
-//    }
+    keypoint_method.name = "set_interval";
+    keypoint_method.min_N = 1000;
+    keypoint_method.max_N = 1;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
 //    // Sleep for 60 seconds - enforces file name change for different tests
 //    std::this_thread::sleep_for(std::chrono::seconds(30));
 //
@@ -180,7 +180,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     auto startTimer = std::chrono::high_resolution_clock::now();
     optimiser->verbose_output = true;
 
-    for (int i = 0; i < 2; i++) {
+    for (int i = 0; i < 100; i++) {
         std::cout << "trial: " << i << "\n";
 
         // Reset internal optimisation data and clear key-points cache
@@ -914,6 +914,12 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
             keypoint_method_name = "*IE_" +
                           std::to_string(keypoint_method.min_N) + "_" +
                           std::to_string(keypoint_method.max_N);
+        }
+        else if(keypoint_method.name == "contact_change"){
+            keypoint_method_name = "contact_change";
+        }
+        else{
+            keypoint_method_name = keypoint_method.name;
         }
     }
 

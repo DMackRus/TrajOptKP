@@ -474,6 +474,9 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 //        std::cout << "l_xx[1] \n" << l_xx[1] << "\n";
 //        std::cout << "l_x[horizon - 1] \n" << l_x[horizon_length - 1] << "\n";
     }
+    else{
+        percentage_derivs_per_iteration.push_back(0.0);
+    }
     time_get_derivs_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
     // STEP 2 - BackwardsPass using the calculated derivatives to calculate an optimal feedback control law

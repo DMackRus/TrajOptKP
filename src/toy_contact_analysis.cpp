@@ -477,7 +477,6 @@ void BoxSweepTest(){
     // Print out the contact sequence
     std::cout << "Contact sequence: \n";
 
-
     // Test keypoint generation
     iLQROptimiser->keypoint_generator->ContactAwareKeyPoints(iLQROptimiser->X_old,iLQROptimiser->U_old,
                                                              iLQROptimiser->contact_list, activeModelTranslator->current_state_vector);
