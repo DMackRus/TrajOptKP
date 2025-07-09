@@ -6,11 +6,12 @@ import csv
 import os
 import sys
 import yaml
+import tkinter
 
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "push_ncl"
+task_name = "box_sweep"
 base_dir = ".."
 
 def main():
@@ -18,6 +19,74 @@ def main():
     
     names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task_name)
     plot_openloop_data(names, dataframes_iLQR)
+    
+    plot_timing_breakdown_data(names, dataframes_iLQR)
+    
+def plot_timing_breakdown_data(names, dataframes_iLQR):
+    global task_name
+    
+    num_iLQR_methods = len(dataframes_iLQR)
+    
+    # Define the timing categories (excluding the total "optimisation time" for plotting)
+    categories = ["Optimisation time (ms)", "Total time keypoints (ms)", 
+                  "Total time FD (ms)", "Total time interpolation (ms)", 
+                  "Total time cost derivs (ms)", "Total time BP (ms)",
+                  "Total time FP (ms)"]
+    
+    plot_categories = categories[1:]  # Skip the first one for stacking
+    # colors = plt.cm.viridis(np.linspace(0.2, 0.9, len(plot_categories)))  # Colour palette
+    
+    # color_map = {
+    #     "Total time keypoints (ms)": "#5DADE2",   # Light blue
+    #     "Total time FD (ms)": "#3498DB",         # Medium blue
+    #     "Total time interpolation (ms)": "#2E86C1", # Darker blue
+    #     "Total time cost derivs (ms)": "#1B4F72", # Very dark blue
+    #     "Total time BP (ms)": "#D81B60",         # Bold pink/red
+    #     "Total time FP (ms)": "#F39C12"          # Bright orange
+    # }
+    
+    color_map = {
+        "Total time keypoints (ms)": "#1f77b4",   # Blue
+        "Total time FD (ms)": "#ff7f0e",          # Orange
+        "Total time interpolation (ms)": "#2ca02c", # Green
+        "Total time cost derivs (ms)": "#9467bd", # Purple
+        "Total time BP (ms)": "#d62728",          # Red
+        "Total time FP (ms)": "#8c564b"           # Brown
+    }
+
+    num_methods = len(dataframes_iLQR)
+    bar_data = []
+
+    # Compute mean values for each category per method
+    for df in dataframes_iLQR:
+        means = df[plot_categories].mean()
+        bar_data.append(means.values)
+    
+    bar_data = np.array(bar_data)  # Shape: (num_methods, num_plot_categories)
+
+    # Plot
+    fig, ax = plt.subplots(figsize=(8, 6))
+    
+    bar_width = 0.5
+    indices = np.arange(num_methods)
+    
+    bottoms = np.zeros(num_methods)
+    for i, category in enumerate(plot_categories):
+        values = bar_data[:, i]
+        ax.bar(indices, values, bar_width, bottom=bottoms,
+               label=category, color=color_map[category])
+        # ax.bar(indices, values, bar_width, bottom=bottoms, label=category, color=colors[i])
+        bottoms += values
+
+    ax.set_ylabel('Average Time per Run (ms)')
+    ax.set_title('Average Timing Breakdown per iLQR Method')
+    ax.set_xticks(indices)
+    ax.set_xticklabels(names)
+    # ax.legend(loc='upper right', bbox_to_anchor=(1.35, 1.0))
+    ax.legend()
+
+    plt.tight_layout()
+    plt.show()
 
     
 def plot_openloop_data(names, dataframes_iLQR):
