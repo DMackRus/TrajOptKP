@@ -1,0 +1,40 @@
+modelFile: "/src/tests/test_xml/Walker/walker.xml"
+modelName: "/Walker"
+timeStep: 0.005
+keypointMethod: "set_interval"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change"
+auto_adjust: false
+minN: 1
+maxN: 20
+iterativeErrorThreshold: 0.1
+
+robots:
+  walker:
+    jointNames: ["rootz", "rootx", "rooty", "right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"]
+    actuatorNames: ["right_hip", "right_knee", "right_ankle", "left_hip", "left_knee", "left_ankle"]
+    torqueControl: true
+    torqueLimits: [1, 1, 1, 1, 1, 1]
+    startPos: [0, 0, 0, 1, -1, 0.2, 0, 0, 0]
+    goalPos: [0, 0, 0, 0, 0, 0, 0, 0, 0]
+    jointJerkThresholds: [1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15, 1e-15]
+    magVelThresholds: [0.1, 0.1, 0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+
+residuals:
+  body_height:
+    target: [0]
+    weight: 1
+    weight_terminal: 1
+  body_orientation:
+    target: [0]
+    weight: 0.1
+    weight_terminal: 0.1
+  body_velocity:
+    target: [0.5]
+    weight: 0.1
+    weight_terminal: 0.1
+  body_controls:
+    target: [0, 0, 0, 0, 0, 0]
+    resid_dimension: 6
+#    weight: 0.0001
+#    weight_terminal: 0.0001
+    weight: 0
+    weight_terminal: 0

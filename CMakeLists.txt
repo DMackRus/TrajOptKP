@@ -185,3 +185,18 @@ target_include_directories(test_model_translator PUBLIC ${Mujoco_INCLUDE_DIRS} $
 target_link_libraries(test_model_translator Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
 
 add_test(ModelTranslator test_model_translator)
+
+# ---------- Kinematic chain tests -------------
+add_executable(test_kinematic_chain src/tests/kinematic_chain_Test.cpp
+        src/ModelTranslator/ModelTranslator.cpp
+        src/tests/test_humanoid.h
+        src/tests/3D_test_class.h
+        src/PhysicsSimulators/MuJoCoHelper.cpp
+        src/StdInclude/StdInclude.cpp
+        src/FileHandler/FileHandler.cpp src/tests/test_walker.h)
+
+target_include_directories(test_kinematic_chain PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+
+target_link_libraries(test_kinematic_chain Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
+
+add_test(ModelTranslator test_kinematic_chain)

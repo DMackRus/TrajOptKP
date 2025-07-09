@@ -1258,31 +1258,41 @@ void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
                 continue;
             }
 
-            if(MuJoCo_helper->model->jnt_type[MuJoCo_helper->model->body_jntadr[body]] == mjJNT_FREE) {
-                // If it is a free joint, we need to add the DoFs that are active in the state vector
-                for (int j = 0; j < 6; j++) {
-                    // check if the qpos address is inside the statevecoter q pos list
-                    for(int k = 0; k < state_vector.q_pos_adr.size(); k++) {
-                        if(MuJoCo_helper->model->jnt_dofadr[MuJoCo_helper->model->body_jntadr[body]] + j == state_vector.q_pos_adr[k]) {
-                            // If the DoF is active in the state vector, add it to the chain
-                            int index = QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body] + j, state_vector);
-                            if(index >= 0){
-                                qpos_chain.push_back(index);
+            // Need logic to determine if there are multiple joints per body
+            for(int i = 0; i < MuJoCo_helper->model->body_jntnum[body]; i++){
+                int jnt_adr = MuJoCo_helper->model->body_jntadr[body] + i;
+
+                // Logic about if free joint or hinge/slide joints
+                if(MuJoCo_helper->model->jnt_type[jnt_adr] == mjJNT_FREE) {
+                    // If it is a free joint, we need to add the DoFs that are active in the state vector
+                    for (int j = 0; j < 6; j++) {
+                        // check if the qpos address is inside the state vector q pos list
+                        int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr] + j;
+                        for(int k = 0; k < state_vector.q_pos_adr.size(); k++) {
+                            if(qpos_adr == state_vector.q_pos_adr[k]) {
+                                // If the DoF is active in the state vector, add it to the chain
+                                int index = QPosIndexToStateIndex(qpos_adr, state_vector);
+                                if(index >= 0){
+                                    qpos_chain.push_back(index);
+                                }
                             }
                         }
                     }
                 }
-            }
-            else {
-                // Otherwise, just add the joint address
-                int index = QPosIndexToStateIndex(MuJoCo_helper->model->body_jntadr[body], state_vector);
-                if(index >= 0){
-                    qpos_chain.push_back(index);
+                else {
+                    // Otherwise, just add the joint address
+                    int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr];
+                    int index = QPosIndexToStateIndex(qpos_adr, state_vector);
+                    if(index >= 0){
+                        qpos_chain.push_back(index);
+                    }
                 }
             }
         }
         state_vector.kinematic_chain_state_indices.push_back(qpos_chain);
     }
+
+    // TODO - Do I need to sort the kinematic chains so they are in ascending order???
 }
 
 std::vector<MatrixXd> ModelTranslator::CreateInitOptimisationControls(int horizon_length) {
