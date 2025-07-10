@@ -42,7 +42,7 @@ residuals:
     weight_terminal: 0
   reach:
     target: [0]
-    weight: 0.2
+    weight: 0
     weight_terminal: 0
 
 # Open loop residuals
