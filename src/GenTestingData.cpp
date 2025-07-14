@@ -56,7 +56,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
         tests_fine = this_test_fine;
     }
 //     Sleep for 60 seconds - enforces file name change for different tests
-//    std::this_thread::sleep_for(std::chrono::seconds(60));
+    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Contact aware case -------------------
     keypoint_method.name = "contact_change";
@@ -235,8 +235,31 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
         // Do the optimisation!
         optimiser->lambda = 0.01;
         std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
-                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 10, 3,
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 6, 6,
                 task_horizon);
+
+        // --------- Save trial specific information to a folder labelled as trial number --------
+        std::string trial_directory = method_directory + "/" + std::to_string(i);
+        if (!std::filesystem::exists(trial_directory)) {
+            std::filesystem::create_directories(trial_directory);
+        }
+
+        std::string filename = trial_directory + "/summary.csv";
+
+        ofstream file_output;
+        file_output.open(filename);
+
+
+        // Make header
+        file_output << "Iteration" << "," << "Cost" << "," << "Cost reduction" << "," << "time (ms)" << std::endl;
+
+        // Loop through rows
+        for(int j = 0; j < optimiser->num_iterations; j++){
+            file_output << j << "," << optimiser->cost_after_iteration[j] << ",";
+            file_output << optimiser->cost_reduction_after_iteration[j] << "," << optimiser->time_after_iteration_ms[j] << std::endl;
+        }
+
+        file_output.close();
 
 
         // ------------------------- Update the data storages -------------------------------------

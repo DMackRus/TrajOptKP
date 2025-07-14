@@ -287,6 +287,7 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
 // -------------------------------------------------------------------------------------------------------
 std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_controls, int max_iterations, int min_iterations, int horizon_length){
     auto optStart = high_resolution_clock::now();
+    start_time = high_resolution_clock::now();
 
     // resize internal matrices if required
     Resize(activeModelTranslator->current_state_vector.dof,
@@ -334,6 +335,10 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     time_cost_derivs_ms.clear();
     surprises.clear();
     expecteds.clear();
+
+    cost_after_iteration.clear();
+    cost_reduction_after_iteration.clear();
+    time_after_iteration_ms.clear();
     // ------------------------------------------------------------------------
 
     auto time_start = high_resolution_clock::now();
@@ -552,7 +557,6 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
             new_cost = old_cost;
         }
     }
-
     time_forwardsPass_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
     if(verbose_output){
@@ -579,6 +583,10 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     }
 
     cost_history.push_back(new_cost);
+
+    cost_after_iteration.push_back(new_cost);
+    cost_reduction_after_iteration.push_back(1 - (new_cost / initial_cost));
+    time_after_iteration_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - start_time).count() / 1000.0f);
 }
 
 

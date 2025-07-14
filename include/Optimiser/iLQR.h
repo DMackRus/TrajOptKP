@@ -117,6 +117,9 @@ private:
     std::vector<double> surprises;
     std::vector<double> expecteds;
 
+    //timing variable clock
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_time;
+
     /**
      * Checks whether the supplied matrix is positive defeinite.
      *

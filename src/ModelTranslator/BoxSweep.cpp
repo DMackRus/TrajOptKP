@@ -52,9 +52,10 @@ void BoxSweep::ReturnRandomGoalState(){
 
 void BoxSweep::SetGoalVisuals(mjData *d){
     pose_6 box_goal;
+    MuJoCo_helper->GetBodyPoseAngle("display_goal", box_goal, d);
+
     box_goal.position(0) = residual_list[0].target[0];
     box_goal.position(1) = residual_list[0].target[1];
-
     box_goal.position(2) = 0.0;
 
     MuJoCo_helper->SetBodyPoseAngle("display_goal", box_goal, d);

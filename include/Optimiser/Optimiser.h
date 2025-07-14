@@ -187,10 +187,18 @@ public:
     double avg_time_backwards_pass_ms = 0.0;
     std::vector<double> time_forwardsPass_ms;
     double avg_time_forwards_pass_ms = 0.0;
+
+
     std::vector<double> percentage_derivs_per_iteration;
     double avg_percent_derivs = 0.0;
     std::vector<int> num_dofs;
     double avg_dofs = 0.0;
+
+    std::vector<double> cost_after_iteration;
+    std::vector<double> cost_reduction_after_iteration;
+    std::vector<double> time_after_iteration_ms;
+
+
     bool verbose_output = true;
 
     // - Top level function - ensures all derivatives are calculated over an entire trajectory by some method
