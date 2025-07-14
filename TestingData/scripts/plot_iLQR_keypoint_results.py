@@ -7,6 +7,7 @@ import os
 import sys
 import yaml
 import tkinter
+import glob
 
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
@@ -21,6 +22,212 @@ def main():
     plot_openloop_data(names, dataframes_iLQR)
     
     plot_timing_breakdown_data(names, dataframes_iLQR)
+    
+    test_plot()
+    
+def test_plot():
+    global base_dir, task_name
+    current_dir = base_dir + "/iLQR"
+
+    fig, axs = plt.subplots(2, 1, figsize=(10, 6))
+    
+
+    for folder in os.listdir(current_dir):
+        if task_name not in folder:
+            continue
+        
+        file_name_yaml = current_dir + "/" + folder + "/summary.yaml"
+        method_name = ""
+        with open(file_name_yaml, 'r') as file:
+            yaml_data = yaml.load(file, Loader=yaml.FullLoader)  # Load YAML data
+            method_name = yaml_data["keypoint_name"]
+
+        subfolder_path = os.path.join(current_dir, folder)
+        subfolders = [name for name in os.listdir(subfolder_path)
+                      if os.path.isdir(os.path.join(subfolder_path, name))]
+
+        all_costs = []
+        all_cost_reductions = []
+        all_times_per_iteration = []
+
+        for trial in subfolders:
+            file = os.path.join(subfolder_path, trial, "summary.csv")
+            if not os.path.isfile(file):
+                continue
+            
+            df = pd.read_csv(file)
+            if "Cost" in df.columns:
+                all_costs.append(df["Cost"])
+                all_cost_reductions.append(df["Cost reduction"])
+                all_times_per_iteration.append(df["time (ms)"])
+                
+                
+        combined_cost = pd.concat(all_costs, axis=1)
+        print(f"Combined cost shape: {combined_cost.shape}")
+        mean_cost = combined_cost.mean(axis=1)
+        print(f"Mean cost shape: {mean_cost.shape}")
+        combined_CR = pd.concat(all_cost_reductions, axis=1)
+        mean_CR = combined_CR.mean(axis=1)
+        combined_times = pd.concat(all_times_per_iteration, axis=1)
+        mean_times = combined_times.mean(axis=1)
+        
+        axs[0].plot(mean_cost, label=method_name)
+        axs[1].scatter(mean_times, mean_cost, label=method_name)
+                
+                
+        print(f"Method: {method_name}, Trials: {len(all_costs)}")
+        
+    # Final plot adjustments
+    axs[0].set_title("Trajectory Cost vs Iteration")
+    axs[0].set_ylabel("Cost")
+    axs[0].grid(True)
+
+    axs[1].set_title("Trajectory Cost vs Time")
+    axs[1].set_xlabel("Time per Iteration (ms)")
+    axs[1].set_ylabel("Cost")
+    axs[1].grid(True)
+
+    # Set a figure-level title
+    fig.suptitle("Average Trajectory Cost for Each Method", fontsize=14)
+
+    # Put a shared legend outside the plot
+    fig.legend(loc="upper right", bbox_to_anchor=(1, 0.95))
+
+    plt.tight_layout(rect=[0, 0, 0.85, 0.95])  # Leave space for suptitle and legend
+    plt.show()
+
+
+    # # Final plot adjustments
+    # plt.xlabel("Iteration number")
+    # plt.ylabel("Cost")
+    # plt.title("Trajectory cost versus iteration number")
+    # plt.grid(True)
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()
+    
+    # global base_dir
+    # current_dir = base_dir + "/iLQR"
+    
+    # all_dfs = []
+
+    # for folder in os.listdir(current_dir):
+    #     if task_name not in folder:
+    #         continue
+
+    #     subfolder_path = os.path.join(current_dir, folder)
+    #     subfolders = [name for name in os.listdir(subfolder_path)
+    #                   if os.path.isdir(os.path.join(subfolder_path, name))]
+
+    #     for trial in subfolders:
+    #         file = os.path.join(subfolder_path, trial, "summary.csv")
+    #         if not os.path.isfile(file):
+    #             continue
+            
+    #         df = pd.read_csv(file)
+    #         if "Cost" in df.columns:
+    #             all_dfs.append(df["Cost"])
+                
+    # print(all_dfs)
+    
+    # # Align all series by index and compute mean at each row
+    # if all_dfs:
+    #     combined = pd.concat(all_dfs, axis=1)
+    #     mean_cost = combined.mean(axis=1)
+
+    #     # Plot
+    #     plt.figure(figsize=(10, 6))
+    #     plt.plot(mean_cost, label="Average Cost")
+    #     plt.xlabel("Timestep")
+    #     plt.ylabel("Cost")
+    #     plt.title("Average Cost per Timestep across Trials")
+    #     plt.grid(True)
+    #     plt.legend()
+    #     plt.show()
+    # else:
+    #     print("No data found to plot.")
+        
+    
+    # for folder in os.listdir(current_dir):
+    #     print(folder)
+        
+    #     if task_name not in folder:
+    #         continue
+        
+    #     # Loop through their trial data
+    #     # subfolders = [ f.path for f in os.scandir(current_dir + "/" + folder) if f.is_dir() ]
+    #     subfolders = [name for name in os.listdir(current_dir + "/" + folder)
+    #        if os.path.isdir(os.path.join(current_dir + "/" + folder, name))]
+        
+    #     print(subfolders)
+        
+    #     all_costs = []
+    #     all_times = []
+        
+    #     # Do something with the subfolders
+    #     for trial in subfolders:
+    #         file = current_dir + "/" + folder + "/" + trial + "/summary.csv"
+    #         print(file)
+            
+    #         df = pd.read_csv(file)
+            
+    #         print(df)
+            
+
+    # summary_paths = []
+    # for d in sorted(subdirs, key=lambda x: int(x)):  # sort numerically, just for sanity
+    #     csv_path = os.path.join(root_dir, d, 'summary.csv')
+    #     if os.path.isfile(csv_path):
+    #         summary_paths.append(csv_path)
+
+    # if not summary_paths:
+    #     raise FileNotFoundError("No summary.csv files found in numeric subdirectories.")
+
+    # all_costs = []
+    # all_times = []
+
+    # for path in summary_paths:
+    #     df = pd.read_csv(path)
+        
+    #     expected_cols = ['Iteration', 'Cost', 'Cost reduction', 'time (ms)']
+    #     if list(df.columns) != expected_cols:
+    #         raise ValueError(f"Unexpected columns in {path}")
+
+    #     all_costs.append(df['Cost'].values)
+    #     all_times.append(df['time (ms)'].cumsum().values)
+
+    # # Convert to numpy
+    # cost_matrix = np.array(all_costs)
+    # time_matrix = np.array(all_times)
+
+    # # Mean across trials
+    # mean_costs = np.mean(cost_matrix, axis=0)
+    # mean_times = np.mean(time_matrix, axis=0)
+
+    # # --- Plot 1: Cost vs. Iteration ---
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(mean_costs, label='Average Cost')
+    # plt.xlabel('Iteration')
+    # plt.ylabel('Cost')
+    # plt.title('Average Cost vs Iteration')
+    # plt.grid(True)
+    # plt.legend()
+    # plt.tight_layout()
+
+    # # --- Plot 2: Cost vs. Time ---
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(mean_times, mean_costs, label='Average Cost')
+    # plt.xlabel('Cumulative Time (ms)')
+    # plt.ylabel('Cost')
+    # plt.title('Average Cost vs Cumulative Time')
+    # plt.grid(True)
+    # plt.legend()
+    # plt.tight_layout()
+
+    # plt.show()
+    
+def cost_per_iteration_data():
+    pass
     
 def plot_timing_breakdown_data(names, dataframes_iLQR):
     global task_name
