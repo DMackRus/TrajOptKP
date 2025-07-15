@@ -99,6 +99,25 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     ComputeStateDofAdrIndices(full_state_vector);
     CreateKinematicChain(full_state_vector);
 
+    // Print kinematic chains
+    std::cout << "Kinematic chains: \n";
+    for(int i = 0; i < full_state_vector.kinematic_chains_bodies.size(); i++){
+        std::cout << "Chain " << i << ": ";
+        for(int j = 0; j <  full_state_vector.kinematic_chains_bodies[i].size(); j++){
+            std::cout << full_state_vector.kinematic_chains_bodies[i][j] << " ";
+        }
+        std::cout << "\n";
+    }
+
+    std::cout << "Kinematic chains: \n";
+    for(int i = 0; i < full_state_vector.kinematic_chain_state_indices.size(); i++){
+        std::cout << "Chain " << i << ": ";
+        for(int j = 0; j <  full_state_vector.kinematic_chain_state_indices[i].size(); j++){
+            std::cout << full_state_vector.kinematic_chain_state_indices[i][j] << " ";
+        }
+        std::cout << "\n";
+    }
+
     // Clear optimiser dof and num ctrl so matrices are properly sized
     // Sets current state vector to full state vector
     ResetSVR();
@@ -1203,6 +1222,7 @@ void ModelTranslator::GetContacts(mjData *d, std::vector<std::pair<int, int>> &c
     for(int i = 0; i < num_contacts; i++){
         auto contact = d->contact[i];
 
+        // TODO - Should this be body of root ID?
         int body_contact_1 = MuJoCo_helper->model->body_rootid[MuJoCo_helper->model->geom_bodyid[contact.geom1]];
         int body_contact_2 = MuJoCo_helper->model->body_rootid[MuJoCo_helper->model->geom_bodyid[contact.geom2]];
 

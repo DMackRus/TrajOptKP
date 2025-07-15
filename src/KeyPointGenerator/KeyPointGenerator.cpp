@@ -75,9 +75,10 @@ void KeypointGenerator::PrintKeypointMethod(){
 
 // Static inline helper function for considering kinematic chains
 static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>& contact,
+                                           const std::vector<std::pair<int, int>>& all_contacts,
                                            const stateVectorList &state_vector_list) {
     // Add all links in the kinematic chains for both contacts
-    int relevant_kinematic_chains[2];
+    std::vector<int> relevant_kinematic_chains;
     std::vector<int> contact_state_indices;
 
     // Contact body 1
@@ -87,7 +88,7 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
         for (int body : body_chain) {
             if (body == contact.first) {
                 // Store the index of the chain instead of the body
-                relevant_kinematic_chains[0] = i;
+                relevant_kinematic_chains.push_back(static_cast<int>(i));
                 found = true;
                 break; // break the inner loop
             }
@@ -104,7 +105,7 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
         for (int body : body_chain) {
             if (body == contact.second) {
                 // Store the index of the chain instead of the body
-                relevant_kinematic_chains[1] = i;
+                relevant_kinematic_chains.push_back(static_cast<int>(i));
                 found = true;
                 break; // break the inner loop
             }
@@ -114,16 +115,39 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
         }
     }
 
-    // Stage 2 - convert all bodies to state vector indices
-    for(int i = 0; i < state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[0]].size(); i++){
-        contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[0]][i]);
-    }
+   // Check for any other affected kinematic chains
+   for(auto & other_contact : all_contacts) {
+        if(other_contact == contact) continue; // Skip the current contact
 
-    if(relevant_kinematic_chains[0] != relevant_kinematic_chains[1]) {
-        for (int i = 0; i < state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[1]].size(); i++) {
-            contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[1]][i]);
+        // Check if the other contact is in the same kinematic chain
+        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
+            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
+            for (int body : body_chain) {
+                if (body == other_contact.first || body == other_contact.second) {
+                    // Store the index of the chain instead of the body
+                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+                    break; // break the inner loop
+                }
+            }
         }
     }
+
+    // Stage 2 - convert all bodies to state vector indices
+    for( const auto &kinematic_chain : relevant_kinematic_chains){
+        for(int i = 0; i < state_vector_list.kinematic_chain_state_indices[kinematic_chain].size(); i++){
+            contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices[kinematic_chain][i]);
+        }
+    }
+
+//    for(int i = 0; i < state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[0]].size(); i++){
+//        contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[0]][i]);
+//    }
+//
+//    if(relevant_kinematic_chains[0] != relevant_kinematic_chains[1]) {
+//        for (int i = 0; i < state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[1]].size(); i++) {
+//            contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices[relevant_kinematic_chains[1]][i]);
+//        }
+//    }
 
     return contact_state_indices;
 }
@@ -190,7 +214,7 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
                 change_in_contact = true;
                 // Add keypoint at this time-step as well as the previous time-step
                 // Consider both kinematic chains when adding keypoints
-                row = AddKeypointsFromContact(contact, state_vector_list);
+                row = AddKeypointsFromContact(contact, new_contacts, state_vector_list);
 
                 // Also need to add keypoints for the previous time-step...
                 // Add keypoints for the previous time-step
@@ -211,7 +235,7 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
                 change_in_contact = true;
                 // Add keypoint at this time-step as well as the previous time-step
                 // Consider both kinematic chains when adding keypoints
-                row = AddKeypointsFromContact(contact, state_vector_list);
+                row = AddKeypointsFromContact(contact, new_contacts, state_vector_list);
                 // Also need to add keypoints for the previous time-step...
                 // Add keypoints for the previous time-step
                 AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
@@ -233,6 +257,16 @@ void KeypointGenerator::ContactAwareKeyPoints(const std::vector<MatrixXd> &traje
 
     // Manually enforce last keypoint for all dofs at horizon - 1
     keypoints.push_back(full_row);
+
+    // Sort the keypoints
+    for(int i = 0; i < horizon; i++){
+        std::sort(keypoints[i].begin(), keypoints[i].end());
+    }
+
+    // Delete any duplicates
+    for(int i = 0; i < horizon; i++){
+        keypoints[i].erase(std::unique(keypoints[i].begin(), keypoints[i].end()), keypoints[i].end());
+    }
 }
 
 void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,

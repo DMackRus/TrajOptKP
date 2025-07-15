@@ -56,7 +56,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
         tests_fine = this_test_fine;
     }
 //     Sleep for 60 seconds - enforces file name change for different tests
-    std::this_thread::sleep_for(std::chrono::seconds(60));
+//    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Contact aware case -------------------
     keypoint_method.name = "contact_change";
@@ -74,19 +74,19 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Set interval 5 ---------------------
-//    keypoint_method.name = "set_interval";
-//    keypoint_method.min_N = 5;
-//    keypoint_method.max_N = 1;
-//
-//    // Set the keypoint method
-//    optimiser->SetCurrentKeypointMethod(keypoint_method);
-//
-//    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-//    if(this_test_fine != EXIT_SUCCESS){
-//        tests_fine = this_test_fine;
-//    }
-//    // Sleep for 60 seconds - enforces file name change for different tests
-//    std::this_thread::sleep_for(std::chrono::seconds(60));
+    keypoint_method.name = "set_interval";
+    keypoint_method.min_N = 5;
+    keypoint_method.max_N = 1;
+
+    // Set the keypoint method
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
+    if(this_test_fine != EXIT_SUCCESS){
+        tests_fine = this_test_fine;
+    }
+    // Sleep for 60 seconds - enforces file name change for different tests
+    std::this_thread::sleep_for(std::chrono::seconds(60));
 //    // ----------------- Set interval 1000 ---------------------
     keypoint_method.name = "set_interval";
     keypoint_method.min_N = 1000;
@@ -180,7 +180,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     auto startTimer = std::chrono::high_resolution_clock::now();
     optimiser->verbose_output = true;
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 20; i++) {
         std::cout << "trial: " << i << "\n";
 
         // Reset internal optimisation data and clear key-points cache

@@ -643,15 +643,15 @@ bool iLQR::BackwardsPassQuuRegularisation(){
             Q_uu_reg(i, i) += lambda;
         }
 
-        if(Quu_pd_check_counter >= number_steps_between_pd_checks){
-            if(!CheckMatrixPD(Q_uu_reg)){
-                if(verbose_output){
-                    cout << "non PD matrix encountered at t = " << t << endl;
-                }
-                return false;
-            }
-            Quu_pd_check_counter = 0;
-        }
+//        if(Quu_pd_check_counter >= number_steps_between_pd_checks){
+//            if(!CheckMatrixPD(Q_uu_reg)){
+//                if(verbose_output){
+//                    cout << "non PD matrix encountered at t = " << t << endl;
+//                }
+//                return false;
+//            }
+//            Quu_pd_check_counter = 0;
+//        }
 
         auto temp = (Q_uu_reg).ldlt();
         MatrixXd I(num_ctrl, num_ctrl);

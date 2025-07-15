@@ -12,7 +12,8 @@ import glob
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "box_sweep"
+# task_name = "box_sweep"
+task_name = "push_mcl"
 base_dir = ".."
 
 def main():
@@ -71,20 +72,22 @@ def test_plot():
         combined_times = pd.concat(all_times_per_iteration, axis=1)
         mean_times = combined_times.mean(axis=1)
         
-        axs[0].plot(mean_cost, label=method_name)
-        axs[1].scatter(mean_times, mean_cost, label=method_name)
+        # axs[0].plot(mean_cost, label=method_name)
+        # axs[1].scatter(mean_times, mean_cost, label=method_name)
+        axs[0].plot(mean_CR, label=method_name)
+        axs[1].scatter(mean_times, mean_CR, label=method_name)
                 
                 
         print(f"Method: {method_name}, Trials: {len(all_costs)}")
         
     # Final plot adjustments
     axs[0].set_title("Trajectory Cost vs Iteration")
-    axs[0].set_ylabel("Cost")
+    axs[0].set_ylabel("Cost reduction")
     axs[0].grid(True)
 
     axs[1].set_title("Trajectory Cost vs Time")
     axs[1].set_xlabel("Time per Iteration (ms)")
-    axs[1].set_ylabel("Cost")
+    axs[1].set_ylabel("Cost reduction")
     axs[1].grid(True)
 
     # Set a figure-level title
