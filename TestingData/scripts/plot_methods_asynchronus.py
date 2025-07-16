@@ -5,7 +5,7 @@ import csv
 import os
 import sys
 
-task = "walker_plane"
+task = "walker_run"
 task_num = -1
 
 show_ind_trajecs = True

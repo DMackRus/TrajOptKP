@@ -30,7 +30,7 @@ residuals:
   joint_0:
     target: [0]
     weight: 0
-    weight_terminal: 0.1
+    weight_terminal: 1
 #  joint_1:
 #    target: [0]
 #    weight: 0
@@ -38,11 +38,11 @@ residuals:
   joint_0_vel:
     target: [0]
     weight: 0
-    weight_terminal: 0.01
+    weight_terminal: 0.1
   joint_1_vel:
     target: [0]
     weight: 0
-    weight_terminal: 0.01
+    weight_terminal: 0.1
   joint_0_torque:
     target: [0]
     weight: 0.1

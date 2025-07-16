@@ -312,13 +312,46 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     std::cout << "beginning testing asynchronus MPC for " << activeModelTranslator->model_name << std::endl;
     std::cout << "optimisation horizon is: " << task_horizon << " task timeout : " << task_timeout << "\n";
 
-    keypoint_method keypoint_method;
+    keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
+    int num_trials = 100;
+
+    // --------------------- Set interval 1 ----------------------------------
     keypoint_method.name = "set_interval";
     keypoint_method.min_N = 1;
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
 
-    return TestingMPC(keypoint_method, true, 100, task_horizon, task_timeout);
+    TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
+
+    // --------------------- Set interval 5 ----------------------------------
+    keypoint_method.name = "set_interval";
+    keypoint_method.min_N = 5;
+    keypoint_method.max_N = 1;
+    keypoint_method.auto_adjust = false;
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
+
+    // --------------------- Set interval 1000 ----------------------------------
+    keypoint_method.name = "set_interval";
+    keypoint_method.min_N = 1000;
+    keypoint_method.max_N = 1;
+    keypoint_method.auto_adjust = false;
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
+
+    // --------------------- Contact_change ----------------------------------
+    keypoint_method.name = "contact_change";
+    keypoint_method.min_N = 5;
+    keypoint_method.max_N = 1;
+    keypoint_method.auto_adjust = false;
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
+
+    return EXIT_SUCCESS;
 }
 
 int GenTestingData::GenDataMPCHorizons(int task_timeout){
@@ -372,6 +405,7 @@ int GenTestingData::GenDataMPCHorizons(int task_timeout){
         TestingMPC(keypoint_method, false, num_trials, horizon, task_timeout);
     }
 
+    return EXIT_SUCCESS;
 }
 
 int GenTestingData::TestingMPC(const keypoint_method& keypoint_method, bool asynchronus,
@@ -409,8 +443,7 @@ int GenTestingData::TestingMPC(const keypoint_method& keypoint_method, bool asyn
 
         yamlReader->LoadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
         activeModelTranslator->ResetSVR();
-        std::cout << "current state vector sizes: \n";
-        std::cout << activeModelTranslator->current_state_vector.dof << " " << activeModelTranslator->current_state_vector.num_ctrl << "\n";
+
         activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
 
@@ -511,6 +544,7 @@ int GenTestingData::SingleMPCRun(bool visualise, bool asynchronus,
                     {
                         std::unique_lock<std::mutex> lock(mtx);
                         reoptimise = true;
+                        std::cout << "reoptimise set to true \n";
                         if(!asynchronus){
                             apply_next_control = false;
                         }
@@ -668,9 +702,7 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
     MatrixXd current_state;
 
     // Create init optimisation controls and reset system state
-    std::cout << "before create init opt controls \n";
     optimised_controls = activeModelTranslator->CreateInitOptimisationControls(task_horizon);
-    std::cout << "after create init opt controls \n";
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
     activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
 
@@ -734,7 +766,7 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
                     bestMatchingStateIndex = i;
                 }
             }
-//            bestMatchingStateIndex = 1;
+            bestMatchingStateIndex = 1;
 
             // Mutex lock
             {

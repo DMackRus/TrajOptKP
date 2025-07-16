@@ -107,13 +107,12 @@ private:
 
     std::mutex mtx;
 
-    volatile bool stop_opt_thread = false;
-    volatile bool apply_next_control = false;
-//    bool async_mpc = true;
+    std::atomic<bool> stop_opt_thread = false;
+    std::atomic<bool> apply_next_control = false;
 
     int num_controls_apply = 80;
     int num_steps_replan = 1;
-    volatile bool reoptimise = true;
+    std::atomic<bool> reoptimise = true;
 
     double final_cost = 0.0;
     double final_dist = 0.0;

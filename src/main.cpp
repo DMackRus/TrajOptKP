@@ -76,12 +76,13 @@ void change_cost_func_push_soft();
 
 double avg_opt_time, avg_percent_derivs, avg_time_derivs, avg_time_bp, avg_time_fp;
 
-bool stop_mpc = false;
 
 int mpc_num_controls_apply = 80;
 int num_steps_replan = 1;
 
-volatile bool reoptimise = false;
+std::atomic<bool> stop_mpc = false;
+std::atomic<bool> reoptimise = false;
+
 
 int main(int argc, char **argv) {
 
@@ -215,7 +216,7 @@ int main(int argc, char **argv) {
         GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
 
-        int task_horizon = 60;
+        int task_horizon = 100;
         int task_timeout = 2000;
         int re_add_dofs;
         double K_threshold;

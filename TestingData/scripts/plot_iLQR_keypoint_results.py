@@ -229,9 +229,6 @@ def test_plot():
 
     # plt.show()
     
-def cost_per_iteration_data():
-    pass
-    
 def plot_timing_breakdown_data(names, dataframes_iLQR):
     global task_name
     
