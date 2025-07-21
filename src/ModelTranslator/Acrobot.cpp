@@ -128,6 +128,6 @@ void Acrobot::SetGoalVisuals(mjData *d) {
     // Set the goal object position
     goal_pose.position(0) = 0;
     goal_pose.position(0) = 0;
-    goal_pose.position(2) = 4.5;
+    goal_pose.position(2) = 4.2;
     MuJoCo_helper->SetBodyPoseAngle("target", goal_pose, d);
 }

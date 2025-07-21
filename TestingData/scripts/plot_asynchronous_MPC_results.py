@@ -151,26 +151,6 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
         
 
     print('')
-            
-            
-    # Print the data in table format for easy transference to the paper
-    # print(f'Methods: {names}')
-    # for i in range(len(graphs)):
-    #     print(f'{graphs[i]}', end=' ')
-    #     for j in range(len(names)):
-            
-    #         print(f'{means[j,i]:.2f}', end=' ')
-    #         print(f' +- {confidence_intervals[j,i]:.2f}', end=' ')
-            
-    #     print('')
-
-    # # Print average time per iteration for each method (means[0,2] / means[2,2])
-    # print('Average time per iteration ', end='')
-    # for j in range(len(names)):
-    #     print(f'{means[j,0]/means[j,2]:.2f}', end=' ')
-    #     print(f' +- {confidence_intervals[j,0]/means[j,2]:.2f}', end=' ')
-
-    # print('')
     
     
     plt.xticks(x, names, rotation=45, ha='right') 

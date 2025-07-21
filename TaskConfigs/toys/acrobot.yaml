@@ -17,7 +17,7 @@ iterativeErrorThreshold: 0.0001                   # Threshold for iterative erro
 robots:
   acrobot:
     jointNames: [shoulder, elbow]
-    actuatorNames: [shoulder]
+    actuatorNames: [elbow]
     torqueControl: true
     torqueLimits: [100]
     startPos: [3.1415, 0.3]
@@ -37,13 +37,13 @@ residuals:
 #    weight_terminal: 10
   joint_0_vel:
     target: [0]
-    weight: 0
-    weight_terminal: 0.1
+    weight: 0.0001
+    weight_terminal: 0
   joint_1_vel:
     target: [0]
-    weight: 0
-    weight_terminal: 0.1
+    weight: 0.0001
+    weight_terminal: 0
   joint_0_torque:
     target: [0]
-    weight: 0.1
+    weight: 0.02
     weight_terminal: 0

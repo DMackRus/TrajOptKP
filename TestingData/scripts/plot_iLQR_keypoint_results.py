@@ -12,19 +12,33 @@ import glob
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-# task_name = "box_sweep"
-task_name = "push_mcl"
+task_name = "push_lcl"
+# task_name = "push_mcl"
 base_dir = ".."
 
 def main():
     global task_name
     
     names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task_name)
+    
+    # Implement code to sort names and dataframes_iLQR based on their names, 
+    # I want the order to be SI1, SI5, Si1000, contact_change
+    print(names)
+    # Sort names and dataframes_iLQR based on the order of SI1, SI5, SI1000, contact_change
+    order = ["SI_1", "SI_5", "SI_1000", "contact_change"]
+    sorted_indices = sorted(range(len(names)), key=lambda i: order.index(names[i]) if names[i] in order else len(order))
+    names = [names[i] for i in sorted_indices]
+    dataframes_iLQR = [dataframes_iLQR[i] for i in sorted_indices]
+    print(names)
+    print(dataframes_iLQR)
+    
+    
     plot_openloop_data(names, dataframes_iLQR)
+
     
-    plot_timing_breakdown_data(names, dataframes_iLQR)
+    # plot_timing_breakdown_data(names, dataframes_iLQR)
     
-    test_plot()
+    # test_plot()
     
 def test_plot():
     global base_dir, task_name
@@ -99,135 +113,6 @@ def test_plot():
     plt.tight_layout(rect=[0, 0, 0.85, 0.95])  # Leave space for suptitle and legend
     plt.show()
 
-
-    # # Final plot adjustments
-    # plt.xlabel("Iteration number")
-    # plt.ylabel("Cost")
-    # plt.title("Trajectory cost versus iteration number")
-    # plt.grid(True)
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.show()
-    
-    # global base_dir
-    # current_dir = base_dir + "/iLQR"
-    
-    # all_dfs = []
-
-    # for folder in os.listdir(current_dir):
-    #     if task_name not in folder:
-    #         continue
-
-    #     subfolder_path = os.path.join(current_dir, folder)
-    #     subfolders = [name for name in os.listdir(subfolder_path)
-    #                   if os.path.isdir(os.path.join(subfolder_path, name))]
-
-    #     for trial in subfolders:
-    #         file = os.path.join(subfolder_path, trial, "summary.csv")
-    #         if not os.path.isfile(file):
-    #             continue
-            
-    #         df = pd.read_csv(file)
-    #         if "Cost" in df.columns:
-    #             all_dfs.append(df["Cost"])
-                
-    # print(all_dfs)
-    
-    # # Align all series by index and compute mean at each row
-    # if all_dfs:
-    #     combined = pd.concat(all_dfs, axis=1)
-    #     mean_cost = combined.mean(axis=1)
-
-    #     # Plot
-    #     plt.figure(figsize=(10, 6))
-    #     plt.plot(mean_cost, label="Average Cost")
-    #     plt.xlabel("Timestep")
-    #     plt.ylabel("Cost")
-    #     plt.title("Average Cost per Timestep across Trials")
-    #     plt.grid(True)
-    #     plt.legend()
-    #     plt.show()
-    # else:
-    #     print("No data found to plot.")
-        
-    
-    # for folder in os.listdir(current_dir):
-    #     print(folder)
-        
-    #     if task_name not in folder:
-    #         continue
-        
-    #     # Loop through their trial data
-    #     # subfolders = [ f.path for f in os.scandir(current_dir + "/" + folder) if f.is_dir() ]
-    #     subfolders = [name for name in os.listdir(current_dir + "/" + folder)
-    #        if os.path.isdir(os.path.join(current_dir + "/" + folder, name))]
-        
-    #     print(subfolders)
-        
-    #     all_costs = []
-    #     all_times = []
-        
-    #     # Do something with the subfolders
-    #     for trial in subfolders:
-    #         file = current_dir + "/" + folder + "/" + trial + "/summary.csv"
-    #         print(file)
-            
-    #         df = pd.read_csv(file)
-            
-    #         print(df)
-            
-
-    # summary_paths = []
-    # for d in sorted(subdirs, key=lambda x: int(x)):  # sort numerically, just for sanity
-    #     csv_path = os.path.join(root_dir, d, 'summary.csv')
-    #     if os.path.isfile(csv_path):
-    #         summary_paths.append(csv_path)
-
-    # if not summary_paths:
-    #     raise FileNotFoundError("No summary.csv files found in numeric subdirectories.")
-
-    # all_costs = []
-    # all_times = []
-
-    # for path in summary_paths:
-    #     df = pd.read_csv(path)
-        
-    #     expected_cols = ['Iteration', 'Cost', 'Cost reduction', 'time (ms)']
-    #     if list(df.columns) != expected_cols:
-    #         raise ValueError(f"Unexpected columns in {path}")
-
-    #     all_costs.append(df['Cost'].values)
-    #     all_times.append(df['time (ms)'].cumsum().values)
-
-    # # Convert to numpy
-    # cost_matrix = np.array(all_costs)
-    # time_matrix = np.array(all_times)
-
-    # # Mean across trials
-    # mean_costs = np.mean(cost_matrix, axis=0)
-    # mean_times = np.mean(time_matrix, axis=0)
-
-    # # --- Plot 1: Cost vs. Iteration ---
-    # plt.figure(figsize=(10, 5))
-    # plt.plot(mean_costs, label='Average Cost')
-    # plt.xlabel('Iteration')
-    # plt.ylabel('Cost')
-    # plt.title('Average Cost vs Iteration')
-    # plt.grid(True)
-    # plt.legend()
-    # plt.tight_layout()
-
-    # # --- Plot 2: Cost vs. Time ---
-    # plt.figure(figsize=(10, 5))
-    # plt.plot(mean_times, mean_costs, label='Average Cost')
-    # plt.xlabel('Cumulative Time (ms)')
-    # plt.ylabel('Cost')
-    # plt.title('Average Cost vs Cumulative Time')
-    # plt.grid(True)
-    # plt.legend()
-    # plt.tight_layout()
-
-    # plt.show()
     
 def plot_timing_breakdown_data(names, dataframes_iLQR):
     global task_name
@@ -409,25 +294,48 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
             axes[i].bar(x, means[:,i], yerr=confidence_intervals[:,i], capsize=5, color=bar_colors)
             axes[i].set_ylabel(graph_name, fontsize = 13)
             
-            
-    # Print the data in table format for easy transferance to the paper
-    print(f'Methods: {names}')
-    for i in range(len(graphs)):
-        print(f'{graphs[i]}', end=' ')
-        for j in range(len(names)):
-            
-            print(f'{means[j,i]:.2f}', end=' ')
-            print(f' +- {confidence_intervals[j,i]:.2f}', end=' ')
-            
-        print('')
+    # Need to sort methods into particular order, the order should be 
+    # SI1, SI5, SI1000, contact_change
 
-    # Print average time per iteration for each method (means[0,2] / means[2,2])
-    print('Average time per iteration ', end='')
-    for j in range(len(names)):
-        print(f'{means[j,0]/means[j,2]:.2f}', end=' ')
-        print(f' +- {confidence_intervals[j,0]/means[j,2]:.2f}', end=' ')
+
+            
+    # Print the data in latex code format to copy and paste into paper
+    # Format is final cost, then average optimisation time, then percentage derivatives
+    print(f'Methods: {names}')
+    for i in range(len(names)):
+        
+        # With confidence intervals
+        # print(f'& {means[i,0]:.2f} $\pm$ {confidence_intervals[i,o]:.2f}', end=' ')
+        # print(f'& {means[i,1]:.2f} $\pm$ {confidence_intervals[i,1]:.2f}', end=' ')
+        # print(f'& {means[i,2]:.2f} $\pm$ {confidence_intervals[i,2]:.2f}', end=' ')
+        
+        # Without confidence intervals
+        print(f'& {means[i,0]/1000:.2f}', end=' ')
+        print(f'& {means[i,1]:.2f}', end=' ')
+        print(f'& {means[i,2]:.2f}', end=' ')
+        
 
     print('')
+            
+            
+    # Print the data in table format for easy transferance to the paper
+    # print(f'Methods: {names}')
+    # for i in range(len(graphs)):
+    #     print(f'{graphs[i]}', end=' ')
+    #     for j in range(len(names)):
+            
+    #         print(f'{means[j,i]:.2f}', end=' ')
+    #         print(f' +- {confidence_intervals[j,i]:.2f}', end=' ')
+            
+    #     print('')
+
+    # # Print average time per iteration for each method (means[0,2] / means[2,2])
+    # print('Average time per iteration ', end='')
+    # for j in range(len(names)):
+    #     print(f'{means[j,0]/means[j,2]:.2f}', end=' ')
+    #     print(f' +- {confidence_intervals[j,0]/means[j,2]:.2f}', end=' ')
+
+    # print('')
     
     
     plt.xticks(x, names, rotation=45, ha='right') 
