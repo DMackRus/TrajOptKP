@@ -28,10 +28,10 @@ void Acrobot::Residuals(mjData *d, MatrixXd &residuals){
 
     mj_kinematics(MuJoCo_helper->model, d);
 
-//    std::vector<double> acrobot_joints;
+    std::vector<double> acrobot_joints;
     std::vector<double> acrobot_velocities;
     std::vector<double> acrobot_control;
-//    MuJoCo_helper->GetRobotJointsPositions("acrobot", acrobot_joints, d);
+    MuJoCo_helper->GetRobotJointsPositions("acrobot", acrobot_joints, d);
     MuJoCo_helper->GetRobotJointsVelocities("acrobot", acrobot_velocities, d);
     MuJoCo_helper->GetRobotJointsControls("acrobot", acrobot_control, d);
 
@@ -59,11 +59,12 @@ void Acrobot::Residuals(mjData *d, MatrixXd &residuals){
     double diff_x = tip_x - goal_pose.position(0);
     double diff_z = tip_z - goal_pose.position(2);
 
-    // --------------- Residual 0: Tip position -----------------
-    residuals(resid_index++, 0) = sqrt(pow(diff_x,2) + pow(diff_z,2));
+    // --------------- Residual 0: Joint 0 position -----------------
+    residuals(resid_index++, 0) = diff_x;
+//    residuals(resid_index++, 0) = residual_list[0].target[0] - acrobot_joints[0];
 
     // --------------- Residual 1: Joint 1 position -----------------
-//    residuals(resid_index++, 0) = tip_z - goal_pose.position(2);
+    residuals(resid_index++, 0) = diff_z;
 
     // --------------- Residual 2: Joint 0 velocity -----------------
     residuals(resid_index++, 0) = acrobot_velocities[0];
