@@ -5,6 +5,7 @@
 #include "test_acrobot.h"
 #include "3D_test_class.h"
 #include "test_humanoid.h"
+#include "ModelTranslator/anyMal.h"
 
 std::shared_ptr<ModelTranslator> model_translator;
 std::shared_ptr<Differentiator> differentiator;
@@ -171,6 +172,34 @@ TEST(Derivatives, humanoid)
     std::cout << "Begin test - Compare derivatives humanoid \n";
     std::shared_ptr<Humanoid> humanoid = std::make_shared<Humanoid>();
     model_translator = humanoid;
+    std::cout << "Initialising system to start state \n";
+
+    differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
+
+    model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
+    MatrixXd control_vector(model_translator->current_state_vector.num_ctrl, 1);
+    control_vector.setZero();
+    model_translator->SetControlVector(control_vector,
+                                       model_translator->MuJoCo_helper->master_reset_data,
+                                       model_translator->current_state_vector);
+
+    for(int i = 0; i < 5; i++) {
+        mj_step(model_translator->MuJoCo_helper->model, model_translator->MuJoCo_helper->master_reset_data);
+    }
+
+    // Append data to save systems state list
+    model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
+
+
+    compare_dynamics_derivatives();
+}
+
+TEST(Derivatives, anyMal)
+{
+    std::cout << "Begin test - Compare derivatives anyMal \n";
+    std::shared_ptr<anyMal> anymal = std::make_shared<anyMal>();
+    model_translator = anymal;
     std::cout << "Initialising system to start state \n";
 
     differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);

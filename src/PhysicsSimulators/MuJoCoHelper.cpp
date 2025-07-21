@@ -40,7 +40,7 @@ void MuJoCoHelper::SetRobotJointPositions(const string& robot_name, vector<doubl
     string robot_base_joint_name;
     if(IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
         if(joint_positions.size() != robots[robot_index].joint_names.size()){
-            std::cerr << "Invalid number of joint positions\n";
+            std::cerr << "Invalid number of joint positions. Expected " << robots[robot_index].joint_names.size() << " but was: " << joint_positions.size() << "\n";
             exit(1);
         }
     }
@@ -68,7 +68,7 @@ void MuJoCoHelper::SetRobotJointsVelocities(const string& robot_name, vector<dou
     string robot_base_joint_name;
     if(IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
         if(joint_velocities.size() != robots[robot_index].joint_names.size()){
-            std::cerr << "Invalid number of joint positions\n";
+            std::cerr << "Invalid number of joint velocities \n";
             exit(1);
         }
     }
@@ -95,7 +95,7 @@ void MuJoCoHelper::SetRobotJointsControls(const string& robot_name, vector<doubl
     string robot_base_joint_name;
     if(IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
         if(joint_controls.size() != robots[robot_index].actuator_names.size()){
-            std::cerr << "Invalid number of joint positions\n";
+            std::cerr << "Invalid number of joint controls\n";
             exit(1);
         }
     }

@@ -18,10 +18,12 @@
 #include "ModelTranslator/Walker.h"
 
 #include "ModelTranslator/PushSoft.h"
-//#include "Hopper.h"
+
 #include "ModelTranslator/Humanoid.h"
 #include "ModelTranslator/PlaceObject.h"
 #include "ModelTranslator/FloatingCube.h"
+
+#include "ModelTranslator/anyMal.h"
 
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
@@ -785,7 +787,6 @@ int assign_task(){
     if(task == "acrobot"){
         std::shared_ptr<Acrobot> myAcrobot = std::make_shared<Acrobot>();
         activeModelTranslator = myAcrobot;
-
     }
     else if(task == "pentabot"){
         std::shared_ptr<Pentabot> my_pentabot = std::make_shared<Pentabot>();
@@ -834,9 +835,9 @@ int assign_task(){
         std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN, WALK);
         activeModelTranslator = myLocomotion;
     }
-    else if(task == "Hopper"){
-        cout << "not implemented task yet " << endl;
-        return EXIT_FAILURE;
+    else if(task == "anyMal"){
+        std::shared_ptr<anyMal> myanyMal = std::make_shared<anyMal>();
+        activeModelTranslator = myanyMal;
     }
     else if(task == "box_sweep"){
         std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();

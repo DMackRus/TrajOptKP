@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "acrobot"
+task: "anyMal"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -22,7 +22,7 @@ task: "acrobot"
 # "place"
 #
 # ---- Locomotion ----
-# "walker_walk", "walker_run", "walker_uneven", "humanoid"
+# "walker_walk", "walker_run", "walker_uneven", "humanoid", "anyMal"
 #
 # ------------------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ task: "acrobot"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp", "gradDescent"
 
 # Run mode for the program
-runMode: "Optimise_once"
+runMode: "MPC_until_completion"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.

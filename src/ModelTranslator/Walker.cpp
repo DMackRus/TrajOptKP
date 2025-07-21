@@ -58,7 +58,6 @@ void walker::ReturnRandomGoalState(){
 }
 
 void walker::Residuals(mjData *d, MatrixXd &residuals){
-//    MatrixXd residuals(residual_list.size(), 1);
     int resid_index = 0;
 
     std::vector<double> walker_joints;
@@ -86,6 +85,4 @@ void walker::Residuals(mjData *d, MatrixXd &residuals){
         std::cerr << "Error: Residuals size mismatch\n";
         exit(1);
     }
-
-//    return residuals;
 }
