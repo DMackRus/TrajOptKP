@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "walker_run"
+task: "impact_large_box"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -20,6 +20,9 @@ task: "walker_run"
 # "push_soft_into_rigid", "push_soft"
 #
 # "place_low_clutter", "place_heavy_clutter",
+#
+# --- Impact manipulation ---
+# "impact_large_box"
 #
 # ---- Locomotion ----
 # "walker_walk", "walker_run", "humanoid" (not working yet), "anyMal" (not working yet)

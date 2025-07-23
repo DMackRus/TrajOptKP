@@ -12,7 +12,7 @@ import glob
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "walker"
+task_name = "impact_large_box"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
@@ -37,7 +37,7 @@ def main():
     plot_openloop_data(names, dataframes_iLQR)
 
     
-    # plot_timing_breakdown_data(names, dataframes_iLQR)
+    plot_timing_breakdown_data(names, dataframes_iLQR)
     
     test_plot()
     
@@ -75,7 +75,6 @@ def test_plot():
                 continue
             
             df = pd.read_csv(file)
-            print(df)
             if "Cost" in df.columns:
                 all_costs.append(df["Cost"])
                 all_cost_reductions.append(df["Cost reduction"])

@@ -24,6 +24,7 @@
 #include "ModelTranslator/FloatingCube.h"
 
 #include "ModelTranslator/anyMal.h"
+#include "ModelTranslator/ImpactLargeBox.h"
 
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
@@ -879,6 +880,10 @@ int assign_task(){
     else if(task == "box_sweep"){
         std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
         activeModelTranslator = myBoxSweep;
+    }
+    else if(task == "impact_large_box"){
+        std::shared_ptr<ImpactLargeBox> my_impact_large_box = std::make_shared<ImpactLargeBox>();
+        activeModelTranslator = my_impact_large_box;
     }
     else if(task == "sweep_multiple"){
         std::shared_ptr<SweepMultiple> my_sweep_multiple = std::make_shared<SweepMultiple>();

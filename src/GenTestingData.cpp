@@ -100,7 +100,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
         tests_fine = this_test_fine;
     }
     // Sleep for 60 seconds - enforces file name change for different tests
-    std::this_thread::sleep_for(std::chrono::seconds(60));
+//    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     return tests_fine;
 }
