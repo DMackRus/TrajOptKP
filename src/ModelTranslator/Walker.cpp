@@ -31,11 +31,23 @@ bool walker::TaskComplete(mjData *d, double &dist){
 
 void walker::ReturnRandomStartState(){
 
-    double start_config[9] = {0, 0, 0, 1, -1, 0.2, 0, 0, 0};
+//    double start_config[9] = {0, 0, 0, 1, -1, 0.2, 0, 0, 0};
+    double lower_lims[9] = {0.0, 0, -0.2, -0.3, -2.5, -0.6, -0.3, -2.5, -0.6};
+    double upper_lims[9] = {0.2, 0, 0.2, 1.6, -0.1, 0.6, 1.6, -0.1, 0.6};
 
     for(int i = 0; i < 9; i++){
-        current_state_vector.robots[0].start_pos[i] = start_config[i];
+        full_state_vector.robots[0].start_pos[i] = randFloat(lower_lims[i], upper_lims[i]);
     }
+
+    // Copy into master data so it can be visualised
+//    MatrixXd position_vector(9, 1);
+//    for(int i = 0; i < 9; i++){
+//        position_vector(i, 0) = current_state_vector.robots[0].start_pos[i];
+//        full_state_vector.robots[0].start_pos[i] =
+//    }
+//    SetPositionVector(position_vector, MuJoCo_helper->master_reset_data, full_state_vector);
+//
+//    .resize(9);
 }
 
 void walker::ReturnRandomGoalState(){

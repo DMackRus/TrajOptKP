@@ -370,10 +370,10 @@ void ModelTranslator::CostDerivativesFromResiduals(const struct stateVectorList 
         // l_xx = w_i * dn2/dr2 * dr2/dx2 (dr/dx * dr/dx^T) Gauss newton approximation
         l_xx += weight_term * 2 * r_x[i] * r_x[i].transpose();
 
-        // l_u = w_i * dn/dr * dr/du
+        // l_u = w_i * dn/dr * dr/du (dn/dr = 2r, as n = r^2)
         l_u += weight_term * 2 * residuals(i) * r_u[i];
         // l_uu = w_i * dn2/dr2 * dr2/du2( dr/du * dr/du^T) Gauss newton approximation
-        l_uu += 2 * weight_term * r_u[i] * r_u[i].transpose();
+        l_uu += weight_term * 2 * r_u[i] * r_u[i].transpose();
     }
 }
 

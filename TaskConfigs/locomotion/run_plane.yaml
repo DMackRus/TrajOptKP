@@ -6,6 +6,7 @@ auto_adjust: false
 minN: 1
 maxN: 20
 mpc_horizon: 100
+openloop_horizon: 100
 iterativeErrorThreshold: 1
 
 robots:
@@ -32,7 +33,7 @@ residuals:
     weight: 0.1
     weight_terminal: 0.1
   body_controls:
-    target: [0, 0, 0, 0, 0, 0]
+    target: [0]
     resid_dimension: 6
     #    weight: 0.0001
     #    weight_terminal: 0.0001

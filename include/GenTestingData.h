@@ -103,7 +103,7 @@ private:
                              const std::string& optimiser_name,
                              const std::string& testing_directory);
 
-    double controls_noise = 0.5;
+    double controls_noise = 0.1;
 
     std::mutex mtx;
 

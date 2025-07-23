@@ -175,7 +175,7 @@ void Optimiser::ComputeKeypoints(){
                                           A, B);
     keypoint_generator->ResetCache();
     time_keypoints_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0);
-    std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
+//    std::cout << "gen keypoints time: " << duration_cast<microseconds>(high_resolution_clock::now() - start_keypoint_time).count() / 1000.0f << " ms\n";
 }
 
 void Optimiser::ComputeDynamicsDerivatives(){
@@ -203,7 +203,7 @@ void Optimiser::ComputeDynamicsDerivatives(){
 
     auto end_interp_time = high_resolution_clock::now();
     time_interpolation_ms.push_back(duration_cast<microseconds>(end_interp_time - start_interp_time).count() / 1000.0);
-    std::cout << "interpolation time: " << duration_cast<microseconds>(end_interp_time - start_interp_time).count() / 1000.0 << " ms \n";
+//    std::cout << "interpolation time: " << duration_cast<microseconds>(end_interp_time - start_interp_time).count() / 1000.0 << " ms \n";
 }
 
 void Optimiser::ComputeCostDerivatives(){
@@ -224,7 +224,7 @@ void Optimiser::ComputeCostDerivatives(){
 
     auto time_stop_residual_derivs = high_resolution_clock::now();
     time_cost_derivs_ms.push_back(duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0);
-    std::cout << "time resid derivs: " << duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0f << " ms\n";
+//    std::cout << "time resid derivs: " << duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0f << " ms\n";
 }
 
 void Optimiser::ComputeResidualDerivatives(){

@@ -43,7 +43,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 //        std::this_thread::sleep_for(std::chrono::seconds(55));
 //    }
 
-    // ----------------- Set interval 1 -------------------
+//     ----------------- Set interval 1 -------------------
     keypoint_method.name = "set_interval";
     keypoint_method.min_N = 1;
     keypoint_method.max_N = 1;
@@ -56,7 +56,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
         tests_fine = this_test_fine;
     }
 //     Sleep for 60 seconds - enforces file name change for different tests
-//    std::this_thread::sleep_for(std::chrono::seconds(60));
+    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Contact aware case -------------------
     keypoint_method.name = "contact_change";
@@ -70,7 +70,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     if(this_test_fine != EXIT_SUCCESS){
         tests_fine = this_test_fine;
     }
-//    // Sleep for 60 seconds - enforces file name change for different tests
+    // Sleep for 60 seconds - enforces file name change for different tests
     std::this_thread::sleep_for(std::chrono::seconds(60));
 
     // ----------------- Set interval 5 ---------------------
@@ -87,7 +87,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     }
     // Sleep for 60 seconds - enforces file name change for different tests
     std::this_thread::sleep_for(std::chrono::seconds(60));
-//    // ----------------- Set interval 1000 ---------------------
+    // ----------------- Set interval 1000 ---------------------
     keypoint_method.name = "set_interval";
     keypoint_method.min_N = 1000;
     keypoint_method.max_N = 1;
@@ -99,52 +99,9 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     if(this_test_fine != EXIT_SUCCESS){
         tests_fine = this_test_fine;
     }
-//    // Sleep for 60 seconds - enforces file name change for different tests
-//    std::this_thread::sleep_for(std::chrono::seconds(30));
-//
-//    // ----------------- Adaptive jerk 1 50 ---------------------
-//    keypoint_method.name = "adaptive_jerk";
-//    keypoint_method.min_N = 1;
-//    keypoint_method.max_N = 100;
-//
-//    // Set the keypoint method
-//    optimiser->SetCurrentKeypointMethod(keypoint_method);
-//
-//    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-//    if(this_test_fine != EXIT_SUCCESS){
-//        tests_fine = this_test_fine;
-//    }
     // Sleep for 60 seconds - enforces file name change for different tests
-//    std::this_thread::sleep_for(std::chrono::seconds(60));
+    std::this_thread::sleep_for(std::chrono::seconds(60));
 
-//     ----------------- Velocity change 1 50 -------------------
-//    keypoint_method.name = "velocity_change";
-//    keypoint_method.min_N = 1;
-//    keypoint_method.max_N = 100;
-//
-//    // Set the keypoint method
-//    optimiser->SetCurrentKeypointMethod(keypoint_method);
-//
-//    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-//    if(this_test_fine != EXIT_SUCCESS){
-//        tests_fine = this_test_fine;
-//    }
-//    // Sleep for 60 seconds - enforces file name change for different tests
-//    std::this_thread::sleep_for(std::chrono::seconds(60));
-
-//     ----------------- Iterative error 1 50 -------------------
-//    keypoint_method.name = "iterative_error";
-//    keypoint_method.min_N = 1;
-//    keypoint_method.max_N = 50;
-//
-//    // Set the keypoint method
-//    optimiser->SetCurrentKeypointMethod(keypoint_method);
-//
-//    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-//    if(this_test_fine != EXIT_SUCCESS){
-//        tests_fine = this_test_fine;
-//    }
-//
     return tests_fine;
 }
 
@@ -180,7 +137,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     auto startTimer = std::chrono::high_resolution_clock::now();
     optimiser->verbose_output = true;
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 100; i++) {
         std::cout << "trial: " << i << "\n";
 
         // Reset internal optimisation data and clear key-points cache
@@ -313,7 +270,7 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     std::cout << "optimisation horizon is: " << task_horizon << " task timeout : " << task_timeout << "\n";
 
     keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
-    int num_trials = 100;
+    int num_trials = 15;
 
     // --------------------- Set interval 1 ----------------------------------
     keypoint_method.name = "set_interval";
@@ -432,7 +389,7 @@ int GenTestingData::TestingMPC(const keypoint_method& keypoint_method, bool asyn
     // -----------------------------------------------------------------------------
 
     auto startTimer = std::chrono::high_resolution_clock::now();
-    optimiser->verbose_output = true;
+    optimiser->verbose_output = false;
 
     optimiser->SetCurrentKeypointMethod(keypoint_method);
 
@@ -544,19 +501,11 @@ int GenTestingData::SingleMPCRun(bool visualise, bool asynchronus,
                     {
                         std::unique_lock<std::mutex> lock(mtx);
                         reoptimise = true;
-                        std::cout << "reoptimise set to true \n";
+//                        std::cout << "reoptimise set to true \n";
                         if(!asynchronus){
                             apply_next_control = false;
                         }
                     }
-                }
-
-                MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
-                for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
-                    double control_noise = ((control_lims(i*2 + 1) - control_lims(i*2)) / 100) * controls_noise;
-
-                    double gauss_noise = GaussNoise(0, control_noise);
-                    next_control(i, 0) += gauss_noise;
                 }
             }
             else{
@@ -573,10 +522,13 @@ int GenTestingData::SingleMPCRun(bool visualise, bool asynchronus,
 
             }
 
-//            for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
-//                double gauss_noise = GaussNoise(0, controls_noise);
-//                next_control(i, 0) += gauss_noise;
-//            }
+            MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
+            for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
+                double control_noise = ((control_lims(i*2 + 1) - control_lims(i*2)) / 100) * controls_noise;
+
+                double gauss_noise = GaussNoise(0, control_noise);
+                next_control(i, 0) += gauss_noise;
+            }
 
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);
@@ -628,22 +580,10 @@ int GenTestingData::SingleMPCRun(bool visualise, bool asynchronus,
 
     MPC_controls_thread.join();
 
-    // NOTE - we change cost function of push soft to track how well we managed to push the soft body.
-    // These cost function elements dont work in normal traj opt for some reason, so we counte this
-    // by using a terminal position cost, however this then isnt trakced by our evaluation
-//    if(1){
-//        for(int i = 0; i < activeModelTranslator->full_state_vector.soft_bodies[0].num_vertices; i++){
-//            activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-//            activeModelTranslator->full_state_vector.soft_bodies[0].linearPosCost[0] = 1;
-//        }
-//    }
+    if(1){
+        // Change cost
 
-//    if(1){
-//        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
-//            rigid_body.terminal_linear_pos_cost[0] = 1000;
-//            rigid_body.terminal_linear_pos_cost[1] = 1000;
-//        }
-//    }
+    }
 
     final_cost = 0.0;
     bool terminal = false;
@@ -663,14 +603,11 @@ int GenTestingData::SingleMPCRun(bool visualise, bool asynchronus,
         activeModelTranslator->Residuals(activeModelTranslator->MuJoCo_helper->vis_data, residuals);
         final_cost += activeModelTranslator->CostFunction(residuals,
                                           activeModelTranslator->full_state_vector, terminal);
-    }
 
-//    if(1){
-//        for(auto& rigid_body : activeModelTranslator->full_state_vector.rigid_bodies){
-//            rigid_body.terminal_linear_pos_cost[0] = 0;
-//            rigid_body.terminal_linear_pos_cost[1] = 0;
+//        if(i % 5 == 0){
+//            activeVisualiser->render("replay");
 //        }
-//    }
+    }
 
     std::cout << "final cost of entire MPC trajectory was: " << final_cost << "\n";
     std::cout << "avg opt time: " << average_opt_time_ms << " ms \n";
@@ -712,7 +649,7 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
 
     while(!stop_opt_thread){
         if(reoptimise){
-            std::cout << "reoptimise called \n";
+//            std::cout << "reoptimise called \n";
             // Copy current state of system (vis data) to starting data object for optimisation
             activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->vis_data);
 
@@ -900,6 +837,8 @@ int GenTestingData::GenerateTestScenes(int num_scenes){
         activeVisualiser->render("Generating random test scenes");
         yamlReader->SaveTaskToFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
         std::cout << "scene " << i << " generated \n";
+        //Sleep
+//        std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
 
     return EXIT_SUCCESS;

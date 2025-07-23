@@ -10,8 +10,10 @@ import yaml
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "walker_run"
+task_name = "place_heavy_clutter"
+#task_name = "walker_run"
 base_dir = ".."
+run_mode = "asynchronus"
 
 def main():
     global task_name
@@ -170,6 +172,7 @@ def make_names(iLQR_yaml_files):
 def load_raw_data(task_name):
     # Load all iLQR algorithms
     global base_dir
+    global run_mode
     
     dataframes_iLQR = []
     yamlfiles_iLQR = []
@@ -184,6 +187,9 @@ def load_raw_data(task_name):
     for folder in entries:
         # Only add the data if the task name is correct
         if task_name not in folder:
+            continue
+        
+        if run_mode not in folder:
             continue
         
         folder_path = os.path.join(current_dir, folder)

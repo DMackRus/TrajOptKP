@@ -1,11 +1,139 @@
 #include "ModelTranslator/PlaceObject.h"
 
-PlaceObject::PlaceObject(std::string EE_name, std::string body_name){
+PlaceObject::PlaceObject(std::string EE_name, std::string body_name, int _clutter_level){
     this->EE_name = EE_name;
     this->body_name = body_name;
 
-    std::string yamlFilePath = "/TaskConfigs/rigid_body_manipulation/place_single.yaml";
+    this->clutterLevel = _clutter_level;
+
+    std::string yamlFilePath;
+
+    if(clutterLevel == noClutter){
+        std::cerr << "Warning: PlaceObject task with no clutter is not implemented yet \n";
+        exit(1);
+    }
+    else if(clutterLevel == lowClutter){
+        yamlFilePath = "/TaskConfigs/rigid_body_manipulation/place_low_clutter.yaml";
+    }
+    else if(clutterLevel == heavyClutter){
+        yamlFilePath = "/TaskConfigs/rigid_body_manipulation/place_heavy_clutter.yaml";
+    }
+    else{
+        std::cerr << "Error: Invalid clutter level for PlaceObject task\n";
+        exit(1);
+    }
+
+
     InitModelTranslator(yamlFilePath);
+}
+
+void PlaceObject::ReturnRandomStartState(){
+
+    float goalX;
+    float goalY;
+
+    goalX = randFloat(0.4, 0.7);
+    goalY = randFloat(-0.6, 0.6);
+
+    // Set start position of pushed object
+//    pose_6 pushedObjectStartPose;
+//    MuJoCo_helper->GetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+//    pushedObjectStartPose.position(0) = startX;
+//    pushedObjectStartPose.position(1) = startY;
+//    pushedObjectStartPose.position(2) = 0.032;
+//    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->main_data);
+//    MuJoCo_helper->SetBodyPoseAngle("goal", pushedObjectStartPose, MuJoCo_helper->master_reset_data);
+//    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
+//    MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
+
+    random_goal_x = goalX;
+    random_goal_y = goalY;
+
+    std::vector<std::string> object_names;
+
+    if(clutterLevel == lowClutter) {
+        object_names.emplace_back("Hot_Chocolate");
+        object_names.emplace_back("Tomato_Soup");
+    }
+    else if(clutterLevel == heavyClutter) {
+        object_names.emplace_back("Hot_Chocolate");
+        object_names.emplace_back("Tomato_Soup");
+        object_names.emplace_back("obstacle_1");
+        object_names.emplace_back("obstacle_2");
+        object_names.emplace_back("obstacle_3");
+        object_names.emplace_back("obstacle_4");
+    }
+
+    int valid_object_counter = 0;
+
+    for(const auto & objectName : object_names){
+        bool valid_placement = false;
+        float sizeX = 0.01;
+        float sizeY = 0.05;
+        while(!valid_placement){
+            sizeX += 0.0005;
+            sizeY += 0.0001;
+
+            float randX, randY;
+            randX = randFloat(goalX - sizeX, goalX + sizeX);
+            randY = randFloat(goalY - sizeY, goalY + sizeY);
+
+
+            pose_6 object_pose;
+
+            MuJoCo_helper->GetBodyPoseAngle(objectName, object_pose, MuJoCo_helper->main_data);
+            object_pose.position(0) = randX;
+            object_pose.position(1) = randY;
+            MuJoCo_helper->SetBodyPoseAngle(objectName, object_pose, MuJoCo_helper->main_data);
+            MuJoCo_helper->SetBodyPoseAngle(objectName, object_pose, MuJoCo_helper->master_reset_data);
+
+            MuJoCo_helper->ForwardSimulator(MuJoCo_helper->main_data);
+            MuJoCo_helper->ForwardSimulator(MuJoCo_helper->master_reset_data);
+
+            if(MuJoCo_helper->CheckBodyForCollisions(objectName, MuJoCo_helper->main_data)){
+            }
+            else{
+                valid_placement = true;
+            }
+        }
+        valid_object_counter++;
+    }
+
+    // Robot start configuration
+    double robot_start_config[7] = {0, 0, 0, -1.62, 0, 0, 0};
+
+    for(int i = 0; i < full_state_vector.robots[0].joint_names.size(); i++){
+        full_state_vector.robots[0].start_pos[i] = robot_start_config[i];
+    }
+
+    // Distractor body poses
+    for(int i = 0; i < object_names.size(); i++){
+        std::cout << "object name: " << object_names[i] << "\n";
+        pose_6 obstacle_pose;
+        MuJoCo_helper->GetBodyPoseAngle(object_names[i], obstacle_pose, MuJoCo_helper->master_reset_data);
+
+        for(int j = 0; j < 3; j++){
+            full_state_vector.rigid_bodies[i + 1].start_linear_pos[j] = obstacle_pose.position[j];
+            full_state_vector.rigid_bodies[i + 1].start_angular_pos[j] = obstacle_pose.orientation[j];
+        }
+    }
+}
+
+void PlaceObject::ReturnRandomGoalState(){
+
+    // Goal object body
+    std::cout << "goal x" << random_goal_x << "goal y: " << random_goal_y << std::endl;
+
+    // First three residuals are for goal positions (x, y, z)
+    residual_list[0].target[0] = random_goal_x;
+    residual_list[1].target[0] = random_goal_y;
+    residual_list[2].target[0] = 0.038;
+
+    // Residual 4 - Upright
+    residual_list[3].target[0] = 0.0;
+
+    // Residual 5 - Transported object Euclidean velocity
+    residual_list[4].target[0] = 0.0;
 }
 
 std::vector<MatrixXd> PlaceObject::CreateInitOptimisationControls(int horizonLength) {
@@ -29,10 +157,6 @@ std::vector<MatrixXd> PlaceObject::CreateInitOptimisationControls(int horizonLen
 
     return init_opt_controls;
 }
-
-//std::vector<MatrixXd> PlaceObject::CreateInitSetupControls(int horizonLength) {
-//
-//}
 
 void PlaceObject::Residuals(mjData *d, MatrixXd &residuals) {
     int resid_index = 0;
@@ -167,7 +291,7 @@ bool PlaceObject::TaskComplete(mjData *d, double &dist) {
     diffz = site_pos[2] - residual_list[2].target[0];
 
     dist = sqrt(pow(diffx,2) + pow(diffy,2) + 0.5 * pow(diffz,2));
-    std::cout << "dist: " << dist << "\n";
+//    std::cout << "dist: " << dist << "\n";
 
     if (dist < 0.015){
         complete_counter++;

@@ -12,9 +12,10 @@ import glob
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "push_lcl"
+task_name = "walker"
 # task_name = "push_mcl"
 base_dir = ".."
+run_mode = "openloop"
 
 def main():
     global task_name
@@ -38,10 +39,10 @@ def main():
     
     # plot_timing_breakdown_data(names, dataframes_iLQR)
     
-    # test_plot()
+    test_plot()
     
 def test_plot():
-    global base_dir, task_name
+    global base_dir, task_name, run_mode
     current_dir = base_dir + "/iLQR"
 
     fig, axs = plt.subplots(2, 1, figsize=(10, 6))
@@ -49,6 +50,9 @@ def test_plot():
 
     for folder in os.listdir(current_dir):
         if task_name not in folder:
+            continue
+        
+        if run_mode not in folder:
             continue
         
         file_name_yaml = current_dir + "/" + folder + "/summary.yaml"
@@ -71,6 +75,7 @@ def test_plot():
                 continue
             
             df = pd.read_csv(file)
+            print(df)
             if "Cost" in df.columns:
                 all_costs.append(df["Cost"])
                 all_cost_reductions.append(df["Cost reduction"])
@@ -355,6 +360,7 @@ def make_names(iLQR_yaml_files):
 def load_raw_data(task_name):
     # Load all iLQR algorithms
     global base_dir
+    global run_mode
     
     dataframes_iLQR = []
     yamlfiles_iLQR = []
@@ -369,6 +375,9 @@ def load_raw_data(task_name):
     for folder in entries:
         # Only add the data if the task name is correct
         if task_name not in folder:
+            continue
+        
+        if run_mode not in folder:
             continue
         
         folder_path = os.path.join(current_dir, folder)

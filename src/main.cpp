@@ -86,6 +86,33 @@ std::atomic<bool> stop_mpc = false;
 std::atomic<bool> reoptimise = false;
 
 
+void printJointLimits(const mjModel* m) {
+    for (int i = 0; i < m->njnt; ++i) {
+        int joint_type = m->jnt_type[i];
+
+        std::string type;
+        switch (joint_type) {
+            case mjJNT_FREE:  type = "free"; break;
+            case mjJNT_BALL:  type = "ball"; break;
+            case mjJNT_SLIDE: type = "slide"; break;
+            case mjJNT_HINGE: type = "hinge"; break;
+            default:          type = "unknown"; break;
+        }
+
+        std::cout << "Joint " << i << " (" << type << ") - Name: "
+                  << (m->names + m->name_jntadr[i]) << std::endl;
+
+        if (joint_type == mjJNT_HINGE || joint_type == mjJNT_SLIDE) {
+            double lower = m->jnt_range[2 * i];
+            double upper = m->jnt_range[2 * i + 1];
+            std::cout << "  Limits: [" << lower << ", " << upper << "]" << std::endl;
+        } else {
+            std::cout << "  No limits (free or ball joint)" << std::endl;
+        }
+    }
+}
+
+
 int main(int argc, char **argv) {
 
     // Minimum Expected arguments
@@ -117,6 +144,8 @@ int main(int argc, char **argv) {
         std::cout << "Task specified does not exist \n";
         return EXIT_FAILURE;
     }
+
+    printJointLimits(activeModelTranslator->MuJoCo_helper->model);
 
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
 
@@ -218,7 +247,7 @@ int main(int argc, char **argv) {
         GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
                                        activeDifferentiator, activeVisualiser, yamlReader);
 
-        int task_horizon = 100;
+        int task_horizon = activeModelTranslator->MPC_horizon;
         int task_timeout = 2000;
         int re_add_dofs;
         double K_threshold;
@@ -815,6 +844,14 @@ int assign_task(){
         std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(constrainedClutter);
         activeModelTranslator = myTwoDPushing;
     }
+    else if(task == "place_low_clutter"){
+        std::shared_ptr<PlaceObject> my_place_object = std::make_shared<PlaceObject>("end_effector", "goal", lowClutter);
+        activeModelTranslator = my_place_object;
+    }
+    else if(task == "place_heavy_clutter"){
+        std::shared_ptr<PlaceObject> my_place_object = std::make_shared<PlaceObject>("end_effector", "goal", heavyClutter);
+        activeModelTranslator = my_place_object;
+    }
     else if(task == "3D_pushing"){
         std::shared_ptr<ThreeDPushing> myThreeDPushing = std::make_shared<ThreeDPushing>();
         activeModelTranslator = myThreeDPushing;
@@ -862,10 +899,6 @@ int assign_task(){
     else if(task == "humanoid"){
         std::shared_ptr<Humanoid> my_humanoid = std::make_shared<Humanoid>();
         activeModelTranslator = my_humanoid;
-    }
-    else if(task == "place"){
-        std::shared_ptr<PlaceObject> my_place_object = std::make_shared<PlaceObject>("end_effector", "goal");
-        activeModelTranslator = my_place_object;
     }
     else if(task == "floating_cube"){
         std::shared_ptr<FloatingCube> my_floating_cube_object = std::make_shared<FloatingCube>();
