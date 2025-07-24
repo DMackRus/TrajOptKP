@@ -113,8 +113,8 @@ void PlaceObject::ReturnRandomStartState(){
         MuJoCo_helper->GetBodyPoseAngle(object_names[i], obstacle_pose, MuJoCo_helper->master_reset_data);
 
         for(int j = 0; j < 3; j++){
-            full_state_vector.rigid_bodies[i + 1].start_linear_pos[j] = obstacle_pose.position[j];
-            full_state_vector.rigid_bodies[i + 1].start_angular_pos[j] = obstacle_pose.orientation[j];
+            full_state_vector.rigid_bodies[i].start_linear_pos[j] = obstacle_pose.position[j];
+            full_state_vector.rigid_bodies[i].start_angular_pos[j] = obstacle_pose.orientation[j];
         }
     }
 }

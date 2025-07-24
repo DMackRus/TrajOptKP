@@ -270,7 +270,7 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     std::cout << "optimisation horizon is: " << task_horizon << " task timeout : " << task_timeout << "\n";
 
     keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
-    int num_trials = 15;
+    int num_trials = 100;
 
     // --------------------- Set interval 1 ----------------------------------
     keypoint_method.name = "set_interval";

@@ -108,9 +108,17 @@ void Acrobot::ReturnRandomGoalState(){
         elbow = 0.0f;
     }
 
-    // Positions of the acrobot joints
-    residual_list[0].target[0] = shoulder;
-    residual_list[1].target[0] = elbow;
+    const double l1 = 1.0;
+    const double l2 = 1.0;
+
+    double tip_x, tip_z;
+    tip_x = (l1 * sin(shoulder)) + (l2 * sin(elbow));
+    // 2.2 is the height of the acrobot base
+    tip_z = 2.2 - (l1 * cos(shoulder) + (l2 * cos(shoulder + elbow)));
+
+    // Positions of the acrobot tip
+    residual_list[0].target[0] = tip_x;
+    residual_list[1].target[0] = tip_z;
 
     // Velocities of the acrobot joints
     residual_list[2].target[0] = 0.0;
@@ -118,17 +126,16 @@ void Acrobot::ReturnRandomGoalState(){
 
     // Control of the acrobot motor
     residual_list[4].target[0] = 0.0;
-
 }
 
 void Acrobot::SetGoalVisuals(mjData *d) {
     pose_6 goal_pose;
-
     MuJoCo_helper->GetBodyPoseAngle("target", goal_pose, d);
 
     // Set the goal object position
-    goal_pose.position(0) = 0;
-    goal_pose.position(0) = 0;
-    goal_pose.position(2) = 4.2;
+    goal_pose.position(0) = residual_list[0].target[0];
+    goal_pose.position(1) = 0;
+    goal_pose.position(2) = residual_list[1].target[0];
+
     MuJoCo_helper->SetBodyPoseAngle("target", goal_pose, d);
 }

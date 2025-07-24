@@ -19,7 +19,7 @@ robots:
 bodies:
   Hot_Chocolate:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
+    activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.65, 0, 0.5 ]
     startAngularPos: [ 0, 0, 0 ]
     linearJerkThreshold: [ 1, 1, 1 ]
@@ -28,7 +28,7 @@ bodies:
     angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
   Tomato_Soup:
     activeLinearDOF: [ true, true, true ]
-    activeAngularDOF: [ true, true, true ]
+    activeAngularDOF: [ false, false, false ]
     startLinearPos: [ 0.75, 0, 0.5 ]
     startAngularPos: [ 0, 0, 0 ]
     linearJerkThreshold: [ 1, 1, 1 ]
