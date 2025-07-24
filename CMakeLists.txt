@@ -120,6 +120,28 @@ add_executable(toy_contact_analysis src/toy_contact_analysis.cpp
         src/ModelTranslator/BoxSweep.cpp
         src/ModelTranslator/PushBaseClass.cpp)
 
+# Derivative Error Analysis Code
+add_executable(derivative_error_analysis
+        src/derivative_error_analysis.cpp
+        src/StdInclude/StdInclude.cpp
+        src/PhysicsSimulators/MuJoCoHelper.cpp
+        src/ModelTranslator/ModelTranslator.cpp
+        src/Visualiser/Visualiser.cpp
+        src/Differentiator/Differentiator.cpp
+        src/Optimiser/Optimiser.cpp
+        src/Optimiser/iLQR.cpp
+        src/FileHandler/FileHandler.cpp
+        src/KeyPointGenerator/KeyPointGenerator.cpp
+        src/ModelTranslator/Acrobot.cpp
+        src/ModelTranslator/ArticulatedContact.cpp
+        src/ModelTranslator/BoxSweep.cpp
+        src/ModelTranslator/ImpactLargeBox.cpp
+        src/ModelTranslator/PushBaseClass.cpp
+        src/ModelTranslator/TwoDPushing.cpp
+        src/ModelTranslator/Walker.cpp
+        src/ModelTranslator/PlaceObject.cpp
+        )
+
 include_directories(
         include
         ${MUJOCO_DIR}/include
@@ -133,6 +155,9 @@ target_link_libraries(benchmark_derivatives Eigen3::Eigen ${LIB_MUJOCO} -lglfw l
 
 target_include_directories(toy_contact_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 target_link_libraries(toy_contact_analysis Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+
+target_include_directories(derivative_error_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+target_link_libraries(derivative_error_analysis Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
 
 enable_testing()
