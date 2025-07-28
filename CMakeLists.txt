@@ -142,7 +142,7 @@ add_executable(derivative_error_analysis
         src/ModelTranslator/PlaceObject.cpp
         )
 
-# Derivative Error Analysis Code
+# Contact stiffness test code
 add_executable(contact_stiffness_test
         src/contact_stiffness_test.cpp
         src/StdInclude/StdInclude.cpp
@@ -155,6 +155,7 @@ add_executable(contact_stiffness_test
         src/FileHandler/FileHandler.cpp
         src/KeyPointGenerator/KeyPointGenerator.cpp
         src/ModelTranslator/BoxSweep.cpp
+        src/ModelTranslator/TwoDPushing.cpp
         src/ModelTranslator/PushBaseClass.cpp
         )
 

@@ -4,6 +4,7 @@
 #include "MuJoCoHelper.h"
 
 #include "ModelTranslator/BoxSweep.h"
+#include "ModelTranslator/TwoDPushing.h"
 
 #include "Optimiser/Optimiser.h"
 #include "Optimiser/iLQR.h"
@@ -304,8 +305,14 @@ int main(int argc, char **argv) {
     std::string config_file_name = "-";
     yamlReader = std::make_shared<FileHandler>();
 
-    std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
-    activeModelTranslator = myBoxSweep;
+    if(0){
+        std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
+        activeModelTranslator = myBoxSweep;
+    }
+    else{
+        std::shared_ptr<TwoDPushing> myTwoDPush = std::make_shared<TwoDPushing>(noClutter);
+        activeModelTranslator = myTwoDPush;
+    }
 
     // Instantiate the differentiator
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
@@ -315,7 +322,7 @@ int main(int argc, char **argv) {
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
 
     // Setup the initial horizon, based on open loop or mpc method
-    const int opt_horizon = 2000;
+    const int opt_horizon = 1500;
 
     iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
                                            activeModelTranslator->MuJoCo_helper,
@@ -329,7 +336,7 @@ int main(int argc, char **argv) {
 
     // Create a folder directory to save the results for this model
 
-    const int num_tasks = 30;
+    const int num_tasks = 100;
 
     //Default solref and solimp values
     double solref[2] = {0.0, 0.0};
@@ -343,7 +350,7 @@ int main(int argc, char **argv) {
     std::cout << "Initial solimp: [" << solimp[0] << ", " << solimp[1] << ", " << solimp[2] << ", "
               << solimp[3] << ", " << solimp[4] << "]\n";
 
-    if(0){
+    if(1){
         // ----------------- solref tests --------------------------
         double solref_lower = 0.01;
         double solref_upper = 0.1;
@@ -382,7 +389,7 @@ int main(int argc, char **argv) {
     }
 
     // Reset Solimp and solref
-    solref[0] = 0.04;
+    solref[0] = 0.06;
 
     // Solimp min tests
     double solimp0_lower = 0.0;
