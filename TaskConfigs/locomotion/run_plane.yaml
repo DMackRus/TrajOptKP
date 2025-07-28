@@ -1,7 +1,7 @@
 modelFile: "/mujoco_models/walker/walker_plane.xml"
 modelName: "/walker_run"
 timeStep: 0.005
-keypointMethod: "contact_change"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change", "contact_change
+keypointMethod: "contact_change_sep"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change", "contact_change", "contact_change_sep
 auto_adjust: false
 minN: 1
 maxN: 20

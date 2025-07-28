@@ -100,7 +100,7 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     CreateKinematicChain(full_state_vector);
 
     // Print kinematic chains
-    std::cout << "Kinematic chains: \n";
+    std::cout << "Kinematic chains bodies: \n";
     for(int i = 0; i < full_state_vector.kinematic_chains_bodies.size(); i++){
         std::cout << "Chain " << i << ": ";
         for(int j = 0; j <  full_state_vector.kinematic_chains_bodies[i].size(); j++){
@@ -109,11 +109,30 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
         std::cout << "\n";
     }
 
-    std::cout << "Kinematic chains: \n";
+    std::cout << "Kinematic chains state indices: \n";
     for(int i = 0; i < full_state_vector.kinematic_chain_state_indices.size(); i++){
         std::cout << "Chain " << i << ": ";
         for(int j = 0; j <  full_state_vector.kinematic_chain_state_indices[i].size(); j++){
             std::cout << full_state_vector.kinematic_chain_state_indices[i][j] << " ";
+        }
+        std::cout << "\n";
+    }
+
+    // Print independant kinematic chains
+    std::cout << "Kinematic chains bodies independant: \n";
+    for(int i = 0; i < full_state_vector.kinematic_chain_bodies_independant.size(); i++){
+        std::cout << "Chain " << i << ": ";
+        for(int j = 0; j <  full_state_vector.kinematic_chain_bodies_independant[i].size(); j++){
+            std::cout << full_state_vector.kinematic_chain_bodies_independant[i][j] << " ";
+        }
+        std::cout << "\n";
+    }
+
+    std::cout << "Kinematic chains, state indices independant: \n";
+    for(int i = 0; i < full_state_vector.kinematic_chain_state_indices_independant.size(); i++){
+        std::cout << "Chain " << i << ": ";
+        for(int j = 0; j <  full_state_vector.kinematic_chain_state_indices_independant[i].size(); j++){
+            std::cout << full_state_vector.kinematic_chain_state_indices_independant[i][j] << " ";
         }
         std::cout << "\n";
     }
@@ -1244,6 +1263,8 @@ void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
 
     state_vector.kinematic_chains_bodies.clear();
     state_vector.kinematic_chain_state_indices.clear();
+    state_vector.kinematic_chain_bodies_independant.clear();
+    state_vector.kinematic_chain_state_indices_independant.clear();
 
     // Stage 1 - Create kinematic chain of body Ids
     for (int i = 1; i < MuJoCo_helper->model->nbody; i++) {  // skip world (body 0) TODO - This might be problematic for models with no plane??
@@ -1314,6 +1335,70 @@ void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
             }
         }
         state_vector.kinematic_chain_state_indices.push_back(qpos_chain);
+    }
+
+    // Create separate kinematic chains, i.e. two legs part of two different kinematic chains
+    // Stage 3 - Create separate kinematic chains (e.g. left leg, right leg), each rooted at body 1
+    int root_body = 1; // TODO - This assumes body 1 is the root (e.g. the torso). Update if needed.
+
+    for (int i = 1; i < MuJoCo_helper->model->nbody; i++) {
+        if (MuJoCo_helper->model->body_parentid[i] == root_body) {
+            // New branch (e.g. leg or arm)
+            vector<int> chain_bodies;
+            queue<int> q;
+            q.push(i);
+
+            // Add root body to start of chain
+            chain_bodies.push_back(root_body);
+
+            while (!q.empty()) {
+                int body = q.front();
+                q.pop();
+                chain_bodies.push_back(body);
+
+                for (int j = 1; j < MuJoCo_helper->model->nbody; j++) {
+                    if (MuJoCo_helper->model->body_parentid[j] == body) {
+                        q.push(j);
+                    }
+                }
+            }
+
+            state_vector.kinematic_chain_bodies_independant.push_back(chain_bodies);
+
+            // Now convert to state indices like before
+            vector<int> qpos_chain;
+            for (const auto &body : chain_bodies) {
+                int joint_id = MuJoCo_helper->model->body_jntadr[body];
+
+                if(joint_id == -1) continue;
+
+                for(int j = 0; j < MuJoCo_helper->model->body_jntnum[body]; j++) {
+                    int jnt_adr = joint_id + j;
+
+                    if(MuJoCo_helper->model->jnt_type[jnt_adr] == mjJNT_FREE) {
+                        for (int k = 0; k < 6; k++) {
+                            int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr] + k;
+                            for (int l = 0; l < state_vector.q_pos_adr.size(); l++) {
+                                if (qpos_adr == state_vector.q_pos_adr[l]) {
+                                    int index = QPosIndexToStateIndex(qpos_adr, state_vector);
+                                    if(index >= 0) {
+                                        qpos_chain.push_back(index);
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr];
+                        int index = QPosIndexToStateIndex(qpos_adr, state_vector);
+                        if(index >= 0) {
+                            qpos_chain.push_back(index);
+                        }
+                    }
+                }
+            }
+
+            state_vector.kinematic_chain_state_indices_independant.push_back(qpos_chain);
+        }
     }
 
     // TODO - Do I need to sort the kinematic chains so they are in ascending order???

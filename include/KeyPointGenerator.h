@@ -96,6 +96,11 @@ public:
                                const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
                                const stateVectorList &state_vector_list);
 
+    void ContactAwareKeypointsSep(const std::vector<MatrixXd> &trajectory_states,
+                               const std::vector<MatrixXd> &trajectory_controls,
+                               const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
+                               const stateVectorList &state_vector_list);
+
     void AdjustKeyPointMethod(double expected, double actual,
                               std::vector<MatrixXd> &trajectory_states,
                               std::vector<double> &dof_importances);

@@ -26,7 +26,7 @@ public:
 
     int GenDataOpenLoopMultipleMethods(int task_horizon);
 
-    int GenDataOpenloopOptimisation(int task_horizon);
+    int GenDataOpenloopOptimisation(int task_horizon, int num_trials, int min_iterations, int max_iterations);
 
     int GenDataMPCHorizons(int task_timeout);
 

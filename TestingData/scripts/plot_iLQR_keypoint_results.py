@@ -12,7 +12,8 @@ import glob
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "box_sweep"
+# task_name = "walker_run_openloop_6"
+task_name = "acrobot_openloop_3"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
@@ -30,16 +31,12 @@ def main():
     sorted_indices = sorted(range(len(names)), key=lambda i: order.index(names[i]) if names[i] in order else len(order))
     names = [names[i] for i in sorted_indices]
     dataframes_iLQR = [dataframes_iLQR[i] for i in sorted_indices]
-    print(names)
-    print(dataframes_iLQR)
-    
     
     plot_openloop_data(names, dataframes_iLQR)
 
+    # plot_timing_breakdown_data(names, dataframes_iLQR)
     
-    plot_timing_breakdown_data(names, dataframes_iLQR)
-    
-    test_plot()
+    # test_plot()
     
 def test_plot():
     global base_dir, task_name, run_mode

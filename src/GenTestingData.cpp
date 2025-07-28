@@ -19,93 +19,35 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     int tests_fine = EXIT_SUCCESS;
     int this_test_fine = EXIT_SUCCESS;
 
+    int num_trials = 100;
+    int min_iterations = 3;
+    int max_iterations = 10;
+
+    // Keypoint methods to be tested
+    std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
+                                                      "contact_change", "contact_change_sep"};
+    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1};
     keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
 
-    // Testing loop to test when velocity change thresholds stop being effective
-    keypoint_method.name = "velocity_change";
-    keypoint_method.min_N = 1;
-    keypoint_method.max_N = 1000;
-//    vector<double> vel_change_thresholds = {0.01, 0.05, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1000.0};
-//    vector<double> vel_change_thresholds = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
-//    vector<double> vel_change_thresholds = {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0};
-//    vector<double> vel_change_thresholds = {20.0, 30.0, 40.0, 50.0, 60.0, 70.0, 80.0, 90.0, 100.0};
-//    for(int i = 0; i < vel_change_thresholds.size(); i++){
-//        keypoint_method.velocity_change_thresholds[0] = vel_change_thresholds[i];
-//        keypoint_method.velocity_change_thresholds[1] = vel_change_thresholds[i];
-//
-//        optimiser->SetCurrentKeypointMethod(keypoint_method);
-//
-//        this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-//        if(this_test_fine != EXIT_SUCCESS){
-//            tests_fine = this_test_fine;
-//        }
-//        // Sleep for 60 seconds - enforces file name change for different tests
-//        std::this_thread::sleep_for(std::chrono::seconds(55));
-//    }
+    for(size_t i = 0; i < keypoint_method_names.size(); i++) {
+        keypoint_method.name = keypoint_method_names[i];
+        keypoint_method.min_N = keypoint_method_min_N[i];
 
-//     ----------------- Set interval 1 -------------------
-    keypoint_method.name = "set_interval";
-    keypoint_method.min_N = 1;
-    keypoint_method.max_N = 1;
+        // Set the keypoint method
+        optimiser->SetCurrentKeypointMethod(keypoint_method);
 
-    // Set the keypoint method
-    optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-    if(this_test_fine != EXIT_SUCCESS){
-        tests_fine = this_test_fine;
+        this_test_fine = GenDataOpenloopOptimisation(task_horizon, num_trials, min_iterations, max_iterations);
+        if(this_test_fine != EXIT_SUCCESS){
+            tests_fine = this_test_fine;
+        }
+        // Sleep for 60 seconds - enforces file name change for different tests
+        std::this_thread::sleep_for(std::chrono::seconds(60));
     }
-//     Sleep for 60 seconds - enforces file name change for different tests
-    std::this_thread::sleep_for(std::chrono::seconds(60));
-
-    // ----------------- Contact aware case -------------------
-    keypoint_method.name = "contact_change";
-    keypoint_method.min_N = 1;
-    keypoint_method.max_N = 1;
-
-    // Set the keypoint method
-    optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-    if(this_test_fine != EXIT_SUCCESS){
-        tests_fine = this_test_fine;
-    }
-    // Sleep for 60 seconds - enforces file name change for different tests
-    std::this_thread::sleep_for(std::chrono::seconds(60));
-
-    // ----------------- Set interval 5 ---------------------
-    keypoint_method.name = "set_interval";
-    keypoint_method.min_N = 5;
-    keypoint_method.max_N = 1;
-
-    // Set the keypoint method
-    optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-    if(this_test_fine != EXIT_SUCCESS){
-        tests_fine = this_test_fine;
-    }
-    // Sleep for 60 seconds - enforces file name change for different tests
-    std::this_thread::sleep_for(std::chrono::seconds(60));
-    // ----------------- Set interval 1000 ---------------------
-    keypoint_method.name = "set_interval";
-    keypoint_method.min_N = 1000;
-    keypoint_method.max_N = 1;
-
-    // Set the keypoint method
-    optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-    this_test_fine = GenDataOpenloopOptimisation(task_horizon);
-    if(this_test_fine != EXIT_SUCCESS){
-        tests_fine = this_test_fine;
-    }
-    // Sleep for 60 seconds - enforces file name change for different tests
-//    std::this_thread::sleep_for(std::chrono::seconds(60));
 
     return tests_fine;
 }
 
-int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
+int GenTestingData::GenDataOpenloopOptimisation(int task_horizon, int num_trials, int min_iterations, int max_iterations){
     std::cout << "begining testing openloop optimisation for " << activeModelTranslator->model_name << std::endl;
     std::cout << "optimisation horizon is: " << task_horizon << std::endl;
 
@@ -117,7 +59,8 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     // Cost reduction, optimisation time, num iterations, avg dofs, avg %derivs, avg time derivs, avg time bp, avg time fp,
 
     // Create the file directory root path dynamically
-    std::string method_directory = CreateTestName("openloop");
+    std::string openloop_name = "openloop_" + std::to_string(min_iterations) + "_" + std::to_string(max_iterations);
+    std::string method_directory = CreateTestName(openloop_name);
 
     // ------------------------- data storage -------------------------------------
     std::vector<double> cost_reductions;
@@ -137,7 +80,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
     auto startTimer = std::chrono::high_resolution_clock::now();
     optimiser->verbose_output = true;
 
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < num_trials; i++) {
         std::cout << "trial: " << i << "\n";
 
         // Reset internal optimisation data and clear key-points cache
@@ -192,7 +135,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon){
         // Do the optimisation!
         optimiser->lambda = 0.01;
         std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
-                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 6, 6,
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, max_iterations, min_iterations,
                 task_horizon);
 
         // --------- Save trial specific information to a folder labelled as trial number --------
@@ -301,7 +244,16 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
 
     // --------------------- Contact_change ----------------------------------
     keypoint_method.name = "contact_change";
-    keypoint_method.min_N = 5;
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 1;
+    keypoint_method.auto_adjust = false;
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
+
+    // --------------------- Contact_change ----------------------------------
+    keypoint_method.name = "contact_change_sep";
+    keypoint_method.min_N = 1;
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
     optimiser->SetCurrentKeypointMethod(keypoint_method);

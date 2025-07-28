@@ -1,0 +1,3 @@
+Final cost,Final dist,Average dofs,Average optimisation time (ms),Average percent derivs,Average time derivs (ms),Average time BP (ms),Average time FP (ms),Average surprise
+22.9567,0.02442,0,66.7671,30.694,52.0984,4.27776,6.14363,0
+19.7372,0.130891,0,67.3787,21.2146,49.6829,4.43665,7.84367,0
