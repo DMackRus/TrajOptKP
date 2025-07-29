@@ -108,6 +108,11 @@ public:
     std::vector<double> DesiredPercentageDerivs(double expected, double actual,
                                                 std::vector<double> &dof_importances);
 
+    void ContactChangeDyn(const std::vector<MatrixXd> &trajectory_states,
+                          const std::vector<MatrixXd> &trajectory_controls,
+                          const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
+                          const stateVectorList &state_vector_list);
+
     void PrintKeypointMethod();
 
     void InterpolateDerivatives(const std::vector<std::vector<int>> &keyPoints, int T,
