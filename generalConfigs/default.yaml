@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_no_clutter"
+task: "acrobot"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -60,8 +60,8 @@ csvRow: 6                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
-minIter: 5               # Minimum number of iterations to run Optimiser for
-maxIter: 100             # Maximum number of iterations to run Optimiser for
+minIter: 6               # Minimum number of iterations to run Optimiser for
+maxIter: 10             # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
 record: false

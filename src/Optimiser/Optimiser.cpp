@@ -15,11 +15,6 @@ Optimiser::Optimiser(std::shared_ptr<ModelTranslator> _modelTranslator,
     activeKeyPointMethod.auto_adjust = activeModelTranslator->auto_adjust;
     activeKeyPointMethod.min_N = activeModelTranslator->min_N;
     activeKeyPointMethod.max_N = activeModelTranslator->max_N;
-    activeKeyPointMethod.jerk_thresholds = activeModelTranslator->jerk_thresholds;
-    // TODO - fix this - add acell thresholds to yaml
-    activeKeyPointMethod.accell_thresholds = activeModelTranslator->jerk_thresholds;
-    activeKeyPointMethod.iterative_error_threshold = activeModelTranslator->iterative_error_threshold;
-    activeKeyPointMethod.velocity_change_thresholds = activeModelTranslator->velocity_change_thresholds;
 
     keypoint_generator = std::make_shared<KeypointGenerator>(activeDifferentiator,
                                                              MuJoCo_helper,

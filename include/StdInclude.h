@@ -18,8 +18,9 @@ struct robot{
     std::vector<std::string> joint_names;
     std::vector<std::string> actuator_names;
     std::vector<double> start_pos;
-    std::vector<double> jerk_thresholds;
-    std::vector<double> vel_change_thresholds;
+    double pos_change_threshold;
+    double vel_change_threshold;
+    double control_change_threshold;
 };
 
 struct rigid_body{
@@ -28,17 +29,11 @@ struct rigid_body{
     bool active_angular_dof[3];
     double start_linear_pos[3];
     double start_angular_pos[3];
-    double linear_jerk_threshold[3];
-    double angular_jerk_threshold[3];
-    double linear_vel_change_threshold[3];
-    double angular_vel_change_threshold[3];
     double base_color[4];
 };
 
 struct vertex{
     bool active_linear_dof[3];
-    double linear_jerk_threshold[3];
-    double linear_vel_change_threshold[3];
 };
 
 struct soft_body{
@@ -72,10 +67,6 @@ struct task{
     bool auto_adjust;
     int minN;
     int maxN;
-    std::vector<double> jerkThresholds;
-    std::vector<double> acellThresholds;
-    double iterativeErrorThreshold;
-    std::vector<double> magVelThresholds;
     std::vector<residual> residuals;
 };
 

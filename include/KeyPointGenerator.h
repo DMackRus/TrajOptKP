@@ -36,10 +36,6 @@ struct keypoint_method{
     bool auto_adjust;
     int min_N;
     int max_N;
-    std::vector<double> jerk_thresholds;
-    std::vector<double> accell_thresholds;
-    double iterative_error_threshold;
-    std::vector<double> velocity_change_thresholds;
 };
 
 struct index_tuple{
@@ -238,7 +234,8 @@ private:
     std::shared_ptr<Differentiator> differentiator;
 
     // Physics simulator object, computes the dynamics of the system.
-    std::shared_ptr<MuJoCoHelper> physics_simulator;
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper;
+    std::shared_ptr<ModelTranslator> Model_translator;
 
     // Stored keypoints for the iterative error method so we know where we have already computed keypoints. Prevents recomputation.
     std::vector<std::vector<bool>> computed_keypoints;

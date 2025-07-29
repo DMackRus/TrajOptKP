@@ -4,8 +4,8 @@ modelName: "/impact_large_box"
 timeStep: 0.005
 openloop_horizon: 1500
 mpc_horizon: 150
-keypointMethod: "contact_change"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change", "contact_change"
-minN: 1000
+keypointMethod: "contact_change_dyn"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
+minN: 1
 maxN: 100
 iterativeErrorThreshold: 0.00001
 robots:
@@ -15,8 +15,9 @@ robots:
     torqueControl: true
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [-1, 0.7, -0.0593, -1.73, 0, 0.722, -1.6]
-    jointJerkThresholds: [1, 1, 1, 1, 1, 1, 1]
-    magVelThresholds: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+    position_threshold: 0.1 # Value between 0 and 1 - uses joint limits
+    velocity_threshold: 1 # Raw velocity threshold value
+    control_threshold: 0.1 # Value between 0 and 1 - uses control limits
 bodies:
   goal:
     activeLinearDOF: [true, true, true]

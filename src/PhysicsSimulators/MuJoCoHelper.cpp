@@ -258,14 +258,32 @@ void MuJoCoHelper::GetRobotControlLimits(const string& robot_name, vector<double
 //        exit(1);
 //    }
 
-    // TOD_ (dmackrus) I think this doesnt accomadate for multiple robots
+    // TODO (dmackrus) I think this doesnt accommodate for multiple robots
     for(int i = 0; i < 2 * robots[robot_index].actuator_names.size(); i++){
         control_limits[i] = model->actuator_ctrlrange[i];
     }
 }
 
-void MuJoCoHelper::GetRobotJointLimits(const string& robot_name, vector<double> &joint_limits, mjData *d){
+void MuJoCoHelper::GetRobotJointLimits(const string& robot_name, vector<double> &joint_limits){
 
+    // Resize joint limits vector
+    int robot_index;
+    string robot_base_joint_name;
+    if(!IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
+        std::cerr << "That robot doesnt exist in the simulation\n";
+        exit(1);
+    }
+    joint_limits.resize(2 * robots[robot_index].joint_names.size());
+
+    for(int i = 0; i < robots[robot_index].joint_names.size(); i++) {
+        int joint_id = mj_name2id(model, mjOBJ_JOINT, robots[robot_index].joint_names[i].c_str());
+        if (joint_id == -1) {
+            std::cerr << "Invalid bodyId for robot: " << robots[robot_index].joint_names[i].c_str() << "\n";
+            exit(1);
+        }
+        joint_limits[2 * i]     = model->jnt_range[2 * joint_id];
+        joint_limits[2 * i + 1] = model->jnt_range[2 * joint_id + 1];
+    }
 }
 
 // --------------------------------- END OF ROBOT UTILITY ---------------------------------------

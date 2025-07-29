@@ -28,7 +28,6 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     max_N = taskConfig.maxN;
     keypoint_method = taskConfig.keypointMethod;
     auto_adjust = taskConfig.auto_adjust;
-    iterative_error_threshold = taskConfig.iterativeErrorThreshold;
     const char* _modelPath = model_file_path.c_str();
 
     openloop_horizon = taskConfig.openloop_horizon;
@@ -41,35 +40,10 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     vector<string> bodyNames;
     for(auto & robot : taskConfig.robots){
         bodyNames.push_back(robot.name);
-        int root_offset = 0;
-        if(robot.root_name != "-"){
-            root_offset = 6;
-        }
-        for(int j = 0; j < robot.joint_names.size() + root_offset; j++){
-            jerk_thresholds.push_back(robot.jerk_thresholds[j]);
-            // TODO fix this duplicate jerk thresholds
-            accel_thresholds.push_back(robot.jerk_thresholds[j]);
-            velocity_change_thresholds.push_back(robot.vel_change_thresholds[j]);
-        }
     }
 
     for(auto & bodiesState : taskConfig.rigid_bodies){
         bodyNames.push_back(bodiesState.name);
-        for(int j = 0; j < 3; j++){
-            if(bodiesState.active_linear_dof[j]){
-                jerk_thresholds.push_back(bodiesState.linear_jerk_threshold[j]);
-                // TODO fix this duplicate jerk thresholds
-                accel_thresholds.push_back(bodiesState.linear_jerk_threshold[j]);
-                velocity_change_thresholds.push_back(bodiesState.linear_vel_change_threshold[j]);
-            }
-
-            if(bodiesState.active_angular_dof[j]){
-                jerk_thresholds.push_back(bodiesState.angular_jerk_threshold[j]);
-                // TODO fix this duplicate jerk thresholds
-                accel_thresholds.push_back(bodiesState.angular_jerk_threshold[j]);
-                velocity_change_thresholds.push_back(bodiesState.angular_vel_change_threshold[j]);
-            }
-        }
     }
 
     MuJoCo_helper = std::make_shared<MuJoCoHelper>(taskConfig.robots, bodyNames);
@@ -560,7 +534,6 @@ MatrixXd ModelTranslator::ReturnPositionVector(mjData* d, const struct stateVect
             position_vector(current_state_index + 5, 0) = root_position.orientation[2];
 
             current_state_index += 6;
-
         }
         vector<double> jointPositions;
         MuJoCo_helper->GetRobotJointsPositions(robot.name, jointPositions, d);

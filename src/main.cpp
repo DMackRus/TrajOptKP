@@ -201,11 +201,11 @@ int main(int argc, char **argv) {
         return -1;
     }
 
-    if(runMode == "GA_keypoint_search"){
-        GAOptimalKeypoints myGASearch(activeModelTranslator, activeModelTranslator->MuJoCo_helper,
-                                      yamlReader, activeOptimiser);
-        return myGASearch.Run();
-    }
+//    if(runMode == "GA_keypoint_search"){
+//        GAOptimalKeypoints myGASearch(activeModelTranslator, activeModelTranslator->MuJoCo_helper,
+//                                      yamlReader, activeOptimiser);
+//        return myGASearch.Run();
+//    }
 
     if(taskInitMode == "random"){
         activeModelTranslator->GenerateRandomGoalAndStartState();

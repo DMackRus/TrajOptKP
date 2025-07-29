@@ -48,7 +48,7 @@ public:
     void GetRobotJointsControls(const string& robot_name, vector<double> &joint_controls, mjData *d);
     void GetRobotJointsGravityCompensationControls(const string& robot_name, vector<double> &joint_controls, mjData *d);
     void GetRobotControlLimits(const string& robot_name, vector<double> &control_limits);
-    void GetRobotJointLimits(const string& robot_name, vector<double> &joint_limits, mjData *d);
+    void GetRobotJointLimits(const string& robot_name, vector<double> &joint_limits);
 
     // Utility functions -- rigid bodies
     bool BodyExists(const string& body_name, int &body_index);

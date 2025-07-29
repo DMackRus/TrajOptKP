@@ -73,13 +73,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
         _taskConfig.maxN = 10;
     }
 
-    if(node["iterativeErrorThreshold"]){
-        _taskConfig.iterativeErrorThreshold = node["iterativeErrorThreshold"].as<double>();
-    }
-    else{
-        _taskConfig.iterativeErrorThreshold = 10;
-    }
-
     // Loop through robots
     for(YAML::const_iterator robot_it=node["robots"].begin(); robot_it!=node["robots"].end(); ++robot_it){
         robot tempRobot;
@@ -92,6 +85,10 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
 
         vector<double> jointJerkThresholds;
         vector<double> magVelThresholds;
+
+        double pos_threshold = 0.2;
+        double vel_threshold = 0.2;
+        double control_threshold = 0.2;
 
         robotName = robot_it->first.as<string>();
 
@@ -122,12 +119,22 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             startPos.push_back(robot_it->second["startPos"][i].as<double>());
         }
 
-        for(int i = 0; i < robot_it->second["jointJerkThresholds"].size(); i++){
-            jointJerkThresholds.push_back(robot_it->second["jointJerkThresholds"][i].as<double>());
-        }
+//        for(int i = 0; i < robot_it->second["jointJerkThresholds"].size(); i++){
+//            jointJerkThresholds.push_back(robot_it->second["jointJerkThresholds"][i].as<double>());
+//        }
+//
+//        for(int i = 0; i < robot_it->second["magVelThresholds"].size(); i++){
+//            magVelThresholds.push_back(robot_it->second["magVelThresholds"][i].as<double>());
+//        }
 
-        for(int i = 0; i < robot_it->second["magVelThresholds"].size(); i++){
-            magVelThresholds.push_back(robot_it->second["magVelThresholds"][i].as<double>());
+        if(robot_it->second["position_threshold"]) {
+            pos_threshold = robot_it->second["position_threshold"].as<double>();
+        }
+        if(robot_it->second["velocity_threshold"]) {
+            vel_threshold = robot_it->second["position_threshold"].as<double>();
+        }
+        if(robot_it->second["control_threshold"]) {
+            control_threshold = robot_it->second["position_threshold"].as<double>();
         }
 
         tempRobot.name = robotName;
@@ -138,8 +145,10 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
 
         tempRobot.start_pos = startPos;
 
-        tempRobot.jerk_thresholds = jointJerkThresholds;
-        tempRobot.vel_change_thresholds = magVelThresholds;
+        tempRobot.pos_change_threshold = pos_threshold;
+        tempRobot.vel_change_threshold = vel_threshold;
+        tempRobot.control_change_threshold = control_threshold;
+
 
         _taskConfig.robots.push_back(tempRobot);
     }
@@ -197,10 +206,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             _rigid_body.active_angular_dof[i] = activeAngularDOF[i];
             _rigid_body.start_linear_pos[i] = startLinearPos[i];
             _rigid_body.start_angular_pos[i] = startAngularPos[i];
-            _rigid_body.linear_jerk_threshold[i] = linearJerkThreshold[i];
-            _rigid_body.angular_jerk_threshold[i] = angularJerkThreshold[i];
-            _rigid_body.linear_vel_change_threshold[i] = linearMagVelThreshold[i];
-            _rigid_body.angular_vel_change_threshold[i] = angularMagVelThreshold[i];
             _rigid_body.base_color[0] = 0;
             _rigid_body.base_color[1] = 0;
             _rigid_body.base_color[2] = 0;
@@ -227,9 +232,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             vertex _vertex{};
             for(int j = 0; j < 3; j++){
                 _vertex.active_linear_dof[j] = body_it->second["activeLinearDOF"][j].as<bool>();
-
-                _vertex.linear_jerk_threshold[j] = body_it->second["linearMagVelThreshold"][j].as<double>();
-                _vertex.linear_vel_change_threshold[j] = body_it->second["angularMagVelThreshold"][j].as<double>();
             }
 
             vertices.push_back(_vertex);

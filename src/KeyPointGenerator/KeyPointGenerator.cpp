@@ -4,7 +4,7 @@ KeypointGenerator::KeypointGenerator(std::shared_ptr<Differentiator> _differenti
                                      std::shared_ptr<MuJoCoHelper> MuJoCo_helper,
                                      int _dof, int _horizon) {
     differentiator = _differentiator;
-    physics_simulator = MuJoCo_helper;
+    this->MuJoCo_helper = MuJoCo_helper;
 
     dof = _dof;
     horizon = _horizon;
@@ -60,15 +60,6 @@ void KeypointGenerator::PrintKeypointMethod(){
     std::cout << "------------------------------------------------------------------------------------ \n";
     std::cout << "Keypoint Method: " << current_keypoint_method.name << std::endl;
     std::cout << "min_N: " << current_keypoint_method.min_N << " max_N: " << current_keypoint_method.max_N << std::endl;
-    std::cout << "jerk thresholds: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << " " << current_keypoint_method.jerk_thresholds[i];
-    }
-    std::cout << "\n";
-    std::cout << "velocity change thresholds: ";
-    for(int i = 0; i < dof; i++){
-        std::cout << " " << current_keypoint_method.velocity_change_thresholds[i];
-    }
     std::cout << "\n ";
     std::cout << "------------------------------------------------------------------------------------ \n";
 }
@@ -140,6 +131,28 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
     }
 
     return contact_state_indices;
+}
+
+static inline void KinematicChain(int state_index, const stateVectorList &state_vector_list, vector<int>& keypoints){
+    int chain_index;
+    for(const auto& chain : state_vector_list.kinematic_chain_state_indices){
+        bool found = false;
+        for(int body_index : chain) {
+            if (body_index == state_index) {
+                found = true;
+                chain_index = body_index;
+                break; // break the inner loop
+            }
+        }
+        if(found){
+            break;
+        }
+    }
+
+    // If the state index is found in a kinematic chain, add all indices of that chain
+    for(int body_index : state_vector_list.kinematic_chain_state_indices[chain_index]) {
+        keypoints.push_back(body_index);
+    }
 }
 
 // Static inline helper function for considering kinematic chains
@@ -424,7 +437,176 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
                       const std::vector<MatrixXd> &trajectory_controls,
                       const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
                       const stateVectorList &state_vector_list){
+    // Enforce first time-step must have all keypoints
+    std::vector<int> full_row(dof, 0);
 
+    for(int i = 0; i < dof; i++){
+        full_row[i] = i;
+    }
+    keypoints.push_back(full_row);
+
+    std::vector<std::pair<int, int>> current_contacts = trajectory_contacts[0];
+
+    std::vector<std::vector<double>> last_robot_joint_positions(state_vector_list.robots.size(), std::vector<double>());
+    std::vector<std::vector<double>> last_robot_joint_velocities(state_vector_list.robots.size(), std::vector<double>());
+    std::vector<std::vector<double>> last_robot_joint_controls(state_vector_list.robots.size(), std::vector<double>());
+
+    std::vector<std::vector<double>> new_robot_joint_positions(state_vector_list.robots.size(), std::vector<double>());
+    std::vector<std::vector<double>> new_robot_joint_velocities(state_vector_list.robots.size(), std::vector<double>());
+    std::vector<std::vector<double>> new_robot_joint_controls(state_vector_list.robots.size(), std::vector<double>());
+
+    // Get the values for the first time-step
+    int robot_index = 0;
+    for(const auto& robot : state_vector_list.robots) {
+        MuJoCo_helper->GetRobotJointsPositions(robot.name, last_robot_joint_positions[robot_index], MuJoCo_helper->saved_systems_state_list[0]);
+        MuJoCo_helper->GetRobotJointsVelocities(robot.name, last_robot_joint_velocities[robot_index], MuJoCo_helper->saved_systems_state_list[0]);
+        MuJoCo_helper->GetRobotJointsControls(robot.name, last_robot_joint_controls[robot_index], MuJoCo_helper->saved_systems_state_list[0]);
+        robot_index++;
+    }
+
+    //Start with just considering contact considerations
+    for(int t = 1; t < horizon - 1; t++){
+        // Initialise empty row object to be populated
+        std::vector<int> row;
+
+        // There are a variety of rules when to enforce key-points
+        // RULE 1 - New contact is made -----------------------------------------
+        std::vector<std::pair<int, int>> new_contacts = trajectory_contacts[t];
+        bool change_in_contact = false;
+        std::vector<int> new_last_row;
+
+        // Check for new contacts
+        for(const auto & contact : new_contacts){
+            bool found = false;
+            for(const auto & old_contact : current_contacts){
+                if(contact == old_contact){
+                    found = true;
+                    break;
+                }
+            }
+            if(!found){
+                change_in_contact = true;
+                // Add keypoint at this time-step as well as the previous time-step
+                // Consider both kinematic chains when adding keypoints
+                row = AddKeypointsFromContact(contact, new_contacts, state_vector_list);
+
+                // Also need to add keypoints for the previous time-step...
+                // Add keypoints for the previous time-step
+                AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
+            }
+        }
+
+        // RULE 2 - Contact is broken -------------------------------------------------
+        for(const auto & contact : current_contacts){
+            bool found = false;
+            for(const auto & new_contact : new_contacts){
+                if(contact == new_contact){
+                    found = true;
+                    break;
+                }
+            }
+            if(!found){
+                change_in_contact = true;
+                // Add keypoint at this time-step as well as the previous time-step
+                // Consider both kinematic chains when adding keypoints
+                row = AddKeypointsFromContact(contact, new_contacts, state_vector_list);
+                // Also need to add keypoints for the previous time-step...
+                // Add keypoints for the previous time-step
+                AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
+            }
+        }
+
+        // RULE 3 - Check for position, velocity or control changes -----------------------------
+        robot_index = 0;
+        std::vector<bool> robot_keypoint_required(state_vector_list.robots.size(), false);
+        for(const auto& robot: state_vector_list.robots){
+            MuJoCo_helper->GetRobotJointsPositions(robot.name, new_robot_joint_positions[robot_index], MuJoCo_helper->saved_systems_state_list[t]);
+            MuJoCo_helper->GetRobotJointsVelocities(robot.name, new_robot_joint_velocities[robot_index], MuJoCo_helper->saved_systems_state_list[t]);
+            MuJoCo_helper->GetRobotJointsControls(robot.name, new_robot_joint_controls[robot_index], MuJoCo_helper->saved_systems_state_list[t]);
+            robot_index++;
+        }
+
+        // Check for position velocity and control changes
+        robot_index = 0;
+        for(const auto& robot : state_vector_list.robots){
+            // Get joint limits
+            vector<double> joint_limits;
+            MuJoCo_helper->GetRobotJointLimits(robot.name, joint_limits);
+            for(int i = 0; i < robot.joint_names.size(); i++){
+                // Check if the position has changed significantly
+                double joint_change_threshold = (joint_limits[2*i+1] - joint_limits[2*i]) * robot.pos_change_threshold;
+                if(joint_change_threshold < 0.0001){
+                    joint_change_threshold = 0.2; // Ensure a minimum threshold
+                }
+                if(std::abs(new_robot_joint_positions[robot_index][i] - last_robot_joint_positions[robot_index][i]) >
+                        joint_change_threshold){
+                    robot_keypoint_required[robot_index] = true;
+                }
+
+                // TODO - Check if the velocity has changed significantly
+//                if(std::abs(new_robot_joint_velocities[robot_index][i] - last_robot_joint_velocities[robot_index][i]) >
+//                   current_keypoint_method.velocity_change_thresholds[i]){
+//                    robot_keypoint_required[robot_index] = true;
+//                }
+
+                // TODO - Check if the control has changed significantly
+//                if(std::abs(new_robot_joint_controls[robot_index][i] - last_robot_joint_controls[robot_index][i]) >
+//                   current_keypoint_method.velocity_change_thresholds[i]){
+//                    robot_keypoint_required[robot_index] = true;
+//                }
+                if(robot_keypoint_required[robot_index]){
+                    break; // No need to check further joints for this robot
+                }
+            }
+            robot_index++;
+        }
+
+        // Using boolean keypoint robots variable add keypoints as required per robot kinematic chain
+        robot_index = 0;
+        for(int i = 0; i < robot_keypoint_required.size(); i++){
+            if(robot_keypoint_required[i]){ // If keypoint is required for this robot
+                // Add all kinematic chain state indices for this robot
+                int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_vector_list.robots[i].joint_names[0].c_str());
+                int qpos_index = MuJoCo_helper->model->jnt_qposadr[joint_id];
+                int state_index = Model_translator->QPosIndexToStateIndex(qpos_index, state_vector_list);
+                KinematicChain(state_index, state_vector_list, row);
+
+                // Update the last values for positions, velocities and controls for this robot
+                last_robot_joint_positions[i] = new_robot_joint_positions[i];
+                last_robot_joint_velocities[i] = new_robot_joint_velocities[i];
+                last_robot_joint_controls[i] = new_robot_joint_controls[i];
+
+//                std::cout << "keypoint enforced via pos change \n";
+            }
+            robot_index++;
+        }
+
+        // Update current contact list
+        current_contacts = new_contacts;
+
+        // TODO - Do we need to sort the key-points?
+        if(change_in_contact){
+            // Sort the row to ensure keypoints are in order
+            std::sort(row.begin(), row.end());
+
+            keypoints[t - 1] = new_last_row; // Update the previous row with the new keypoints
+        }
+
+        keypoints.push_back(row);
+    }
+
+    // Manually enforce last keypoint for all dofs at horizon - 1
+    keypoints.push_back(full_row);
+
+    // Sort the keypoints
+    for(int i = 0; i < horizon; i++){
+        std::sort(keypoints[i].begin(), keypoints[i].end());
+    }
+
+    // Delete any duplicates
+    for(int i = 0; i < horizon; i++){
+        keypoints[i].erase(std::unique(keypoints[i].begin(), keypoints[i].end()), keypoints[i].end());
+    }
 }
 
 void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
