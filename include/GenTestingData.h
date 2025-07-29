@@ -7,6 +7,18 @@
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 
+// ---------- Tasks -----------------
+#include "ModelTranslator/Acrobot.h"
+#include "ModelTranslator/PistonBlock.h"
+#include "ModelTranslator/Reaching.h"
+#include "ModelTranslator/TwoDPushing.h"
+#include "ModelTranslator/ThreeDPushing.h"
+#include "ModelTranslator/BoxSweep.h"
+#include "ModelTranslator/Walker.h"
+#include "ModelTranslator/Humanoid.h"
+#include "ModelTranslator/PlaceObject.h"
+#include "ModelTranslator/ImpactLargeBox.h"
+
 class GenTestingData{
 
 public:

@@ -1,5 +1,206 @@
 #include "GenTestingData.h"
 
+std::shared_ptr<ModelTranslator> activeModelTranslator;
+std::shared_ptr<Differentiator> activeDifferentiator;
+std::shared_ptr<Optimiser> activeOptimiser;
+std::shared_ptr<iLQR> iLQROptimiser;
+std::shared_ptr<Visualiser> activeVisualiser;
+std::shared_ptr<FileHandler> yamlReader;
+
+int assign_task(std::string task){
+    if(task == "acrobot"){
+        std::shared_ptr<Acrobot> myAcrobot = std::make_shared<Acrobot>();
+        activeModelTranslator = myAcrobot;
+    }
+    else if(task == "reaching"){
+        std::shared_ptr<pandaReaching> myReaching = std::make_shared<pandaReaching>();
+        activeModelTranslator = myReaching;
+    }
+    else if(task == "pushing_no_clutter"){
+        std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(noClutter);
+        activeModelTranslator = myTwoDPushing;
+    }
+    else if(task == "pushing_low_clutter"){
+        std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(lowClutter);
+        activeModelTranslator = myTwoDPushing;
+    }
+    else if(task == "pushing_moderate_clutter"){
+        std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(heavyClutter);
+        activeModelTranslator = myTwoDPushing;
+    }
+    else if(task == "pushing_moderate_clutter_constrained"){
+        std::shared_ptr<TwoDPushing> myTwoDPushing = std::make_shared<TwoDPushing>(constrainedClutter);
+        activeModelTranslator = myTwoDPushing;
+    }
+    else if(task == "place_low_clutter"){
+        std::shared_ptr<PlaceObject> my_place_object = std::make_shared<PlaceObject>("end_effector", "goal", lowClutter);
+        activeModelTranslator = my_place_object;
+    }
+    else if(task == "place_heavy_clutter"){
+        std::shared_ptr<PlaceObject> my_place_object = std::make_shared<PlaceObject>("end_effector", "goal", heavyClutter);
+        activeModelTranslator = my_place_object;
+    }
+    else if(task == "3D_pushing"){
+        std::shared_ptr<ThreeDPushing> myThreeDPushing = std::make_shared<ThreeDPushing>();
+        activeModelTranslator = myThreeDPushing;
+    }
+    else if(task == "box_push_toppling"){
+        cout << "not implemented task yet " << endl;
+        return EXIT_FAILURE;
+    }
+    else if(task == "walker_walk"){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(PLANE, WALK);
+        activeModelTranslator = myLocomotion;
+    }
+    else if(task == "walker_run"){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN, RUN);
+        activeModelTranslator = myLocomotion;
+    }
+    else if(task == "walker_uneven"){
+        std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN, WALK);
+        activeModelTranslator = myLocomotion;
+    }
+    else if(task == "box_sweep"){
+        std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
+        activeModelTranslator = myBoxSweep;
+    }
+    else if(task == "impact_large_box"){
+        std::shared_ptr<ImpactLargeBox> my_impact_large_box = std::make_shared<ImpactLargeBox>();
+        activeModelTranslator = my_impact_large_box;
+    }
+    else if(task == "piston_block"){
+        std::shared_ptr<PistonBlock> my_piston_block = std::make_shared<PistonBlock>();
+        activeModelTranslator = my_piston_block;
+    }
+    else if(task == "humanoid"){
+        std::shared_ptr<Humanoid> my_humanoid = std::make_shared<Humanoid>();
+        activeModelTranslator = my_humanoid;
+    }
+    else{
+        std::cout << "invalid scene selected, " << task << " does not exist" << std::endl;
+    }
+    return EXIT_SUCCESS;
+}
+
+int main(int argc, char **argv){
+
+    // Minimum Expected arguments
+    // 1. Program name
+    // 2. run_mode
+    // 3. task_name
+    if(argc < 3){
+        std::cout << "Insufficient arguments, intended usage is {program name} {run_mode} {task_name}" << endl;
+        return EXIT_FAILURE;
+    }
+
+    std::string run_mode = argv[1];
+    std::string task_name = argv[2];
+
+    if(assign_task(task_name) == EXIT_FAILURE){
+        std::cout << "Task specified does not exist \n";
+        return EXIT_FAILURE;
+    }
+
+    int opt_horizon = activeModelTranslator->openloop_horizon;
+
+    yamlReader = std::make_shared<FileHandler>();
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
+    activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
+    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
+                                           activeModelTranslator->MuJoCo_helper,
+                                           activeDifferentiator,
+                                           opt_horizon, activeVisualiser, yamlReader);
+    activeOptimiser = iLQROptimiser;
+
+
+//    yamlReader->ReadSettingsFile("/generalConfigs/" + config_file_name + ".yaml");
+
+
+
+    if(run_mode == "Generate_openloop_data"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+        int task_horizon = activeModelTranslator->openloop_horizon;
+        return myTestingObject.GenDataOpenLoopMultipleMethods(task_horizon);
+    }
+    if(run_mode == "Generate_asynchronus_mpc_data"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_horizon = activeModelTranslator->MPC_horizon;
+        int task_timeout = 2000;
+        int re_add_dofs;
+        double K_threshold;
+
+        if(argc > 2){
+            task_horizon = std::atoi(argv[2]);
+        }
+
+        if(argc > 3){
+            task_timeout = std::atoi(argv[3]);
+        }
+
+        if(argc > 4){
+            re_add_dofs = std::atoi(argv[4]);
+            K_threshold = std::atof(argv[5]);
+
+            myTestingObject.SetParamsiLQR_SVR(re_add_dofs, K_threshold);
+            std::cout << "set optimiser parameters \n";
+        }
+
+        return myTestingObject.GenDataAsyncMPC(task_horizon, task_timeout);
+    }
+
+    if(run_mode == "Generate_syncronus_mpc_data"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_timeout = 1500;
+
+        if(argc > 2){
+            task_timeout = std::atoi(argv[2]);
+        }
+
+        return myTestingObject.GenDataMPCHorizons(task_timeout);
+    }
+
+    if(run_mode == "Generate_dynamics_data"){
+        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        return myTestingObject.GenerateDynamicsDerivsData(100, 4);
+    }
+
+    if(run_mode == "Generate_test_scenes"){
+        GenTestingData myTestingObject(iLQROptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        return myTestingObject.GenerateTestScenes(100);
+    }
+
+    if(run_mode == "Analyse_toy_contact"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_horizon = activeModelTranslator->openloop_horizon;
+
+        return myTestingObject.AnalyseToyContact(task_horizon);
+    }
+
+    if(run_mode == "Analyse_toy_contact_keypoints"){
+        GenTestingData myTestingObject(activeOptimiser, activeModelTranslator,
+                                       activeDifferentiator, activeVisualiser, yamlReader);
+
+        int task_horizon = activeModelTranslator->openloop_horizon;
+
+        return myTestingObject.AnalyseToyContactKeypoints(task_horizon);
+    }
+
+    return EXIT_SUCCESS;
+
+}
+
 GenTestingData::GenTestingData(std::shared_ptr<Optimiser> optimiser_,
                                std::shared_ptr<ModelTranslator> activeModelTranslator_,
                                std::shared_ptr<Differentiator> activeDifferentiator_,
@@ -20,7 +221,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     int this_test_fine = EXIT_SUCCESS;
 
     int num_trials = 100;
-    int min_iterations = 3;
+    int min_iterations = 6;
     int max_iterations = 10;
 
     // Keypoint methods to be tested

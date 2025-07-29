@@ -439,27 +439,27 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //        std::cout << "Interval keypoint generation time: " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start_interval).count() / 1000.0f << "ms\n";
 
     }
-    else if(current_keypoint_method.name == "adaptive_jerk"){
-        auto start_jerk = std::chrono::high_resolution_clock::now();
-        GenerateJerkProfile(trajectory_states);
-//        std::cout << "Jerk profile generation time: " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start_jerk).count() / 1000.0f << "ms\n";
-        GenerateKeyPointsAdaptive(jerk_profile);
-    }
-    else if(current_keypoint_method.name == "adaptive_accel"){
-        std::vector<MatrixXd> acceleration_profile = GenerateAccellerationProfile(horizon, trajectory_states);
-        GenerateKeyPointsAdaptive(acceleration_profile);
-    }
-    else if(current_keypoint_method.name == "iterative_error"){
-        computed_keypoints.clear();
-        physics_simulator->InitModelForFiniteDifferencing();
-        keypoints = GenerateKeyPointsIteratively(horizon, trajectory_states, A, B);
-        physics_simulator->ResetModelAfterFiniteDifferencing();
-
-    }
-    else if(current_keypoint_method.name == "velocity_change"){
-        GenerateVelocityProfile(trajectory_states);
-        GenerateKeyPointsVelocityChange(velocity_profile);
-    }
+//    else if(current_keypoint_method.name == "adaptive_jerk"){
+//        auto start_jerk = std::chrono::high_resolution_clock::now();
+//        GenerateJerkProfile(trajectory_states);
+////        std::cout << "Jerk profile generation time: " << std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start_jerk).count() / 1000.0f << "ms\n";
+//        GenerateKeyPointsAdaptive(jerk_profile);
+//    }
+//    else if(current_keypoint_method.name == "adaptive_accel"){
+//        std::vector<MatrixXd> acceleration_profile = GenerateAccellerationProfile(horizon, trajectory_states);
+//        GenerateKeyPointsAdaptive(acceleration_profile);
+//    }
+//    else if(current_keypoint_method.name == "iterative_error"){
+//        computed_keypoints.clear();
+//        physics_simulator->InitModelForFiniteDifferencing();
+//        keypoints = GenerateKeyPointsIteratively(horizon, trajectory_states, A, B);
+//        physics_simulator->ResetModelAfterFiniteDifferencing();
+//
+//    }
+//    else if(current_keypoint_method.name == "velocity_change"){
+//        GenerateVelocityProfile(trajectory_states);
+//        GenerateKeyPointsVelocityChange(velocity_profile);
+//    }
     else if(current_keypoint_method.name == "contact_change"){
         // Print out contact sequence
 //        for(int t = 0; t < horizon; t++){
@@ -483,7 +483,7 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
         ContactAwareKeypointsSep(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list);
     }
     else{
-        std::cerr << "ERROR: keyPointsMethod not recognised \n";
+        std::cerr << "ERROR: key point method not recognised \n";
         exit(1);
     }
 
@@ -505,188 +505,6 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //        std::cout << last_percentages[i] << " ";
 //    }
 //    std::cout << "\n";
-}
-
-void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,
-                                             std::vector<MatrixXd> &trajectory_states,
-                                             std::vector<double> &dof_importances){
-
-
-    // If we are not in auto-adjust mode, then return
-    if(!current_keypoint_method.auto_adjust){
-        return;
-    }
-
-    // Compute lower limit for number of key-points, based on the max_N
-    int lower_lim_num_derivs = ceil((double)horizon / (double)current_keypoint_method.max_N) + 1;
-
-    std::vector<int> desired_num_keypoints = std::vector<int>(dof);
-    std::vector<double> desired_derivative_percentages = std::vector<double>(dof);
-
-    // New desired percentages
-
-//    std::vector<int> desired_derivative_nums = std::vector<int>(dof, 0);
-
-    // Print last num keypoints
-//    cout << "Last num keypoints: ";
-//    for(int i = 0; i < dof; i++){
-//        cout << last_num_keypoints[i] << " ";
-//    }
-//    cout << "\n";
-//
-//    cout << "last percentages: ";
-//    for(int i = 0; i < dof; i++){
-//        cout << last_percentages[i] << " ";
-//    }
-//    cout << "\n";
-
-    // If the last optimisation decreased the cost
-    desired_derivative_percentages = DesiredPercentageDerivs(expected, actual, dof_importances);
-
-//    std::cout << "desired derivative percentages: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << desired_derivative_percentages[i] << " ";
-//    }
-//    std::cout << std::endl;
-
-    // Convert percentages to number of key-points
-    desired_num_keypoints = ConvertPercentagesToNumKeypoints(desired_derivative_percentages);
-
-    // Enforce minimum and maximum number of key-points
-    for(int i = 0; i < dof; i++){
-        if(desired_num_keypoints[i] < lower_lim_num_derivs){
-            desired_num_keypoints[i] = lower_lim_num_derivs;
-        }
-
-        if(desired_num_keypoints[i] > horizon){
-            desired_num_keypoints[i] = horizon;
-        }
-    }
-
-//    std::cout << "last percentages: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << last_percentages[i] << " ";
-//
-//    }
-//    std::cout << std::endl;
-//
-//    std::cout << "desired percentages: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << desired_derivative_percentages[i] << " ";
-//    }
-//    std::cout << std::endl;
-
-    AutoAdjustKeypointParameters(trajectory_states, desired_num_keypoints, 3);
-}
-
-std::vector<double> KeypointGenerator::DesiredPercentageDerivs(double expected, double actual,
-                                            std::vector<double> &dof_importances){
-
-    std::vector<double> desired_derivative_percentages = std::vector<double>(dof);
-
-    double surprise = actual / expected;
-//    std:: cout << "actual was: " << actual << " expected was: " << expected << "surprise was: " << surprise << std::endl;
-
-    // If we has some cost reduction
-    if(actual > 0){
-        // Make the key-points greedier
-
-        // When surprise is low, dont update
-        double raw_adjust_factor;
-        if(surprise < surprise_lower){
-//            std::cout << "surprise was low" << std::endl;
-            raw_adjust_factor = -2 - pow(expected, 2);
-
-            if(raw_adjust_factor < -5){
-                raw_adjust_factor = -5;
-            }
-        }
-            // Lets scale our greediness depending on how much surprise we received
-        else{
-            // This might need caps on it.
-            raw_adjust_factor = 3 * pow(surprise, 2) + 2;
-        }
-
-        // Cap the adjust factor
-        if(raw_adjust_factor > 5){
-            raw_adjust_factor = 5;
-        }
-
-//        std::cout << "raw adjust factor  " << raw_adjust_factor << std::endl;
-
-        for(int i = 0; i < dof; i++){
-
-            // Take into account the dof importances, if a dof is very important, we want to be less greedy
-            // If a dof is not important, we want to be more greedy
-            double adjust_factor;
-
-            if(dof_importances[i] == 0.0){
-                adjust_factor = raw_adjust_factor;
-            }
-            else{
-                adjust_factor = raw_adjust_factor * (1.0 / dof_importances[i]);
-            }
-            desired_derivative_percentages[i] = last_percentages[i] - adjust_factor;
-        }
-    }
-    // If we had no cost reduction
-    else{
-        // Make the key-points less greedy
-        for(int i = 0; i < dof; i++) {
-
-            // TODO(DMackRus) we might need to take into acount the old cost also.
-            double raw_adjust_factor = pow(expected, 2);
-
-            if(raw_adjust_factor > 5){
-                raw_adjust_factor = 5;
-            }
-
-            double adjust_factor = raw_adjust_factor * dof_importances[i];
-
-            desired_derivative_percentages[i] = last_percentages[i] + adjust_factor;
-        }
-    }
-
-    return desired_derivative_percentages;
-}
-
-void KeypointGenerator::AutoAdjustKeypointParameters(const std::vector<MatrixXd> &trajectory_states,
-                                  const std::vector<int> &desired_num_keypoints, int num_iterations){
-
-    std::vector<double> dof_percentages;
-    std::vector<MatrixXd> empty;
-
-//    std::cout << "desired derivs: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << desired_num_keypoints[i] << " ";
-//    }
-//    std::cout << std::endl;
-
-    GenerateKeypointsOrderOfImportance(trajectory_states, desired_num_keypoints);
-    UpdateLastPercentageDerivatives(keypoints);
-
-//    std::cout << "actual derivs: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << last_num_keypoints[i] << " ";
-//    }
-//    std::cout << std::endl;
-//
-//    std::cout << "new percentages: ";
-//    for(int i = 0; i < dof; i++){
-//        std::cout << last_percentages[i] << " ";
-//    }
-//    std::cout << std::endl;
-
-//    for(int i = 0; i < keypoints.size(); i++){
-//        cout << "timestep " << i << ": ";
-//        for(int j = 0; j < keypoints[i].size(); j++){
-//            cout << keypoints[i][j] << " ";
-//        }
-//        cout << "\n";
-//    }
-
-    // Prevents recomputation for next iteration as we have already adjusted.
-    keypoints_computed = true;
 }
 
 void KeypointGenerator::GenerateKeyPointsSetInterval(){
@@ -817,367 +635,6 @@ void KeypointGenerator::GenerateKeypointsOrderOfImportance(const std::vector<Mat
 //        cout << "\n";
 //    }
 
-}
-
-std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsIteratively(int horizon, std::vector<MatrixXd> trajectory_states,
-                                                                              std::vector<MatrixXd> &A, std::vector<MatrixXd> &B) {
-    int dof = trajectory_states[0].rows() / 2;
-
-    std::vector<std::vector<int>> keypoints;
-    bool bins_complete[dof];
-    std::vector<index_tuple> index_tuples;
-    int start_index = 0;
-    int end_index = horizon - 1;
-
-    // Initialise variables
-    for(int i = 0; i < dof; i++){
-        bins_complete[i] = false;
-//        computed_keypoints.push_back(std::vector<int>());
-    }
-
-    // Resize the outer vector to 'dof'
-    computed_keypoints.resize(dof);
-
-    // Resize each inner vector to 'T' and initialize with 'false'
-    for (auto& innerVec : computed_keypoints) {
-        innerVec.resize(horizon, false);
-    }
-
-    for(int i = 0; i < horizon; i++){
-        keypoints.push_back(std::vector<int>());
-    }
-
-    // Loop through all dofs in the system
-//    #pragma omp parallel for
-    for(int i = 0; i < dof; i++){
-//        std::cout << "---------------------  Generating key points for dof --------------------------------- " << i << std::endl;
-        std::vector<index_tuple> list_of_indices_check;
-        index_tuple initial_tuple;
-        initial_tuple.start_index = start_index;
-        initial_tuple.end_index = end_index;
-        list_of_indices_check.push_back(initial_tuple);
-
-        std::vector<index_tuple> sub_list_indices;
-        std::vector<int> sub_list_with_midpoints;
-
-        while(!bins_complete[i]){
-            bool allChecksComplete = true;
-
-            for(int j = 0; j < list_of_indices_check.size(); j++) {
-
-                int midIndex = (list_of_indices_check[j].start_index + list_of_indices_check[j].end_index) / 2;
-//                cout <<"dof: " << i <<  ": index tuple: " << list_of_indices_check[j].start_index << " " << list_of_indices_check[j].end_index << endl;
-                bool approximationGood = CheckDOFColumnError(list_of_indices_check[j], i, dof, A, B);
-
-                if (!approximationGood) {
-                    allChecksComplete = false;
-                    index_tuple tuple1;
-                    tuple1.start_index = list_of_indices_check[j].start_index;
-                    tuple1.end_index = midIndex;
-                    index_tuple tuple2;
-                    tuple2.start_index = midIndex;
-                    tuple2.end_index = list_of_indices_check[j].end_index;
-                    sub_list_indices.push_back(tuple1);
-                    sub_list_indices.push_back(tuple2);
-                }
-                else{
-                    sub_list_with_midpoints.push_back(list_of_indices_check[j].start_index);
-                    sub_list_with_midpoints.push_back(midIndex);
-                    sub_list_with_midpoints.push_back(list_of_indices_check[j].end_index);
-                }
-            }
-
-            if(allChecksComplete){
-                bins_complete[i] = true;
-                sub_list_with_midpoints.clear();
-            }
-
-            list_of_indices_check = sub_list_indices;
-            sub_list_indices.clear();
-        }
-    }
-
-    // Loop over the horizon
-    for(int i = 0; i < horizon; i++){
-        // Loop over the dofs
-        for(int j = 0; j < dof; j++){
-            if(computed_keypoints[j][i]){
-                keypoints[i].push_back(j);
-            }
-        }
-    }
-
-    // Sort list into order
-    for(int i = 0; i < horizon; i++){
-        std::sort(keypoints[i].begin(), keypoints[i].end());
-    }
-
-    // Remove duplicates
-    for(int i = 0; i < horizon; i++){
-        keypoints[i].erase(std::unique(keypoints[i].begin(), keypoints[i].end()), keypoints[i].end());
-    }
-
-    return keypoints;
-}
-
-bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, int num_dofs,
-                                            std::vector<MatrixXd> &A, std::vector<MatrixXd> &B) {
-    int state_vector_size = num_dofs * 2;
-
-    // The two columns of the "A" matrix we will compare (position, velocity) for that dof to evaluate our approximation
-    MatrixXd mid_columns_approximated[2];
-    for(int i = 0; i < 2; i++){
-        mid_columns_approximated[i] = MatrixXd::Zero(state_vector_size, 1);
-    }
-
-    // Middle index in trajectory between start and end index passed from "indices" struct
-    int mid_index = (indices.start_index + indices.end_index) / 2;
-    if((indices.end_index - indices.start_index) <= current_keypoint_method.min_N){
-        return true;
-    }
-
-    MatrixXd blank1, blank2, blank3, blank4;
-
-    bool start_index_computed = false;
-    bool mid_index_computed = false;
-    bool end_index_computed = false;
-
-    if(computed_keypoints[dof_index][indices.start_index]){
-        start_index_computed = true;
-    }
-
-    if(computed_keypoints[dof_index][mid_index]){
-        mid_index_computed = true;
-    }
-
-    if(computed_keypoints[dof_index][indices.end_index]){
-        end_index_computed = true;
-    }
-
-    std::vector<int> cols;
-    cols.push_back(dof_index);
-
-    // Gets thread id so we can make sure we use different data structure for F.D computations
-    int tid = omp_get_thread_num();
-
-    if(!start_index_computed){
-        differentiator->DynamicsDerivatives(A[indices.start_index], B[indices.start_index], cols,
-                                            indices.start_index, tid, true, 1e-6);
-        computed_keypoints[dof_index][indices.start_index] = true;
-    }
-
-    if(!mid_index_computed){
-        differentiator->DynamicsDerivatives(A[mid_index], B[mid_index], cols,
-                                            mid_index, tid, true, 1e-6);
-        computed_keypoints[dof_index][mid_index] = true;
-    }
-
-    if(!end_index_computed){
-        differentiator->DynamicsDerivatives(A[indices.end_index], B[indices.end_index], cols,
-                                            indices.end_index, tid, true, 1e-6);
-        computed_keypoints[dof_index][indices.end_index] = true;
-    }
-
-    mid_columns_approximated[0] = (A[indices.start_index].block(0, dof_index, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index, num_dofs * 2, 1)) / 2;
-    mid_columns_approximated[1] = (A[indices.start_index].block(0, dof_index + num_dofs, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index + num_dofs, num_dofs * 2, 1)) / 2;
-
-    double error_sum = 0.0f;
-    int counter = 0;
-
-    for(int i = 0; i < 2; i++){
-        int A_col_indices[2] = {dof_index, dof_index + num_dofs};
-        for(int j = num_dofs; j < num_dofs*2; j++){
-            double square_difference = pow((A[mid_index](j, A_col_indices[i]) - mid_columns_approximated[i](j, 0)), 2);
-
-            counter++;
-            error_sum += square_difference;
-        }
-    }
-
-    double average_error;
-    if(counter > 0){
-        average_error = error_sum / counter;
-    }
-    else{
-        average_error = 0.0f;
-    }
-
-//    if(dofIndex == 0){
-//        cout << "average error: " << average_error << "\n";
-//    }
-
-    if(average_error < current_keypoint_method.iterative_error_threshold){
-        return true;
-    }
-    return false;
-}
-
-void KeypointGenerator::GenerateKeyPointsVelocityChange(const std::vector<MatrixXd> &velocity_profile) {
-
-    std::vector<int> full_row(dof, 0);
-
-    for(int i = 0; i < dof; i++){
-        full_row[i] = i;
-    }
-    keypoints.push_back(full_row);
-
-    // Keeps track of interval from last keypoint for this dof
-    std::vector<int> last_keypoint_counter = std::vector<int>(dof, 0);
-    std::vector<double> last_vel_value = std::vector<double>(dof, 0);
-    std::vector<double> last_vel_direction = std::vector<double>(dof, 0);
-
-    for(int i = 0; i < dof; i++){
-//        last_vel_value[i] = velocity_profile[0](i, 0);
-        last_vel_value[i] = 0.0;
-
-        min_last_velocity[i] = velocity_profile[0](i, 0);
-        max_last_velocity[i] = velocity_profile[0](i, 0);
-    }
-
-    // Loop over the horizon
-    for(int t = 1; t < horizon; t++){
-        std::vector<int> row;
-
-        // Loop over the velocity dofs
-        for(int i = 0; i < dof; i++){
-
-            last_keypoint_counter[i]++;
-            double current_vel_direction = velocity_profile[t](i, 0) - velocity_profile[t - 1](i, 0);
-//            double current_vel_change_since_last_keypoint = velocity_profile[t](i, 0) - last_vel_value[i];
-            last_vel_value[i] += abs(velocity_profile[t](i, 0));
-
-            // If the vel change is above the required threshold
-            if(last_keypoint_counter[i] >= current_keypoint_method.min_N){
-                if(abs(last_vel_value[i]) > current_keypoint_method.velocity_change_thresholds[i]){
-                    row.push_back(i);
-//                    last_vel_value[i] = velocity_profile[t](i, 0);
-                    last_vel_value[i] = 0.0;
-                    last_keypoint_counter[i] = 0;
-                    continue;
-                }
-            }
-
-            // If the interval is greater than min_N
-            if(last_keypoint_counter[i] >= current_keypoint_method.min_N){
-                // If the direction of the velocity has changed
-                if(current_vel_direction * last_vel_direction[i] < 0){
-                    row.push_back(i);
-//                    last_vel_value[i] = velocity_profile[t](i, 0);
-                    last_vel_value[i] = 0.0;
-                    last_keypoint_counter[i] = 0;
-                    continue;
-                }
-            }
-            else{
-                last_vel_direction[i] = current_vel_direction;
-            }
-
-            // If interval is greater than max_N
-            if(last_keypoint_counter[i] >= current_keypoint_method.max_N){
-                row.push_back(i);
-//                last_vel_value[i] = velocity_profile[t](i, 0);
-                last_vel_value[i] = 0.0;
-                last_keypoint_counter[i] = 0;
-                continue;
-            }
-
-            // Update min and max velocities
-            if(velocity_profile[t](i, 0) < min_last_velocity[i]){
-                min_last_velocity[i] = velocity_profile[t](i, 0);
-            }
-
-            if(velocity_profile[t](i, 0) > max_last_velocity[i]){
-                max_last_velocity[i] = velocity_profile[t](i, 0);
-            }
-        }
-
-        keypoints.push_back(row);
-    }
-
-    // Enforce last keypoint for all dofs at horizonLength - 1
-    for(int i = 0; i < dof; i++){
-        keypoints[horizon - 1].push_back(i);
-    }
-}
-
-void KeypointGenerator::GenerateJerkProfile(const std::vector<MatrixXd> &trajectory_states){
-
-    MatrixXd jerk(dof, 1);
-
-    MatrixXd state1(trajectory_states[0].rows(), 1);
-    MatrixXd state2(trajectory_states[0].rows(), 1);
-    MatrixXd state3(trajectory_states[0].rows(), 1);
-
-    MatrixXd accell1(dof*2, 1);
-    MatrixXd accell2(dof*2, 1);
-
-    for(int t = 0; t < horizon - 2; t++){
-        state1 = trajectory_states[t];
-        state2 = trajectory_states[t + 1];
-        state3 = trajectory_states[t + 2];
-
-        accell1 = (state2 - state1) / physics_simulator->ReturnModelTimeStep();
-        accell2 = (state3 - state2) / physics_simulator->ReturnModelTimeStep();
-
-        for(int j = 0; j < dof; j++){
-            jerk(j, 0) = abs((accell2(j+dof, 0) - accell1(j+dof, 0)) / physics_simulator->ReturnModelTimeStep());
-        }
-
-        jerk_profile[t] = jerk;
-    }
-
-    // Set last two time-steps to zero
-    for(int i = 0; i < dof; i++){
-        jerk_profile[horizon - 2](i, 0) = 0;
-        jerk_profile[horizon - 1](i, 0) = 0;
-    }
-
-    // Temp print jerk values
-//    for(int t = 0; t < jerk_profile.size(); t++){
-//        std::cout << "timestep " << t << ": ";
-//        for(int i = 0; i < dof; i++){
-//            std::cout << jerk_profile[t](i, 0) << " ";
-//        }
-//        std::cout << "\n";
-//    }
-}
-
-std::vector<MatrixXd> KeypointGenerator::GenerateAccellerationProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
-    int dof = trajectory_states[0].rows() / 2;
-    MatrixXd accel(dof, 1);
-
-    MatrixXd state1(trajectory_states[0].rows(), 1);
-    MatrixXd state2(trajectory_states[0].rows(), 1);
-
-    std::vector<MatrixXd> accelleration_profile;
-
-    for(int i = 0; i < horizon - 1; i++){
-        state1 = trajectory_states[i];
-        state2 = trajectory_states[i + 1];
-
-        MatrixXd accell_states = state2 - state1;
-
-        for(int j = 0; j < dof; j++){
-            accel(j, 0) = accell_states(j + dof, 0);
-        }
-
-        accelleration_profile.push_back(accel);
-    }
-
-    return accelleration_profile;
-}
-
-void KeypointGenerator::GenerateVelocityProfile(const std::vector<MatrixXd> &trajectory_states) {
-    int dof = trajectory_states[0].rows() / 2;
-
-    MatrixXd velocities(dof, 1);
-
-    for(int t = 0; t < horizon; t++){
-        for(int i = 0; i < dof; i++){
-            velocities(i, 0) = trajectory_states[t](i+dof, 0);
-        }
-        velocity_profile[t] = velocities;
-    }
 }
 
 void KeypointGenerator::UpdateLastPercentageDerivatives(std::vector<std::vector<int>> &keypoints){
@@ -1345,3 +802,540 @@ std::vector<double> KeypointGenerator::ConvertNumKeypointsToPercentages(const st
 void KeypointGenerator::ResetCache(){
     keypoints_computed = false;
 }
+
+// ----------------------------------------------------------------------------------------------
+//                                  Legacy Code
+// ----------------------------------------------------------------------------------------------
+//std::vector<std::vector<int>> KeypointGenerator::GenerateKeyPointsIteratively(int horizon, std::vector<MatrixXd> trajectory_states,
+//                                                                              std::vector<MatrixXd> &A, std::vector<MatrixXd> &B) {
+//    int dof = trajectory_states[0].rows() / 2;
+//
+//    std::vector<std::vector<int>> keypoints;
+//    bool bins_complete[dof];
+//    std::vector<index_tuple> index_tuples;
+//    int start_index = 0;
+//    int end_index = horizon - 1;
+//
+//    // Initialise variables
+//    for(int i = 0; i < dof; i++){
+//        bins_complete[i] = false;
+////        computed_keypoints.push_back(std::vector<int>());
+//    }
+//
+//    // Resize the outer vector to 'dof'
+//    computed_keypoints.resize(dof);
+//
+//    // Resize each inner vector to 'T' and initialize with 'false'
+//    for (auto& innerVec : computed_keypoints) {
+//        innerVec.resize(horizon, false);
+//    }
+//
+//    for(int i = 0; i < horizon; i++){
+//        keypoints.push_back(std::vector<int>());
+//    }
+//
+//    // Loop through all dofs in the system
+////    #pragma omp parallel for
+//    for(int i = 0; i < dof; i++){
+////        std::cout << "---------------------  Generating key points for dof --------------------------------- " << i << std::endl;
+//        std::vector<index_tuple> list_of_indices_check;
+//        index_tuple initial_tuple;
+//        initial_tuple.start_index = start_index;
+//        initial_tuple.end_index = end_index;
+//        list_of_indices_check.push_back(initial_tuple);
+//
+//        std::vector<index_tuple> sub_list_indices;
+//        std::vector<int> sub_list_with_midpoints;
+//
+//        while(!bins_complete[i]){
+//            bool allChecksComplete = true;
+//
+//            for(int j = 0; j < list_of_indices_check.size(); j++) {
+//
+//                int midIndex = (list_of_indices_check[j].start_index + list_of_indices_check[j].end_index) / 2;
+////                cout <<"dof: " << i <<  ": index tuple: " << list_of_indices_check[j].start_index << " " << list_of_indices_check[j].end_index << endl;
+//                bool approximationGood = CheckDOFColumnError(list_of_indices_check[j], i, dof, A, B);
+//
+//                if (!approximationGood) {
+//                    allChecksComplete = false;
+//                    index_tuple tuple1;
+//                    tuple1.start_index = list_of_indices_check[j].start_index;
+//                    tuple1.end_index = midIndex;
+//                    index_tuple tuple2;
+//                    tuple2.start_index = midIndex;
+//                    tuple2.end_index = list_of_indices_check[j].end_index;
+//                    sub_list_indices.push_back(tuple1);
+//                    sub_list_indices.push_back(tuple2);
+//                }
+//                else{
+//                    sub_list_with_midpoints.push_back(list_of_indices_check[j].start_index);
+//                    sub_list_with_midpoints.push_back(midIndex);
+//                    sub_list_with_midpoints.push_back(list_of_indices_check[j].end_index);
+//                }
+//            }
+//
+//            if(allChecksComplete){
+//                bins_complete[i] = true;
+//                sub_list_with_midpoints.clear();
+//            }
+//
+//            list_of_indices_check = sub_list_indices;
+//            sub_list_indices.clear();
+//        }
+//    }
+//
+//    // Loop over the horizon
+//    for(int i = 0; i < horizon; i++){
+//        // Loop over the dofs
+//        for(int j = 0; j < dof; j++){
+//            if(computed_keypoints[j][i]){
+//                keypoints[i].push_back(j);
+//            }
+//        }
+//    }
+//
+//    // Sort list into order
+//    for(int i = 0; i < horizon; i++){
+//        std::sort(keypoints[i].begin(), keypoints[i].end());
+//    }
+//
+//    // Remove duplicates
+//    for(int i = 0; i < horizon; i++){
+//        keypoints[i].erase(std::unique(keypoints[i].begin(), keypoints[i].end()), keypoints[i].end());
+//    }
+//
+//    return keypoints;
+//}
+//
+//bool KeypointGenerator::CheckDOFColumnError(index_tuple indices, int dof_index, int num_dofs,
+//                                            std::vector<MatrixXd> &A, std::vector<MatrixXd> &B) {
+//    int state_vector_size = num_dofs * 2;
+//
+//    // The two columns of the "A" matrix we will compare (position, velocity) for that dof to evaluate our approximation
+//    MatrixXd mid_columns_approximated[2];
+//    for(int i = 0; i < 2; i++){
+//        mid_columns_approximated[i] = MatrixXd::Zero(state_vector_size, 1);
+//    }
+//
+//    // Middle index in trajectory between start and end index passed from "indices" struct
+//    int mid_index = (indices.start_index + indices.end_index) / 2;
+//    if((indices.end_index - indices.start_index) <= current_keypoint_method.min_N){
+//        return true;
+//    }
+//
+//    MatrixXd blank1, blank2, blank3, blank4;
+//
+//    bool start_index_computed = false;
+//    bool mid_index_computed = false;
+//    bool end_index_computed = false;
+//
+//    if(computed_keypoints[dof_index][indices.start_index]){
+//        start_index_computed = true;
+//    }
+//
+//    if(computed_keypoints[dof_index][mid_index]){
+//        mid_index_computed = true;
+//    }
+//
+//    if(computed_keypoints[dof_index][indices.end_index]){
+//        end_index_computed = true;
+//    }
+//
+//    std::vector<int> cols;
+//    cols.push_back(dof_index);
+//
+//    // Gets thread id so we can make sure we use different data structure for F.D computations
+//    int tid = omp_get_thread_num();
+//
+//    if(!start_index_computed){
+//        differentiator->DynamicsDerivatives(A[indices.start_index], B[indices.start_index], cols,
+//                                            indices.start_index, tid, true, 1e-6);
+//        computed_keypoints[dof_index][indices.start_index] = true;
+//    }
+//
+//    if(!mid_index_computed){
+//        differentiator->DynamicsDerivatives(A[mid_index], B[mid_index], cols,
+//                                            mid_index, tid, true, 1e-6);
+//        computed_keypoints[dof_index][mid_index] = true;
+//    }
+//
+//    if(!end_index_computed){
+//        differentiator->DynamicsDerivatives(A[indices.end_index], B[indices.end_index], cols,
+//                                            indices.end_index, tid, true, 1e-6);
+//        computed_keypoints[dof_index][indices.end_index] = true;
+//    }
+//
+//    mid_columns_approximated[0] = (A[indices.start_index].block(0, dof_index, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index, num_dofs * 2, 1)) / 2;
+//    mid_columns_approximated[1] = (A[indices.start_index].block(0, dof_index + num_dofs, num_dofs * 2, 1) + A[indices.end_index].block(0, dof_index + num_dofs, num_dofs * 2, 1)) / 2;
+//
+//    double error_sum = 0.0f;
+//    int counter = 0;
+//
+//    for(int i = 0; i < 2; i++){
+//        int A_col_indices[2] = {dof_index, dof_index + num_dofs};
+//        for(int j = num_dofs; j < num_dofs*2; j++){
+//            double square_difference = pow((A[mid_index](j, A_col_indices[i]) - mid_columns_approximated[i](j, 0)), 2);
+//
+//            counter++;
+//            error_sum += square_difference;
+//        }
+//    }
+//
+//    double average_error;
+//    if(counter > 0){
+//        average_error = error_sum / counter;
+//    }
+//    else{
+//        average_error = 0.0f;
+//    }
+//
+////    if(dofIndex == 0){
+////        cout << "average error: " << average_error << "\n";
+////    }
+//
+//    if(average_error < current_keypoint_method.iterative_error_threshold){
+//        return true;
+//    }
+//    return false;
+//}
+//
+//void KeypointGenerator::GenerateKeyPointsVelocityChange(const std::vector<MatrixXd> &velocity_profile) {
+//
+//    std::vector<int> full_row(dof, 0);
+//
+//    for(int i = 0; i < dof; i++){
+//        full_row[i] = i;
+//    }
+//    keypoints.push_back(full_row);
+//
+//    // Keeps track of interval from last keypoint for this dof
+//    std::vector<int> last_keypoint_counter = std::vector<int>(dof, 0);
+//    std::vector<double> last_vel_value = std::vector<double>(dof, 0);
+//    std::vector<double> last_vel_direction = std::vector<double>(dof, 0);
+//
+//    for(int i = 0; i < dof; i++){
+////        last_vel_value[i] = velocity_profile[0](i, 0);
+//        last_vel_value[i] = 0.0;
+//
+//        min_last_velocity[i] = velocity_profile[0](i, 0);
+//        max_last_velocity[i] = velocity_profile[0](i, 0);
+//    }
+//
+//    // Loop over the horizon
+//    for(int t = 1; t < horizon; t++){
+//        std::vector<int> row;
+//
+//        // Loop over the velocity dofs
+//        for(int i = 0; i < dof; i++){
+//
+//            last_keypoint_counter[i]++;
+//            double current_vel_direction = velocity_profile[t](i, 0) - velocity_profile[t - 1](i, 0);
+////            double current_vel_change_since_last_keypoint = velocity_profile[t](i, 0) - last_vel_value[i];
+//            last_vel_value[i] += abs(velocity_profile[t](i, 0));
+//
+//            // If the vel change is above the required threshold
+//            if(last_keypoint_counter[i] >= current_keypoint_method.min_N){
+//                if(abs(last_vel_value[i]) > current_keypoint_method.velocity_change_thresholds[i]){
+//                    row.push_back(i);
+////                    last_vel_value[i] = velocity_profile[t](i, 0);
+//                    last_vel_value[i] = 0.0;
+//                    last_keypoint_counter[i] = 0;
+//                    continue;
+//                }
+//            }
+//
+//            // If the interval is greater than min_N
+//            if(last_keypoint_counter[i] >= current_keypoint_method.min_N){
+//                // If the direction of the velocity has changed
+//                if(current_vel_direction * last_vel_direction[i] < 0){
+//                    row.push_back(i);
+////                    last_vel_value[i] = velocity_profile[t](i, 0);
+//                    last_vel_value[i] = 0.0;
+//                    last_keypoint_counter[i] = 0;
+//                    continue;
+//                }
+//            }
+//            else{
+//                last_vel_direction[i] = current_vel_direction;
+//            }
+//
+//            // If interval is greater than max_N
+//            if(last_keypoint_counter[i] >= current_keypoint_method.max_N){
+//                row.push_back(i);
+////                last_vel_value[i] = velocity_profile[t](i, 0);
+//                last_vel_value[i] = 0.0;
+//                last_keypoint_counter[i] = 0;
+//                continue;
+//            }
+//
+//            // Update min and max velocities
+//            if(velocity_profile[t](i, 0) < min_last_velocity[i]){
+//                min_last_velocity[i] = velocity_profile[t](i, 0);
+//            }
+//
+//            if(velocity_profile[t](i, 0) > max_last_velocity[i]){
+//                max_last_velocity[i] = velocity_profile[t](i, 0);
+//            }
+//        }
+//
+//        keypoints.push_back(row);
+//    }
+//
+//    // Enforce last keypoint for all dofs at horizonLength - 1
+//    for(int i = 0; i < dof; i++){
+//        keypoints[horizon - 1].push_back(i);
+//    }
+//}
+//
+//void KeypointGenerator::GenerateJerkProfile(const std::vector<MatrixXd> &trajectory_states){
+//
+//    MatrixXd jerk(dof, 1);
+//
+//    MatrixXd state1(trajectory_states[0].rows(), 1);
+//    MatrixXd state2(trajectory_states[0].rows(), 1);
+//    MatrixXd state3(trajectory_states[0].rows(), 1);
+//
+//    MatrixXd accell1(dof*2, 1);
+//    MatrixXd accell2(dof*2, 1);
+//
+//    for(int t = 0; t < horizon - 2; t++){
+//        state1 = trajectory_states[t];
+//        state2 = trajectory_states[t + 1];
+//        state3 = trajectory_states[t + 2];
+//
+//        accell1 = (state2 - state1) / physics_simulator->ReturnModelTimeStep();
+//        accell2 = (state3 - state2) / physics_simulator->ReturnModelTimeStep();
+//
+//        for(int j = 0; j < dof; j++){
+//            jerk(j, 0) = abs((accell2(j+dof, 0) - accell1(j+dof, 0)) / physics_simulator->ReturnModelTimeStep());
+//        }
+//
+//        jerk_profile[t] = jerk;
+//    }
+//
+//    // Set last two time-steps to zero
+//    for(int i = 0; i < dof; i++){
+//        jerk_profile[horizon - 2](i, 0) = 0;
+//        jerk_profile[horizon - 1](i, 0) = 0;
+//    }
+//}
+//
+//std::vector<MatrixXd> KeypointGenerator::GenerateAccellerationProfile(int horizon, std::vector<MatrixXd> trajectory_states) {
+//    int dof = trajectory_states[0].rows() / 2;
+//    MatrixXd accel(dof, 1);
+//
+//    MatrixXd state1(trajectory_states[0].rows(), 1);
+//    MatrixXd state2(trajectory_states[0].rows(), 1);
+//
+//    std::vector<MatrixXd> accelleration_profile;
+//
+//    for(int i = 0; i < horizon - 1; i++){
+//        state1 = trajectory_states[i];
+//        state2 = trajectory_states[i + 1];
+//
+//        MatrixXd accell_states = state2 - state1;
+//
+//        for(int j = 0; j < dof; j++){
+//            accel(j, 0) = accell_states(j + dof, 0);
+//        }
+//
+//        accelleration_profile.push_back(accel);
+//    }
+//
+//    return accelleration_profile;
+//}
+//
+//void KeypointGenerator::GenerateVelocityProfile(const std::vector<MatrixXd> &trajectory_states) {
+//    int dof = trajectory_states[0].rows() / 2;
+//
+//    MatrixXd velocities(dof, 1);
+//
+//    for(int t = 0; t < horizon; t++){
+//        for(int i = 0; i < dof; i++){
+//            velocities(i, 0) = trajectory_states[t](i+dof, 0);
+//        }
+//        velocity_profile[t] = velocities;
+//    }
+//}
+//
+//void KeypointGenerator::AdjustKeyPointMethod(double expected, double actual,
+//                                             std::vector<MatrixXd> &trajectory_states,
+//                                             std::vector<double> &dof_importances){
+//
+//
+//    // If we are not in auto-adjust mode, then return
+//    if(!current_keypoint_method.auto_adjust){
+//        return;
+//    }
+//
+//    // Compute lower limit for number of key-points, based on the max_N
+//    int lower_lim_num_derivs = ceil((double)horizon / (double)current_keypoint_method.max_N) + 1;
+//
+//    std::vector<int> desired_num_keypoints = std::vector<int>(dof);
+//    std::vector<double> desired_derivative_percentages = std::vector<double>(dof);
+//
+//    // New desired percentages
+//
+////    std::vector<int> desired_derivative_nums = std::vector<int>(dof, 0);
+//
+//    // Print last num keypoints
+////    cout << "Last num keypoints: ";
+////    for(int i = 0; i < dof; i++){
+////        cout << last_num_keypoints[i] << " ";
+////    }
+////    cout << "\n";
+////
+////    cout << "last percentages: ";
+////    for(int i = 0; i < dof; i++){
+////        cout << last_percentages[i] << " ";
+////    }
+////    cout << "\n";
+//
+//    // If the last optimisation decreased the cost
+//    desired_derivative_percentages = DesiredPercentageDerivs(expected, actual, dof_importances);
+//
+////    std::cout << "desired derivative percentages: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << desired_derivative_percentages[i] << " ";
+////    }
+////    std::cout << std::endl;
+//
+//    // Convert percentages to number of key-points
+//    desired_num_keypoints = ConvertPercentagesToNumKeypoints(desired_derivative_percentages);
+//
+//    // Enforce minimum and maximum number of key-points
+//    for(int i = 0; i < dof; i++){
+//        if(desired_num_keypoints[i] < lower_lim_num_derivs){
+//            desired_num_keypoints[i] = lower_lim_num_derivs;
+//        }
+//
+//        if(desired_num_keypoints[i] > horizon){
+//            desired_num_keypoints[i] = horizon;
+//        }
+//    }
+//
+////    std::cout << "last percentages: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << last_percentages[i] << " ";
+////
+////    }
+////    std::cout << std::endl;
+////
+////    std::cout << "desired percentages: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << desired_derivative_percentages[i] << " ";
+////    }
+////    std::cout << std::endl;
+//
+//    AutoAdjustKeypointParameters(trajectory_states, desired_num_keypoints, 3);
+//}
+//
+//std::vector<double> KeypointGenerator::DesiredPercentageDerivs(double expected, double actual,
+//                                                               std::vector<double> &dof_importances){
+//
+//    std::vector<double> desired_derivative_percentages = std::vector<double>(dof);
+//
+//    double surprise = actual / expected;
+////    std:: cout << "actual was: " << actual << " expected was: " << expected << "surprise was: " << surprise << std::endl;
+//
+//    // If we has some cost reduction
+//    if(actual > 0){
+//        // Make the key-points greedier
+//
+//        // When surprise is low, dont update
+//        double raw_adjust_factor;
+//        if(surprise < surprise_lower){
+////            std::cout << "surprise was low" << std::endl;
+//            raw_adjust_factor = -2 - pow(expected, 2);
+//
+//            if(raw_adjust_factor < -5){
+//                raw_adjust_factor = -5;
+//            }
+//        }
+//            // Lets scale our greediness depending on how much surprise we received
+//        else{
+//            // This might need caps on it.
+//            raw_adjust_factor = 3 * pow(surprise, 2) + 2;
+//        }
+//
+//        // Cap the adjust factor
+//        if(raw_adjust_factor > 5){
+//            raw_adjust_factor = 5;
+//        }
+//
+////        std::cout << "raw adjust factor  " << raw_adjust_factor << std::endl;
+//
+//        for(int i = 0; i < dof; i++){
+//
+//            // Take into account the dof importances, if a dof is very important, we want to be less greedy
+//            // If a dof is not important, we want to be more greedy
+//            double adjust_factor;
+//
+//            if(dof_importances[i] == 0.0){
+//                adjust_factor = raw_adjust_factor;
+//            }
+//            else{
+//                adjust_factor = raw_adjust_factor * (1.0 / dof_importances[i]);
+//            }
+//            desired_derivative_percentages[i] = last_percentages[i] - adjust_factor;
+//        }
+//    }
+//        // If we had no cost reduction
+//    else{
+//        // Make the key-points less greedy
+//        for(int i = 0; i < dof; i++) {
+//
+//            // TODO(DMackRus) we might need to take into acount the old cost also.
+//            double raw_adjust_factor = pow(expected, 2);
+//
+//            if(raw_adjust_factor > 5){
+//                raw_adjust_factor = 5;
+//            }
+//
+//            double adjust_factor = raw_adjust_factor * dof_importances[i];
+//
+//            desired_derivative_percentages[i] = last_percentages[i] + adjust_factor;
+//        }
+//    }
+//
+//    return desired_derivative_percentages;
+//}
+//
+//void KeypointGenerator::AutoAdjustKeypointParameters(const std::vector<MatrixXd> &trajectory_states,
+//                                                     const std::vector<int> &desired_num_keypoints, int num_iterations){
+//
+//    std::vector<double> dof_percentages;
+//    std::vector<MatrixXd> empty;
+//
+////    std::cout << "desired derivs: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << desired_num_keypoints[i] << " ";
+////    }
+////    std::cout << std::endl;
+//
+//    GenerateKeypointsOrderOfImportance(trajectory_states, desired_num_keypoints);
+//    UpdateLastPercentageDerivatives(keypoints);
+//
+////    std::cout << "actual derivs: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << last_num_keypoints[i] << " ";
+////    }
+////    std::cout << std::endl;
+////
+////    std::cout << "new percentages: ";
+////    for(int i = 0; i < dof; i++){
+////        std::cout << last_percentages[i] << " ";
+////    }
+////    std::cout << std::endl;
+//
+////    for(int i = 0; i < keypoints.size(); i++){
+////        cout << "timestep " << i << ": ";
+////        for(int j = 0; j < keypoints[i].size(); j++){
+////            cout << keypoints[i][j] << " ";
+////        }
+////        cout << "\n";
+////    }
+//
+//    // Prevents recomputation for next iteration as we have already adjusted.
+//    keypoints_computed = true;
+//}

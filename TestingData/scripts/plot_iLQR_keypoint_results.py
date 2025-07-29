@@ -12,8 +12,8 @@ import glob
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-# task_name = "walker_run_openloop_6"
-task_name = "acrobot_openloop_3"
+task_name = "impact"
+iterations = "6_6"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
@@ -34,9 +34,9 @@ def main():
     
     plot_openloop_data(names, dataframes_iLQR)
 
-    # plot_timing_breakdown_data(names, dataframes_iLQR)
+    plot_timing_breakdown_data(names, dataframes_iLQR)
     
-    # test_plot()
+    test_plot()
     
 def test_plot():
     global base_dir, task_name, run_mode
@@ -44,12 +44,14 @@ def test_plot():
 
     fig, axs = plt.subplots(2, 1, figsize=(10, 6))
     
+    run_mode_search = run_mode + "_" + iterations
+    
 
     for folder in os.listdir(current_dir):
         if task_name not in folder:
             continue
         
-        if run_mode not in folder:
+        if run_mode_search not in folder:
             continue
         
         file_name_yaml = current_dir + "/" + folder + "/summary.yaml"
@@ -357,6 +359,9 @@ def load_raw_data(task_name):
     # Load all iLQR algorithms
     global base_dir
     global run_mode
+    global iterations
+    
+    run_iterations = run_mode + "_" + iterations
     
     dataframes_iLQR = []
     yamlfiles_iLQR = []
@@ -373,7 +378,7 @@ def load_raw_data(task_name):
         if task_name not in folder:
             continue
         
-        if run_mode not in folder:
+        if run_iterations not in folder:
             continue
         
         folder_path = os.path.join(current_dir, folder)

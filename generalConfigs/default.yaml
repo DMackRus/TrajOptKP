@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "acrobot"
+task: "pushing_no_clutter"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -33,7 +33,7 @@ task: "acrobot"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "stomp" (not working), "gradDescent" (not working)
 
 # Run mode for the program
-runMode: "Generate_openloop_data"
+runMode: "Optimise_once"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
