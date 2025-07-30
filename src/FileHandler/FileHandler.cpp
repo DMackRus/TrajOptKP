@@ -131,10 +131,10 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             pos_threshold = robot_it->second["position_threshold"].as<double>();
         }
         if(robot_it->second["velocity_threshold"]) {
-            vel_threshold = robot_it->second["position_threshold"].as<double>();
+            vel_threshold = robot_it->second["velocity_threshold"].as<double>();
         }
         if(robot_it->second["control_threshold"]) {
-            control_threshold = robot_it->second["position_threshold"].as<double>();
+            control_threshold = robot_it->second["control_threshold"].as<double>();
         }
 
         tempRobot.name = robotName;
@@ -182,22 +182,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
 
         for(int i = 0; i < body_it->second["startAngularPos"].size(); i++){
             startAngularPos[i] = body_it->second["startAngularPos"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["linearJerkThreshold"].size(); i++){
-            linearJerkThreshold[i] = body_it->second["linearJerkThreshold"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["angularJerkThreshold"].size(); i++){
-            angularJerkThreshold[i] = body_it->second["angularJerkThreshold"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["linearMagVelThreshold"].size(); i++){
-            linearMagVelThreshold[i] = body_it->second["linearMagVelThreshold"][i].as<double>();
-        }
-
-        for(int i = 0; i < body_it->second["angularMagVelThreshold"].size(); i++){
-            angularMagVelThreshold[i] = body_it->second["angularMagVelThreshold"][i].as<double>();
         }
 
         _rigid_body.name = bodyName;

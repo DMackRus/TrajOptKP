@@ -531,31 +531,59 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
         for(const auto& robot : state_vector_list.robots){
             // Get joint limits
             vector<double> joint_limits;
+            vector<double> control_limits;
             MuJoCo_helper->GetRobotJointLimits(robot.name, joint_limits);
+            MuJoCo_helper->GetRobotControlLimits(robot.name, control_limits);
             for(int i = 0; i < robot.joint_names.size(); i++){
                 // Check if the position has changed significantly
-                double joint_change_threshold = (joint_limits[2*i+1] - joint_limits[2*i]) * robot.pos_change_threshold;
-                if(joint_change_threshold < 0.0001){
-                    joint_change_threshold = 0.2; // Ensure a minimum threshold
+                double joint_change_threshold;
+
+                // If joint limits are too close together, implying the joint is unbounded
+                if(joint_limits[2*i+1] - joint_limits[2*i] < 0.0001){
+                    joint_change_threshold = PI * robot.pos_change_threshold;
                 }
+                else{
+                    joint_change_threshold = (joint_limits[2*i+1] - joint_limits[2*i]) * robot.pos_change_threshold;
+                }
+
                 if(std::abs(new_robot_joint_positions[robot_index][i] - last_robot_joint_positions[robot_index][i]) >
                         joint_change_threshold){
                     robot_keypoint_required[robot_index] = true;
                 }
 
-                // TODO - Check if the velocity has changed significantly
-//                if(std::abs(new_robot_joint_velocities[robot_index][i] - last_robot_joint_velocities[robot_index][i]) >
-//                   current_keypoint_method.velocity_change_thresholds[i]){
-//                    robot_keypoint_required[robot_index] = true;
-//                }
+                if(std::abs(new_robot_joint_velocities[robot_index][i] - last_robot_joint_velocities[robot_index][i]) >
+                   robot.vel_change_threshold){
+                    robot_keypoint_required[robot_index] = true;
+//                    std::cout << "vel change reason \n";
+                }
 
-                // TODO - Check if the control has changed significantly
-//                if(std::abs(new_robot_joint_controls[robot_index][i] - last_robot_joint_controls[robot_index][i]) >
-//                   current_keypoint_method.velocity_change_thresholds[i]){
-//                    robot_keypoint_required[robot_index] = true;
-//                }
                 if(robot_keypoint_required[robot_index]){
                     break; // No need to check further joints for this robot
+                }
+            }
+
+            // No need to perform further checks
+            if(robot_keypoint_required[robot_index]){
+                break;
+            }
+
+            // Loop through controls
+            for(int i = 0; i < robot.actuator_names.size(); i++){
+                // Check if the control has changed significantly
+                double control_change_threshold;
+                // TODO - When control limits don't exist. We can't use percentage method. This might be fine
+                // most of the time robots have actuator limits.
+                if(control_limits[2*i+1] - control_limits[2*i] < 0.0001){
+                    control_change_threshold = robot.control_change_threshold;
+                }
+                else{
+                    control_change_threshold = (control_limits[2*i+1] - control_limits[2*i]) * robot.control_change_threshold;
+                }
+
+                if(std::abs(new_robot_joint_controls[robot_index][i] - last_robot_joint_controls[robot_index][i]) >
+                        control_change_threshold){
+                    robot_keypoint_required[robot_index] = true;
+//                    std::cout << "control change reason \n";
                 }
             }
             robot_index++;
@@ -588,10 +616,8 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
         if(change_in_contact){
             // Sort the row to ensure keypoints are in order
             std::sort(row.begin(), row.end());
-
             keypoints[t - 1] = new_last_row; // Update the previous row with the new keypoints
         }
-
         keypoints.push_back(row);
     }
 

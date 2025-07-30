@@ -222,12 +222,14 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 
     int num_trials = 100;
     int min_iterations = 6;
-    int max_iterations = 10;
+    int max_iterations = 6;
 
     // Keypoint methods to be tested
-    std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
-                                                      "contact_change", "contact_change_sep"};
-    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1};
+//    std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
+//                                                      "contact_change", "contact_change_sep", "contact_change_dyn"};
+//    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1, 1};
+    std::vector<std::string> keypoint_method_names = {"contact_change_dyn"};
+    std::vector<int> keypoint_method_min_N = {1};
     keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
 
     for(size_t i = 0; i < keypoint_method_names.size(); i++) {
@@ -241,8 +243,11 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
         if(this_test_fine != EXIT_SUCCESS){
             tests_fine = this_test_fine;
         }
-        // Sleep for 60 seconds - enforces file name change for different tests
-        std::this_thread::sleep_for(std::chrono::seconds(60));
+
+        if(i != keypoint_method_names.size() - 1){
+            // Sleep for 60 seconds - enforces file name change for different tests
+            std::this_thread::sleep_for(std::chrono::seconds(60));
+        }
     }
 
     return tests_fine;
@@ -1091,29 +1096,6 @@ void GenTestingData::SaveTestSummaryData(keypoint_method keypoint_method,
 
     out << YAML::Key << "keypoint_max_N";
     out << YAML::Value << keypoint_method.max_N;
-
-    if(keypoint_method.name == "velocity_change"){
-        std::vector<double> thresholds;
-        for(int i = 0; i < keypoint_method.velocity_change_thresholds.size(); i++){
-            thresholds.push_back(keypoint_method.velocity_change_thresholds[i]);
-        }
-        out << YAML::Key << "velocity_change_thresholds";
-        out << YAML::Value << thresholds;
-    }
-
-    if(keypoint_method.name == "adaptive_jerk"){
-        std::vector<double> thresholds;
-        for(int i = 0; i < keypoint_method.jerk_thresholds.size(); i++){
-            thresholds.push_back(keypoint_method.jerk_thresholds[i]);
-        }
-        out << YAML::Key << "jerk_thresholds";
-        out << YAML::Value << thresholds;
-    }
-
-    if(keypoint_method.name == "iterative_error"){
-        out << YAML::Key << "error_threshold";
-        out << YAML::Value << keypoint_method.iterative_error_threshold;
-    }
 
     // -------------------------- State vector reduction ----------------------------
 
