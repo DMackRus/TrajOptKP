@@ -270,6 +270,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon, int num_trials
 
     // ------------------------- data storage -------------------------------------
     std::vector<double> cost_reductions;
+    std::vector<double> final_costs;
     std::vector<double> optimisation_times;
     std::vector<int>    num_iterations;
     std::vector<double> avg_num_dofs;
@@ -367,9 +368,9 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon, int num_trials
 
         file_output.close();
 
-
         // ------------------------- Update the data storages -------------------------------------
         cost_reductions.push_back(optimiser->cost_reduction);
+        final_costs.push_back(optimiser->new_cost);
         optimisation_times.push_back(optimiser->opt_time_ms);
         num_iterations.push_back(optimiser->num_iterations);
         avg_num_dofs.push_back(optimiser->avg_dofs);
@@ -390,14 +391,14 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon, int num_trials
     file_output.open(filename);
 
     // Make header
-    file_output << "Cost reduction" << "," << "Optimisation time (ms)" << "," << "Number iterations" << ",";
+    file_output << "Cost reduction" << "," << "Final cost" << "," << "Optimisation time (ms)" << "," << "Number iterations" << ",";
     file_output << "Average num dofs" << "," << "Average percent derivs" << "," << "Total time derivs (ms)" << ",";
     file_output << "Total time keypoints (ms)" << "," << "Total time FD (ms)" << "," << "Total time interpolation (ms)" << ",";
     file_output << "Total time cost derivs (ms)" << "," << "Total time BP (ms)" << "," << "Total time FP (ms)" << std::endl;
 
     // Loop through rows
     for(int i = 0; i < cost_reductions.size(); i++){
-        file_output << cost_reductions[i] << "," << optimisation_times[i] << "," << num_iterations[i] << ",";
+        file_output << cost_reductions[i] << "," << final_costs[i] << "," << optimisation_times[i] << "," << num_iterations[i] << ",";
         file_output << avg_num_dofs[i] << "," << avg_percent_derivs[i] << "," << total_time_derivs[i] << ",";
         file_output << total_time_keypoint_generation[i] << "," << total_time_FD[i] << ",";
         file_output << total_time_interpolation[i] << "," << total_time_residuals[i] << ",";

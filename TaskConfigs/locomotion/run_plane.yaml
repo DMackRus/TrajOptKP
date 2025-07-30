@@ -1,13 +1,12 @@
 modelFile: "/mujoco_models/walker/walker_plane.xml"
 modelName: "/walker_run"
 timeStep: 0.005
-keypointMethod: "contact_change_sep"   # Possible values: "set_interval", "adaptive_jerk", "adaptive_accel", "iterative_error, "velocity_change", "contact_change", "contact_change_sep
+keypointMethod: "contact_change_dyn"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 auto_adjust: false
 minN: 1
 maxN: 20
 mpc_horizon: 100
 openloop_horizon: 100
-iterativeErrorThreshold: 1
 
 robots:
   walker:
@@ -16,9 +15,9 @@ robots:
     torqueControl: true
     torqueLimits: [1, 1, 1, 1, 1, 1]
     startPos: [0, 0, 0, 1, -1, 0.2, 0, 0, 0]
-    position_threshold: 0.1  # Value between 0 and 1 - uses joint limits
-    velocity_threshold: 0.1    # Raw velocity threshold value
-    control_threshold: 0.1   # Value between 0 and 1 - uses control limits
+    position_threshold: 0.2  # Value between 0 and 1 - uses joint limits
+    velocity_threshold: 8    # Raw velocity threshold value
+    control_threshold: 0.5   # Value between 0 and 1 - uses control limits
 
 residuals:
   body_height:
@@ -36,7 +35,5 @@ residuals:
   body_controls:
     target: [0]
     resid_dimension: 6
-    #    weight: 0.0001
-    #    weight_terminal: 0.0001
     weight: 0.001
     weight_terminal: 0

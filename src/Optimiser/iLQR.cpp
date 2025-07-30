@@ -1036,4 +1036,3 @@ void iLQR::PrintBannerIteration(int iteration, double new_cost, double old_cost,
               << "|" << std::setw(14) << time_fp
               << "|" << std::setw(18) << best_alpha << "|" << std::endl;
 }
-

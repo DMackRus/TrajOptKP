@@ -1,0 +1,11 @@
+git clone https://github.com/osqp/osqp
+cd osqp
+
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release \
+         -DOSQP_BUILD_SHARED_LIB=ON \
+         -DOSQP_BUILD_STATIC_LIB=ON \
+         -DCMAKE_INSTALL_PREFIX=/usr/local
+
+make -j4
+sudo make install

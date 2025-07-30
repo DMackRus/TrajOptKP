@@ -60,9 +60,6 @@ void SaveTestSummaryData(keypoint_method keypoint_method,
     if(keypoint_method.name == "set_interval") {
         keypoint_method_name = "SI_" + std::to_string(keypoint_method.min_N);
     }
-    else if(keypoint_method.name == "contact_change"){
-        keypoint_method_name = "contact_change";
-    }
     else{
         keypoint_method_name = keypoint_method.name;
     }
@@ -114,9 +111,6 @@ void OpenLoopOptimisationTest(int task_horizon, int num_tasks, std::string contr
     if(iLQROptimiser->activeKeyPointMethod.name == "set_interval") {
         keypoint_name = "SI_" + std::to_string(iLQROptimiser->activeKeyPointMethod.min_N);
     }
-    else if(iLQROptimiser->activeKeyPointMethod.name == "contact_change"){
-        keypoint_name = "contact_change";
-    }
     else{
         keypoint_name = iLQROptimiser->activeKeyPointMethod.name;
     }
@@ -126,6 +120,7 @@ void OpenLoopOptimisationTest(int task_horizon, int num_tasks, std::string contr
 
     // ------------------------- data storage -------------------------------------
     std::vector<double> cost_reductions;
+    std::vector<double> final_costs;
     std::vector<double> optimisation_times;
     std::vector<int>    num_iterations;
     std::vector<double> avg_num_dofs;
@@ -226,6 +221,7 @@ void OpenLoopOptimisationTest(int task_horizon, int num_tasks, std::string contr
 
         // ------------------------- Update the data storages -------------------------------------
         cost_reductions.push_back(iLQROptimiser->cost_reduction);
+        final_costs.push_back(iLQROptimiser->new_cost);
         optimisation_times.push_back(iLQROptimiser->opt_time_ms);
         num_iterations.push_back(iLQROptimiser->num_iterations);
         avg_num_dofs.push_back(iLQROptimiser->avg_dofs);
@@ -246,14 +242,14 @@ void OpenLoopOptimisationTest(int task_horizon, int num_tasks, std::string contr
     file_output.open(filename);
 
     // Make header
-    file_output << "Cost reduction" << "," << "Optimisation time (ms)" << "," << "Number iterations" << ",";
+    file_output << "Cost reduction" << "," << "Final cost" << "," << "Optimisation time (ms)" << "," << "Number iterations" << ",";
     file_output << "Average num dofs" << "," << "Average percent derivs" << "," << "Total time derivs (ms)" << ",";
     file_output << "Total time keypoints (ms)" << "," << "Total time FD (ms)" << "," << "Total time interpolation (ms)" << ",";
     file_output << "Total time cost derivs (ms)" << "," << "Total time BP (ms)" << "," << "Total time FP (ms)" << std::endl;
 
     // Loop through rows
     for(int i = 0; i < cost_reductions.size(); i++){
-        file_output << cost_reductions[i] << "," << optimisation_times[i] << "," << num_iterations[i] << ",";
+        file_output << cost_reductions[i] << "," << final_costs[i] << "," << optimisation_times[i] << "," << num_iterations[i] << ",";
         file_output << avg_num_dofs[i] << "," << avg_percent_derivs[i] << "," << total_time_derivs[i] << ",";
         file_output << total_time_keypoint_generation[i] << "," << total_time_FD[i] << ",";
         file_output << total_time_interpolation[i] << "," << total_time_residuals[i] << ",";
@@ -322,7 +318,7 @@ int main(int argc, char **argv) {
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
 
     // Setup the initial horizon, based on open loop or mpc method
-    const int opt_horizon = 1500;
+    const int opt_horizon = activeModelTranslator->openloop_horizon;
 
     iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
                                            activeModelTranslator->MuJoCo_helper,
@@ -336,7 +332,7 @@ int main(int argc, char **argv) {
 
     // Create a folder directory to save the results for this model
 
-    const int num_tasks = 100;
+    const int num_tasks = 10;
 
     //Default solref and solimp values
     double solref[2] = {0.0, 0.0};
@@ -354,7 +350,7 @@ int main(int argc, char **argv) {
         // ----------------- solref tests --------------------------
         double solref_lower = 0.01;
         double solref_upper = 0.1;
-        int solref_steps = 20;
+        int solref_steps = 10;
         std::vector<double> solref_values;
         for(int i = 0; i < solref_steps; i++){
             double solref_value = solref_lower + (solref_upper - solref_lower) * (double)i / (double)(solref_steps - 1);
@@ -369,8 +365,8 @@ int main(int argc, char **argv) {
             std::string folder_prefix = "solref_" + std::to_string(solref_values[i]);
 
 
-            std::vector<std::string> method_names = {"set_interval", "set_interval", "set_interval", "contact_change"};
-            std::vector<int> method_N_values = {1, 5, 1000, 0}; // 0 for contact_change
+            std::vector<std::string> method_names = {"set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn"};
+            std::vector<int> method_N_values = {1, 5, 1000, 1, 1}; // 0 for contact_change
 
             // For loop over keypoint methods
             for(int j = 0; j < method_names.size(); j++){
@@ -389,45 +385,43 @@ int main(int argc, char **argv) {
     }
 
     // Reset Solimp and solref
-    solref[0] = 0.06;
+//    solref[0] = 0.06;
+//
+//    // Solimp min tests
+//    double solimp0_lower = 0.0;
+//    double solimp0_upper = 0.85;
+//    int solimp0_steps = 20;
+//    std::vector<double> solimp0_values;
+//    for(int i = 0; i < solimp0_steps; i++){
+//        double solref_value = solimp0_lower + (solimp0_upper - solimp0_lower) * (double)i / (double)(solimp0_steps - 1);
+//        solimp0_values.push_back(solref_value);
+//    }
 
-    // Solimp min tests
-    double solimp0_lower = 0.0;
-    double solimp0_upper = 0.85;
-    int solimp0_steps = 20;
-    std::vector<double> solimp0_values;
-    for(int i = 0; i < solimp0_steps; i++){
-        double solref_value = solimp0_lower + (solimp0_upper - solimp0_lower) * (double)i / (double)(solimp0_steps - 1);
-        solimp0_values.push_back(solref_value);
-    }
-
-    for(int i = 0; i < solimp0_values.size(); i++){
-        // Set the solref value in the MuJoCo helper
-        solimp[0] = solimp0_values[i];
-        set_solref_solimp("goal", solref, solimp);
-
-        std::string folder_prefix = "solimp0_" + std::to_string(solimp0_values[i]);
-
-
-        std::vector<std::string> method_names = {"set_interval", "set_interval", "set_interval", "contact_change"};
-        std::vector<int> method_N_values = {1, 5, 1000, 0}; // 0 for contact_change
-
-        // For loop over keypoint methods
-        for(int j = 0; j < method_names.size(); j++){
-            keypoint_method method;
-            method = iLQROptimiser->ReturnCurrentKeypointMethod();
-            method.name = method_names[j];
-            method.min_N = method_N_values[j];
-
-            // Set the current keypoint method
-            iLQROptimiser->SetCurrentKeypointMethod(method);
-
-            // Perform optimisation over N tasks for this key-point method
-            OpenLoopOptimisationTest(opt_horizon, num_tasks, "solimp[0]", solimp0_values[i]);
-        }
-    }
-
-
+//    for(int i = 0; i < solimp0_values.size(); i++){
+//        // Set the solref value in the MuJoCo helper
+//        solimp[0] = solimp0_values[i];
+//        set_solref_solimp("goal", solref, solimp);
+//
+//        std::string folder_prefix = "solimp0_" + std::to_string(solimp0_values[i]);
+//
+//
+//        std::vector<std::string> method_names = {"set_interval", "set_interval", "set_interval", "contact_change"};
+//        std::vector<int> method_N_values = {1, 5, 1000, 0}; // 0 for contact_change
+//
+//        // For loop over keypoint methods
+//        for(int j = 0; j < method_names.size(); j++){
+//            keypoint_method method;
+//            method = iLQROptimiser->ReturnCurrentKeypointMethod();
+//            method.name = method_names[j];
+//            method.min_N = method_N_values[j];
+//
+//            // Set the current keypoint method
+//            iLQROptimiser->SetCurrentKeypointMethod(method);
+//
+//            // Perform optimisation over N tasks for this key-point method
+//            OpenLoopOptimisationTest(opt_horizon, num_tasks, "solimp[0]", solimp0_values[i]);
+//        }
+//    }
 
     return EXIT_SUCCESS;
 }

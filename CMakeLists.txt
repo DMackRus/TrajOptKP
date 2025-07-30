@@ -52,6 +52,9 @@ if(PNGwriter_FOUND)
     message(STATUS "PNG writer library found")
 endif(PNGwriter_FOUND)
 
+# OSQP
+find_package(osqp REQUIRED)
+
 # Create libraries
 #add_library(MuJoCo_helper STATIC src/PhysicsSimulators/MuJoCoHelper.cpp )
 
@@ -86,7 +89,7 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/GAOptimalKeypoints.cpp
             src/ModelTranslator/ArticulatedContact.cpp
             src/ModelTranslator/anyMal.cpp
-            src/ModelTranslator/ImpactLargeBox.cpp)
+            src/ModelTranslator/ImpactLargeBox.cpp src/Optimiser/SCVX.cpp)
 
 add_executable(gen_testing_data src/GenTestingData.cpp
         src/StdInclude/StdInclude.cpp
@@ -188,7 +191,7 @@ include_directories(
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter osqp::osqp) # or osqp::osqp
 
 target_include_directories(gen_testing_data PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 target_link_libraries(gen_testing_data Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)

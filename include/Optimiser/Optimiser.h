@@ -89,6 +89,7 @@ public:
         time_get_derivs_ms.clear();
         time_backwards_pass_ms.clear();
         time_forwardsPass_ms.clear();
+        time_qp_ms.clear();
         percentage_derivs_per_iteration.clear();
     }
 
@@ -187,6 +188,8 @@ public:
     double avg_time_backwards_pass_ms = 0.0;
     std::vector<double> time_forwardsPass_ms;
     double avg_time_forwards_pass_ms = 0.0;
+    std::vector<double> time_qp_ms;
+    double avg_time_qp_ms = 0.0;
 
 
     std::vector<double> percentage_derivs_per_iteration;

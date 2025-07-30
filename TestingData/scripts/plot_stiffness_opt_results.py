@@ -57,9 +57,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Set path to the outer directory, e.g., path/to/root/solref[0]
-# outer_path = "../stiffness_tests/solref[0]"
+outer_path = "../stiffness_tests/solref[0]"
 # outer_path = "../stiffness_tests/solimp[0]"
-outer_path = "../stiffness_tests_6_iters_100_tasks_box_sweep/solimp[0]"
+# outer_path = "../stiffness_tests_6_iters_100_tasks_box_sweep/solimp[0]"
 outer_folder = os.path.basename(outer_path)
 
 # Use this for x-axis label and title
@@ -81,8 +81,8 @@ for x_val in x_dirs:
         if os.path.isfile(summary_file):
             try:
                 df = pd.read_csv(summary_file)
-                if "Cost reduction" in df.columns:
-                    values = df["Cost reduction"].dropna()
+                if "Final cost" in df.columns:
+                    values = df["Final cost"].dropna()
                     n = len(values)
                     if n > 0:
                         mean = values.mean()
