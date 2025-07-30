@@ -12,31 +12,34 @@ import glob
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "acrobot"
+# task_name = "push_mcl"
 iterations = "6_6"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
 
 def main():
-    global task_name
+    # global task_name
     
-    names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task_name)
+    tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
     
-    # Implement code to sort names and dataframes_iLQR based on their names, 
-    # I want the order to be SI1, SI5, Si1000, contact_change
-    print(names)
-    # Sort names and dataframes_iLQR based on the order of SI1, SI5, SI1000, contact_change
-    order = ["SI_1", "SI_5", "SI_1000", "contact_change"]
-    sorted_indices = sorted(range(len(names)), key=lambda i: order.index(names[i]) if names[i] in order else len(order))
-    names = [names[i] for i in sorted_indices]
-    dataframes_iLQR = [dataframes_iLQR[i] for i in sorted_indices]
-    
-    plot_openloop_data(names, dataframes_iLQR)
+    for task in tasks:
+        names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
+        
+        # Implement code to sort names and dataframes_iLQR based on their names, 
+        # I want the order to be SI1, SI5, Si1000, contact_change
+        # print(names)
+        # Sort names and dataframes_iLQR based on the order of SI1, SI5, SI1000, contact_change
+        order = ["SI_1", "SI_5", "SI_1000", "contact_change"]
+        sorted_indices = sorted(range(len(names)), key=lambda i: order.index(names[i]) if names[i] in order else len(order))
+        names = [names[i] for i in sorted_indices]
+        dataframes_iLQR = [dataframes_iLQR[i] for i in sorted_indices]
+        
+        plot_openloop_data(names, dataframes_iLQR, task)
 
-    plot_timing_breakdown_data(names, dataframes_iLQR)
+    # plot_timing_breakdown_data(names, dataframes_iLQR)
     
-    test_plot()
+    # test_plot()
     
 def test_plot():
     global base_dir, task_name, run_mode
@@ -94,8 +97,6 @@ def test_plot():
         axs[0].plot(mean_CR, label=method_name)
         axs[1].scatter(mean_times, mean_CR, label=method_name)
                 
-                
-        print(f"Method: {method_name}, Trials: {len(all_costs)}")
         
     # Final plot adjustments
     axs[0].set_title("Trajectory Cost vs Iteration")
@@ -184,7 +185,7 @@ def plot_timing_breakdown_data(names, dataframes_iLQR):
     plt.show()
 
     
-def plot_openloop_data(names, dataframes_iLQR):
+def plot_openloop_data(names, dataframes_iLQR, task):
     
     # graphs_to_plot = ['Cost reduction', 'Optimisation time (ms)', 'Optimisation time (ms)', 'Number iterations', 'Average percent derivs']
     # columns_per_graph = [['Cost reduction'], 
@@ -199,10 +200,9 @@ def plot_openloop_data(names, dataframes_iLQR):
                          ['Number iterations'],
                          ['Average percent derivs']]
     
-    generate_plots_confidence(names, dataframes_iLQR, graphs_to_plot, columns_per_graph)
+    generate_plots_confidence(names, dataframes_iLQR, graphs_to_plot, columns_per_graph, task)
     
-def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph):
-    global task_name
+def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph, task):
     
     num_iLQR_methods = len(dataframes_iLQR)
     
@@ -304,21 +304,25 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
             
     # Print the data in latex code format to copy and paste into paper
     # Format is final cost, then average optimisation time, then percentage derivatives
-    print(f'Methods: {names}')
+    print(f'{task}', end=' ')
     for i in range(len(names)):
         
+        #OT no CI and CR with CI
+        print(f'& {means[i,0]/1000:.2f}', end=' ')
+        print(f'& {means[i,1]:.2f}$\pm${confidence_intervals[i,1]:.2f}', end=' ')
+        
         # With confidence intervals
-        # print(f'& {means[i,0]:.2f} $\pm$ {confidence_intervals[i,o]:.2f}', end=' ')
+        # print(f'& {means[i,0]:.2f} $\pm$ {confidence_intervals[i,0]:.2f}', end=' ')
         # print(f'& {means[i,1]:.2f} $\pm$ {confidence_intervals[i,1]:.2f}', end=' ')
         # print(f'& {means[i,2]:.2f} $\pm$ {confidence_intervals[i,2]:.2f}', end=' ')
         
         # Without confidence intervals
-        print(f'& {means[i,0]/1000:.2f}', end=' ')
-        print(f'& {means[i,1]:.2f}', end=' ')
-        print(f'& {means[i,2]:.2f}', end=' ')
+        # print(f'& {means[i,0]/1000:.2f}', end=' ')
+        # print(f'& {means[i,1]:.2f}', end=' ')
+        # print(f'& {means[i,2]:.2f}', end=' ')
         
 
-    print('')
+    print(f'\\\\')
             
             
     # Print the data in table format for easy transferance to the paper
@@ -342,10 +346,10 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
     
     
     plt.xticks(x, names, rotation=45, ha='right') 
-    figure_title = task_name
+    figure_title = task
     fig.suptitle(figure_title, fontsize = 20)
     
-    plt.show()
+    # plt.show()
     
 def make_names(iLQR_yaml_files):
     names = []
@@ -355,7 +359,7 @@ def make_names(iLQR_yaml_files):
     
     return names
     
-def load_raw_data(task_name):
+def load_raw_data(task):
     # Load all iLQR algorithms
     global base_dir
     global run_mode
@@ -375,7 +379,7 @@ def load_raw_data(task_name):
 
     for folder in entries:
         # Only add the data if the task name is correct
-        if task_name not in folder:
+        if task not in folder:
             continue
         
         if run_iterations not in folder:

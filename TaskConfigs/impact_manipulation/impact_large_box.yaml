@@ -16,7 +16,7 @@ robots:
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [-1, 0.7, -0.0593, -1.73, 0, 0.722, -1.6]
     position_threshold: 0.1 # Value between 0 and 1 - uses joint limits
-    velocity_threshold: 1 # Raw velocity threshold value
+    velocity_threshold: 0.1 # Raw velocity threshold value
     control_threshold: 0.1 # Value between 0 and 1 - uses control limits
 bodies:
   goal:
@@ -25,10 +25,6 @@ bodies:
     startLinearPos: [ 0.65, 0.3, 0.08 ]
     startAngularPos: [ 0, 0, 0 ]
     goalLinearPos: [ 0.65, 0.4, 0.0 ]
-    linearJerkThreshold: [1, 1, 1]
-    angularJerkThreshold: [ 0, 0, 0 ]
-    linearMagVelThreshold: [ 0.05, 0.05, 0.05 ]
-    angularMagVelThreshold: [ 0.2, 0.2, 0.2 ]
 
 # Open loop residuals
 residuals:

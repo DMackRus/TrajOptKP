@@ -107,7 +107,8 @@ public:
     void ContactChangeDyn(const std::vector<MatrixXd> &trajectory_states,
                           const std::vector<MatrixXd> &trajectory_controls,
                           const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
-                          const stateVectorList &state_vector_list);
+                          const stateVectorList &state_vector_list,
+                          bool dyn_mode);
 
     void PrintKeypointMethod();
 
@@ -220,6 +221,10 @@ private:
     void GenerateKeyPointsVelocityChange(const std::vector<MatrixXd> &velocity_profile);
 
     std::vector<double> ComputePercentageDerivatives(std::vector<std::vector<int>> &keypoints);
+
+    inline std::vector<int> AddKeypointsFromContactSeparate(const std::pair<int, int>& contact,
+                                                                   const std::vector<std::pair<int, int>>& all_contacts,
+                                                                   const stateVectorList &state_vector_list);
 
     void AutoAdjustKeypointParameters(const std::vector<MatrixXd> &trajectory_states,
                                       const std::vector<int> &desired_percentages, int num_iterations);

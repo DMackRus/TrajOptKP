@@ -225,11 +225,11 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     int max_iterations = 6;
 
     // Keypoint methods to be tested
-//    std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
-//                                                      "contact_change", "contact_change_sep", "contact_change_dyn"};
-//    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1, 1};
-    std::vector<std::string> keypoint_method_names = {"contact_change_dyn"};
-    std::vector<int> keypoint_method_min_N = {1};
+    std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
+                                                      "contact_change", "contact_change_sep", "contact_change_dyn"};
+    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1, 1};
+//    std::vector<std::string> keypoint_method_names = {"contact_change_dyn"};
+//    std::vector<int> keypoint_method_min_N = {1};
     keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
 
     for(size_t i = 0; i < keypoint_method_names.size(); i++) {

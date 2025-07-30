@@ -4,8 +4,8 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 cd ..
 
-./build/gen_testing_data Generate_openloop_data acrobot
-./build/gen_testing_data Generate_openloop_data pushing_no_clutter
+#./build/gen_testing_data Generate_openloop_data acrobot
+#./build/gen_testing_data Generate_openloop_data pushing_no_clutter
 ./build/gen_testing_data Generate_openloop_data pushing_low_clutter
 ./build/gen_testing_data Generate_openloop_data pushing_moderate_clutter
 ./build/gen_testing_data Generate_openloop_data box_sweep

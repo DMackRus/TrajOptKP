@@ -16,8 +16,9 @@ robots:
     torqueControl: true
     torqueLimits: [1, 1, 1, 1, 1, 1]
     startPos: [0, 0, 0, 1, -1, 0.2, 0, 0, 0]
-    jointJerkThresholds: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000]
-    magVelThresholds: [2, 2, 2, 10, 10, 10, 10, 10, 10]
+    position_threshold: 0.1  # Value between 0 and 1 - uses joint limits
+    velocity_threshold: 0.1    # Raw velocity threshold value
+    control_threshold: 0.1   # Value between 0 and 1 - uses control limits
 
 residuals:
   body_height:
