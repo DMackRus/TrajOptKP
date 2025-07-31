@@ -5,7 +5,7 @@ openloop_horizon: 1000
 mpc_horizon: 50
 keypointMethod: "contact_change_dyn"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 auto_adjust: false
-minN: 1
+minN: 1000
 maxN: 50
 
 robots:
@@ -121,31 +121,31 @@ residuals:
   obstacle_1_pos:
     target: [ 0.65, 0.45 ]
     weight: 0
-    weight_terminal: 0  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
   obstacle_2_pos:
     target: [ 0.68, 0.3 ]
     weight: 0
-    weight_terminal: 0  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
   obstacle_3_pos:
     target: [ 0.72, 0.3 ]
     weight: 0
-    weight_terminal: 0  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
   obstacle_4_pos:
     target: [ 0.5, 0.2 ]
     weight: 0
-    weight_terminal: 0  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
   obstacle_5_pos:
     target: [ 0.55, 0.45 ]
     weight: 0
-    weight_terminal: 0  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
   obstacle_6_pos:
     target: [ 0.6, 0.15 ]
     weight: 0
-    weight_terminal: 0  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
   obstacle_7_pos:
     target: [ 0.75, 0.5 ]
     weight: 0
-    weight_terminal: 0  # 1000 when long horizon
+    weight_terminal: 10  # 1000 when long horizon
   joint_5_velocity:
     target: [ 0 ]
     weight: 0.1

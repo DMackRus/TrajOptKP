@@ -450,7 +450,7 @@ void SCVX::Iteration(int iteration_num, bool &converged){
 
     // STEP 2 - Formulate and solve the QP subproblem
     timer_start = high_resolution_clock::now();
-    SolveQP();
+//    SolveQP();
     time_qp_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
 
@@ -481,73 +481,166 @@ void SCVX::Iteration(int iteration_num, bool &converged){
     }
 }
 
-void SCVX::SolveQP(const vector<MatrixXd>& A_k,
-                   const vector<MatrixXd>& B_k,
-                   const vector<VectorXd>& d_k,
-                   const vector<MatrixXd>& cost_hess_xx,
-                   const vector<MatrixXd>& cost_hess_uu,
-                   const vector<MatrixXd>& cost_hess_xu,
-                   const vector<VectorXd>& cost_grad_x,
-                   const vector<VectorXd>& cost_grad_u,
-                   const VectorXd& terminal_grad,
-                   const MatrixXd& terminal_hess,
-                   int n, int m, int N,
-                   double trust_box){
+void SolveQP(
+        const SparseMatrix<double>& H,
+        const VectorXd& h,
+        const SparseMatrix<double>& A_eq,
+        const VectorXd& b_eq,
+        const SparseMatrix<double>& A_ineq,
+        const VectorXd& l_ineq,
+        const VectorXd& u_ineq)
+{
+    int nz = H.rows();  // number of decision variables
+    int n_eq = A_eq.rows();
+    int n_ineq = A_ineq.rows();
+    int n_con = n_eq + n_ineq;
 
-    int nz = N * (n + m) + n;
+    // Combine A_eq and A_ineq into one matrix A
+    SparseMatrix<double> A_combined(n_con, nz);
+    typedef Triplet<double> T;
+    vector<T> triplets;
 
-    SparseMatrix<double> H, A_eq, A_ineq;
-    VectorXd h, b_eq, l_ineq, u_ineq;
+    for (int k = 0; k < A_eq.outerSize(); ++k)
+        for (SparseMatrix<double>::InnerIterator it(A_eq, k); it; ++it)
+            triplets.emplace_back(it.row(), it.col(), it.value());
 
-    buildEqualityConstraints(A_k, B_k, d_k, n, m, N, A_eq, b_eq);
-    buildCostFunction(cost_hess_xx, cost_hess_uu, cost_hess_xu,
-                      cost_grad_x, cost_grad_u, terminal_grad, terminal_hess,
-                      n, m, N, H, h);
-    buildTrustRegion(nz, trust_box, A_ineq, l_ineq, u_ineq);
+    for (int k = 0; k < A_ineq.outerSize(); ++k)
+        for (SparseMatrix<double>::InnerIterator it(A_ineq, k); it; ++it)
+            triplets.emplace_back(n_eq + it.row(), it.col(), it.value());
 
-    // Combine A_eq and A_ineq
-    SparseMatrix<double> A_combined(A_eq.rows() + A_ineq.rows(), nz);
-    A_combined.topRows(A_eq.rows()) = A_eq;
-    A_combined.bottomRows(A_ineq.rows()) = A_ineq;
+    A_combined.setFromTriplets(triplets.begin(), triplets.end());
 
-    VectorXd l_combined(b_eq.size() + l_ineq.size());
-    VectorXd u_combined(b_eq.size() + u_ineq.size());
+    // Combine lower and upper bounds
+    VectorXd l_combined(n_con), u_combined(n_con);
     l_combined << b_eq, l_ineq;
     u_combined << b_eq, u_ineq;
 
-    // OSQP setup
-    c_int n_var = nz;
-    c_int n_con = A_combined.rows();
+    // Convert Eigen sparse matrices to CSC format for OSQP
+    A_combined.makeCompressed();
+//    H.makeCompressed();
+//
+//    OSQPCscMatrix* P = OSQPCscMatrix_new(
+//            nz, nz,
+//            H.nonZeros(),
+//            H.valuePtr(),
+//            H.innerIndexPtr(),
+//            H.outerIndexPtr()
+//    );
+//
+//    OSQPCscMatrix* A = OSQPCscMatrix_new(
+//            n_con, nz,
+//            A_combined.nonZeros(),
+//            A_combined.valuePtr(),
+//            A_combined.innerIndexPtr(),
+//            A_combined.outerIndexPtr()
+//    );
 
-    OSQPSettings* settings = (OSQPSettings*)c_malloc(sizeof(OSQPSettings));
-    osqp_set_default_settings(settings);
-    settings->alpha = 1.0;
-
-    OSQPData* data = (OSQPData*)c_malloc(sizeof(OSQPData));
-    data->n = n_var;
-    data->m = n_con;
-    data->P = csc_matrix(nz, nz, H.nonZeros(), H.valuePtr(), (c_int*)H.innerIndexPtr(), (c_int*)H.outerIndexPtr());
-    data->q = h.data();
-    data->A = csc_matrix(n_con, n_var, A_combined.nonZeros(), A_combined.valuePtr(), (c_int*)A_combined.innerIndexPtr(), (c_int*)A_combined.outerIndexPtr());
-    data->l = l_combined.data();
-    data->u = u_combined.data();
-
-    OSQPWorkspace* work = osqp_setup(data, settings);
-    osqp_solve(work);
-
-    VectorXd result;
-    if (work->info->status_val == OSQP_SOLVED) {
-        result = VectorXd::Map(work->solution->x, nz);
-    } else {
-        std::cerr << "OSQP failed to solve the QP." << std::endl;
-        result = VectorXd::Zero(nz);
-    }
-
-    osqp_cleanup(work);
-    c_free(data);
-    c_free(settings);
-    return result;
+    // Gradient vector q
+//    double* q = const_cast<double*>(h.data());
+//    double* l = const_cast<double*>(l_combined.data());
+//    double* u = const_cast<double*>(u_combined.data());
+//
+//    // Settings
+//    OSQPSettings* settings = OSQPSettings_new();
+//    osqp_set_default_settings(settings);
+//    settings->alpha = 1.0;  // relaxation parameter (controls step size of dual updates)
+//
+//    // Solver
+//    OSQPSolver* solver = nullptr;
+//    OSQPInt exitflag = osqp_setup(&solver, P, q, A, l, u, n_con, nz, settings);
+//
+//    if (exitflag != 0) {
+//        std::cerr << "OSQP setup failed with exitflag " << exitflag << std::endl;
+//        return;
+//    }
+//
+//    // Solve QP
+//    exitflag = osqp_solve(solver);
+//    if (exitflag != 0) {
+//        std::cerr << "OSQP solve failed with exitflag " << exitflag << std::endl;
+//    } else {
+//        // Access solution
+//        VectorXd solution = Map<VectorXd>(solver->solution->x, nz);
+//        std::cout << "QP solution:\n" << solution.transpose() << std::endl;
+//    }
+//
+//    // Clean up
+//    osqp_cleanup(solver);
+//    OSQPCscMatrix_free(P);
+//    OSQPCscMatrix_free(A);
+//    OSQPSettings_free(settings);
 }
+
+
+//void SCVX::SolveQP(const vector<MatrixXd>& A_k,
+//                   const vector<MatrixXd>& B_k,
+//                   const vector<VectorXd>& d_k,
+//                   const vector<MatrixXd>& cost_hess_xx,
+//                   const vector<MatrixXd>& cost_hess_uu,
+//                   const vector<MatrixXd>& cost_hess_xu,
+//                   const vector<VectorXd>& cost_grad_x,
+//                   const vector<VectorXd>& cost_grad_u,
+//                   const VectorXd& terminal_grad,
+//                   const MatrixXd& terminal_hess,
+//                   int n, int m, int N,
+//                   double trust_box){
+//
+//    int nz = N * (n + m) + n;
+//
+//    SparseMatrix<double> H, A_eq, A_ineq;
+//    VectorXd h, b_eq, l_ineq, u_ineq;
+//
+//    buildEqualityConstraints(A_k, B_k, d_k, n, m, N, A_eq, b_eq);
+//    buildCostFunction(cost_hess_xx, cost_hess_uu, cost_hess_xu,
+//                      cost_grad_x, cost_grad_u, terminal_grad, terminal_hess,
+//                      n, m, N, H, h);
+//    buildTrustRegion(nz, trust_box, A_ineq, l_ineq, u_ineq);
+//
+//    // Combine A_eq and A_ineq
+//    SparseMatrix<double> A_combined(A_eq.rows() + A_ineq.rows(), nz);
+//    A_combined.topRows(A_eq.rows()) = A_eq;
+//    A_combined.bottomRows(A_ineq.rows()) = A_ineq;
+//
+//    VectorXd l_combined(b_eq.size() + l_ineq.size());
+//    VectorXd u_combined(b_eq.size() + u_ineq.size());
+//    l_combined << b_eq, l_ineq;
+//    u_combined << b_eq, u_ineq;
+//
+//    // OSQP setup
+//    u_int n_var = nz;
+//    u_int n_con = A_combined.rows();
+//
+//    /* Exitflag */
+//    OSQPInt exitflag = 0;
+//
+//    /* Solver */
+//    OSQPSolver *solver;
+//
+//    /* Create CSC matrices that are backed by the above data arrays. */
+//    OSQPCscMatrix* P = OSQPCscMatrix_new(n, n, P_nnz, P_x, P_i, P_p);
+//    OSQPCscMatrix* A = OSQPCscMatrix_new(m, n, A_nnz, A_x, A_i, A_p);
+//
+//    /* Setup settings */
+//    OSQPSettings *settings = OSQPSettings_new();
+//    settings->alpha = 1.0; /* Change alpha parameter */ //TODO - who knows what this does...
+//
+//    /* Setup solver */
+//    exitflag = osqp_setup(&solver, P, q, A, l, u, m, n, settings);
+//
+//    /* Solve problem */
+//    if (!exitflag) exitflag = osqp_solve(solver);
+//
+//    /* Cleanup */
+//    osqp_cleanup(solver);
+//    OSQPCscMatrix_free(A);
+//    OSQPCscMatrix_free(P);
+//    OSQPSettings_free(settings);
+//
+//
+//
+//
+//
+//}
 
 void SCVX::BuildEqualityConstraints(){
 

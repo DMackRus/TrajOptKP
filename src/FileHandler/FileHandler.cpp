@@ -119,14 +119,6 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
             startPos.push_back(robot_it->second["startPos"][i].as<double>());
         }
 
-//        for(int i = 0; i < robot_it->second["jointJerkThresholds"].size(); i++){
-//            jointJerkThresholds.push_back(robot_it->second["jointJerkThresholds"][i].as<double>());
-//        }
-//
-//        for(int i = 0; i < robot_it->second["magVelThresholds"].size(); i++){
-//            magVelThresholds.push_back(robot_it->second["magVelThresholds"][i].as<double>());
-//        }
-
         if(robot_it->second["position_threshold"]) {
             pos_threshold = robot_it->second["position_threshold"].as<double>();
         }

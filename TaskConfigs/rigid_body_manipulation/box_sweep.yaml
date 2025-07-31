@@ -24,7 +24,6 @@ bodies:
     activeAngularDOF: [true, true, true]
     startLinearPos: [ 0.65, 0, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.65, 0.4, 0.0 ]
 
 # MPC residuals
 #residuals:

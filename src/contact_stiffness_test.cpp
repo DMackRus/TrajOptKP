@@ -18,18 +18,15 @@ std::shared_ptr<FileHandler> yamlReader;
 
 std::string CreateTestName(const std::string control_variable,
                            const double control_variable_value,
-                           const std::string keypoint_name) {
+                           const std::string keypoint_name,
+                           const std::string task_name) {
 
     // Go back two directories
     std::string project_parent_path = __FILE__;
     project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
     project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
 
-    std::string task_prefix = activeModelTranslator->model_name;
-
-    std::string time_stamp = GetCurrentTimestamp();
-
-    std::string root_path = project_parent_path + "/TestingData/stiffness_tests/" + control_variable;
+    std::string root_path = project_parent_path + "/TestingData/stiffness_tests/" + task_name + "_" + control_variable;
 
     // Check if optimiser directory exists
     if (!filesystem::exists(root_path)) {
@@ -96,7 +93,9 @@ void SaveTestSummaryData(keypoint_method keypoint_method,
     fout.close();
 }
 
-void OpenLoopOptimisationTest(int task_horizon, int num_tasks, std::string control_variable, double control_variable_value){
+void OpenLoopOptimisationTest(int task_horizon, int num_tasks,
+                              std::string control_variable, double control_variable_value,
+                              std::string task_name){
     std::cout << "begining testing openloop optimisation for " << activeModelTranslator->model_name << std::endl;
     std::cout << "optimisation horizon is: " << task_horizon << std::endl;
 
@@ -116,7 +115,7 @@ void OpenLoopOptimisationTest(int task_horizon, int num_tasks, std::string contr
     }
 
     // Create the file directory root path dynamically
-    std::string method_directory = CreateTestName(control_variable, control_variable_value, keypoint_name);
+    std::string method_directory = CreateTestName(control_variable, control_variable_value, keypoint_name, task_name);
 
     // ------------------------- data storage -------------------------------------
     std::vector<double> cost_reductions;
@@ -297,17 +296,28 @@ void set_solref_solimp(std::string body_name, double solref[2], double solimp[5]
 }
 
 int main(int argc, char **argv) {
-
     std::string config_file_name = "-";
     yamlReader = std::make_shared<FileHandler>();
 
-    if(0){
+    if(argc < 2){
+        std::cerr << "Usage: " << argv[0] << " <task_name>" << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    std::string task_name = argv[1];
+    std::cout << "task_name: " << task_name << std::endl;
+
+    if(task_name == "box_sweep"){
         std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
         activeModelTranslator = myBoxSweep;
     }
-    else{
+    else if(task_name == "pushing_no_clutter") {
         std::shared_ptr<TwoDPushing> myTwoDPush = std::make_shared<TwoDPushing>(noClutter);
         activeModelTranslator = myTwoDPush;
+    }
+    else{
+        std::cerr << "invalid task name, exiting \n";
+        exit(EXIT_FAILURE);
     }
 
     // Instantiate the differentiator
@@ -332,7 +342,7 @@ int main(int argc, char **argv) {
 
     // Create a folder directory to save the results for this model
 
-    const int num_tasks = 10;
+    const int num_tasks = 100;
 
     //Default solref and solimp values
     double solref[2] = {0.0, 0.0};
@@ -350,7 +360,7 @@ int main(int argc, char **argv) {
         // ----------------- solref tests --------------------------
         double solref_lower = 0.01;
         double solref_upper = 0.1;
-        int solref_steps = 10;
+        int solref_steps = 20;
         std::vector<double> solref_values;
         for(int i = 0; i < solref_steps; i++){
             double solref_value = solref_lower + (solref_upper - solref_lower) * (double)i / (double)(solref_steps - 1);
@@ -361,9 +371,6 @@ int main(int argc, char **argv) {
             // Set the solref value in the MuJoCo helper
             solref[0] = solref_values[i];
             set_solref_solimp("goal", solref, solimp);
-
-            std::string folder_prefix = "solref_" + std::to_string(solref_values[i]);
-
 
             std::vector<std::string> method_names = {"set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn"};
             std::vector<int> method_N_values = {1, 5, 1000, 1, 1}; // 0 for contact_change
@@ -379,7 +386,7 @@ int main(int argc, char **argv) {
                 iLQROptimiser->SetCurrentKeypointMethod(method);
 
                 // Perform optimisation over N tasks for this key-point method
-                OpenLoopOptimisationTest(opt_horizon, num_tasks, "solref[0]", solref_values[i]);
+                OpenLoopOptimisationTest(opt_horizon, num_tasks, "solref[0]", solref_values[i], task_name);
             }
         }
     }
@@ -402,7 +409,7 @@ int main(int argc, char **argv) {
 //        solimp[0] = solimp0_values[i];
 //        set_solref_solimp("goal", solref, solimp);
 //
-//        std::string folder_prefix = "solimp0_" + std::to_string(solimp0_values[i]);
+//        std::string folder_prefix = task_name + "_solimp0_" + std::to_string(solimp0_values[i]);
 //
 //
 //        std::vector<std::string> method_names = {"set_interval", "set_interval", "set_interval", "contact_change"};

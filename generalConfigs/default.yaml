@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "acrobot"
+task: "pushing_moderate_clutter"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -30,7 +30,7 @@ task: "acrobot"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "SCVX"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
+optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
 
 # Run mode for the program
 runMode: "Optimise_once"

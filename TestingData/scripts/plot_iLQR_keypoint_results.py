@@ -21,7 +21,8 @@ run_mode = "openloop"
 def main():
     # global task_name
     
-    tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+    # tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+    tasks = ["push_mcl"]
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
@@ -194,9 +195,10 @@ def plot_openloop_data(names, dataframes_iLQR, task):
     #                      ['Number iterations'],
     #                      ['Average percent derivs']]
     
-    graphs_to_plot = ['Optimisation time (ms)', 'Cost reduction',  'Number iterations', 'Average percent derivs']
+    graphs_to_plot = ['Optimisation time (ms)', 'Cost reduction',  'Final cost', 'Number iterations', 'Average percent derivs']
     columns_per_graph = [['Optimisation time (ms)'],
                          ['Cost reduction'], 
+                         ['Final cost'],
                          ['Number iterations'],
                          ['Average percent derivs']]
     
@@ -310,6 +312,7 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
         #OT no CI and CR with CI
         print(f'& {means[i,0]/1000:.2f}', end=' ')
         print(f'& {means[i,1]:.2f}$\pm${confidence_intervals[i,1]:.2f}', end=' ')
+        print(f'& {means[i,2]:.2f}', end=' ')
         
         # With confidence intervals
         # print(f'& {means[i,0]:.2f} $\pm$ {confidence_intervals[i,0]:.2f}', end=' ')
@@ -349,7 +352,7 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
     figure_title = task
     fig.suptitle(figure_title, fontsize = 20)
     
-    # plt.show()
+    plt.show()
     
 def make_names(iLQR_yaml_files):
     names = []

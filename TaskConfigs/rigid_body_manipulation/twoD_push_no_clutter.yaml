@@ -25,9 +25,6 @@ bodies:
     activeAngularDOF: [true, true, true]
     startLinearPos: [ 0.5, 0.1, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
-    goalLinearPos: [ 0.7, -0.1, 0.0 ]
-    goalAngularPos: [ 0, 0, 0 ]
-    terminalAngularVelCost: [0, 0, 0]
 
 # MPC residuals
 #residuals:
