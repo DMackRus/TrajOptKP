@@ -13,16 +13,23 @@ green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
 # task_name = "push_mcl"
-iterations = "6_6"
+iterations = "6_10"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
 
+show_plot = False
+paper_data_folder = False
+
+cost_reductions = []
+optimisation_times = []
+number_iterations = []
+
 def main():
     # global task_name
     
-    # tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    tasks = ["push_mcl"]
+    tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+    # tasks = ["push_mcl"]
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
@@ -37,6 +44,19 @@ def main():
         dataframes_iLQR = [dataframes_iLQR[i] for i in sorted_indices]
         
         plot_openloop_data(names, dataframes_iLQR, task)
+        
+    print(cost_reductions)
+    
+    print("Average ", end='')
+    for method in range(len(names)):
+        # Compute mean of cost reduction for each method (column)
+        mean_cost_reduction = np.mean([cost_reductions[i][method] for i in range(len(cost_reductions))])
+        mean_optimisation_time = np.mean([optimisation_times[i][method] for i in range(len(optimisation_times))])
+        mean_number_iterations = np.mean([number_iterations[i][method] for i in range(len(number_iterations))])
+        
+        print(f'& {mean_optimisation_time/1000.0:.2f}', end=' ')
+        print(f'& {mean_cost_reduction:.2f}', end=' ')
+        print(f'& {mean_number_iterations:.2f}', end=' ')
 
     # plot_timing_breakdown_data(names, dataframes_iLQR)
     
@@ -310,9 +330,9 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
     for i in range(len(names)):
         
         #OT no CI and CR with CI
-        print(f'& {means[i,0]/1000:.2f}', end=' ')
-        print(f'& {means[i,1]:.2f}$\pm${confidence_intervals[i,1]:.2f}', end=' ')
-        print(f'& {means[i,2]:.2f}', end=' ')
+        # print(f'& {means[i,0]/1000:.2f}', end=' ')
+        # print(f'& {means[i,1]:.2f}$\pm${confidence_intervals[i,1]:.2f}', end=' ')
+        # print(f'& {means[i,2]:.2f}', end=' ')
         
         # With confidence intervals
         # print(f'& {means[i,0]:.2f} $\pm$ {confidence_intervals[i,0]:.2f}', end=' ')
@@ -320,12 +340,17 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
         # print(f'& {means[i,2]:.2f} $\pm$ {confidence_intervals[i,2]:.2f}', end=' ')
         
         # Without confidence intervals
-        # print(f'& {means[i,0]/1000:.2f}', end=' ')
-        # print(f'& {means[i,1]:.2f}', end=' ')
-        # print(f'& {means[i,2]:.2f}', end=' ')
+        print(f'& {means[i,0]/1000:.2f}', end=' ')
+        print(f'& {means[i,1]:.2f}', end=' ')
+        print(f'& {means[i,3]:.2f}', end=' ')
         
 
     print(f'\\\\')
+    
+    # Save data per task for all methods to array so we can average over all tasks 
+    cost_reductions.append(means[:,1])
+    optimisation_times.append(means[:,0])
+    number_iterations.append(means[:,3])
             
             
     # Print the data in table format for easy transferance to the paper
@@ -352,7 +377,8 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
     figure_title = task
     fig.suptitle(figure_title, fontsize = 20)
     
-    plt.show()
+    if(show_plot):
+        plt.show()
     
 def make_names(iLQR_yaml_files):
     names = []
@@ -373,7 +399,10 @@ def load_raw_data(task):
     dataframes_iLQR = []
     yamlfiles_iLQR = []
     
-    current_dir = base_dir + "/iLQR"
+    if paper_data_folder:
+        current_dir = base_dir + "/../PaperData/new_paper_data/Openloop_fixed_6_iters"
+    else:
+        current_dir = base_dir + "/iLQR"
 
     entries = os.listdir(current_dir)
 

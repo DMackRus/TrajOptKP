@@ -5,6 +5,7 @@
 
 #include "ModelTranslator/BoxSweep.h"
 #include "ModelTranslator/TwoDPushing.h"
+#include "ModelTranslator/ImpactLargeBox.h"
 
 #include "Optimiser/Optimiser.h"
 #include "Optimiser/iLQR.h"
@@ -314,6 +315,10 @@ int main(int argc, char **argv) {
     else if(task_name == "pushing_no_clutter") {
         std::shared_ptr<TwoDPushing> myTwoDPush = std::make_shared<TwoDPushing>(noClutter);
         activeModelTranslator = myTwoDPush;
+    }
+    else if(task_name == "impact_large_box"){
+        std::shared_ptr<ImpactLargeBox> myImpactLargeBox = std::make_shared<ImpactLargeBox>();
+        activeModelTranslator = myImpactLargeBox;
     }
     else{
         std::cerr << "invalid task name, exiting \n";
