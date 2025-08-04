@@ -4,10 +4,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Set path to the outer directory, e.g., path/to/root/solref[0]
-# outer_path = "../stiffness_tests/pushing_no_clutter_solref[0]"
-# task = "pushing_no_clutter"
-outer_path = "../stiffness_tests/box_sweep_solref[0]"
-task = "box_sweep"
+outer_path = "../stiffness_tests/pushing_no_clutter_solref[0]"
+task = "pushing_no_clutter"
+# outer_path = "../stiffness_tests/box_sweep_solref[0]"
+# task = "box_sweep"
 # outer_path = "../stiffness_tests/pushing_no_clutter_solref[0]"
 # outer_path = "../stiffness_tests/solimp[0]"
 # outer_path = "../stiffness_tests_6_iters_100_tasks_box_sweep/solimp[0]"

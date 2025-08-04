@@ -860,6 +860,8 @@ void MuJoCoHelper::UpdateScene(GLFWwindow *window, const char* label){
 //    opt.flags[mjVIS_FLEXFACE] = false;
 //    opt.flags[mjVIS_FLEXVERT] = true;
 //    opt.frame = mjFRAME_BODY;
+    opt.flags[mjVIS_CONTACTFORCE] = true;
+    opt.flags[mjVIS_CONTACTPOINT] = true;
     mjv_updateScene(model, vis_data, &opt, nullptr, &cam, mjCAT_ALL, &scn);
 
     mjr_render(viewport, &scn, &con);
