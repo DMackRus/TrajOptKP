@@ -361,8 +361,11 @@ void TestKeypointMethod(){
     }
 
     // Test keypoint generation
-    iLQROptimiser->keypoint_generator->ContactAwareKeyPoints(iLQROptimiser->X_old,iLQROptimiser->U_old,
-                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector);
+//    iLQROptimiser->keypoint_generator->ContactChangeDyn(iLQROptimiser->X_old,iLQROptimiser->U_old,
+//                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector, false);
+
+    iLQROptimiser->keypoint_generator->ContactAwareKeypointsSep(iLQROptimiser->X_old,iLQROptimiser->U_old,
+                                                        iLQROptimiser->contact_list, activeModelTranslator->current_state_vector);
 
     //Print out the key points
     std::cout << "Keypoints: \n";
@@ -477,9 +480,17 @@ void BoxSweepTest(){
     // Print out the contact sequence
     std::cout << "Contact sequence: \n";
 
+    for(int i = 0; i < iLQROptimiser->contact_list.size(); i++){
+        std::cout << "Contact " << i << ": ";
+        for(int j = 0; j < iLQROptimiser->contact_list[i].size(); j++){
+            std::cout << "[" << iLQROptimiser->contact_list[i][j].first << " " << iLQROptimiser->contact_list[i][j].second << "] ";
+        }
+        std::cout << "\n";
+    }
+
     // Test keypoint generation
-    iLQROptimiser->keypoint_generator->ContactAwareKeyPoints(iLQROptimiser->X_old,iLQROptimiser->U_old,
-                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector);
+    iLQROptimiser->keypoint_generator->ContactChangeDyn(iLQROptimiser->X_old,iLQROptimiser->U_old,
+                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector, false);
 
     //Print out the key points
     std::cout << "Keypoints: \n";

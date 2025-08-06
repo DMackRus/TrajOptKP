@@ -25,7 +25,7 @@ cost_reduction_data = {}
 final_cost_data = {}
 optimisation_time_data = {}
 
-z_threshold = 2
+z_threshold = 1000
 
 for x_val in x_dirs:
     x_val_path = os.path.join(outer_path, x_val)
