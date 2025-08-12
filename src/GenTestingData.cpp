@@ -222,7 +222,7 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 
     int num_trials = 100;
     int min_iterations = 6;
-    int max_iterations = 10;
+    int max_iterations = 6;
 
     // Keypoint methods to be tested
     std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",

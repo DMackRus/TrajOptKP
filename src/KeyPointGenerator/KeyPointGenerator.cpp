@@ -107,21 +107,21 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
     }
 
    // Check for any other affected kinematic chains
-//   for(auto & other_contact : all_contacts) {
-//        if(other_contact == contact) continue; // Skip the current contact
-//
-//        // Check if the other contact is in the same kinematic chain
-//        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
-//            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
-//            for (int body : body_chain) {
-//                if (body == other_contact.first || body == other_contact.second) {
-//                    // Store the index of the chain instead of the body
-//                    relevant_kinematic_chains.push_back(static_cast<int>(i));
-//                    break; // break the inner loop
-//                }
-//            }
-//        }
-//    }
+   for(auto & other_contact : all_contacts) {
+        if(other_contact == contact) continue; // Skip the current contact
+
+        // Check if the other contact is in the same kinematic chain
+        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
+            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
+            for (int body : body_chain) {
+                if (body == other_contact.first || body == other_contact.second) {
+                    // Store the index of the chain instead of the body
+                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+                    break; // break the inner loop
+                }
+            }
+        }
+    }
 
     // Stage 2 - convert all bodies to state vector indices
     for( const auto &kinematic_chain : relevant_kinematic_chains){

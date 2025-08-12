@@ -13,7 +13,7 @@ green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
 # task_name = "push_mcl"
-iterations = "6_10"
+iterations = "6_6"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
@@ -28,8 +28,8 @@ number_iterations = []
 def main():
     # global task_name
     
-    tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    # tasks = ["push_mcl"]
+    # tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+    tasks = ["push_mcl"]
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
@@ -330,8 +330,8 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
     for i in range(len(names)):
         
         #OT no CI and CR with CI
-        # print(f'& {means[i,0]/1000:.2f}', end=' ')
-        # print(f'& {means[i,1]:.2f}$\pm${confidence_intervals[i,1]:.2f}', end=' ')
+        print(f'& {means[i,0]/1000:.2f}', end=' ')
+        print(f'& {means[i,1]:.2f}$\pm${confidence_intervals[i,1]:.2f}', end=' ')
         # print(f'& {means[i,2]:.2f}', end=' ')
         
         # With confidence intervals
@@ -340,9 +340,9 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
         # print(f'& {means[i,2]:.2f} $\pm$ {confidence_intervals[i,2]:.2f}', end=' ')
         
         # Without confidence intervals
-        print(f'& {means[i,0]/1000:.2f}', end=' ')
-        print(f'& {means[i,1]:.2f}', end=' ')
-        print(f'& {means[i,3]:.2f}', end=' ')
+        # print(f'& {means[i,0]/1000:.2f}', end=' ')
+        # print(f'& {means[i,1]:.2f}', end=' ')
+        # print(f'& {means[i,3]:.2f}', end=' ')
         
 
     print(f'\\\\')

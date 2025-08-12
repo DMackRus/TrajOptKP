@@ -7,8 +7,11 @@
 #include <algorithm>
 #include <future>
 
-#include "osqp.h"
+//#include "osqp.h"
+#include "OsqpEigen/OsqpEigen.h"
 #include "Eigen/Sparse"
+#include <Eigen/SparseCholesky>
+#include <Eigen/OrderingMethods>
 
 class SCVX: public Optimiser{
 public:
@@ -71,21 +74,14 @@ private:
      */
     double ForwardsPass(double _old_cost);
 
-    void SolveQP(const vector<MatrixXd>& A_k,
-                 const vector<MatrixXd>& B_k,
-                 const vector<VectorXd>& d_k,
-                 const vector<MatrixXd>& cost_hess_xx,
-                 const vector<MatrixXd>& cost_hess_uu,
-                 const vector<MatrixXd>& cost_hess_xu,
-                 const vector<VectorXd>& cost_grad_x,
-                 const vector<VectorXd>& cost_grad_u,
-                 const VectorXd& terminal_grad,
-                 const MatrixXd& terminal_hess,
-                 int n, int m, int N,
-                 double trust_box);
-    void BuildEqualityConstraints();
-    void BuildCostFunction();
-    void BuildTrustRegion();
+    void SolveQP();
+    void BuildEqualityConstraints(SparseMatrix<double> &A_eq, VectorXd &b_eq);
+    void BuildCostFunction(SparseMatrix<double> &H, VectorXd &h, double reg_diag);
+    void BuildTrustRegion(SparseMatrix<double> &A_ineq, VectorXd &l_ineq, VectorXd &u_ineq, double trust_box);
+
+    void SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix);
+    void SetTrustRegionConstraints(Eigen::SparseMatrix<double>& linear_matrix);
+    void SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix, Eigen::VectorXd& gradient_vector);
 
     void PrintBanner(double time_rollout);
 
@@ -108,5 +104,28 @@ private:
     double Rho = 0.0;
     double rho_lower_limit = 0.2;
     double rho_upper_limit = 0.8;
+
+    // --- QP matrices & vectors (decision vector z = [u0..u_{N-1}, x1..xN]) ---
+    // QP data (Eigen)
+    Eigen::SparseMatrix<double> qp_H;        // Hessian P (size n_z x n_z)
+    Eigen::VectorXd qp_h;                    // gradient q (size n_z)
+
+    Eigen::SparseMatrix<double> qp_Aeq;      // equality A_eq (n_eq x n_z)
+    Eigen::VectorXd qp_beq;                  // equality rhs (n_eq)
+
+    // Optional inequality (trust region / box)
+    Eigen::SparseMatrix<double> qp_Aineq;    // inequality rows (n_ineq x n_z)
+    Eigen::VectorXd qp_lineq;                // inequality lower bounds (n_ineq)
+    Eigen::VectorXd qp_uineq;                // inequality upper bounds (n_ineq)
+
+    // Solution and candidate controls
+    Eigen::VectorXd qp_dz;                   // delta z (n_z)
+    std::vector<Eigen::MatrixXd> qp_candidate_controls; // candidate controls U_k
+
+    // solver settings
+    int osqp_verbose = 0;
+    int osqp_max_iter = 10000;
+    double osqp_eps_abs = 1e-6;
+    double osqp_eps_rel = 1e-6;
 
 };
