@@ -81,6 +81,7 @@ public:
     Eigen::MatrixXd GetJacobian(const std::string& body_name, mjData *d) const;
     int CheckSystemForCollisions(mjData *d) const;
     bool CheckBodyForCollisions(const string& body_name, mjData *d) const;
+    bool CheckBodyForCollisionsIncludingGeoms(const std::string& body_name, mjData* d) const;
     std::vector<int> GetContactList(mjData *d) const;
     bool CheckPairForCollisions(const string& body_name_1, const string& body_name_2, mjData *d) const;
 

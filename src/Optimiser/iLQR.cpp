@@ -70,9 +70,6 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         l_u.clear();
         l_uu.clear();
 
-        // Residual derivatives with respect to control
-        r_u.clear();
-
         // Old control trajectory
         U_old.clear();
 
@@ -84,9 +81,6 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         // Cost derivatives with respect to state
         l_x.clear();
         l_xx.clear();
-
-        // Residual derivatives with respect to state
-        r_x.clear();
 
         // Dynamics derivatives with respect to state
         A.clear();
@@ -105,6 +99,11 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     B.clear();
     K.clear();
 
+    // Residual derivatives with respect to control
+    r_u.clear();
+    // Residual derivatives with respect to state
+    r_x.clear();
+
     int num_dof = activeModelTranslator->current_state_vector.dof;
     int num_dof_quat = activeModelTranslator->current_state_vector.dof_quat;
 
@@ -118,13 +117,6 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
 
             X_old.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
             X_new.emplace_back(MatrixXd(num_dof_quat + num_dof, 1));
-
-            vector<MatrixXd> r_x_;
-            for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
-                r_x_.emplace_back(MatrixXd(2*dof, 1));
-            }
-
-            r_x.emplace_back(r_x_);
         }
 
         if(update_ctrl){
@@ -134,14 +126,17 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
             k.emplace_back(MatrixXd(num_ctrl, 1));
 
             U_old.emplace_back(MatrixXd(num_ctrl, 1));
-
-            vector<MatrixXd> r_u_;
-            for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
-                r_u_.emplace_back(MatrixXd(num_ctrl, 1));
-            }
-
-            r_u.emplace_back(r_u_);
         }
+
+        vector<MatrixXd> r_x_;
+        vector<MatrixXd> r_u_;
+        for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
+            r_x_.emplace_back(MatrixXd(2*dof, 1));
+            r_u_.emplace_back(MatrixXd(num_ctrl, 1));
+
+        }
+        r_x.emplace_back(r_x_);
+        r_u.emplace_back(r_u_);
 
         B.emplace_back(MatrixXd(2*dof, num_ctrl));
         K.emplace_back(MatrixXd(num_ctrl, 2*dof));
@@ -155,17 +150,18 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         X_old.push_back(MatrixXd(num_dof_quat + num_dof, 1));
         X_new.push_back(MatrixXd(num_dof_quat + num_dof, 1));
 
-        vector<MatrixXd> r_x_;
-        vector<MatrixXd> r_u_;
-        for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
-            r_x_.emplace_back(MatrixXd(2*dof, 1));
-            r_u_.emplace_back(MatrixXd(num_ctrl, 1));
-
-        }
-
-        r_x.emplace_back(r_x_);
-        r_u.emplace_back(r_u_);
     }
+
+    // One more residual derivative
+    vector<MatrixXd> r_x_;
+    vector<MatrixXd> r_u_;
+    for(int i = 0; i < activeModelTranslator->residual_list.size(); i++) {
+        r_x_.emplace_back(MatrixXd(2*dof, 1));
+        r_u_.emplace_back(MatrixXd(num_ctrl, 1));
+
+    }
+    r_x.emplace_back(r_x_);
+    r_u.emplace_back(r_u_);
 
     if(update_horizon){
         // Clear old rollout data
@@ -195,7 +191,6 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         }
 
         for(int t = 0; t < horizon_length+1; t++){
-            residuals.push_back(MatrixXd(activeModelTranslator->residual_list.size(), 1));
             contact_list.emplace_back();
 
             // Empty contact data lists for all parallel rollouts
@@ -203,13 +198,18 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
                 rollout_data[i][t].contacts.clear();
             }
         }
+    }
 
+    for(int t = 0; t < horizon_length+1; t++) {
+        residuals.push_back(MatrixXd(activeModelTranslator->residual_list.size(), 1));
     }
 
     // Resize Keypoint generator class
     keypoint_generator->Resize(dof, num_ctrl, horizon_length);
 
     if(verbose_output){
+        std::cout << "size of r_u: " << r_u.size() << " and size of r_x: " << r_x.size() << "\n";
+        std::cout << "size of r_u[0]: " << r_u[0].size() << " and size of r_x[0]: " << r_x[0].size() << "\n";
         std::cout << "iLQR time to allocate memory: " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
     }
 }

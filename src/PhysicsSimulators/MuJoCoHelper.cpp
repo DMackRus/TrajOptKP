@@ -678,6 +678,50 @@ bool MuJoCoHelper::CheckBodyForCollisions(const string& body_name, mjData *d) co
     return body_collision_found;
 }
 
+bool MuJoCoHelper::CheckBodyForCollisionsIncludingGeoms(const std::string& body_name, mjData* d) const {
+    mj_forward(model, d);  // Ensure contacts are up to date
+
+    int target_body_id = mj_name2id(model, mjOBJ_BODY, body_name.c_str());
+    if (target_body_id == -1) {
+        std::cerr << "Body \"" << body_name << "\" not found in the model!" << std::endl;
+        return false;
+    }
+
+    // Get ground plane body ID (e.g., assuming it's named "floor")
+    // Cache this in your class if possible
+    int plane_body_id = mj_name2id(model, mjOBJ_GEOM, "ground");  // Change "floor" to your actual ground name
+    if (plane_body_id == -1) {
+        std::cerr << "Ground plane body not found in model (expected name: \"floor\")!" << std::endl;
+        return false;
+    }
+
+    for (int i = 0; i < d->ncon; i++) {
+        const mjContact& contact = d->contact[i];
+        int geom1 = contact.geom1;
+        int geom2 = contact.geom2;
+
+        int body1 = model->geom_bodyid[geom1];
+        int body2 = model->geom_bodyid[geom2];
+
+        bool involves_target = (body1 == target_body_id || body2 == target_body_id);
+        if (!involves_target) continue;
+
+        // Identify the other geom/body
+        int other_body = (body1 == target_body_id) ? body2 : body1;
+        int other_geom = (body1 == target_body_id) ? geom2 : geom1;
+
+        // Is the other body static and not the plane?
+//        bool is_static = (model->body_dofnum[other_body] == 0);
+        bool is_not_plane = (other_geom != plane_body_id);
+
+        if(is_not_plane){
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool MuJoCoHelper::CheckPairForCollisions(const string& body_name_1, const string& body_name_2, mjData *d) const{
 
         // TODO (DMackRus) - Check if this is necessary
@@ -860,8 +904,8 @@ void MuJoCoHelper::UpdateScene(GLFWwindow *window, const char* label){
 //    opt.flags[mjVIS_FLEXFACE] = false;
 //    opt.flags[mjVIS_FLEXVERT] = true;
 //    opt.frame = mjFRAME_BODY;
-    opt.flags[mjVIS_CONTACTFORCE] = true;
-    opt.flags[mjVIS_CONTACTPOINT] = true;
+//    opt.flags[mjVIS_CONTACTFORCE] = true;
+//    opt.flags[mjVIS_CONTACTPOINT] = true;
     mjv_updateScene(model, vis_data, &opt, nullptr, &cam, mjCAT_ALL, &scn);
 
     mjr_render(viewport, &scn, &con);
