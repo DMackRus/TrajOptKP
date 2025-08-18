@@ -101,7 +101,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/ArticulatedContact.cpp
             src/ModelTranslator/anyMal.cpp
             src/ModelTranslator/ImpactLargeBox.cpp
-            src/Optimiser/SCVX.cpp)
+            src/Optimiser/SCVX.cpp
+            src/ModelTranslator/Piston.cpp)
 
 add_executable(gen_testing_data src/GenTestingData.cpp
         src/StdInclude/StdInclude.cpp
@@ -195,6 +196,7 @@ add_executable(contact_stiffness_test
         src/ModelTranslator/BoxSweep.cpp
         src/ModelTranslator/TwoDPushing.cpp
         src/ModelTranslator/PushBaseClass.cpp
+        src/ModelTranslator/ImpactLargeBox.cpp
         )
 
 include_directories(

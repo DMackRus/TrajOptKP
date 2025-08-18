@@ -18,7 +18,7 @@ iterations = "6_6"
 base_dir = ".."
 run_mode = "openloop"
 
-show_plot = False
+show_plot = True
 paper_data_folder = False
 
 cost_reductions = []
@@ -29,7 +29,7 @@ def main():
     # global task_name
     
     # tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    tasks = ["push_mcl"]
+    tasks = ["push_ncl"]
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)

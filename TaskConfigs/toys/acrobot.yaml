@@ -1,8 +1,8 @@
 modelFile: "/mujoco_models/Acrobot/acrobot.xml"   # Path to the model xml file
 modelName: "/acrobot"                             # Name of the model, used for saving data
 timeStep: 0.01                                    # Time step for simulation
-openloop_horizon: 1000
-keypointMethod: "contact_change_dyn"              # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
+openloop_horizon: 200
+keypointMethod: "set_interval"              # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 minN: 1                                           # Minimum interval between key-points
 maxN: 13                                          # Maximum interval between key-points
 
@@ -13,7 +13,7 @@ robots:
     actuatorNames: [elbow]
     torqueControl: true
     torqueLimits: [100]
-    startPos: [3.1415, 0.3]
+    startPos: [2.0, 0.3]
     position_threshold: 0.1  # Value between 0 and 1 - uses joint limits
     velocity_threshold: 1    # Raw velocity threshold value
     control_threshold: 0.1   # Value between 0 and 1 - uses control limits

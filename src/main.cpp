@@ -7,6 +7,7 @@
 #include "ModelTranslator/Acrobot.h"
 #include "ModelTranslator/Pentabot.h"
 #include "ModelTranslator/PistonBlock.h"
+#include "ModelTranslator/Piston.h"
 
 #include "ModelTranslator/Reaching.h"
 
@@ -804,6 +805,10 @@ int assign_task(){
     else if(task == "piston_block"){
         std::shared_ptr<PistonBlock> my_piston_block = std::make_shared<PistonBlock>();
         activeModelTranslator = my_piston_block;
+    }
+    else if(task == "piston"){
+        std::shared_ptr<Piston> my_piston = std::make_shared<Piston>();
+        activeModelTranslator = my_piston;
     }
     else if(task == "push_soft_into_rigid"){
         std::shared_ptr<PushSoft> my_squish_soft = std::make_shared<PushSoft>(PUSH_SOFT_RIGID);

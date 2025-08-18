@@ -199,19 +199,20 @@ void SCVX::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     int n_z = N * n_u + N * n_x;
     int n_eq = N * n_x;
 
-    qp_H.resize(n_z, n_z);
-    qp_h = Eigen::VectorXd::Zero(n_z);
-
-    qp_Aeq.resize(n_eq, n_z);
-    qp_beq = Eigen::VectorXd::Zero(n_eq);
-
-    qp_Aineq.resize(0, n_z); // empty by default
-    qp_lineq.resize(0);
-    qp_uineq.resize(0);
-
-    qp_dz = Eigen::VectorXd::Zero(n_z);
     qp_candidate_controls.clear();
-    qp_candidate_controls.resize(N);
+    qp_candidate_states.clear();
+    X_old_no_quat.clear();
+
+    for(int t = 0; t < this->horizon_length; t++){
+        qp_candidate_controls.push_back(MatrixXd::Zero(num_ctrl, 1));
+        qp_candidate_states.push_back(MatrixXd::Zero(2 * num_dof, 1));
+        X_old_no_quat.push_back(MatrixXd::Zero(2 * num_dof, 1));
+    }
+
+    // One more state than control
+    qp_candidate_states.push_back(MatrixXd::Zero(2 * num_dof, 1));
+    X_old_no_quat.push_back(MatrixXd::Zero(2 * num_dof, 1));
+
 
     // Resize Keypoint generator class
     keypoint_generator->Resize(dof, num_ctrl, horizon_length);
@@ -227,6 +228,7 @@ double SCVX::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, d);
 
     X_old[0] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+    X_old_no_quat[0] = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
     if(MuJoCo_helper->CheckIfDataIndexExists(0)){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
@@ -262,6 +264,7 @@ double SCVX::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
         // If required to save states to trajectory tracking, then save state
         if(save_states){
             X_old[i + 1] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+            X_old_no_quat[i + 1] = activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
             U_old[i] = activeModelTranslator->ReturnControlVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
             if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
                 MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
@@ -361,14 +364,10 @@ std::vector<MatrixXd> SCVX::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     for(int i = 0; i < max_iterations; i++) {
         num_iterations++;
 
-        bool lambda_exit, converged = false;
+        bool converged = false;
         Iteration(i, converged);
 
         if (converged && (i >= min_iterations)) {
-            break;
-        }
-
-        if (lambda_exit) {
             break;
         }
     }
@@ -462,6 +461,8 @@ void SCVX::Iteration(int iteration_num, bool &converged){
     auto timer_start = high_resolution_clock::now();
     if(cost_reduced_last_iter){
         GenerateDerivatives();
+        std::cout << "A[0] " << A[0] << "\n";
+//        std::cout << "l_xx[horizon] " << l_xx[horizon_length] << "\n";
     }
     else{
         percentage_derivs_per_iteration.push_back(0.0);
@@ -473,18 +474,44 @@ void SCVX::Iteration(int iteration_num, bool &converged){
     SolveQP();
     time_qp_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
+    // STEP 2a - Evaluate cost of the candidate states and controls
+    EvaluateLinSolutionCost();
 
-    // STEP 3 - Rollout the new trajectory from QP subproblem using original nonlinear dynamics
+    // STEP 3 - Rollout the new trajectory from QP sub-problem using original nonlinear dynamics
     timer_start = high_resolution_clock::now();
-    non_linear_cost = ForwardsPass(old_cost); // TODO - write forwards pass
+    non_linear_cost = ForwardsPass(old_cost);
     time_forwardsPass_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
 
-    // STEP 4 - Update nominal trajectory if cost improvement - also update trust region based on difference between
-    // nonlinear dynamics and linearised dynamics
+    std::cout << "non linear cost: " << non_linear_cost << "\n";
+
+    // STEP 4 - Handling deviations in non_linear_cost and linear_cost to scale trust region
+    if(non_linear_cost < old_cost){
+        // If cost reduced, then we can increase the trust region
+        trust_region_radius *= 1.2;
+        SaveBestRollout(0);
+    }
+    else{
+        // If cost did not reduce, then we need to decrease the trust region
+        trust_region_radius *= 0.5;
+
+        // Dont update nominal
+    }
+
+
+    if(verbose_output){
+        PrintBannerIteration(iteration_num, non_linear_cost, old_cost,
+                             1 - (non_linear_cost / old_cost), percentage_derivs_per_iteration[iteration_num],
+                             time_get_derivs_ms[iteration_num], time_qp_ms[iteration_num], time_forwardsPass_ms[iteration_num]);
+    }
+
+    // STEP 5 - Check for convergence
     converged = CheckForConvergence(old_cost, new_cost);
+
+
     if(non_linear_cost < old_cost){
         UpdateNominal();
         cost_reduced_last_iter = true;
+        old_cost = non_linear_cost;
     }
     else{
         cost_reduced_last_iter = false;
@@ -492,60 +519,389 @@ void SCVX::Iteration(int iteration_num, bool &converged){
     cost_after_iteration.push_back(new_cost);
     cost_reduction_after_iteration.push_back(1 - (new_cost / initial_cost));
     time_after_iteration_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - start_time).count() / 1000.0f);
-
-
-    if(verbose_output){
-        PrintBannerIteration(iteration_num, new_cost, old_cost,
-                             1 - (new_cost / old_cost), percentage_derivs_per_iteration[iteration_num],
-                             time_get_derivs_ms[iteration_num], time_backwards_pass_ms[iteration_num], time_forwardsPass_ms[iteration_num]);
-    }
 }
 
-// Helper to copy Eigen sparse -> CSC arrays (values + c_int indices)
-static void EigenSparseToCSC(const Eigen::SparseMatrix<double> &M,
-                             double *&x_out,
-                             OSQPInt *&i_out,
-                             OSQPInt *&p_out,
-                             OSQPInt &nnz_out) {
-    Eigen::SparseMatrix<double> Mc = M;
-    Mc.makeCompressed();
-    nnz_out = static_cast<OSQPInt>(Mc.nonZeros());
-    p_out = (OSQPInt*)c_malloc(sizeof(OSQPInt) * (Mc.outerSize() + 1)); // outerSize()==cols for column-major
-    i_out = (OSQPInt*)c_malloc(sizeof(OSQPInt) * nnz_out);
-    x_out = (double*)c_malloc(sizeof(double) * nnz_out);
+void SCVX::EvaluateLinSolutionCost(){
+    // Loop through horizon, set the states and controls from QP solution and calculate cost
 
-    // copy outer ptr (col pointers)
-    for (int col = 0; col <= Mc.outerSize(); ++col) {
-        p_out[col] = static_cast<OSQPInt>(Mc.outerIndexPtr()[col]);
+    double lin_cost = 0.0;
+    for(int t = 0; t < horizon_length; t++){
+        activeModelTranslator->SetControlVector(qp_candidate_controls[t], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+        activeModelTranslator->SetStateVector(qp_candidate_states[t], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+
+        // TODO - temp code to be removed later
+//        if(t % 10 == 0){
+            MuJoCo_helper->CopySystemState(MuJoCo_helper->vis_data, MuJoCo_helper->main_data);
+            MuJoCo_helper->ForwardSimulator(MuJoCo_helper->vis_data);
+            active_visualiser->render("Lin solution");
+//        }
+
+        double state_cost;
+        activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[t]);
+        if(t == horizon_length - 1){
+            state_cost = activeModelTranslator->CostFunction(residuals[t], activeModelTranslator->full_state_vector, true);
+        }
+        else{
+            state_cost = activeModelTranslator->CostFunction(residuals[t], activeModelTranslator->full_state_vector, false);
+        }
+
+        lin_cost += state_cost;
     }
-    // copy inner indices and values
-    for (int k = 0; k < nnz_out; ++k) {
-        i_out[k] = static_cast<OSQPInt>(Mc.innerIndexPtr()[k]); // row indices
-        x_out[k] = Mc.valuePtr()[k];
-    }
+
+    std::cout << "lin cost is " << lin_cost << "\n";
 }
 
-void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix){
-    // Use A and B matrices that have already been computed
-    int N = horizon_length;
-    int n_x = 2 * dof; // number of state variables
-    int n_u = num_ctrl; // number of control variables
-    int n_z = N * n_u + N * n_x; // total number of variables
+double SCVX::ForwardsPass(double _old_cost){
+    double non_linear_cost = 0.0;
+    //TODO - forward rollout code of new controls and evaluate cost.
 
-    int n_eq = N * n_x; // number of equality constraints
-    linear_matrix.resize(n_eq, n_z);
+    MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
+
+//    std::cout << "X[0] " << activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector).transpose() << "\n";
 
     for(int t = 0; t < horizon_length; t++){
-        
+        // Set the new control
+        activeModelTranslator->SetControlVector(qp_candidate_controls[t], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+
+        SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, t);
+
+        // Integrate the simulator
+        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
+
+        // Get contacts
+        activeModelTranslator->GetContacts(MuJoCo_helper->main_data, contact_list[t+1]);
+
+        // Get the new state vector
+        X_new[t + 1] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+
+        // Calculate cost for this state
+        double state_cost;
+        activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[t]);
+        if(t == horizon_length - 1){
+            state_cost = activeModelTranslator->CostFunction(residuals[t], activeModelTranslator->full_state_vector, true);
+        }
+        else{
+            state_cost = activeModelTranslator->CostFunction(residuals[t], activeModelTranslator->full_state_vector, false);
+        }
+
+//        MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[t], MuJoCo_helper->main_data);
+//
+//        if(t % 10 == 0){
+//            MuJoCo_helper->CopySystemState(MuJoCo_helper->vis_data, MuJoCo_helper->main_data);
+//            MuJoCo_helper->ForwardSimulator(MuJoCo_helper->vis_data);
+//            active_visualiser->render("rollout");
+//        }
+
+
+
+        non_linear_cost += state_cost;
     }
+
+    SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, horizon_length);
+
+//    std::cout << "non linear cost: " << non_linear_cost << "\n";
+
+    // Return new cost which in the case of SCVX is non-linear cost
+    return non_linear_cost;
 }
 
-void SCVX::SetTrustRegionConstraints(Eigen::SparseMatrix<double>& linear_matrix){
+void SCVX::AddL1TrustRegionWithResize(Eigen::SparseMatrix<double>& A,
+                                      Eigen::VectorXd& l,
+                                      Eigen::VectorXd& u,
+                                      Eigen::SparseMatrix<double>& hessian_matrix,
+                                      Eigen::VectorXd& gradient_vector,
+                                      double rho,
+                                      const std::vector<Eigen::MatrixXd>& x_ref, // size T+1
+                                      const std::vector<Eigen::MatrixXd>& u_ref) // size T
+{
+    int T  = horizon_length;
+    int nx = 2 * dof;
+    int nu = num_ctrl;
 
+    // original decision length
+    int n_x_block = T * nx;           // x1..xT
+    int n_u_block = T * nu;           // u0..u_{T-1}
+    int n_z       = n_x_block + n_u_block;
+
+    // slack variables: one t per original var
+    int n_tr = n_z;
+
+    // --- Sanity checks ---
+    assert((int)x_ref.size() == T + 1 && "x_ref must be size T+1 (x0..xT)");
+    assert((int)u_ref.size() == T     && "u_ref must be size T (u0..u_{T-1})");
+
+    for (int t = 0; t < T; ++t) {
+        assert(x_ref[t+1].rows() == nx && x_ref[t+1].cols() == 1);
+        assert(u_ref[t].rows()   == nu && u_ref[t].cols()   == 1);
+    }
+
+    // r = stacked nominal matching z = [x1..xT, u0..u_{T-1}]
+    Eigen::VectorXd r(n_z);
+    for (int t = 0; t < T; ++t) {
+        r.segment(t * nx, nx) = x_ref[t+1].col(0); // use x_{t+1} from x_ref
+    }
+    for (int t = 0; t < T; ++t) {
+        r.segment(n_x_block + t * nu, nu) = u_ref[t].col(0);
+    }
+
+    // --- Old sizes ---
+    int old_rows = A.rows();
+    int old_cols = A.cols();
+    int old_nvars = old_cols; // should equal n_z
+    assert(old_cols == n_z && "A must currently have n_z columns (no t yet).");
+
+    // Sanity: hessian and gradient sizes must match old vars
+    assert(gradient_vector.size() == old_nvars && "gradient_vector size mismatch");
+    assert(hessian_matrix.rows() == old_nvars && hessian_matrix.cols() == old_nvars && "hessian_matrix size mismatch");
+
+    // --- New sizes ---
+    int add_rows = n_z + n_z + n_tr + 1;  // (1) z - t <= r, (2) -z - t <= -r, (3) -t <= 0, (4) sum(t) <= rho
+    int new_rows = old_rows + add_rows;
+    int new_cols = old_nvars + n_tr;      // we append t variables -> columns grow
+
+    // --- Build triplets for new A (copy old + append) ---
+    std::vector<Eigen::Triplet<double>> trips;
+    trips.reserve(static_cast<size_t>(A.nonZeros()) + 3ULL * n_z + n_tr + 4);
+
+    // copy old A
+    A.makeCompressed();
+    for (int k = 0; k < A.outerSize(); ++k) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(A, k); it; ++it) {
+            trips.emplace_back(it.row(), it.col(), it.value());
+        }
+    }
+
+    // offsets
+    int row_off_1 = old_rows;                  // z - t <= r
+    int row_off_2 = row_off_1 + n_z;           // -z - t <= -r
+    int row_off_3 = row_off_2 + n_z;           // -t <= 0
+    int row_off_4 = row_off_3 + n_tr;          // sum(t) <= rho
+    int t_offset  = old_nvars;                 // first column index of t block
+
+    // (1) z - t <= r -> [ I_z  -I_t ]
+    for (int i = 0; i < n_z; ++i) {
+        trips.emplace_back(row_off_1 + i, i,         1.0);   // +z_i
+        trips.emplace_back(row_off_1 + i, t_offset + i, -1.0); // -t_i
+    }
+
+    // (2) -z - t <= -r -> [ -I_z  -I_t ]
+    for (int i = 0; i < n_z; ++i) {
+        trips.emplace_back(row_off_2 + i, i,         -1.0);  // -z_i
+        trips.emplace_back(row_off_2 + i, t_offset + i, -1.0); // -t_i
+    }
+
+    // (3) -t <= 0 -> [ 0  -I_t ]
+    for (int i = 0; i < n_tr; ++i) {
+        trips.emplace_back(row_off_3 + i, t_offset + i, -1.0);
+    }
+
+    // (4) sum(t) <= rho -> [ 0  1^T ]
+    for (int i = 0; i < n_tr; ++i) {
+        trips.emplace_back(row_off_4, t_offset + i, 1.0);
+    }
+
+    // --- Build new bounds l_new, u_new ---
+    Eigen::VectorXd l_new(new_rows);
+    Eigen::VectorXd u_new(new_rows);
+
+    // copy old bounds
+    l_new.head(old_rows) = l;
+    u_new.head(old_rows) = u;
+
+    // (1) z - t <= r  ->  l = -inf, u = r
+    l_new.segment(row_off_1, n_z).setConstant(-OSQP_INFTY);
+    u_new.segment(row_off_1, n_z) = r;
+
+    // (2) -z - t <= -r  ->  l = -inf, u = -r
+    l_new.segment(row_off_2, n_z).setConstant(-OSQP_INFTY);
+    u_new.segment(row_off_2, n_z) = -r;
+
+    // (3) -t <= 0  ->  l = -inf, u = 0
+    l_new.segment(row_off_3, n_tr).setConstant(-OSQP_INFTY);
+    u_new.segment(row_off_3, n_tr).setZero();
+
+    // (4) 1^T t <= rho -> l = -inf, u = rho
+    l_new(row_off_4) = -OSQP_INFTY;
+    u_new(row_off_4) = rho;
+
+    // Assemble augmented A
+    Eigen::SparseMatrix<double> A_new(new_rows, new_cols);
+    A_new.setFromTriplets(trips.begin(), trips.end());
+    A_new.makeCompressed();
+
+    // --- Expand Hessian (P) and gradient (q) to match new_cols ---
+    int new_nvars = new_cols;
+
+    // gradient_vector -> q_new
+    Eigen::VectorXd q_new(new_nvars);
+    q_new.head(old_nvars) = gradient_vector;
+    q_new.tail(n_tr).setZero(); // no linear cost on slacks
+
+    // hessian_matrix -> P_new (sparse copy top-left, zeros elsewhere)
+    std::vector<Eigen::Triplet<double>> h_trips;
+    h_trips.reserve(static_cast<size_t>(hessian_matrix.nonZeros()));
+
+    hessian_matrix.makeCompressed();
+    for (int k = 0; k < hessian_matrix.outerSize(); ++k) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(hessian_matrix, k); it; ++it) {
+            // keep same (row,col,value) in top-left block
+            h_trips.emplace_back(it.row(), it.col(), it.value());
+        }
+    }
+    // NOTE: bottom-right block (slacks) is left zero; cross-terms zero.
+
+    Eigen::SparseMatrix<double> P_new(new_nvars, new_nvars);
+    if (!h_trips.empty()) {
+        P_new.setFromTriplets(h_trips.begin(), h_trips.end());
+    } else {
+        // ensure a valid sparse matrix object even when Hessian is zero
+        P_new.setZero();
+    }
+    P_new.makeCompressed();
+
+    // --- swap augmented matrices/vectors back to caller ---
+    A.swap(A_new);
+    l.swap(l_new);
+    u.swap(u_new);
+
+    hessian_matrix.swap(P_new);
+    gradient_vector.swap(q_new);
 }
 
-void SCVX::SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix, Eigen::VectorXd& gradient_vector){
+void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
+                                  Eigen::VectorXd& lower_bound,
+                                  Eigen::VectorXd& upper_bound,
+                                  const Eigen::VectorXd& x0){
+    int T   = horizon_length; // number of control steps
+    int n_x = 2 * dof;        // state dimension
+    int n_u = num_ctrl;       // control dimension
 
+    // Decision vector length z = [delta x_1, ..., delta x_T, delta u_0, ..., delta u_{T-1}]
+    int n_z = (n_x + n_u) * T;
+
+    // Equality constraints: delta x_{t+1} = A_t delta x_t + B_t delta u_t, t=0..T-1
+    int n_eq = T * n_x;
+    linear_matrix.resize(n_eq, n_z);
+
+    std::vector<Eigen::Triplet<double>> trips;
+    trips.reserve(static_cast<size_t>(n_eq) * (n_x + n_u));
+
+    // bounds vector for Ax = b form
+    Eigen::VectorXd rhs = Eigen::VectorXd::Zero(n_eq);
+
+    for (int t = 0; t < T; ++t) {
+        int row_base = t * n_x;
+
+        // Offsets in z:
+        int u_offset = T * n_x;
+        int idx_x_tp1 = t * n_x;             // x_{t+1} in z (x1 is at 0)
+        int idx_x_t   = (t - 1) * n_x;       // x_t in z (only valid for t > 0)
+        int idx_u_t   = u_offset + (t * n_u);
+
+        // +1 * x_{t+1}
+        for (int i = 0; i < n_x; ++i) {
+            trips.emplace_back(row_base + i, idx_x_tp1 + i, 1.0);
+        }
+
+        // Handle -A_t * x_t term
+        if (t > 0) {
+            for (int i = 0; i < n_x; ++i) {
+                for (int j = 0; j < n_x; ++j) {
+                    double val = -A[t](i, j);
+                    if (val != 0.0) trips.emplace_back(row_base + i, idx_x_t + j, val);
+                }
+            }
+        } else {
+            // t == 0 → x₀ not in z, move to RHS: rhs₀ = A₀ x₀
+//            rhs.segment(row_base, n_x) = A[0] * x0;
+        }
+
+        // Handle -B_t * u_t term
+        for (int i = 0; i < n_x; ++i) {
+            for (int j = 0; j < n_u; ++j) {
+                double val = -B[t](i, j);
+                if (val != 0.0) trips.emplace_back(row_base + i, idx_u_t + j, val);
+            }
+        }
+    }
+
+    linear_matrix.setFromTriplets(trips.begin(), trips.end());
+    linear_matrix.makeCompressed();
+
+    // Equality bounds = rhs
+    lower_bound = rhs;
+    upper_bound = rhs;
+}
+
+void SCVX::SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix,
+                           Eigen::VectorXd& gradient_vector)
+{
+    int T  = horizon_length; // number of control stages
+    int nx = dof * 2;
+    int nu = num_ctrl;
+
+    int total_vars = (nx + nu) * T; // [x₁..x_T, u₀..u_{T-1}]
+
+    gradient_vector = Eigen::VectorXd::Zero(total_vars);
+
+    auto idx_x = [&](int t) { return (t - 1) * nx; };            // x_t, t >= 1
+    auto idx_u = [&](int t) { return nx * T + t * nu; };         // u_t, t >= 0
+
+    // Stage costs
+    for (int t = 0; t < T; ++t) {
+        // Controls u_t
+        int iu = idx_u(t);
+        assert(l_u[t].size() == nu);
+        gradient_vector.segment(iu, nu) += l_u[t];
+
+        // States x_{t+1}
+        int ix = idx_x(t + 1);
+        assert(l_x[t + 1].size() == nx);
+        gradient_vector.segment(ix, nx) += l_x[t + 1];
+    }
+
+    // Terminal gradient if provided (size = T+1 in l_x)
+    if ((int)l_x.size() == T + 1) {
+        int ixN = idx_x(T);
+        gradient_vector.segment(ixN, nx) += l_x[T];
+    }
+
+    // Hessian triplets
+    std::vector<Eigen::Triplet<double>> triplets;
+    triplets.reserve(static_cast<size_t>(total_vars) * 4);
+
+    for (int t = 0; t < T; ++t) {
+        // Huu_t
+        int iu = idx_u(t);
+        const Eigen::MatrixXd &Huu = l_uu[t];
+        for (int i = 0; i < nu; ++i)
+            for (int j = 0; j < nu; ++j)
+                if (Huu(i,j) != 0.0)
+                    triplets.emplace_back(iu + i, iu + j, Huu(i,j));
+
+        // Hxx_{t+1}
+        int ix = idx_x(t + 1);
+        const Eigen::MatrixXd &Hxx = l_xx[t];
+        for (int i = 0; i < nx; ++i)
+            for (int j = 0; j < nx; ++j)
+                if (Hxx(i,j) != 0.0)
+                    triplets.emplace_back(ix + i, ix + j, Hxx(i,j));
+    }
+
+    // Terminal Hessian if provided
+//    if ((int)l_xx.size() == T + 1) {
+//        int ixN = idx_x(T);
+//        const Eigen::MatrixXd &HxxN = l_xx[T];
+//        for (int i = 0; i < nx; ++i)
+//            for (int j = 0; j < nx; ++j)
+//                if (HxxN(i,j) != 0.0)
+//                    triplets.emplace_back(ixN + i, ixN + j, HxxN(i,j));
+//    }
+
+    // Assemble
+    hessian_matrix.resize(total_vars, total_vars);
+    hessian_matrix.setFromTriplets(triplets.begin(), triplets.end());
+    hessian_matrix.makeCompressed();
 }
 
 void SCVX::SolveQP() {
@@ -553,7 +909,7 @@ void SCVX::SolveQP() {
     OsqpEigen::Solver solver;
 
     // settings
-    // solver.settings()->setVerbosity(false);
+    solver.settings()->setVerbosity(false);
     solver.settings()->setWarmStart(true);
 
     // Setup the QP problem
@@ -565,552 +921,103 @@ void SCVX::SolveQP() {
     Eigen::VectorXd upper_bound;
 
     //Formulate QP matrices
-    SetDynamicsConstraints(linear_matrix);
+    auto start = std::chrono::high_resolution_clock::now();
+    SetDynamicsConstraints(linear_matrix, lower_bound, upper_bound, X_old_no_quat[0]);
+    auto end = std::chrono::high_resolution_clock::now();
+//    std::cout << "Time to set dynamics constraints: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
 
+    start = std::chrono::high_resolution_clock::now();
+    SetCostFunction(hessian, gradient);
+    end = std::chrono::high_resolution_clock::now();
+//    std::cout << "Time to set cost function: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
+
+//    SetTrustRegionConstraints(linear_matrix,
+//                              lower_bound,
+//                             upper_bound,
+//                             0.1);
+
+//    AddL1TrustRegionWithResize(linear_matrix,
+//                              lower_bound,
+//                              upper_bound,
+//                              hessian,
+//                              gradient,
+//                              1000, // trust region radius
+//                              X_old_no_quat,  // reference states
+//                              U_old); // reference controls
 
     // ----------- Set QP matrices --------------
-//    solver.data()->setNumberOfVariables();
-//    solver.data()->setNumberOfConstraints();
 
-    if(!solver.data()->setHessianMatrix(hessian)){
+    int num_variables = static_cast<int>(hessian.cols());      // n
+    int num_constraints = static_cast<int>(linear_matrix.rows()); // m
+
+    solver.data()->setNumberOfVariables(num_variables);
+    solver.data()->setNumberOfConstraints(num_constraints);
+
+    // Print out sizes of matrices
+//    std::cout << "Hessian size: " << hessian.rows() << " x " << hessian.cols() << std::endl;
+//    std::cout << "Gradient size: " << gradient.size() << std::endl;
+//    std::cout << "Linear constraints size: " << linear_matrix.rows() << " x " << linear_matrix.cols() << std::endl;
+//    std::cout << "Lower bound size: " << lower_bound.size() << std::endl;
+//    std::cout << "Upper bound size: " << upper_bound.size() << std::endl;
+
+
+    if (!solver.data()->setHessianMatrix(hessian)) {
         std::cerr << "Failed to set Hessian matrix." << std::endl;
-        return;
     }
-    if (!solver.data()->setGradient(gradient)){
+    if (!solver.data()->setGradient(gradient)) {
         std::cerr << "Failed to set gradient matrix." << std::endl;
-        return;
     }
-    if (!solver.data()->setLinearConstraintsMatrix(linear_matrix)){
+    if (!solver.data()->setLinearConstraintsMatrix(linear_matrix)) {
         std::cerr << "Failed to set linear constraints matrix." << std::endl;
-        return;
     }
-    if (!solver.data()->setLowerBound(lower_bound)){
+    if (!solver.data()->setLowerBound(lower_bound)) {
         std::cerr << "Failed to set lower bound." << std::endl;
-        return;
     }
-    if (!solver.data()->setUpperBound(upper_bound)){
+    if (!solver.data()->setUpperBound(upper_bound)) {
         std::cerr << "Failed to set upper bound." << std::endl;
-        return;
     }
 
-
-
+    if (!solver.initSolver()) {
+        std::cerr << "Failed to initialise OSQP solver." << std::endl;
+    }
 
     // solve the QP problem
-    if (solver.solveProblem() != OsqpEigen::ErrorExitFlag::NoError)
-    {
+    if (solver.solveProblem() != OsqpEigen::ErrorExitFlag::NoError) {
         std::cerr << "OSQP failed to solve the problem." << std::endl;
-        return;
     }
 
+    // Get the controls from the solution
+    auto qp_solution = solver.getSolution();
+    linear_cost = solver.getObjValue();
 
-    // Build QP blocks (fill qp_H, qp_h, qp_Aeq, qp_beq)
-//    BuildEqualityConstraints(qp_Aeq, qp_beq);
-//    BuildCostFunction(qp_H, qp_h);
-//
-//    // Build trust region / inequalities if desired
-//    // Example: use BuildTrustRegion to make qp_Aineq/l/u of size n_z
-//    double trust_box = lambda;
-//    if (trust_box <= 0) trust_box = 1.0;
-//    BuildTrustRegion(qp_Aineq, qp_lineq, qp_uineq, trust_box);
-//
-//    // Combine equality and inequality matrices into A_combined
-//    int n_z = static_cast<int>(qp_H.rows());
-//    int n_eq = static_cast<int>(qp_Aeq.rows());
-//    int n_ineq = static_cast<int>(qp_Aineq.rows());
-//    int n_con = n_eq + n_ineq;
-//
-//    Eigen::SparseMatrix<double> A_combined(n_con, n_z);
-//    std::vector<Eigen::Triplet<double>> trips;
-//    trips.reserve(qp_Aeq.nonZeros() + qp_Aineq.nonZeros());
-//
-//    // copy Aeq triplets
-//    for (int k = 0; k < qp_Aeq.outerSize(); ++k)
-//        for (Eigen::SparseMatrix<double>::InnerIterator it(qp_Aeq, k); it; ++it)
-//            trips.emplace_back(it.row(), it.col(), it.value());
-//
-//    // copy Aineq triplets, shifted by n_eq rows
-//    for (int k = 0; k < qp_Aineq.outerSize(); ++k)
-//        for (Eigen::SparseMatrix<double>::InnerIterator it(qp_Aineq, k); it; ++it)
-//            trips.emplace_back(n_eq + it.row(), it.col(), it.value());
-//
-//    A_combined.setFromTriplets(trips.begin(), trips.end());
-//    A_combined.makeCompressed();
-//
-//    // Build l and u
-//    Eigen::VectorXd l_combined(n_con), u_combined(n_con);
-//    if (n_eq > 0) {
-//        l_combined.segment(0, n_eq) = qp_beq;
-//        u_combined.segment(0, n_eq) = qp_beq;
-//    }
-//    if (n_ineq > 0) {
-//        l_combined.segment(n_eq, n_ineq) = qp_lineq;
-//        u_combined.segment(n_eq, n_ineq) = qp_uineq;
-//    }
-//
-//    // Ensure qp_H is compressed
-//    qp_H.makeCompressed();
-//
-//    // Convert Eigen sparse P (qp_H) -> CSC arrays
-//    double *P_x = nullptr, *A_x = nullptr;
-//    OSQPInt *P_i = nullptr, *P_p = nullptr;
-//    OSQPInt *A_i = nullptr, *A_p = nullptr;
-//    OSQPInt P_nnz = 0, A_nnz = 0;
-//
-//    EigenSparseToCSC(qp_H, P_x, P_i, P_p, P_nnz);
-//    EigenSparseToCSC(A_combined, A_x, A_i, A_p, A_nnz);
-//
-//    // Copy q, l, u into C arrays (OSQP expects c_float* which is double in default builds)
-//    OSQPFloat *q = (OSQPFloat *) c_malloc(sizeof(OSQPFloat) * n_z);
-//    OSQPFloat *l = (OSQPFloat *) c_malloc(sizeof(OSQPFloat) * n_con);
-//    OSQPFloat *u = (OSQPFloat *) c_malloc(sizeof(OSQPFloat) * n_con);
-//    for (int i = 0; i < n_z; ++i) q[i] = static_cast<OSQPFloat>(qp_h(i));
-//    for (int i = 0; i < n_con; ++i) {
-//        l[i] = static_cast<c_float>(l_combined(i));
-//        u[i] = static_cast<c_float>(u_combined(i));
-//    }
-//
-//    // Build csc matrices with the OSQP-provided csc_matrix constructor
-//    csc *P_csc = csc_matrix(n_z, n_z, P_nnz, P_x, P_i, P_p);
-//    csc *A_csc = csc_matrix(n_con, n_z, A_nnz, A_x, A_i, A_p);
-//
-//    // Setup OSQP data
-//    OSQPData *data = (OSQPData *) c_malloc(sizeof(OSQPData));
-//    data->n = n_z;
-//    data->m = n_con;
-//    data->P = P_csc;
-//    data->q = q;
-//    data->A = A_csc;
-//    data->l = l;
-//    data->u = u;
-//
-//    // Settings
-//    OSQPSettings *settings = (OSQPSettings *) c_malloc(sizeof(OSQPSettings));
-//    osqp_set_default_settings(settings);
-//    settings->alpha = 1.0;
-//    settings->verbose = osqp_verbose;
-//    settings->max_iter = osqp_max_iter;
-//    settings->eps_abs = osqp_eps_abs;
-//    settings->eps_rel = osqp_eps_rel;
-//
-//    // Workspace
-//    OSQPWorkspace *work = nullptr;
-//    c_int exitflag = osqp_setup(&work, data, settings);
-//    if (exitflag != 0 || work == nullptr) {
-//        std::cerr << "OSQP setup failed with exitflag " << exitflag << std::endl;
-//        // cleanup partial allocations
-//        if (work) osqp_cleanup(work);
-//        c_free(q);
-//        c_free(l);
-//        c_free(u);
-//        // free csc arrays (they point to P_x, etc.)
-//        // free P_i/P_p/A_i/A_p and the x arrays allocated earlier
-//        c_free(P_i);
-//        c_free(P_p);
-//        c_free(A_i);
-//        c_free(A_p);
-//        c_free(P_x);
-//        c_free(A_x);
-//        c_free(data);
-//        c_free(settings);
-//        return;
-//    }
-//
-//    // Solve
-//    osqp_solve(work);
-//
-//    // Read solution
-//    if (work->info->status_val == OSQP_SOLVED || work->info->status_val == OSQP_SOLVED_INACCURATE) {
-//        qp_dz = Eigen::VectorXd::Zero(n_z);
-//        for (int i = 0; i < n_z; ++i) {
-//            qp_dz(i) = static_cast<double>(work->solution->x[i]);
-//        }
-//
-//        // Extract candidate controls u_k = U_old[k] + delta_u_k
-//        int N = horizon_length;
-//        int n_u_local = num_ctrl;
-//        qp_candidate_controls.clear();
-//        qp_candidate_controls.resize(N);
-//        for (int k = 0; k < N; ++k) {
-//            Eigen::VectorXd delta_u = qp_dz.segment(k * n_u_local, n_u_local);
-//            qp_candidate_controls[k] = U_old[k] + delta_u;
-//        }
-//
-//        if (verbose_output) {
-//            std::cout << "[SolveQP] OSQP solved, dz norm = " << qp_dz.norm() << std::endl;
-//        }
-//    } else {
-//        std::cerr << "OSQP did not find a solution. status_val = " << work->info->status_val << std::endl;
-//    }
-//
-//    // Cleanup OSQP
-//    osqp_cleanup(work);
-//    // Free memory we allocated
-//    c_free(q);
-//    c_free(l);
-//    c_free(u);
-//    // csc struct will not free arrays; we allocated them so free now:
-//    c_free(P_i);
-//    c_free(P_p);
-//    c_free(A_i);
-//    c_free(A_p);
-//    c_free(P_x);
-//    c_free(A_x);
-//    c_free(data);
-//    c_free(settings);
-}
+    int control_offset = horizon_length * (2 * dof);
+    for(int t = 0; t < horizon_length; t++){
+        // Extract the control vector for this time step
+        int idx_u = t * num_ctrl; // start of u_t
 
-//void SCVX::SolveQP(
-//        const vector<MatrixXd>& A_k,
-//        const vector<MatrixXd>& B_k,
-//        const vector<VectorXd>& d_k,
-//        const vector<MatrixXd>& cost_hess_xx,
-//        const vector<MatrixXd>& cost_hess_uu,
-//        const vector<MatrixXd>& cost_hess_xu,
-//        const vector<VectorXd>& cost_grad_x,
-//        const vector<VectorXd>& cost_grad_u,
-//        const VectorXd& terminal_grad,
-//        const MatrixXd& terminal_hess,
-//        int n, int m, int N,
-//        double trust_box)
-//{
-//    int nz = qp_H.rows();  // number of decision variables
-//    int n_eq = qp_Aeq.rows();
-//    int n_ineq = qp_Aineq.rows();
-//    int n_con = n_eq + n_ineq;
-//
-//    // Combine A_eq and A_ineq into one matrix A
-//    SparseMatrix<double> A_combined(n_con, nz);
-//    typedef Triplet<double> T;
-//    vector<T> triplets;
-//
-//    for (int k = 0; k < qp_Aeq.outerSize(); ++k)
-//        for (SparseMatrix<double>::InnerIterator it(qp_Aeq, k); it; ++it)
-//            triplets.emplace_back(it.row(), it.col(), it.value());
-//
-//    for (int k = 0; k < qp_Aineq.outerSize(); ++k)
-//        for (SparseMatrix<double>::InnerIterator it(qp_Aineq, k); it; ++it)
-//            triplets.emplace_back(n_eq + it.row(), it.col(), it.value());
-//
-//    A_combined.setFromTriplets(triplets.begin(), triplets.end());
-//
-//    // Combine lower and upper bounds
-//    VectorXd l_combined(n_con), u_combined(n_con);
-//    l_combined << b_eq, l_ineq;
-//    u_combined << b_eq, u_ineq;
-//
-//    // Convert Eigen sparse matrices to CSC format for OSQP
-//    A_combined.makeCompressed();
-////    H.makeCompressed();
-////
-////    OSQPCscMatrix* P = OSQPCscMatrix_new(
-////            nz, nz,
-////            H.nonZeros(),
-////            H.valuePtr(),
-////            H.innerIndexPtr(),
-////            H.outerIndexPtr()
-////    );
-////
-////    OSQPCscMatrix* A = OSQPCscMatrix_new(
-////            n_con, nz,
-////            A_combined.nonZeros(),
-////            A_combined.valuePtr(),
-////            A_combined.innerIndexPtr(),
-////            A_combined.outerIndexPtr()
-////    );
-//
-//    // Gradient vector q
-////    double* q = const_cast<double*>(h.data());
-////    double* l = const_cast<double*>(l_combined.data());
-////    double* u = const_cast<double*>(u_combined.data());
-////
-////    // Settings
-////    OSQPSettings* settings = OSQPSettings_new();
-////    osqp_set_default_settings(settings);
-////    settings->alpha = 1.0;  // relaxation parameter (controls step size of dual updates)
-////
-////    // Solver
-////    OSQPSolver* solver = nullptr;
-////    OSQPInt exitflag = osqp_setup(&solver, P, q, A, l, u, n_con, nz, settings);
-////
-////    if (exitflag != 0) {
-////        std::cerr << "OSQP setup failed with exitflag " << exitflag << std::endl;
-////        return;
-////    }
-////
-////    // Solve QP
-////    exitflag = osqp_solve(solver);
-////    if (exitflag != 0) {
-////        std::cerr << "OSQP solve failed with exitflag " << exitflag << std::endl;
-////    } else {
-////        // Access solution
-////        VectorXd solution = Map<VectorXd>(solver->solution->x, nz);
-////        std::cout << "QP solution:\n" << solution.transpose() << std::endl;
-////    }
-////
-////    // Clean up
-////    osqp_cleanup(solver);
-////    OSQPCscMatrix_free(P);
-////    OSQPCscMatrix_free(A);
-////    OSQPSettings_free(settings);
-//}
+        // If perturbations
+        qp_candidate_controls[t] = U_old[t] + qp_solution.segment(control_offset + idx_u, num_ctrl);
+        qp_candidate_states[t+1] = X_old_no_quat[t + 1] + qp_solution.segment(t * (2 * dof), 2 * dof);
 
+        // If absolute states and controls
+//        qp_candidate_controls[t] = qp_solution.segment(control_offset + idx_u, num_ctrl);
+//        qp_candidate_states[t+1] = qp_solution.segment(t * (2 * dof), 2 * dof);
 
-void SCVX::BuildEqualityConstraints(SparseMatrix<double> &A_eq, VectorXd &b_eq) {
-    // Build A_eq * dz = b_eq for linearised dynamics.
-    // Decision ordering: [u0...u_{N-1}, x1...xN]
-    const int N = horizon_length;
-    const int n_u = num_ctrl;
-    const int n_x = 2 * dof; // matches your l_x/l_xx sizing
-    const int z_size = N * n_u + N * n_x;
-
-    const int eq_rows = N * n_x;
-    A_eq.resize(eq_rows, z_size);
-    b_eq = VectorXd::Zero(eq_rows);
-
-    std::vector<Triplet<double>> trips;
-    trips.reserve(eq_rows * (n_u + 2*n_x)); // rough reserve
-
-    auto u_idx = [&](int k){ return k * n_u; };               // k in [0..N-1]
-    auto x_idx = [&](int k){ return N * n_u + (k-1) * n_x; }; // k in [1..N]
-
-    // Build d_k as the affine offset: d_k = x_{k+1}_nom - A_k * x_k_nom - B_k * u_k_nom
-    for (int k = 0; k < N; ++k) {
-        for (int i = 0; i < n_x; ++i) {
-            int row = k * n_x + i;
-
-            // +1 * x_{k+1} (x_{k+1} is in decision vector, x1..xN)
-            int col_xkp1 = x_idx(k+1) + i;
-            trips.emplace_back(row, col_xkp1, 1.0);
-
-            // -A_k * x_k -> if k == 0, x0 is known and moved to RHS
-            if (k >= 1) {
-                for (int j = 0; j < n_x; ++j) {
-                    double val = -A[k].coeff(i, j);
-                    if (val != 0.0) trips.emplace_back(row, x_idx(k) + j, val);
-                }
-            } else {
-                // x0 known -> move -A0 * x0 to RHS (we will add to b_eq)
-            }
-
-            // -B_k * u_k (u_k is in decision vector)
-            for (int j = 0; j < n_u; ++j) {
-                double val = -B[k].coeff(i, j);
-                if (val != 0.0) trips.emplace_back(row, u_idx(k) + j, val);
-            }
-
-            // Build RHS: d_k = x_{k+1}_nom - A_k * x_k_nom - B_k * u_k_nom
-            // We use X_old and U_old as the nominal trajectories.
-            VectorXd xkp1_nom = X_old[k+1].topRows(n_x); // note: X_old stores num_dof_quat + num_dof
-            VectorXd xk_nom = X_old[k].topRows(n_x);
-            VectorXd uk_nom = U_old[k];
-            VectorXd Ax = A[k] * xk_nom;
-            VectorXd Bu = B[k] * uk_nom;
-            double rhs_i = xkp1_nom(i) - Ax(i) - Bu(i);
-            // Add A0*x0 term implicitly included above via xkp1_nom - A*xk_nom - B*uk_nom
-            b_eq(row) = rhs_i;
-        }
     }
-
-    A_eq.setFromTriplets(trips.begin(), trips.end());
-    A_eq.makeCompressed();
 }
-
-void SCVX::BuildCostFunction(SparseMatrix<double> &H, VectorXd &h, double reg_diag = 1e-6) {
-    // Build Hessian H and gradient h for QP in decision vector ordering:
-    // z = [u0..u_{N-1}, x1..xN]
-    const int N = horizon_length;
-    const int n_u = num_ctrl;
-    const int n_x = 2 * dof;
-    const int z_size = N * n_u + N * n_x;
-
-    H.resize(z_size, z_size);
-    h = VectorXd::Zero(z_size);
-
-    std::vector<Triplet<double>> H_trips;
-    H_trips.reserve(N * (n_u*n_u + n_x*n_x) * 2);
-
-    auto u_idx = [&](int k){ return k * n_u; };               // k in [0..N-1]
-    auto x_idx = [&](int k){ return N * n_u + (k-1) * n_x; }; // k in [1..N]
-
-    // Stage costs k = 0..N-1
-    for (int k = 0; k < N; ++k) {
-        // L_uu: add to H at u block
-        const MatrixXd &Luu = l_uu[k];
-        for (int i = 0; i < n_u; ++i) {
-            for (int j = 0; j < n_u; ++j) {
-                double v = Luu(i, j);
-                if (v != 0.0) H_trips.emplace_back(u_idx(k) + i, u_idx(k) + j, v);
-            }
-        }
-
-        // L_xx: stage cost w.r.t x_k. Note: x0 is not in decision vector => only k>=1 contribute to H
-        const MatrixXd &Lxx = l_xx[k];
-        if (k >= 1) {
-            for (int i = 0; i < n_x; ++i) {
-                for (int j = 0; j < n_x; ++j) {
-                    double v = Lxx(i, j);
-                    if (v != 0.0) H_trips.emplace_back(x_idx(k) + i, x_idx(k) + j, v);
-                }
-            }
-        } else {
-            // k == 0: cost w.r.t x0 (nominal) contributes to constants; skip for H
-        }
-
-        // gradients: we assume l_u and l_x are gradients in delta coordinates.
-        h.segment(u_idx(k), n_u) += l_u[k];
-        if (k >= 1) h.segment(x_idx(k), n_x) += l_x[k];
-        else {
-            // k == 0: l_x[0] is gradient wrt x0 which is not a decision variable; so ignore here.
-        }
-    }
-
-    // Terminal cost at x_N (index N)
-    const MatrixXd &LxxN = l_xx[N]; // l_xx sized N+1
-    for (int i = 0; i < n_x; ++i)
-        for (int j = 0; j < n_x; ++j) {
-            double v = LxxN(i, j);
-            if (v != 0.0) H_trips.emplace_back(x_idx(N) + i, x_idx(N) + j, v);
-        }
-    h.segment(x_idx(N), n_x) += l_x[N];
-
-    // Assemble sparse H
-    H.setFromTriplets(H_trips.begin(), H_trips.end());
-
-    // Regularise H diagonal to ensure positive-definiteness (small),
-    // and add any additional regularisation you want here.
-    // We do this by adding reg_diag to the diagonal entries.
-    // If a diagonal entry already exists it will be incremented; otherwise we create it.
-    std::vector<Triplet<double>> diag_trips;
-    diag_trips.reserve(z_size);
-    for (int i = 0; i < z_size; ++i) {
-        diag_trips.emplace_back(i, i, reg_diag);
-    }
-    SparseMatrix<double> reg(z_size, z_size);
-    reg.setFromTriplets(diag_trips.begin(), diag_trips.end());
-    H += reg;
-
-    H.makeCompressed();
-}
-
-void SCVX::BuildTrustRegion(SparseMatrix<double> &A_ineq, VectorXd &l_ineq, VectorXd &u_ineq, double trust_box) {
-    // Build simple box trust region: -trust_box <= delta_z_i <= trust_box
-    // Implemented as 2* z_size rows in A_ineq (one per bound), but we can instead use A = I and l,u = [-trust, trust]
-    const int N = horizon_length;
-    const int n_u = num_ctrl;
-    const int n_x = 2 * dof;
-    const int z_size = N * n_u + N * n_x;
-
-    // A_ineq will be identity selecting each z variable
-    A_ineq.resize(z_size, z_size);
-    std::vector<Triplet<double>> trips;
-    trips.reserve(z_size);
-    for (int i = 0; i < z_size; ++i) trips.emplace_back(i, i, 1.0);
-    A_ineq.setFromTriplets(trips.begin(), trips.end());
-    A_ineq.makeCompressed();
-
-    l_ineq = VectorXd::Constant(z_size, -trust_box);
-    u_ineq = VectorXd::Constant(z_size, trust_box);
-}
-
-//double SCVX::ForwardsPass(double _old_cost) {
-//    // Build QP, solve it (unconstrained solve here), apply deltas to controls,
-//    // evaluate the nonlinear rollout and if better, accept (save states).
-//    const int N = horizon_length;
-//    const int n_u = num_ctrl;
-//    const int n_x = 2 * dof;
-//    const int z_size = N * n_u + N * n_x;
-//
-//    // 1) Build equality constraints (not used by unconstrained solve, but kept for later)
-//    SparseMatrix<double> A_eq;
-//    VectorXd b_eq;
-//    BuildEqualityConstraints(A_eq, b_eq);
-//
-//    // 2) Build cost
-//    SparseMatrix<double> H;
-//    VectorXd h;
-//    const double regularisation = 1e-6;
-//    BuildCostFunction(H, h, regularisation);
-//
-//    // 3) Build trust region
-//    SparseMatrix<double> A_ineq;
-//    VectorXd l_ineq, u_ineq;
-//    double trust_box = lambda; // you already have lambda variable — use as trust radius, or set externally.
-//    if (trust_box <= 0) trust_box = 1.0; // fallback
-//    BuildTrustRegion(A_ineq, l_ineq, u_ineq, trust_box);
-//
-//    // 4) Solve QP
-//    // For now: solve unconstrained quadratic subproblem: minimize 1/2 dz' H dz + h' dz
-//    // => solve H dz = -h
-//    VectorXd dz;
-//    bool solved = false;
-//
-//    // Convert H to a dense/sparse factorisation and solve robustly
-//    // Try sparse LDLT first
-//    try {
-//        Eigen::SimplicialLDLT<SparseMatrix<double>> ldlt;
-//        ldlt.compute(H);
-//        if (ldlt.info() == Eigen::Success) {
-//            dz = ldlt.solve(-h);
-//            if (ldlt.info() == Eigen::Success) solved = true;
-//        }
-//    } catch (...) {
-//        solved = false;
-//    }
-//
-//    if (!solved) {
-//        // fall back to dense regularised solve
-//        MatrixXd Hdense = MatrixXd(H);
-//        for (int i = 0; i < Hdense.rows(); ++i) Hdense(i,i) += 1e-8;
-//        Eigen::LDLT<MatrixXd> ld(dense_cast<MatrixXd>(Hdense));
-//        dz = ld.solve(-h);
-//    }
-//
-//    // 5) Map dz to delta_u and form candidate controls
-//    vector<MatrixXd> candidate_controls(N);
-//    for (int k = 0; k < N; ++k) {
-//        VectorXd delta_u = dz.segment(k * n_u, n_u);
-//        candidate_controls[k] = U_old[k] + delta_u;
-//    }
-//
-//    // 6) Evaluate nonlinear cost (rollout) without saving states
-//    double candidate_cost = RolloutTrajectory(MuJoCo_helper->main_data, false, candidate_controls);
-//
-//    // store new cost candidate, but only accept/commit later
-//    non_linear_cost = candidate_cost;
-//
-//    if (candidate_cost < _old_cost) {
-//        // Accept: do second rollout that saves states and writes U_old/X_old
-//        double saved = RolloutTrajectory(MuJoCo_helper->main_data, true, candidate_controls);
-//        // saved should equal candidate_cost unless simulator non-deterministic
-//        new_cost = saved;
-//        return new_cost;
-//    } else {
-//        // Reject: do not change nominals
-//        new_cost = _old_cost; // keep previous nominal cost
-//        return non_linear_cost;
-//    }
-//}
 
 void SCVX::UpdateNominal() {
-    // If a saved rollout already accepted (we called RolloutTrajectory(save_states=true) in ForwardsPass),
-    // then X_old and U_old were updated already and we consider them as the new nominal.
-    // Here we can perform any additional book-keeping if required (e.g. shrinking/expanding trust region).
-    // For now this is effectively a no-op because ForwardsPass saved the new trajectory when accepted.
-    // You could copy X_old -> X_new or similar if you maintain separate buffers.
-    // Example (no-op):
-    if (verbose_output) {
-        std::cout << "Nominal updated. new_cost = " << new_cost << ", lambda/trust = " << lambda << std::endl;
+    for(int t = 0 ; t < horizon_length; t++){
+        X_old.at(t + 1) = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->saved_systems_state_list[t + 1],
+                                                                              activeModelTranslator->current_state_vector);
+        U_old[t] = activeModelTranslator->ReturnControlVector(MuJoCo_helper->saved_systems_state_list[t],
+                                                              activeModelTranslator->current_state_vector);
+        X_old_no_quat[t + 1] = activeModelTranslator->ReturnStateVector(MuJoCo_helper->saved_systems_state_list[t + 1],
+                                                                                  activeModelTranslator->current_state_vector);
     }
-}
 
-//double SCVX::ForwardsPass(double _old_cost){
-//
-//}
-//
-//void SCVX::UpdateNominal(){
-//
-//}
+//    old_cost = new_cost;
+}
 
 void SCVX::PrintBanner(double time_rollout){
     std::cout << "--------------------------------------------------------------------------------------------------------------------------------------------" << std::endl;

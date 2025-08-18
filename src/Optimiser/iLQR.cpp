@@ -476,7 +476,7 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 //        std::cout << "l_x[0] \n" << l_x[0] << "\n";
 //        std::cout << "l_xx[0] \n" << l_xx[0] << "\n";
 //        std::cout << "l_x[1] \n" << l_x[1] << "\n";
-//        std::cout << "l_xx[1] \n" << l_xx[1] << "\n";
+        std::cout << "l_xx[horizon] \n" << l_xx[horizon_length] << "\n";
 //        std::cout << "l_x[horizon - 1] \n" << l_x[horizon_length - 1] << "\n";
     }
     else{

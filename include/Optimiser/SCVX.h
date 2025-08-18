@@ -75,12 +75,23 @@ private:
     double ForwardsPass(double _old_cost);
 
     void SolveQP();
-    void BuildEqualityConstraints(SparseMatrix<double> &A_eq, VectorXd &b_eq);
-    void BuildCostFunction(SparseMatrix<double> &H, VectorXd &h, double reg_diag);
-    void BuildTrustRegion(SparseMatrix<double> &A_ineq, VectorXd &l_ineq, VectorXd &u_ineq, double trust_box);
 
-    void SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix);
-    void SetTrustRegionConstraints(Eigen::SparseMatrix<double>& linear_matrix);
+    void EvaluateLinSolutionCost();
+
+    void SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
+                                Eigen::VectorXd& lower_bound,
+                                Eigen::VectorXd& upper_bound,
+                                const Eigen::VectorXd& x0);
+
+    void AddL1TrustRegionWithResize(Eigen::SparseMatrix<double>& A,
+                                Eigen::VectorXd& l,
+                                Eigen::VectorXd& u,
+                                Eigen::SparseMatrix<double>& hessian_matrix,
+                                Eigen::VectorXd& gradient_vector,
+                                double rho,
+                                const std::vector<Eigen::MatrixXd>& x_ref, // size T+1
+                                const std::vector<Eigen::MatrixXd>& u_ref);
+
     void SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix, Eigen::VectorXd& gradient_vector);
 
     void PrintBanner(double time_rollout);
@@ -121,6 +132,8 @@ private:
     // Solution and candidate controls
     Eigen::VectorXd qp_dz;                   // delta z (n_z)
     std::vector<Eigen::MatrixXd> qp_candidate_controls; // candidate controls U_k
+    std::vector<Eigen::MatrixXd> qp_candidate_states;  // candidate states X_k
+    std::vector<Eigen::MatrixXd> X_old_no_quat;
 
     // solver settings
     int osqp_verbose = 0;
