@@ -466,17 +466,19 @@ void SCVX::Iteration(int iteration_num, bool &converged){
     auto timer_start = high_resolution_clock::now();
     if(cost_reduced_last_iter){
         GenerateDerivatives();
-        std::cout << "A[0] " << A[0] << "\n";
-        std::cout << "B[0] " << B[0] << "\n";
-        std::cout << "l_xx[0] " << l_xx[0] << "\n";
-        std::cout << "l_x[0] " << l_x[0] << "\n";
+//        std::cout << "A[0] " << A[0] << "\n";
+//        std::cout << "B[0] " << B[0] << "\n";
+//        std::cout << "A[1] " << A[1] << "\n";
+//        std::cout << "B[1] " << B[1] << "\n";
+//        std::cout << "l_xx[0] " << l_xx[0] << "\n";
+//        std::cout << "l_x[0] " << l_x[0] << "\n";
 //        std::cout << "terminal residual derivs: " << residuals[horizon_length].transpose() << "\n";
 //        std::cout << "r_x[horizon_length] " << r_x[horizon_length][0] << "\n";
 //        std::cout << "r_u[horizon_length] " << r_u[horizon_length][0] << "\n";
-        std::cout << "l_xx[horizon] " << l_xx[horizon_length] << "\n";
-        std::cout << "l_x[horizon] " << l_x[horizon_length] << "\n";
-        std::cout << "A[horizon - 1]" << A[horizon_length - 1] << "\n";
-        std::cout << "B[horizon - 1] " << B[horizon_length - 1] << "\n";
+//        std::cout << "l_xx[horizon] " << l_xx[horizon_length] << "\n";
+//        std::cout << "l_x[horizon] " << l_x[horizon_length] << "\n";
+//        std::cout << "A[horizon - 1]" << A[horizon_length - 1] << "\n";
+//        std::cout << "B[horizon - 1] " << B[horizon_length - 1] << "\n";
     }
     else{
         percentage_derivs_per_iteration.push_back(0.0);
@@ -538,6 +540,8 @@ void SCVX::Iteration(int iteration_num, bool &converged){
 void SCVX::EvaluateLinSolutionCost(){
     // Loop through horizon, set the states and controls from QP solution and calculate cost
 
+    std::cout << "EVALUATE LIN SOLUTION COST \n";
+
     // Copy the initial state to the main data
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
@@ -547,23 +551,24 @@ void SCVX::EvaluateLinSolutionCost(){
         activeModelTranslator->SetControlVector(qp_candidate_controls[t], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
         // Return cost for this state
-        double state_cost;
         activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[t]);
-        state_cost = activeModelTranslator->CostFunction(residuals[t], activeModelTranslator->full_state_vector, false);
+        double state_cost = activeModelTranslator->CostFunction(residuals[t], activeModelTranslator->full_state_vector, false);
+
+//        std::cout << "State at t == " << t << ": " << activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector).transpose() << "\n";
+//        std::cout << "state cost at t == " << t << ": " << state_cost << "\n";
 
         lin_cost += state_cost;
 
         // This is sort of like mj_step for this function, setting state directly from QP solution
-        activeModelTranslator->SetStateVector(qp_candidate_states[t], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+        // Note: t+1 as this is effectively mj_step setting state for next time-step.
+        activeModelTranslator->SetStateVector(qp_candidate_states[t+1], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
         // TODO - temp code to be removed later
 //        if(t % 10 == 0){
             MuJoCo_helper->CopySystemState(MuJoCo_helper->vis_data, MuJoCo_helper->main_data);
             MuJoCo_helper->ForwardSimulator(MuJoCo_helper->vis_data);
-//            active_visualiser->render("Lin solution");
+            active_visualiser->render("Lin solution");
 //        }
-
-        lin_cost += state_cost;
     }
 
     activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[horizon_length]);
@@ -584,9 +589,8 @@ double SCVX::ForwardsPass(double _old_cost){
         activeModelTranslator->SetControlVector(qp_candidate_controls[t], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
         // Calculate cost for this state
-        double state_cost;
         activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[t]);
-        state_cost = activeModelTranslator->CostFunction(residuals[t], activeModelTranslator->full_state_vector, false);
+        double state_cost = activeModelTranslator->CostFunction(residuals[t], activeModelTranslator->full_state_vector, false);
 
         SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, t);
 
@@ -1019,20 +1023,20 @@ void SCVX::SolveQP() {
 
     }
 
-    std::cout << "X_old[horizon] " << X_old[horizon_length].transpose() << "\n";
+    std::cout << "X_old[horizon] " << X_old_no_quat[horizon_length].transpose() << "\n";
     std::cout << "adjustment[horizon] " << qp_solution.segment((horizon_length) * (2 * dof), 2 * dof).transpose() << "\n";
     qp_candidate_states[horizon_length] = X_old_no_quat[horizon_length] + qp_solution.segment((horizon_length) * (2 * dof), 2 * dof);
 
-    std::cout << "X_old[0] " << X_old[0].transpose() << "\n";
-    std::cout << "X_old[horizon_length] " << X_old[horizon_length].transpose() << "\n";
-    std::cout << "qp_candidate state[0] " << qp_candidate_states[0].transpose() << "\n";
-    std::cout << "qp_candidate state[1] " << qp_candidate_states[1].transpose() << "\n";
-    std::cout << "qp_candidate state[2] " << qp_candidate_states[2].transpose() << "\n";
-    std::cout << "qp_candidate state[horizon - 1] " << qp_candidate_states[horizon_length - 1].transpose() << "\n";
-    std::cout << "qp_candidate state[horizon_length] " << qp_candidate_states[horizon_length].transpose() << "\n";
+//    std::cout << "X_old[0] " << X_old[0].transpose() << "\n";
+//    std::cout << "X_old[horizon_length] " << X_old[horizon_length].transpose() << "\n";
+//    std::cout << "qp_candidate state[0] " << qp_candidate_states[0].transpose() << "\n";
+//    std::cout << "qp_candidate state[1] " << qp_candidate_states[1].transpose() << "\n";
+//    std::cout << "qp_candidate state[2] " << qp_candidate_states[2].transpose() << "\n";
+//    std::cout << "qp_candidate state[horizon - 1] " << qp_candidate_states[horizon_length - 1].transpose() << "\n";
+//    std::cout << "qp_candidate state[horizon_length] " << qp_candidate_states[horizon_length].transpose() << "\n";
 
-    std::cout << "qp candidate controls: " << qp_candidate_controls[0].transpose() << "\n";
-    std::cout << "qp candidate controls: " << qp_candidate_controls[1].transpose() << "\n";
+//    std::cout << "qp candidate controls: " << qp_candidate_controls[0].transpose() << "\n";
+//    std::cout << "qp candidate controls: " << qp_candidate_controls[1].transpose() << "\n";
 }
 
 void SCVX::UpdateNominal() {

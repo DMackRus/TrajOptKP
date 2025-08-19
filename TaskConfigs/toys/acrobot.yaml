@@ -25,7 +25,7 @@ residuals:
     weight: 0
     weight_terminal: 1
   tip_z:
-    target: [4.2]
+    target: [0]
     weight: 0
     weight_terminal: 10
   joint_0_vel:

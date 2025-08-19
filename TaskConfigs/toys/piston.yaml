@@ -23,5 +23,5 @@ residuals:
     weight_terminal: 100
   rod_x_vel:
     target: [0]
-    weight: 0
-    weight_terminal: 0
+    weight: 0.001
+    weight_terminal: 10

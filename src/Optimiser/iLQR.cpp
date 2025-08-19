@@ -219,8 +219,6 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
 
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, d);
 
-    X_old[0] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
-
     if(MuJoCo_helper->CheckIfDataIndexExists(0)){
         MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
     }
@@ -234,27 +232,12 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
     for(int i = 0; i < horizon_length; i++){
         // set controls
         activeModelTranslator->SetControlVector(initial_controls[i],
-                                                          MuJoCo_helper->main_data,
-                                                             activeModelTranslator->full_state_vector);
-        // Integrate simulator
-        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
-
-        // Get contacts
-        activeModelTranslator->GetContacts(MuJoCo_helper->main_data, contact_list[i+1]);
-
-        // Return cost for this state
-        double state_cost;
-        activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[i]);
-        if(i == horizon_length - 1){
-            state_cost = activeModelTranslator->CostFunction(residuals[i], activeModelTranslator->full_state_vector, true);
-        }
-        else{
-            state_cost = activeModelTranslator->CostFunction(residuals[i], activeModelTranslator->full_state_vector, false);
-        }
+                                                MuJoCo_helper->main_data,
+                                                activeModelTranslator->full_state_vector);
 
         // If required to save states to trajectory tracking, then save state
         if(save_states){
-            X_old[i + 1] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+            X_old[i] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
             U_old[i] = activeModelTranslator->ReturnControlVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
             if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
                 MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
@@ -264,13 +247,89 @@ double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd
             }
         }
 
+        // Get contacts
+        activeModelTranslator->GetContacts(MuJoCo_helper->main_data, contact_list[i]);
+
+        // Return cost for this state
+        double state_cost;
+        activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[i]);
+        state_cost = activeModelTranslator->CostFunction(residuals[i], activeModelTranslator->full_state_vector, false);
+
+        // Integrate simulator
+        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
+
         cost += state_cost;
     }
+
+    activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[horizon_length]);
+    cost += activeModelTranslator->CostFunction(residuals[horizon_length], activeModelTranslator->full_state_vector, true);
+
+    // Save the last state
+    activeModelTranslator->GetContacts(MuJoCo_helper->main_data, contact_list[horizon_length]);
+    X_old[horizon_length] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
     cost_history.push_back(cost);
 
     return cost;
 }
+
+//double iLQR::RolloutTrajectory(mjData* d, bool save_states, std::vector<MatrixXd> initial_controls){
+//    double cost = 0.0;
+//
+//    MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, d);
+//
+//    X_old[0] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+//
+//    if(MuJoCo_helper->CheckIfDataIndexExists(0)){
+//        MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], MuJoCo_helper->main_data);
+//    }
+//    else{
+//        MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
+//    }
+//
+//    // Get contact
+//    activeModelTranslator->GetContacts(MuJoCo_helper->main_data, contact_list[0]);
+//
+//    for(int i = 0; i < horizon_length; i++){
+//        // set controls
+//        activeModelTranslator->SetControlVector(initial_controls[i],
+//                                                          MuJoCo_helper->main_data,
+//                                                             activeModelTranslator->full_state_vector);
+//        // Integrate simulator
+//        mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
+//
+//        // Get contacts
+//        activeModelTranslator->GetContacts(MuJoCo_helper->main_data, contact_list[i+1]);
+//
+//        // Return cost for this state
+//        double state_cost;
+//        activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[i]);
+//        if(i == horizon_length - 1){
+//            state_cost = activeModelTranslator->CostFunction(residuals[i], activeModelTranslator->full_state_vector, true);
+//        }
+//        else{
+//            state_cost = activeModelTranslator->CostFunction(residuals[i], activeModelTranslator->full_state_vector, false);
+//        }
+//
+//        // If required to save states to trajectory tracking, then save state
+//        if(save_states){
+//            X_old[i + 1] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+//            U_old[i] = activeModelTranslator->ReturnControlVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
+//            if(MuJoCo_helper->CheckIfDataIndexExists(i + 1)){
+//                MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[i + 1], MuJoCo_helper->main_data);
+//            }
+//            else{
+//                MuJoCo_helper->AppendSystemStateToEnd(MuJoCo_helper->main_data);
+//            }
+//        }
+//
+//        cost += state_cost;
+//    }
+//
+//    cost_history.push_back(cost);
+//
+//    return cost;
+//}
 
 // ------------------------------------------------------------------------------------------------------
 //
@@ -471,8 +530,8 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     auto timer_start = high_resolution_clock::now();
     if(cost_reduced_last_iter){
         GenerateDerivatives();
-//        std::cout << "A[0] \n" << A[0] << "\n";
-//        std::cout << "B[0] \n" << B[0] << "\n";
+        std::cout << "A[0] \n" << A[0] << "\n";
+        std::cout << "B[0] \n" << B[0] << "\n";
 //        std::cout << "l_x[0] \n" << l_x[0] << "\n";
 //        std::cout << "l_xx[0] \n" << l_xx[0] << "\n";
 //        std::cout << "l_x[1] \n" << l_x[1] << "\n";
@@ -593,9 +652,9 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
 // ------------------------------------------- STEP 2 FUNCTIONS (BACKWARDS PASS) ----------------------------------------------
 bool iLQR::BackwardsPassQuuRegularisation(){
     MatrixXd V_x(2*dof, 2*dof);
-    V_x = l_x[horizon_length - 1];
+    V_x = l_x[horizon_length];
     MatrixXd V_xx(2*dof, 2*dof);
-    V_xx = l_xx[horizon_length - 1];
+    V_xx = l_xx[horizon_length];
     int Quu_pd_check_counter = 0;
     int number_steps_between_pd_checks = 100;
 
@@ -939,18 +998,9 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
 
         // Clamp torque within limits
         for(int i = 0; i < num_ctrl; i++){
-            if(U_new(i) > control_limits(2*i+1, 0)){
-//                std::cout << "U_new(i) is " << U_new(i) << " and control limits are " << control_limits(2*i+1, 0) << "\n";
-                U_new(i) = control_limits(2*i+1, 0);
-//                std::cout << "U_new(i) is " << U_new(i) << "\n";
-
-            }
+            if(U_new(i) > control_limits(2*i+1, 0)) U_new(i) = control_limits(2*i+1, 0);
             if(U_new(i) < control_limits(2*i, 0)) U_new(i) = control_limits(2*i, 0);
         }
-
-//        if(t == 0){
-//            std::cout << "U_new[0] " << U_new.transpose() << "\n";
-//        }
 
         activeModelTranslator->SetControlVector(U_new, MuJoCo_helper->fd_data[thread_id],
                                                 activeModelTranslator->current_state_vector);
@@ -959,25 +1009,25 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
         // Terminal state
         MatrixXd residuals_t(activeModelTranslator->residual_list.size(), 1);
         activeModelTranslator->Residuals(MuJoCo_helper->fd_data[thread_id], residuals_t);
-        if(t == horizon_length - 1){
-            new_state_cost = activeModelTranslator->CostFunction(residuals_t,
-                                                                 activeModelTranslator->full_state_vector, true);
-        }
-        else{
-            new_state_cost = activeModelTranslator->CostFunction(residuals_t,
-                                                                 activeModelTranslator->full_state_vector, false);
-        }
+        new_state_cost = activeModelTranslator->CostFunction(residuals_t,
+                                                             activeModelTranslator->full_state_vector, false);
 
         _new_cost += new_state_cost;
 
         mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[thread_id]);
 
         // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-
         SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t);
     }
 
-    // Compute expected costreduction
+    // Terminal cost
+    MatrixXd residuals_t(activeModelTranslator->residual_list.size(), 1);
+    activeModelTranslator->Residuals(MuJoCo_helper->fd_data[thread_id], residuals_t);
+    _new_cost += activeModelTranslator->CostFunction(residuals_t,
+                                                         activeModelTranslator->full_state_vector, true);
+
+
+    // Compute expected cost reduction
     expected = -(alpha * delta_J + (pow(alpha, 2) / 2) * delta_J);
 //    expecteds.push_back(expected);
 
