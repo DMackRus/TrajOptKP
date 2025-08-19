@@ -5,7 +5,7 @@ openloop_horizon: 1000
 mpc_horizon: 100
 keypointMethod: "set_interval"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 auto_adjust: false
-minN: 1000
+minN: 1
 maxN: 10
 iterativeErrorThreshold: 0.01
 robots:

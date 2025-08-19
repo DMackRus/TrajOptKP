@@ -176,13 +176,13 @@ void Optimiser::ComputeKeypoints(){
 void Optimiser::ComputeDynamicsDerivatives(){
     // Compute dynamics derivatives at keypoints - note if keypoint method = iterative error, we do not need to compute derivatives
     // as they have already been computed
-    if(activeKeyPointMethod.name != "iterative_error") {
-        auto start_fd_time = high_resolution_clock::now();
-        ComputeDynamicsDerivativesAtKeypoints(keypoint_generator->keypoints);
-        auto stop_fd_time = high_resolution_clock::now();
-        auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
-        time_FD_derivs_ms.push_back(duration_fd_time.count() / 1000.0);
-    }
+
+    auto start_fd_time = high_resolution_clock::now();
+    ComputeDynamicsDerivativesAtKeypoints(keypoint_generator->keypoints);
+    auto stop_fd_time = high_resolution_clock::now();
+    auto duration_fd_time = duration_cast<microseconds>(stop_fd_time - start_fd_time);
+    time_FD_derivs_ms.push_back(duration_fd_time.count() / 1000.0);
+
 
     // Interpolate the dynamics derivatives
     auto start_interp_time = high_resolution_clock::now();
@@ -213,9 +213,9 @@ void Optimiser::ComputeCostDerivatives(){
     }
 
     activeModelTranslator->CostDerivativesFromResiduals(activeModelTranslator->current_state_vector,
-                                                        l_x[horizon_length - 1], l_xx[horizon_length - 1],
-                                                        l_u[horizon_length - 1], l_uu[horizon_length - 1],
-                                                        residuals[horizon_length - 1], r_x[horizon_length - 1], r_u[horizon_length - 1], true);
+                                                        l_x[horizon_length], l_xx[horizon_length],
+                                                        l_u[horizon_length], l_uu[horizon_length],
+                                                        residuals[horizon_length], r_x[horizon_length], r_u[horizon_length], true);
 
     auto time_stop_residual_derivs = high_resolution_clock::now();
     time_cost_derivs_ms.push_back(duration_cast<microseconds>(time_stop_residual_derivs - time_start_residual_derivs).count() / 1000.0);
