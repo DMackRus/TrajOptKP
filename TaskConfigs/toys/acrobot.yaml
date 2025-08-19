@@ -1,7 +1,7 @@
 modelFile: "/mujoco_models/Acrobot/acrobot.xml"   # Path to the model xml file
 modelName: "/acrobot"                             # Name of the model, used for saving data
 timeStep: 0.01                                    # Time step for simulation
-openloop_horizon: 200
+openloop_horizon: 1000
 keypointMethod: "set_interval"              # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 minN: 1                                           # Minimum interval between key-points
 maxN: 13                                          # Maximum interval between key-points
@@ -25,7 +25,7 @@ residuals:
     weight: 0
     weight_terminal: 1
   tip_z:
-    target: [0]
+    target: [4.2]
     weight: 0
     weight_terminal: 10
   joint_0_vel:
@@ -36,11 +36,7 @@ residuals:
     target: [0]
     weight: 0.0001
     weight_terminal: 0.1
-#  joint_0_torque:
-#    target: [0]
-#    weight: 1.0
-#    weight_terminal: 0
   joint_0_torque:
     target: [0]
-    weight: 0.0
-    weight_terminal: 0
+    weight: 1.0
+    weight_terminal: 1.0

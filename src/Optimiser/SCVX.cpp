@@ -142,7 +142,6 @@ void SCVX::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         X_old.push_back(MatrixXd(num_dof_quat + num_dof, 1));
         X_new.push_back(MatrixXd(num_dof_quat + num_dof, 1));
 
-        // TODO - add empty control residuals for last state to prevent seg fault
         l_u.emplace_back(MatrixXd(num_ctrl, 1));
         l_uu.emplace_back(MatrixXd(num_ctrl, num_ctrl));
 
@@ -564,17 +563,14 @@ void SCVX::EvaluateLinSolutionCost(){
         activeModelTranslator->SetStateVector(qp_candidate_states[t+1], MuJoCo_helper->main_data, activeModelTranslator->full_state_vector);
 
         // TODO - temp code to be removed later
-//        if(t % 10 == 0){
-            MuJoCo_helper->CopySystemState(MuJoCo_helper->vis_data, MuJoCo_helper->main_data);
-            MuJoCo_helper->ForwardSimulator(MuJoCo_helper->vis_data);
-            active_visualiser->render("Lin solution");
-//        }
+
+//        MuJoCo_helper->CopySystemState(MuJoCo_helper->vis_data, MuJoCo_helper->main_data);
+//        MuJoCo_helper->ForwardSimulator(MuJoCo_helper->vis_data);
+//        active_visualiser->render("Lin solution");
     }
 
     activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[horizon_length]);
     lin_cost += activeModelTranslator->CostFunction(residuals[horizon_length], activeModelTranslator->full_state_vector, true);
-
-    std::cout << "X[horizon_length] linear " << activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector).transpose() << "\n";
 
     std::cout << "lin cost is " << lin_cost << "\n";
 }
@@ -600,13 +596,6 @@ double SCVX::ForwardsPass(double _old_cost){
         // Get contacts
         activeModelTranslator->GetContacts(MuJoCo_helper->main_data, contact_list[t+1]);
 
-//        MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[t], MuJoCo_helper->main_data);
-//
-//        if(t % 10 == 0){
-//            MuJoCo_helper->CopySystemState(MuJoCo_helper->vis_data, MuJoCo_helper->main_data);
-//            MuJoCo_helper->ForwardSimulator(MuJoCo_helper->vis_data);
-//            active_visualiser->render("rollout");
-//        }
         non_linear_cost += state_cost;
     }
 
@@ -617,8 +606,6 @@ double SCVX::ForwardsPass(double _old_cost){
     // Save the last state
     SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, horizon_length);
 
-    std::cout << "X[horizon_length] " << activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector).transpose() << "\n";
-
     // Return new cost which in the case of SCVX is non-linear cost
     return non_linear_cost;
 }
@@ -628,56 +615,38 @@ void SCVX::AddL1TrustRegionWithResize(Eigen::SparseMatrix<double>& A,
                                       Eigen::VectorXd& u,
                                       Eigen::SparseMatrix<double>& hessian_matrix,
                                       Eigen::VectorXd& gradient_vector,
-                                      double rho,
-                                      const std::vector<Eigen::MatrixXd>& x_ref, // size T+1
-                                      const std::vector<Eigen::MatrixXd>& u_ref) // size T
+                                      double rho)
 {
     int T  = horizon_length;
     int nx = 2 * dof;
     int nu = num_ctrl;
 
-    // original decision length
-    int n_x_block = T * nx;           // x1..xT
-    int n_u_block = T * nu;           // u0..u_{T-1}
+    // ---------------- Decision structure ----------------
+    // z = [δx0 .. δxT, δu0 .. δu_{T-1}]
+    int n_x_block = (T + 1) * nx;
+    int n_u_block = T * nu;
     int n_z       = n_x_block + n_u_block;
 
-    // slack variables: one t per original var
+    // slack variables, one per element of z
     int n_tr = n_z;
 
-    // --- Sanity checks ---
-    assert((int)x_ref.size() == T + 1 && "x_ref must be size T+1 (x0..xT)");
-    assert((int)u_ref.size() == T     && "u_ref must be size T (u0..u_{T-1})");
+    // ---------------- Old sizes ----------------
+    int old_rows  = A.rows();
+    int old_cols  = A.cols();
+    int old_nvars = old_cols;
 
-    for (int t = 0; t < T; ++t) {
-        assert(x_ref[t+1].rows() == nx && x_ref[t+1].cols() == 1);
-        assert(u_ref[t].rows()   == nu && u_ref[t].cols()   == 1);
-    }
-
-    // r = stacked nominal matching z = [x1..xT, u0..u_{T-1}]
-    Eigen::VectorXd r(n_z);
-    for (int t = 0; t < T; ++t) {
-        r.segment(t * nx, nx) = x_ref[t+1].col(0); // use x_{t+1} from x_ref
-    }
-    for (int t = 0; t < T; ++t) {
-        r.segment(n_x_block + t * nu, nu) = u_ref[t].col(0);
-    }
-
-    // --- Old sizes ---
-    int old_rows = A.rows();
-    int old_cols = A.cols();
-    int old_nvars = old_cols; // should equal n_z
-    assert(old_cols == n_z && "A must currently have n_z columns (no t yet).");
-
-    // Sanity: hessian and gradient sizes must match old vars
+    assert(old_cols == n_z && "A must currently have (T+1)*nx + T*nu columns.");
     assert(gradient_vector.size() == old_nvars && "gradient_vector size mismatch");
-    assert(hessian_matrix.rows() == old_nvars && hessian_matrix.cols() == old_nvars && "hessian_matrix size mismatch");
+    assert(hessian_matrix.rows() == old_nvars &&
+           hessian_matrix.cols() == old_nvars &&
+           "hessian_matrix size mismatch");
 
-    // --- New sizes ---
-    int add_rows = n_z + n_z + n_tr + 1;  // (1) z - t <= r, (2) -z - t <= -r, (3) -t <= 0, (4) sum(t) <= rho
+    // ---------------- New sizes ----------------
+    int add_rows = n_z + n_z + n_tr + 1;  // (1) |z| <= t, (2) -t <= 0, (3) sum(t) <= rho
     int new_rows = old_rows + add_rows;
-    int new_cols = old_nvars + n_tr;      // we append t variables -> columns grow
+    int new_cols = old_nvars + n_tr;      // append slack variables
 
-    // --- Build triplets for new A (copy old + append) ---
+    // ---------------- Build new A ----------------
     std::vector<Eigen::Triplet<double>> trips;
     trips.reserve(static_cast<size_t>(A.nonZeros()) + 3ULL * n_z + n_tr + 4);
 
@@ -689,36 +658,35 @@ void SCVX::AddL1TrustRegionWithResize(Eigen::SparseMatrix<double>& A,
         }
     }
 
-    // offsets
-    int row_off_1 = old_rows;                  // z - t <= r
-    int row_off_2 = row_off_1 + n_z;           // -z - t <= -r
-    int row_off_3 = row_off_2 + n_z;           // -t <= 0
-    int row_off_4 = row_off_3 + n_tr;          // sum(t) <= rho
-    int t_offset  = old_nvars;                 // first column index of t block
+    int row_off_1 = old_rows;             // z - t <= 0
+    int row_off_2 = row_off_1 + n_z;      // -z - t <= 0
+    int row_off_3 = row_off_2 + n_z;      // -t <= 0
+    int row_off_4 = row_off_3 + n_tr;     // sum(t) <= rho
+    int t_offset  = old_nvars;            // first index of slack block
 
-    // (1) z - t <= r -> [ I_z  -I_t ]
+    // (1) z - t <= 0
     for (int i = 0; i < n_z; ++i) {
-        trips.emplace_back(row_off_1 + i, i,         1.0);   // +z_i
-        trips.emplace_back(row_off_1 + i, t_offset + i, -1.0); // -t_i
+        trips.emplace_back(row_off_1 + i, i,         1.0);
+        trips.emplace_back(row_off_1 + i, t_offset + i, -1.0);
     }
 
-    // (2) -z - t <= -r -> [ -I_z  -I_t ]
+    // (2) -z - t <= 0
     for (int i = 0; i < n_z; ++i) {
-        trips.emplace_back(row_off_2 + i, i,         -1.0);  // -z_i
-        trips.emplace_back(row_off_2 + i, t_offset + i, -1.0); // -t_i
+        trips.emplace_back(row_off_2 + i, i,        -1.0);
+        trips.emplace_back(row_off_2 + i, t_offset + i, -1.0);
     }
 
-    // (3) -t <= 0 -> [ 0  -I_t ]
+    // (3) -t <= 0
     for (int i = 0; i < n_tr; ++i) {
         trips.emplace_back(row_off_3 + i, t_offset + i, -1.0);
     }
 
-    // (4) sum(t) <= rho -> [ 0  1^T ]
+    // (4) sum(t) <= rho
     for (int i = 0; i < n_tr; ++i) {
         trips.emplace_back(row_off_4, t_offset + i, 1.0);
     }
 
-    // --- Build new bounds l_new, u_new ---
+    // ---------------- Bounds ----------------
     Eigen::VectorXd l_new(new_rows);
     Eigen::VectorXd u_new(new_rows);
 
@@ -726,62 +694,56 @@ void SCVX::AddL1TrustRegionWithResize(Eigen::SparseMatrix<double>& A,
     l_new.head(old_rows) = l;
     u_new.head(old_rows) = u;
 
-    // (1) z - t <= r  ->  l = -inf, u = r
+    // (1) z - t <= 0
     l_new.segment(row_off_1, n_z).setConstant(-OSQP_INFTY);
-    u_new.segment(row_off_1, n_z) = r;
+    u_new.segment(row_off_1, n_z).setZero();
 
-    // (2) -z - t <= -r  ->  l = -inf, u = -r
+    // (2) -z - t <= 0
     l_new.segment(row_off_2, n_z).setConstant(-OSQP_INFTY);
-    u_new.segment(row_off_2, n_z) = -r;
+    u_new.segment(row_off_2, n_z).setZero();
 
-    // (3) -t <= 0  ->  l = -inf, u = 0
+    // (3) -t <= 0
     l_new.segment(row_off_3, n_tr).setConstant(-OSQP_INFTY);
     u_new.segment(row_off_3, n_tr).setZero();
 
-    // (4) 1^T t <= rho -> l = -inf, u = rho
+    // (4) sum(t) <= rho
     l_new(row_off_4) = -OSQP_INFTY;
     u_new(row_off_4) = rho;
 
-    // Assemble augmented A
+    // ---------------- Assemble A ----------------
     Eigen::SparseMatrix<double> A_new(new_rows, new_cols);
     A_new.setFromTriplets(trips.begin(), trips.end());
     A_new.makeCompressed();
 
-    // --- Expand Hessian (P) and gradient (q) to match new_cols ---
+    // ---------------- Expand Hessian & gradient ----------------
     int new_nvars = new_cols;
 
-    // gradient_vector -> q_new
     Eigen::VectorXd q_new(new_nvars);
     q_new.head(old_nvars) = gradient_vector;
-    q_new.tail(n_tr).setZero(); // no linear cost on slacks
+    q_new.tail(n_tr).setZero(); // no cost on slacks
 
-    // hessian_matrix -> P_new (sparse copy top-left, zeros elsewhere)
     std::vector<Eigen::Triplet<double>> h_trips;
     h_trips.reserve(static_cast<size_t>(hessian_matrix.nonZeros()));
 
     hessian_matrix.makeCompressed();
     for (int k = 0; k < hessian_matrix.outerSize(); ++k) {
         for (Eigen::SparseMatrix<double>::InnerIterator it(hessian_matrix, k); it; ++it) {
-            // keep same (row,col,value) in top-left block
             h_trips.emplace_back(it.row(), it.col(), it.value());
         }
     }
-    // NOTE: bottom-right block (slacks) is left zero; cross-terms zero.
 
     Eigen::SparseMatrix<double> P_new(new_nvars, new_nvars);
     if (!h_trips.empty()) {
         P_new.setFromTriplets(h_trips.begin(), h_trips.end());
     } else {
-        // ensure a valid sparse matrix object even when Hessian is zero
         P_new.setZero();
     }
     P_new.makeCompressed();
 
-    // --- swap augmented matrices/vectors back to caller ---
+    // ---------------- Swap back ----------------
     A.swap(A_new);
     l.swap(l_new);
     u.swap(u_new);
-
     hessian_matrix.swap(P_new);
     gradient_vector.swap(q_new);
 }
@@ -831,15 +793,6 @@ void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
                 }
             }
         }
-        else{
-            // Just add Identity for x_0?
-        }
-
-
-//        } else {
-//            // t == 0 → x₀ not in z, move to RHS: rhs₀ = A₀ x₀
-//            rhs.segment(row_base, n_x) = A[0] * x0;
-//        }
 
         // Handle -B_t * u_t term
         for (int i = 0; i < n_x; ++i) {
@@ -870,7 +823,7 @@ void SCVX::SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix,
     gradient_vector = Eigen::VectorXd::Zero(total_vars);
 
     auto idx_x = [&](int t) { return (t) * nx; };             // x_t, t >= 1
-    auto idx_u = [&](int t) { return nx * T + t * nu; };      // u_t, t >= 0
+    auto idx_u = [&](int t) { return (nx * (T+1)) + t * nu; };      // u_t, t >= 0
 
     // Stage costs
     for (int t = 0; t < T; ++t) {
@@ -954,14 +907,12 @@ void SCVX::SolveQP() {
     end = std::chrono::high_resolution_clock::now();
 //    std::cout << "Time to set cost function: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
 
-//    AddL1TrustRegionWithResize(linear_matrix,
-//                              lower_bound,
-//                              upper_bound,
-//                              hessian,
-//                              gradient,
-//                              10, // trust region radius
-//                              X_old_no_quat,  // reference states
-//                              U_old); // reference controls
+    AddL1TrustRegionWithResize(linear_matrix,
+                              lower_bound,
+                              upper_bound,
+                              hessian,
+                              gradient,
+                              50);
 
     // ----------- Set QP matrices --------------
 
@@ -1013,18 +964,13 @@ void SCVX::SolveQP() {
         // Extract the control vector for this time step
         int idx_u = t * num_ctrl; // start of u_t
 
-        // If perturbations
+        // Solution to QP is perturbation about nominal trajectory
         qp_candidate_controls[t] = U_old[t] + qp_solution.segment(control_offset + idx_u, num_ctrl);
         qp_candidate_states[t] = X_old_no_quat[t] + qp_solution.segment(t * (2 * dof), 2 * dof);
-
-        // If absolute states and controls
-//        qp_candidate_controls[t] = qp_solution.segment(control_offset + idx_u, num_ctrl);
-//        qp_candidate_states[t+1] = qp_solution.segment(t * (2 * dof), 2 * dof);
-
     }
 
-    std::cout << "X_old[horizon] " << X_old_no_quat[horizon_length].transpose() << "\n";
-    std::cout << "adjustment[horizon] " << qp_solution.segment((horizon_length) * (2 * dof), 2 * dof).transpose() << "\n";
+//    std::cout << "X_old[horizon] " << X_old_no_quat[horizon_length].transpose() << "\n";
+//    std::cout << "adjustment[horizon] " << qp_solution.segment((horizon_length) * (2 * dof), 2 * dof).transpose() << "\n";
     qp_candidate_states[horizon_length] = X_old_no_quat[horizon_length] + qp_solution.segment((horizon_length) * (2 * dof), 2 * dof);
 
 //    std::cout << "X_old[0] " << X_old[0].transpose() << "\n";

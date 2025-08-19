@@ -84,13 +84,11 @@ private:
                                 const Eigen::VectorXd& x0);
 
     void AddL1TrustRegionWithResize(Eigen::SparseMatrix<double>& A,
-                                Eigen::VectorXd& l,
-                                Eigen::VectorXd& u,
-                                Eigen::SparseMatrix<double>& hessian_matrix,
-                                Eigen::VectorXd& gradient_vector,
-                                double rho,
-                                const std::vector<Eigen::MatrixXd>& x_ref, // size T+1
-                                const std::vector<Eigen::MatrixXd>& u_ref);
+                                    Eigen::VectorXd& l,
+                                    Eigen::VectorXd& u,
+                                    Eigen::SparseMatrix<double>& hessian_matrix,
+                                    Eigen::VectorXd& gradient_vector,
+                                    double rho);
 
     void SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix, Eigen::VectorXd& gradient_vector);
 
