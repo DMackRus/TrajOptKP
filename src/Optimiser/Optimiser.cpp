@@ -433,8 +433,7 @@ void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_
 }
 
 void Optimiser::SaveBestRollout(int thread_id){
-    for(int t = 0; t < horizon_length; t++){
-
+    for(int t = 0; t < horizon_length + 1; t++){
         MuJoCo_helper->saved_systems_state_list[t]->time = rollout_data[thread_id][t].time;
 
         for(int i = 0; i < MuJoCo_helper->model->nq; i++){
@@ -457,6 +456,8 @@ void Optimiser::SaveBestRollout(int thread_id){
         }
 
         // Update the residuals of the nominal trajectory
+        // TODO - This is bad?? I am recomputing the residuals of the nominal trajectory. I should change this so it
+        // is saved during rollouts and copied here.
         activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t], residuals[t]);
 
         // Update the contact list sequence of the trajectory

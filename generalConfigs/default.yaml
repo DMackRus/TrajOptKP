@@ -61,7 +61,7 @@ filtering: "none"         # FIR or low_pass or none - Filtering of derivative va
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
 minIter: 6               # Minimum number of iterations to run Optimiser for
-maxIter: 1             # Maximum number of iterations to run Optimiser for
+maxIter: 10             # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
 record: false

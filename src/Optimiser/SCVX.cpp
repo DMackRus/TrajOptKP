@@ -470,9 +470,9 @@ void SCVX::Iteration(int iteration_num, bool &converged){
         std::cout << "B[0] " << B[0] << "\n";
         std::cout << "l_xx[0] " << l_xx[0] << "\n";
         std::cout << "l_x[0] " << l_x[0] << "\n";
-        std::cout << "terminal residual derivs: " << residuals[horizon_length].transpose() << "\n";
-        std::cout << "r_x[horizon_length] " << r_x[horizon_length][0] << "\n";
-        std::cout << "r_u[horizon_length] " << r_u[horizon_length][0] << "\n";
+//        std::cout << "terminal residual derivs: " << residuals[horizon_length].transpose() << "\n";
+//        std::cout << "r_x[horizon_length] " << r_x[horizon_length][0] << "\n";
+//        std::cout << "r_u[horizon_length] " << r_u[horizon_length][0] << "\n";
         std::cout << "l_xx[horizon] " << l_xx[horizon_length] << "\n";
         std::cout << "l_x[horizon] " << l_x[horizon_length] << "\n";
         std::cout << "A[horizon - 1]" << A[horizon_length - 1] << "\n";
@@ -569,16 +569,15 @@ void SCVX::EvaluateLinSolutionCost(){
     activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[horizon_length]);
     lin_cost += activeModelTranslator->CostFunction(residuals[horizon_length], activeModelTranslator->full_state_vector, true);
 
+    std::cout << "X[horizon_length] linear " << activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector).transpose() << "\n";
+
     std::cout << "lin cost is " << lin_cost << "\n";
 }
 
 double SCVX::ForwardsPass(double _old_cost){
     double non_linear_cost = 0.0;
-    //TODO - forward rollout code of new controls and evaluate cost.
 
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
-
-//    std::cout << "X[0] " << activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector).transpose() << "\n";
 
     for(int t = 0; t < horizon_length; t++){
         // Set the new control
@@ -613,6 +612,8 @@ double SCVX::ForwardsPass(double _old_cost){
 
     // Save the last state
     SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, horizon_length);
+
+    std::cout << "X[horizon_length] " << activeModelTranslator->ReturnStateVector(MuJoCo_helper->main_data, activeModelTranslator->full_state_vector).transpose() << "\n";
 
     // Return new cost which in the case of SCVX is non-linear cost
     return non_linear_cost;
@@ -789,8 +790,8 @@ void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
     int n_x = 2 * dof;        // state dimension
     int n_u = num_ctrl;       // control dimension
 
-    // Decision vector length z = [delta x_1, ..., delta x_T, delta u_0, ..., delta u_{T-1}]
-    int n_z = (n_x + n_u) * T;
+    // Decision vector length z = [delta x_0, delta x_1, ..., delta x_T, delta u_0, ..., delta u_{T-1}]
+    int n_z = (n_u * T) + (n_x * (T+1));
 
     // Equality constraints: delta x_{t+1} = A_t delta x_t + B_t delta u_t, t=0..T-1
     int n_eq = T * n_x;
@@ -806,9 +807,9 @@ void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
         int row_base = t * n_x;
 
         // Offsets in z:
-        int u_offset  = T * n_x;
-        int idx_x_tp1 = t * n_x;             // x_{t+1} in z (x1 is at 0)
-        int idx_x_t   = (t - 1) * n_x;       // x_t in z (only valid for t > 0)
+        int u_offset  = (T+1) * n_x;
+        int idx_x_tp1 = (t+1) * n_x;             // x_{t+1} in z (x1 is at 0)
+        int idx_x_t   = (t) * n_x;       // x_t in z (only valid for t > 0)
         int idx_u_t   = u_offset + (t * n_u);
 
         // +1 * x_{t+1}
@@ -817,17 +818,24 @@ void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
         }
 
         // Handle -A_t * x_t term
-        if (t > 0) {
+        // \delta x_{t+1} - A_t * \delta x_t - B_t * \delta u_t = 0
+        if(t > 0){
             for (int i = 0; i < n_x; ++i) {
                 for (int j = 0; j < n_x; ++j) {
                     double val = -A[t](i, j);
                     if (val != 0.0) trips.emplace_back(row_base + i, idx_x_t + j, val);
                 }
             }
-        } else {
-            // t == 0 → x₀ not in z, move to RHS: rhs₀ = A₀ x₀
-//            rhs.segment(row_base, n_x) = A[0] * x0;
         }
+        else{
+            // Just add Identity for x_0?
+        }
+
+
+//        } else {
+//            // t == 0 → x₀ not in z, move to RHS: rhs₀ = A₀ x₀
+//            rhs.segment(row_base, n_x) = A[0] * x0;
+//        }
 
         // Handle -B_t * u_t term
         for (int i = 0; i < n_x; ++i) {
@@ -853,12 +861,12 @@ void SCVX::SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix,
     int nx = dof * 2;
     int nu = num_ctrl;
 
-    int total_vars = (nx + nu) * T; // [x₁..x_T, u₀..u_{T-1}]
+    int total_vars = (nu * T) + (nx * (T+1)); // [x_0, x_1..x_T, u₀..u_{T-1}]
 
     gradient_vector = Eigen::VectorXd::Zero(total_vars);
 
-    auto idx_x = [&](int t) { return (t-1) * nx; };             // x_t, t >= 1
-    auto idx_u = [&](int t) { return nx * T + t * nu; };    // u_t, t >= 0
+    auto idx_x = [&](int t) { return (t) * nx; };             // x_t, t >= 1
+    auto idx_u = [&](int t) { return nx * T + t * nu; };      // u_t, t >= 0
 
     // Stage costs
     for (int t = 0; t < T; ++t) {
@@ -891,15 +899,14 @@ void SCVX::SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix,
                 if (Huu(i,j) != 0.0)
                     triplets.emplace_back(iu + i, iu + j, Huu(i,j));
 
-        // Hxx_{t+1}
-        if(t != 0){
-            int ix = idx_x(t);
-            const Eigen::MatrixXd &Hxx = l_xx[t];
-            for (int i = 0; i < nx; ++i)
-                for (int j = 0; j < nx; ++j)
-                    if (Hxx(i,j) != 0.0)
-                        triplets.emplace_back(ix + i, ix + j, Hxx(i,j));
-        }
+        // Hxx_{t}
+        int ix = idx_x(t);
+        const Eigen::MatrixXd &Hxx = l_xx[t];
+        for (int i = 0; i < nx; ++i)
+            for (int j = 0; j < nx; ++j)
+                if (Hxx(i,j) != 0.0)
+                    triplets.emplace_back(ix + i, ix + j, Hxx(i,j));
+
 
     }
 
@@ -921,7 +928,7 @@ void SCVX::SolveQP() {
     OsqpEigen::Solver solver;
 
     // settings
-    solver.settings()->setVerbosity(true);
+    solver.settings()->setVerbosity(false);
     solver.settings()->setWarmStart(false);
 
     // Setup the QP problem
@@ -997,24 +1004,35 @@ void SCVX::SolveQP() {
     auto qp_solution = solver.getSolution();
     linear_cost = solver.getObjValue();
 
-    int control_offset = horizon_length * (2 * dof);
+    int control_offset = (horizon_length+1) * (2 * dof);
     for(int t = 0; t < horizon_length; t++){
         // Extract the control vector for this time step
         int idx_u = t * num_ctrl; // start of u_t
 
         // If perturbations
-//        qp_candidate_controls[t] = U_old[t] + qp_solution.segment(control_offset + idx_u, num_ctrl);
-//        qp_candidate_states[t + 1] = X_old_no_quat[t + 1] + qp_solution.segment(t * (2 * dof), 2 * dof);
+        qp_candidate_controls[t] = U_old[t] + qp_solution.segment(control_offset + idx_u, num_ctrl);
+        qp_candidate_states[t] = X_old_no_quat[t] + qp_solution.segment(t * (2 * dof), 2 * dof);
 
         // If absolute states and controls
-        qp_candidate_controls[t] = qp_solution.segment(control_offset + idx_u, num_ctrl);
-        qp_candidate_states[t+1] = qp_solution.segment(t * (2 * dof), 2 * dof);
+//        qp_candidate_controls[t] = qp_solution.segment(control_offset + idx_u, num_ctrl);
+//        qp_candidate_states[t+1] = qp_solution.segment(t * (2 * dof), 2 * dof);
 
     }
 
+    std::cout << "X_old[horizon] " << X_old[horizon_length].transpose() << "\n";
+    std::cout << "adjustment[horizon] " << qp_solution.segment((horizon_length) * (2 * dof), 2 * dof).transpose() << "\n";
+    qp_candidate_states[horizon_length] = X_old_no_quat[horizon_length] + qp_solution.segment((horizon_length) * (2 * dof), 2 * dof);
+
+    std::cout << "X_old[0] " << X_old[0].transpose() << "\n";
+    std::cout << "X_old[horizon_length] " << X_old[horizon_length].transpose() << "\n";
     std::cout << "qp_candidate state[0] " << qp_candidate_states[0].transpose() << "\n";
     std::cout << "qp_candidate state[1] " << qp_candidate_states[1].transpose() << "\n";
+    std::cout << "qp_candidate state[2] " << qp_candidate_states[2].transpose() << "\n";
+    std::cout << "qp_candidate state[horizon - 1] " << qp_candidate_states[horizon_length - 1].transpose() << "\n";
     std::cout << "qp_candidate state[horizon_length] " << qp_candidate_states[horizon_length].transpose() << "\n";
+
+    std::cout << "qp candidate controls: " << qp_candidate_controls[0].transpose() << "\n";
+    std::cout << "qp candidate controls: " << qp_candidate_controls[1].transpose() << "\n";
 }
 
 void SCVX::UpdateNominal() {
