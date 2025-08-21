@@ -543,12 +543,12 @@ void iLQR::Iteration(int iteration_num, bool &converged, bool &lambda_exit){
     auto timer_start = high_resolution_clock::now();
     if(cost_reduced_last_iter){
         GenerateDerivatives();
-        std::cout << "A[0] \n" << A[0] << "\n";
-        std::cout << "B[0] \n" << B[0] << "\n";
+//        std::cout << "A[0] \n" << A[0] << "\n";
+//        std::cout << "B[0] \n" << B[0] << "\n";
 //        std::cout << "l_x[0] \n" << l_x[0] << "\n";
 //        std::cout << "l_xx[0] \n" << l_xx[0] << "\n";
 //        std::cout << "l_x[1] \n" << l_x[1] << "\n";
-        std::cout << "l_xx[horizon] \n" << l_xx[horizon_length] << "\n";
+//        std::cout << "l_xx[horizon] \n" << l_xx[horizon_length] << "\n";
 //        std::cout << "l_x[horizon - 1] \n" << l_x[horizon_length - 1] << "\n";
     }
     else{

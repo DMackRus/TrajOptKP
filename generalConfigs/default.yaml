@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "impact_large_box"
+task: "pushing_no_clutter"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -30,7 +30,7 @@ task: "impact_large_box"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
+optimiser: "SCVX"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
 
 # Run mode for the program
 runMode: "Optimise_once"
@@ -61,7 +61,7 @@ filtering: "none"         # FIR or low_pass or none - Filtering of derivative va
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
 
 minIter: 6               # Minimum number of iterations to run Optimiser for
-maxIter: 10             # Maximum number of iterations to run Optimiser for
+maxIter: 20             # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
 record: false

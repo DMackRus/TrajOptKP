@@ -499,6 +499,13 @@ void SCVX::Iteration(int iteration_num, bool &converged){
 
     std::cout << "non linear cost: " << non_linear_cost << "\n";
 
+
+    if(verbose_output){
+        PrintBannerIteration(iteration_num, non_linear_cost, old_cost,
+                             1 - (non_linear_cost / old_cost), percentage_derivs_per_iteration[iteration_num],
+                             time_get_derivs_ms[iteration_num], time_qp_ms[iteration_num], time_forwardsPass_ms[iteration_num]);
+    }
+
     // STEP 4 - Handling deviations in non_linear_cost and linear_cost to scale trust region
     if(non_linear_cost < old_cost){
         // If cost reduced, then we can increase the trust region
@@ -510,13 +517,6 @@ void SCVX::Iteration(int iteration_num, bool &converged){
         trust_region_radius *= 0.5;
 
         // Dont update nominal
-    }
-
-
-    if(verbose_output){
-        PrintBannerIteration(iteration_num, non_linear_cost, old_cost,
-                             1 - (non_linear_cost / old_cost), percentage_derivs_per_iteration[iteration_num],
-                             time_get_derivs_ms[iteration_num], time_qp_ms[iteration_num], time_forwardsPass_ms[iteration_num]);
     }
 
     // STEP 5 - Check for convergence
@@ -539,7 +539,7 @@ void SCVX::Iteration(int iteration_num, bool &converged){
 void SCVX::EvaluateLinSolutionCost(){
     // Loop through horizon, set the states and controls from QP solution and calculate cost
 
-    std::cout << "EVALUATE LIN SOLUTION COST \n";
+//    std::cout << "EVALUATE LIN SOLUTION COST \n";
 
     // Copy the initial state to the main data
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
@@ -658,7 +658,7 @@ void SCVX::AddL1TrustRegionWithResize(Eigen::SparseMatrix<double>& A,
         }
     }
 
-    int row_off_1 = old_rows;             // z - t <= 0
+    int row_off_1 = old_rows;             // z - t <= 0iLQR
     int row_off_2 = row_off_1 + n_z;      // -z - t <= 0
     int row_off_3 = row_off_2 + n_z;      // -t <= 0
     int row_off_4 = row_off_3 + n_tr;     // sum(t) <= rho
@@ -885,8 +885,8 @@ void SCVX::SolveQP() {
     OsqpEigen::Solver solver;
 
     // settings
-    solver.settings()->setVerbosity(false);
-    solver.settings()->setWarmStart(false);
+    solver.settings()->setVerbosity(true);
+    solver.settings()->setWarmStart(true);
 
     // Setup the QP problem
     // allocate QP problem matrices and vectors
@@ -900,19 +900,19 @@ void SCVX::SolveQP() {
     auto start = std::chrono::high_resolution_clock::now();
     SetDynamicsConstraints(linear_matrix, lower_bound, upper_bound, X_old_no_quat[0]);
     auto end = std::chrono::high_resolution_clock::now();
-//    std::cout << "Time to set dynamics constraints: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
+    std::cout << "Time to set dynamics constraints: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
 
     start = std::chrono::high_resolution_clock::now();
     SetCostFunction(hessian, gradient);
     end = std::chrono::high_resolution_clock::now();
-//    std::cout << "Time to set cost function: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
+    std::cout << "Time to set cost function: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
 
     AddL1TrustRegionWithResize(linear_matrix,
                               lower_bound,
                               upper_bound,
                               hessian,
                               gradient,
-                              50);
+                                 trust_region_radius);
 
     // ----------- Set QP matrices --------------
 
@@ -951,9 +951,12 @@ void SCVX::SolveQP() {
     }
 
     // solve the QP problem
+    start = std::chrono::high_resolution_clock::now();
     if (solver.solveProblem() != OsqpEigen::ErrorExitFlag::NoError) {
         std::cerr << "OSQP failed to solve the problem." << std::endl;
     }
+    end = std::chrono::high_resolution_clock::now();
+    std::cout << "Time to get QP solution: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
 
     // Get the controls from the solution
     auto qp_solution = solver.getSolution();
@@ -969,20 +972,7 @@ void SCVX::SolveQP() {
         qp_candidate_states[t] = X_old_no_quat[t] + qp_solution.segment(t * (2 * dof), 2 * dof);
     }
 
-//    std::cout << "X_old[horizon] " << X_old_no_quat[horizon_length].transpose() << "\n";
-//    std::cout << "adjustment[horizon] " << qp_solution.segment((horizon_length) * (2 * dof), 2 * dof).transpose() << "\n";
     qp_candidate_states[horizon_length] = X_old_no_quat[horizon_length] + qp_solution.segment((horizon_length) * (2 * dof), 2 * dof);
-
-//    std::cout << "X_old[0] " << X_old[0].transpose() << "\n";
-//    std::cout << "X_old[horizon_length] " << X_old[horizon_length].transpose() << "\n";
-//    std::cout << "qp_candidate state[0] " << qp_candidate_states[0].transpose() << "\n";
-//    std::cout << "qp_candidate state[1] " << qp_candidate_states[1].transpose() << "\n";
-//    std::cout << "qp_candidate state[2] " << qp_candidate_states[2].transpose() << "\n";
-//    std::cout << "qp_candidate state[horizon - 1] " << qp_candidate_states[horizon_length - 1].transpose() << "\n";
-//    std::cout << "qp_candidate state[horizon_length] " << qp_candidate_states[horizon_length].transpose() << "\n";
-
-//    std::cout << "qp candidate controls: " << qp_candidate_controls[0].transpose() << "\n";
-//    std::cout << "qp candidate controls: " << qp_candidate_controls[1].transpose() << "\n";
 }
 
 void SCVX::UpdateNominal() {
@@ -1006,8 +996,9 @@ void SCVX::PrintBanner(double time_rollout){
               << std::setw(12) << "| Old Cost"
               << std::setw(12) << "| New Cost"
               << std::setw(8)  << "| Eps"
+              << std::setw(15) << "| Trust Radius"
               << std::setw(16) << "| % Derivatives"
-              << std::setw(20) << "| Time Derivs (ms)"
+              << std::setw(20) << "| Time Derivs (ms) "
               << std::setw(15) << "| Time QP (ms)"
               << std::setw(15) << "| Time FP (ms)   |" << std::endl;
 }
@@ -1020,7 +1011,7 @@ void SCVX::PrintBannerIteration(int iteration, double new_cost, double old_cost,
               << "|" << std::setw(11) << old_cost
               << "|" << std::setw(11) << new_cost
               << "|" << std::setprecision(3) << std::setw(7)  << eps
-              << "|" << std::setw(9) << lambda
+              << "|" << std::setw(14) << trust_region_radius
               << "|" << std::setw(15) << percent_derivatives
               << "|" << std::setw(19) <<time_derivs
               << "|" << std::setw(14)  << time_qp
