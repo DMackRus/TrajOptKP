@@ -3,9 +3,9 @@ modelName: "/push_ncl"
 timeStep: 0.008
 openloop_horizon: 1000
 mpc_horizon: 100
-keypointMethod: "set_interval"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
+keypointMethod: "contact_change_sep"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 auto_adjust: false
-minN: 1
+minN: 1000
 maxN: 10
 iterativeErrorThreshold: 0.01
 robots:
@@ -16,13 +16,13 @@ robots:
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [0, -0.183, 0, -3.1, 0, 1.34, 0]
     goalPos: [ 0, 0, 0, 0, 0, 0, 0 ]
-    position_threshold: 0.1  # Value between 0 and 1 - uses joint limits
+    position_threshold: 0.2  # Value between 0 and 1 - uses joint limits
     velocity_threshold: 0.1    # Raw velocity threshold value
-    control_threshold: 0.1   # Value between 0 and 1 - uses control limits
+    control_threshold: 0.05   # Value between 0 and 1 - uses control limits
 bodies:
   goal:
     activeLinearDOF: [true, true, true]
-    activeAngularDOF: [false, false, false]
+    activeAngularDOF: [true, true, true]
     startLinearPos: [ 0.5, 0.1, 0.0 ]
     startAngularPos: [ 0, 0, 0 ]
 
@@ -61,5 +61,5 @@ residuals:
     weight_terminal: 0.1
   reach:
     target: [0]
-    weight: 0.01
-    weight_terminal: 0.01
+    weight: 0.001
+    weight_terminal: 0.001

@@ -28,8 +28,9 @@ number_iterations = []
 def main():
     # global task_name
     
-    # tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    tasks = ["push_ncl"]
+    tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+    # tasks = ["acrobot", "push_ncl", "push_lcl", "box_sweep", "impact", "walker"]
+    tasks = ["push_lcl", "push_mcl"]
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)

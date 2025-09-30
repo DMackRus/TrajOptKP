@@ -152,5 +152,5 @@ residuals:
     weight_terminal: 0.1
   reach:
     target: [0]
-    weight: 0.1
-    weight_terminal: 0.1
+    weight: 0.001
+    weight_terminal: 0.001

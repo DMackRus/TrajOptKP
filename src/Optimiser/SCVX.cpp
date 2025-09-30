@@ -887,6 +887,7 @@ void SCVX::SolveQP() {
     // settings
     solver.settings()->setVerbosity(true);
     solver.settings()->setWarmStart(true);
+//    solver.settings()->setMaxIteration(1000);
 
     // Setup the QP problem
     // allocate QP problem matrices and vectors

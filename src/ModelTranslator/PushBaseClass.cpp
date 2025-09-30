@@ -88,7 +88,7 @@ void PushBaseClass::EEWayPointsPush(m_point desiredObjectEnd,
 
     // Max speed could be a parameter
 //    double maxDistTravelled = 0.1 * ((5.0f/6.0f) * horizon * MuJoCo_helper->ReturnModelTimeStep());
-    double maxDistTravelled = 0.02 * ((5.0f/6.0f) * horizon * MuJoCo_helper->ReturnModelTimeStep());
+    double maxDistTravelled = 0 * ((5.0f/6.0f) * horizon * MuJoCo_helper->ReturnModelTimeStep());
 
 //    cout << "max EE travel dist: " << maxDistTravelled << endl;
     double desiredDistTravelled = sqrt(pow((desired_endPointX - intermediatePointX),2) + pow((desired_endPointY - intermediatePointY),2));
