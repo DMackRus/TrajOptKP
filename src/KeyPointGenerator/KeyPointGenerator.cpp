@@ -107,21 +107,21 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
     }
 
    // Check for any other affected kinematic chains
-   for(auto & other_contact : all_contacts) {
-        if(other_contact == contact) continue; // Skip the current contact
-
-        // Check if the other contact is in the same kinematic chain
-        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
-            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
-            for (int body : body_chain) {
-                if (body == other_contact.first || body == other_contact.second) {
-                    // Store the index of the chain instead of the body
-                    relevant_kinematic_chains.push_back(static_cast<int>(i));
-                    break; // break the inner loop
-                }
-            }
-        }
-    }
+//   for(auto & other_contact : all_contacts) {
+//        if(other_contact == contact) continue; // Skip the current contact
+//
+//        // Check if the other contact is in the same kinematic chain
+//        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
+//            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
+//            for (int body : body_chain) {
+//                if (body == other_contact.first || body == other_contact.second) {
+//                    // Store the index of the chain instead of the body
+//                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+//                    break; // break the inner loop
+//                }
+//            }
+//        }
+//    }
 
     // Stage 2 - convert all bodies to state vector indices
     for( const auto &kinematic_chain : relevant_kinematic_chains){
@@ -387,12 +387,22 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
         robot_index++;
     }
 
+    bool next_row_keypoint = false;
+    std::vector<int> next_row;
+
     //Start with just considering contact considerations
     for(int t = 1; t < horizon - 1; t++){
         // Initialise empty row object to be populated
         std::vector<int> row;
 
         std::vector<bool> robot_keypoint_required(state_vector_list.robots.size(), false);
+
+
+        if(next_row_keypoint){
+            // Add the next row keypoints
+            row = next_row;
+            next_row_keypoint = false;
+        }
 
         // There are a variety of rules when to enforce key-points
         // RULE 1 - New contact is made -----------------------------------------
@@ -541,6 +551,10 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
             // Sort the row to ensure keypoints are in order
             std::sort(row.begin(), row.end());
             keypoints[t - 1] = new_last_row; // Update the previous row with the new keypoints
+            // Also add keypoints at t + 1
+//            keypoints[t + 1] = row;
+            next_row_keypoint = true;
+            next_row = row;
         }
         keypoints.push_back(row);
     }
@@ -597,7 +611,22 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
         ContactAwareKeypointsSep(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list);
     }
     else if(current_keypoint_method.name == "contact_change_dyn"){
+        for(int t = 0; t < horizon; t++){
+            std::cout << "time " << t << " :";
+            for(const auto & contact : trajectory_contacts[t]){
+                std::cout << " (" << contact.first << ", " << contact.second << ") ";
+            }
+            std::cout << "\n";
+        }
         ContactChangeDyn(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list, true);
+        for(int t = 0; t < horizon; t++){
+            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
+            std::cout << "time " << t << " :";
+            for(int i = 0; i < keypoints[t].size(); i++){
+                std::cout << keypoints[t][i] << " ";
+            }
+            std::cout << "\n";
+        }
     }
     else{
         std::cerr << "ERROR: key point method not recognised \n";

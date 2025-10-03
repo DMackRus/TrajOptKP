@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "box_sweep"
+task: "pushing_moderate_clutter"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -33,7 +33,7 @@ task: "box_sweep"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
 
 # Run mode for the program
-runMode: "Optimise_once"
+runMode: "Init_controls"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
