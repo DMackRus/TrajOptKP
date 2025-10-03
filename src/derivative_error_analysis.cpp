@@ -131,17 +131,21 @@ int assign_task(std::string task){
 
 int main(int argc, char **argv) {
 
-    if(argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <task_name>" << std::endl;
+
+    // Arguments {task_name}, {num_data_points}, {opt_horizon}, {num_opt_iterations}
+    if(argc < 5) {
+        std::cerr << "NOT ENOUGH ARGUMENTS PROVIDED (task_name, num_data_points,  opt_horizon, num_opt_iterations) \n";
         return EXIT_FAILURE;
     }
 
-    std::string config_file_name = "benchmark_derivatives";
+//    std::string config_file_name = "benchmark_derivatives";
     yamlReader = std::make_shared<FileHandler>();
 
     std::string task_name = argv[1];
+    int num_data_points = std::stoi(argv[2]);
+    int opt_horizon = std::stoi(argv[3]);
+    int num_opt_iterations = std::stoi(argv[4]);
     assign_task(task_name);
-
 
     // Instantiate the differentiator
     activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
@@ -149,9 +153,6 @@ int main(int argc, char **argv) {
     activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
     //Instantiate the visualiser
     activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
-
-    // Setup the initial horizon, based on open loop or mpc method
-    int opt_horizon = 500;
 
     iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
                                            activeModelTranslator->MuJoCo_helper,
@@ -163,13 +164,10 @@ int main(int argc, char **argv) {
                           activeModelTranslator->current_state_vector.num_ctrl,
                           opt_horizon);
 
-    // Data storage - TODO: Make this a better data structure that isnt hardcoded to 4 methods.
     std::vector<MatrixXd> A_matrices_SI1, B_matrices_SI1;
-
     std::vector<std::string> methods = {"SI2", "SI5", "SI20", "SI1000", "contact_change", "contact_change_dyn"};
     std::vector<std::string> keypoint_methods = {"set_interval", "set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn"};
     std::vector<int> min_n_values = {2, 5, 20, 1000, 1, 1};
-
     // Create Vectors of MatrixXd to store A and B matrices for each method
     std::vector<std::vector<MatrixXd>> A_matrices(methods.size()), B_matrices(methods.size());
 
@@ -193,8 +191,8 @@ int main(int argc, char **argv) {
     int data_counter = 0;
     int task_counter = 0;
     int iteration_counter = 0;
-    const int NUM_DATA_POINTS = 5;
-    const int MAX_ITERATIONS_PER_TASK = 5;
+    const int NUM_DATA_POINTS = num_data_points;
+    const int MAX_ITERATIONS_PER_TASK = num_opt_iterations;
     bool new_base_task = true;
     std::vector<MatrixXd> init_controls;
     std::vector<MatrixXd> optimised_controls;
@@ -318,7 +316,7 @@ int main(int argc, char **argv) {
     }
 
     const int w_method = 20;
-    const int w_num    = 12;
+    const int w_num    = 15;
 
     std::cout << std::left
               << std::setw(w_method) << "Method"
@@ -338,17 +336,36 @@ int main(int argc, char **argv) {
                   << "\n";
     }
 
-    // Loop through results and print out nice tabulated results
-//    std::cout << "Method\t\tMSE\t\tRMS\t\tMax Error\t% Derivatives\n";
-//    for(int i = 0; i < methods.size(); i++){
-//        std::cout << methods[i] << "\t\t"
-//                  << averaged_mse_error[i] << "\t"
-//                  << average_rms_error[i] << "\t"
-//                  << average_max_error[i] << "\t"
-//                  << average_percentage_derivatives[i] << "\n";
-//    }
+    // --------------- Save the results to a file --------------------------
+    // directory "DerivativeErrorData / {{task_name}_{opt_horizon}_{num_iterations}} / {method_name}.csv
 
-    // Save the results to a file
+    std::string project_parent_path = __FILE__;
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+
+    // Check folder exists, if it does not create one
+    std::string folder_name = project_parent_path + "/DerivativeErrorData/" + task_name + "_" + std::to_string(opt_horizon) + "_" + std::to_string(num_opt_iterations) + "/";
+    if(!std::filesystem::exists(folder_name)){
+        std::filesystem::create_directories(folder_name);
+    }
+
+    for(int i = 0; i < methods.size(); i++){
+        std::string file_path = folder_name + methods[i] + ".csv";
+        std::ofstream file(file_path);
+        if(file.is_open()){
+            file << "MSE,RMS,Max Error,% Derivatives\n";
+            for(int j = 0; j < NUM_DATA_POINTS; j++){
+                file << mean_squared_error[i][j] << ","
+                     << rms_error[i][j] << ","
+                     << max_error[i][j] << ","
+                     << percentage_derivatives[i][j] << "\n";
+            }
+            file.close();
+        }
+        else{
+            std::cerr << "Could not open file: " << file_path << "\n";
+        }
+    }
 
     return EXIT_SUCCESS;
 }
