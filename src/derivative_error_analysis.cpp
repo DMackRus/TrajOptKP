@@ -3,6 +3,12 @@
 #include "Visualiser.h"
 #include "MuJoCoHelper.h"
 
+#include <cmath>
+#include <algorithm>
+#include <Eigen/Dense>
+#include <vector>
+#include <cassert>
+
 // --------------------- different scenes -----------------------
 #include "ModelTranslator/TwoDPushing.h"
 #include "ModelTranslator/Acrobot.h"
@@ -21,66 +27,226 @@ std::shared_ptr<iLQR> iLQROptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
 
-void ApproximationError(std::vector<MatrixXd> &A_SI1, std::vector<MatrixXd> &B_SI1,
-                          std::vector<MatrixXd> &A_approximated, std::vector<MatrixXd> &B_approximated,
-                          double &max_error, double &rms_error, double &mean_squared_error){
-    max_error = 0.0, rms_error = 0.0, mean_squared_error = 0.0;
+//void ApproximationError(std::vector<MatrixXd> &A_SI1, std::vector<MatrixXd> &B_SI1,
+//                          std::vector<MatrixXd> &A_approximated, std::vector<MatrixXd> &B_approximated,
+//                          double &max_error, double &rms_error, double &mean_squared_error){
+//    max_error = 0.0, rms_error = 0.0, mean_squared_error = 0.0;
+//
+//    size_t T = A_SI1.size();
+//    int nx = A_SI1[0].rows();
+//    int nu = B_SI1[0].cols();
+//
+//    // Loop through the matrices over the time horizon and compute absolute error
+//    for(int t = 0; t < T; t++){
+//        double A_error= 0.0, B_error = 0.0;
+//        double total_error = 0.0;
+//        double total_error_scaled = 0.0;
+//
+////        std::cout << "A_SI1[" << t << "] = \n" << A_SI1[t] << "\n";
+////        std::cout << "A_approximated[" << t << "] = \n" << A_SI1[t] << "\n";
+//
+//        // ----------------------------------------------------------------
+//        double denominator = 0.0;
+//        for(int i = 0; i < A_SI1[t].rows(); i++){
+//            for(int j = 0; j < A_SI1[t].cols(); j++){
+//                denominator += pow(A_SI1[t](i, j), 2);
+//            }
+//        }
+//        for(int i = 0; i < B_SI1[t].rows(); i++){
+//            for(int j = 0; j < B_SI1[t].cols(); j++){
+//                denominator += pow(B_SI1[t](i, j), 2);
+//            }
+//        }
+//        // ----------------------------------------------------------------
+//
+//        // Compute the squared error for A matrices
+//        for(int i = 0; i < A_SI1[t].rows(); i++){
+//            for(int j = 0; j < A_SI1[t].cols(); j++){
+//                A_error += pow((A_SI1[t](i, j) - A_approximated[t](i, j)),2);
+//            }
+//        }
+////        std::cout << "A_error = " << A_error << "\n";
+//
+//        // Compute the squared error for B matrices
+//        for(int i = 0; i < B_SI1[t].rows(); i++){
+//            for(int j = 0; j < B_SI1[t].cols(); j++){
+//                B_error += pow((B_SI1[t](i, j) - B_approximated[t](i, j)), 2);
+//            }
+//        }
+//
+//        // Keep track of total error
+//        total_error = (A_error / (nx * nx)) + (B_error / (nx * nu));
+//        total_error_scaled = total_error / denominator;
+//
+//
+//        if(total_error_scaled > max_error) max_error = total_error_scaled;
+//
+//        mean_squared_error += total_error;
+//
+//
+////        error += (A_error / (nx * nx)) + (B_error / (nx * nu));
+//    }
+//
+//    mean_squared_error /= T;
+//
+//    double denominator = 0.0;
+//    for(int t = 0; t < T; t++){
+//        for(int i = 0; i < A_SI1[t].rows(); i++){
+//            for(int j = 0; j < A_SI1[t].cols(); j++){
+//                denominator += pow(A_SI1[t](i, j), 2);
+//            }
+//        }
+//        for(int i = 0; i < B_SI1[t].rows(); i++){
+//            for(int j = 0; j < B_SI1[t].cols(); j++){
+//                denominator += pow(B_SI1[t](i, j), 2);
+//            }
+//        }
+//    }
+//
+//    denominator /= T;
+//    rms_error = sqrt(mean_squared_error) / sqrt(denominator);
+//}
 
-    size_t T = A_SI1.size();
-    int nx = A_SI1[0].rows();
-    int nu = B_SI1[0].cols();
+//void ApproximationError(
+//        const std::vector<Eigen::MatrixXd> &A_exact,
+//        const std::vector<Eigen::MatrixXd> &B_exact,
+//        const std::vector<Eigen::MatrixXd> &A_approx,
+//        const std::vector<Eigen::MatrixXd> &B_approx,
+//        double &mse,
+//        double &frobenius_error,
+//        double &elementnorm_mse_error,
+//        double &elementrmsnorm_error,
+//        double &max_abs_error,
+//        double &max_rel_error)
+//{
+//    // Safety check assertions
+//    assert(A_exact.size() == A_approx.size());
+//    assert(B_exact.size() == B_approx.size());
+//    size_t T = A_exact.size();
+//
+//    max_abs_error = 0.0;
+//    max_rel_error = 0.0;
+//    mse = 0.0;
+//
+//
+//}
 
-    // Loop through the matrices over the time horizon and compute absolute error
-    for(int t = 0; t < T; t++){
-        double A_error= 0.0, B_error = 0.0;
-        double total_error = 0.0;
+void ApproximationError(
+        const std::vector<Eigen::MatrixXd> &A_exact,
+        const std::vector<Eigen::MatrixXd> &B_exact,
+        const std::vector<Eigen::MatrixXd> &A_approx,
+        const std::vector<Eigen::MatrixXd> &B_approx,
+        double &mse,
+        double &frobenius_error,
+        double &elementnorm_mse_error,
+        double &max_abs_error,
+        double &max_rel_error)
+{
+    assert(A_exact.size() == A_approx.size());
+    assert(B_exact.size() == B_approx.size());
+    size_t T = A_exact.size();
 
-//        std::cout << "A_SI1[" << t << "] = \n" << A_SI1[t] << "\n";
-//        std::cout << "A_approximated[" << t << "] = \n" << A_SI1[t] << "\n";
+    const double eps = 1e-8;
 
-        // Compute the absolute error for A matrices
-        for(int i = 0; i < A_SI1[t].rows(); i++){
-            for(int j = 0; j < A_SI1[t].cols(); j++){
-                A_error += pow((A_SI1[t](i, j) - A_approximated[t](i, j)),2);
-            }
+    mse = 0.0;
+    frobenius_error = 0.0;
+    elementnorm_mse_error = 0.0;
+    max_abs_error = 0.0;
+    max_rel_error = 0.0;
+
+    // 1. Compute global MSE and max absolute error
+    size_t total_elements = 0;
+    for (size_t t = 0; t < T; ++t) {
+        Eigen::MatrixXd diffA = A_exact[t] - A_approx[t];
+        Eigen::MatrixXd diffB = B_exact[t] - B_approx[t];
+        double step_mse = diffA.squaredNorm() + diffB.squaredNorm();
+        mse += step_mse;
+
+        if(step_mse > max_abs_error){
+            max_abs_error = step_mse;
         }
-//        std::cout << "A_error = " << A_error << "\n";
-
-        // Compute the absolute error for B matrices
-        for(int i = 0; i < B_SI1[t].rows(); i++){
-            for(int j = 0; j < B_SI1[t].cols(); j++){
-                B_error += pow((B_SI1[t](i, j) - B_approximated[t](i, j)), 2);
-            }
-        }
-
-        // Keep track of total error
-        total_error = (A_error / (nx * nx)) + (B_error / (nx * nu));
-        if(total_error > max_error) max_error = total_error;
-
-        mean_squared_error += total_error;
-
-
-//        error += (A_error / (nx * nx)) + (B_error / (nx * nu));
     }
+    // Normalise MSE by total number of elements across all timesteps
+    mse /= static_cast<double>((A_exact[0].size() + B_exact[0].size()) * T);
+    max_abs_error /= static_cast<double>(A_exact[0].size() + B_exact[0].size());
 
-    mean_squared_error /= T;
+    // 2. Compute per-timestep relative Frobenius error (for both A and B)
+    for (size_t t = 0; t < T; ++t) {
+        // Eigen .norm() returns sum squared of all values and square root of this sum
+        double errA = (A_exact[t] - A_approx[t]).norm();
+        double errB = (B_exact[t] - B_approx[t]).norm();
+        double normA = A_exact[t].norm();
+        double normB = B_exact[t].norm();
 
-    double denominator = 0.0;
-    for(int t = 0; t < T; t++){
-        for(int i = 0; i < A_SI1[t].rows(); i++){
-            for(int j = 0; j < A_SI1[t].cols(); j++){
-                denominator += pow(A_SI1[t](i, j), 2);
-            }
-        }
-        for(int i = 0; i < B_SI1[t].rows(); i++){
-            for(int j = 0; j < B_SI1[t].cols(); j++){
-                denominator += pow(B_SI1[t](i, j), 2);
-            }
-        }
+        double relA = errA / (normA + eps);
+        double relB = errB / (normB + eps);
+        double rel_t = relA + relB;
+
+        frobenius_error += rel_t;
+        if (rel_t > max_rel_error) max_rel_error = rel_t;
     }
+    frobenius_error /= static_cast<double>((A_exact[0].size() + B_exact[0].size()) * T);
+    max_rel_error /= static_cast<double>(A_exact[0].size() + B_exact[0].size());
 
-    denominator /= T;
-    rms_error = sqrt(mean_squared_error) / sqrt(denominator);
+    // 3. Compute elementwise norm matrices for A and B based on exact values
+    Eigen::MatrixXd minA = Eigen::MatrixXd::Zero(A_exact[0].rows(), A_exact[0].cols());
+    Eigen::MatrixXd maxA = Eigen::MatrixXd::Zero(A_exact[0].rows(), A_exact[0].cols());
+    Eigen::MatrixXd minB = Eigen::MatrixXd::Zero(B_exact[0].rows(), B_exact[0].cols());
+    Eigen::MatrixXd maxB = Eigen::MatrixXd::Zero(B_exact[0].rows(), B_exact[0].cols());
+
+    // Find the min and max values for each element across all timesteps
+    for(int t = 0; t < T; t++){
+        for(int i = 0; i < A_exact[t].rows(); i++){
+            for(int j = 0; j < A_exact[t].cols(); j++){
+                if(t == 0){
+                    minA(i, j) = A_exact[t](i, j);
+                    maxA(i, j) = A_exact[t](i, j);
+                }
+                else{
+                    if(A_exact[t](i, j) < minA(i, j)) minA(i, j) = A_exact[t](i, j);
+                    if(A_exact[t](i, j) > maxA(i, j)) maxA(i, j) = A_exact[t](i, j);
+                }
+            }
+        }
+        for(int i = 0; i < B_exact[t].rows(); i++){
+            for(int j = 0; j < B_exact[t].cols(); j++){
+                if(t == 0){
+                    minB(i, j) = B_exact[t](i, j);
+                    maxB(i, j) = B_exact[t](i, j);
+                }
+                else{
+                    if(B_exact[t](i, j) < minB(i, j)) minB(i, j) = B_exact[t](i, j);
+                    if(B_exact[t](i, j) > maxB(i, j)) maxB(i, j) = B_exact[t](i, j);
+                }
+            }
+        }
+     }
+
+    // Normalise the exact and approximate matrices using these min and max values
+    for(int t = 0; t < T; t++){
+        Eigen::MatrixXd normA_exact = Eigen::MatrixXd::Zero(A_exact[t].rows(), A_exact[t].cols());
+        Eigen::MatrixXd normA_approx = Eigen::MatrixXd::Zero(A_approx[t].rows(), A_approx[t].cols());
+        Eigen::MatrixXd normB_exact = Eigen::MatrixXd::Zero(B_exact[t].rows(), B_exact[t].cols());
+        Eigen::MatrixXd normB_approx = Eigen::MatrixXd::Zero(B_approx[t].rows(), B_approx[t].cols());
+
+        for(int i = 0; i < A_exact[t].rows(); i++){
+            for(int j = 0; j < A_exact[t].cols(); j++){
+                normA_exact(i, j) = (A_exact[t](i, j) - minA(i, j)) / (maxA(i, j) - minA(i, j) + eps);
+                normA_approx(i, j) = (A_approx[t](i, j) - minA(i, j)) / (maxA(i, j) - minA(i, j) + eps);
+            }
+        }
+        for(int i = 0; i < B_exact[t].rows(); i++){
+            for(int j = 0; j < B_exact[t].cols(); j++){
+                normB_exact(i, j) = (B_exact[t](i, j) - minB(i, j)) / (maxB(i, j) - minB(i, j) + eps);
+                normB_approx(i, j) = (B_approx[t](i, j) - minB(i, j)) / (maxB(i, j) - minB(i, j) + eps);
+            }
+        }
+
+        // Compute the MSE between the normalised exact and approximate matrices
+        double step_mse = (normA_exact - normA_approx).squaredNorm() + (normB_exact - normB_approx).squaredNorm();
+        elementnorm_mse_error += step_mse;
+    }
+    elementnorm_mse_error /= static_cast<double>((A_exact[0].size() + B_exact[0].size()) * T);
 }
 
 int assign_task(std::string task){
@@ -178,13 +344,18 @@ int main(int argc, char **argv) {
     }
 
     std::vector<std::vector<double>> mean_squared_error,
-                                    max_error,
-                                    rms_error,
+                                    frobenius_errors,
+                                    elementnorm_mse_errors,
+                                    max_abs_error,
+                                    max_rel_error,
                                     percentage_derivatives;
 
     mean_squared_error.resize(methods.size());
-    max_error.resize(methods.size());
-    rms_error.resize(methods.size());
+    frobenius_errors.resize(methods.size());
+    elementnorm_mse_errors.resize(methods.size());
+    max_abs_error.resize(methods.size());
+    max_rel_error.resize(methods.size());
+
     percentage_derivatives.resize(methods.size());
 
     // Loop over 100 tasks
@@ -262,11 +433,15 @@ int main(int argc, char **argv) {
             A_matrices[i] = iLQROptimiser->A;
             B_matrices[i] = iLQROptimiser->B;
 
-            double max_err, rms_err, mse;
-            ApproximationError(A_matrices_SI1, B_matrices_SI1, A_matrices[i], B_matrices[i], max_err, rms_err, mse);
-            max_error[i].push_back(max_err);
-            rms_error[i].push_back(rms_err);
+            double mse, frobenius_error, elementnorm_mse_error, max_abs_err, max_rel_err;
+            ApproximationError(A_matrices_SI1, B_matrices_SI1, A_matrices[i], B_matrices[i],
+                               mse, frobenius_error, elementnorm_mse_error, max_abs_err, max_rel_err);
+
             mean_squared_error[i].push_back(mse);
+            frobenius_errors[i].push_back(frobenius_error);
+            elementnorm_mse_errors[i].push_back(elementnorm_mse_error);
+            max_abs_error[i].push_back(max_abs_err);
+            max_rel_error[i].push_back(max_rel_err);
 
             double average_percent_derivs = 0.0;
             for(int j = 0; j < activeModelTranslator->current_state_vector.dof; j++){
@@ -298,40 +473,53 @@ int main(int argc, char **argv) {
 
     // Compute average approximation errors and percentage derivatives for all methods
     std::vector<double> averaged_mse_error(methods.size(), 0.0);
-    std::vector<double> average_max_error(methods.size(), 0.0);
-    std::vector<double> average_rms_error(methods.size(), 0.0);
+    std::vector<double> averaged_frobenius_error(methods.size(), 0.0);
+    std::vector<double> averaged_elementnorm_mse_error(methods.size(), 0.0);
+    std::vector<double> average_max_abs_error(methods.size(), 0.0);
+    std::vector<double> average_max_rel_error(methods.size(), 0.0);
+
     std::vector<double> average_percentage_derivatives(methods.size(), 0.0);
 
     for(int i = 0; i < methods.size(); i++){
         for(int j = 0; j < NUM_DATA_POINTS; j++){
             averaged_mse_error[i] += mean_squared_error[i][j];
-            average_max_error[i] += max_error[i][j];
-            average_rms_error[i] += rms_error[i][j];
+            averaged_frobenius_error[i] += frobenius_errors[i][j];
+            averaged_elementnorm_mse_error[i] += elementnorm_mse_errors[i][j];
+            average_max_abs_error[i] += max_abs_error[i][j];
+            average_max_rel_error[i] += max_rel_error[i][j];
+
             average_percentage_derivatives[i] += percentage_derivatives[i][j];
         }
         averaged_mse_error[i] /= NUM_DATA_POINTS;
-        average_max_error[i] /= NUM_DATA_POINTS;
-        average_rms_error[i] /= NUM_DATA_POINTS;
+        averaged_frobenius_error[i] /= NUM_DATA_POINTS;
+        averaged_elementnorm_mse_error[i] /= NUM_DATA_POINTS;
+        average_max_abs_error[i] /= NUM_DATA_POINTS;
+        average_max_rel_error[i] /= NUM_DATA_POINTS;
+
         average_percentage_derivatives[i] /= NUM_DATA_POINTS;
     }
 
     const int w_method = 20;
-    const int w_num    = 15;
+    const int w_num    = 18;
 
     std::cout << std::left
               << std::setw(w_method) << "Method"
               << std::right
               << std::setw(w_num) << "MSE"
-              << std::setw(w_num) << "RMS"
-              << std::setw(w_num) << "Max Error"
+              << std::setw(w_num) << "Frob Err"
+              << std::setw(w_num) << "Elem Norm MSE"
+              << std::setw(w_num) << "Max Error (abs)"
+              << std::setw(w_num) << "Max Error (rel)"
               << std::setw(w_num) << "% Derivatives"
               << "\n";
 
     for (int i = 0; i < methods.size(); i++) {
         std::cout << std::left << std::setw(w_method) << methods[i]
                   << std::right << std::setw(w_num) << std::fixed << std::setprecision(4) << averaged_mse_error[i]
-                  << std::setw(w_num) << std::fixed << std::setprecision(5) << average_rms_error[i]
-                  << std::setw(w_num) << std::fixed << std::setprecision(4) << average_max_error[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(5) << averaged_frobenius_error[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(5) << averaged_elementnorm_mse_error[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(4) << average_max_abs_error[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(4) << average_max_rel_error[i]
                   << std::setw(w_num) << std::fixed << std::setprecision(2) << average_percentage_derivatives[i]
                   << "\n";
     }
@@ -353,11 +541,13 @@ int main(int argc, char **argv) {
         std::string file_path = folder_name + methods[i] + ".csv";
         std::ofstream file(file_path);
         if(file.is_open()){
-            file << "MSE,RMS,Max Error,% Derivatives\n";
+            file << "MSE,Frobenius Error,Elementnorm Error,Max Error (abs),Max Error (rel),% Derivatives\n";
             for(int j = 0; j < NUM_DATA_POINTS; j++){
                 file << mean_squared_error[i][j] << ","
-                     << rms_error[i][j] << ","
-                     << max_error[i][j] << ","
+                     << frobenius_errors[i][j] << ","
+                     << elementnorm_mse_errors[i][j] << ","
+                     << max_abs_error[i][j] << ","
+                     << max_rel_error[i][j] << ","
                      << percentage_derivatives[i][j] << "\n";
             }
             file.close();

@@ -597,7 +597,23 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //            std::cout << "\n";
 //        }
 //        ContactAwareKeyPoints(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list);
+
+        for(int t = 0; t < horizon; t++){
+            std::cout << "time " << t << " :";
+            for(const auto & contact : trajectory_contacts[t]){
+                std::cout << " (" << contact.first << ", " << contact.second << ") ";
+            }
+            std::cout << "\n";
+        }
         ContactChangeDyn(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list, false);
+        for(int t = 0; t < horizon; t++){
+            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
+            std::cout << "time " << t << " :";
+            for(int i = 0; i < keypoints[t].size(); i++){
+                std::cout << keypoints[t][i] << " ";
+            }
+            std::cout << "\n";
+        }
     }
     else if(current_keypoint_method.name == "contact_change_sep"){
         // Print out contact sequence
@@ -611,22 +627,22 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
         ContactAwareKeypointsSep(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list);
     }
     else if(current_keypoint_method.name == "contact_change_dyn"){
-        for(int t = 0; t < horizon; t++){
-            std::cout << "time " << t << " :";
-            for(const auto & contact : trajectory_contacts[t]){
-                std::cout << " (" << contact.first << ", " << contact.second << ") ";
-            }
-            std::cout << "\n";
-        }
+//        for(int t = 0; t < horizon; t++){
+//            std::cout << "time " << t << " :";
+//            for(const auto & contact : trajectory_contacts[t]){
+//                std::cout << " (" << contact.first << ", " << contact.second << ") ";
+//            }
+//            std::cout << "\n";
+//        }
         ContactChangeDyn(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list, true);
-        for(int t = 0; t < horizon; t++){
-            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
-            std::cout << "time " << t << " :";
-            for(int i = 0; i < keypoints[t].size(); i++){
-                std::cout << keypoints[t][i] << " ";
-            }
-            std::cout << "\n";
-        }
+//        for(int t = 0; t < horizon; t++){
+//            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
+//            std::cout << "time " << t << " :";
+//            for(int i = 0; i < keypoints[t].size(); i++){
+//                std::cout << keypoints[t][i] << " ";
+//            }
+//            std::cout << "\n";
+//        }
     }
     else{
         std::cerr << "ERROR: key point method not recognised \n";
