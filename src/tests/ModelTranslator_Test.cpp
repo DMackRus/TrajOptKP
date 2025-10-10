@@ -183,6 +183,32 @@ TEST(model_translator, anyMal_SetReturnState){
 
     model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
 
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper = model_translator->MuJoCo_helper;
+
+    MatrixXd test_state_vector(model_translator->current_state_vector.dof_quat + model_translator->current_state_vector.dof, 1);
+    test_state_vector << 1, 2, 3, 1, 0, 0, 0,
+                        0.1, 0.1, 0.1,
+                        0.2, 0.2, 0.2,
+                        0.1, 0.1, 0.1,
+                        0.2, 0.2, 0.2,
+                        0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+                        0.01, 0.01, 0.01,
+                        0.01, 0.01, 0.01,
+                        0.01, 0.01, 0.01,
+                        0.01, 0.01, 0.01;
+
+    model_translator->SetStateVectorQuat(test_state_vector, MuJoCo_helper->master_reset_data,
+                                     model_translator->current_state_vector);
+
+    MatrixXd return_state_vector = model_translator->ReturnStateVectorQuaternions(MuJoCo_helper->master_reset_data,
+                                                                       model_translator->current_state_vector);
+
+    std::cout << "Test state vector: \n" << test_state_vector.transpose() << "\n";
+    std::cout << "Return state vector: \n" << return_state_vector.transpose() << "\n";
+    for(int i = 0; i < model_translator->current_state_vector.dof_quat + model_translator->current_state_vector.dof; i++){
+        EXPECT_NEAR(test_state_vector(i), return_state_vector(i), 1e-9);
+    }
+
 }
 
 int main(int argc, char* argv[]){

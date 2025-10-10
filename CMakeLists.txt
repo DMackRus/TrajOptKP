@@ -240,7 +240,8 @@ add_test(NAME Derivs COMMAND test_derivs)
 # ---------- Model translator tests ------------
 add_executable(test_model_translator src/tests/ModelTranslator_Test.cpp
         src/tests/test_acrobot.h
-        src/tests/3D_test_class.h)
+        src/tests/3D_test_class.h
+        src/ModelTranslator/anyMal.cpp)
 
 target_include_directories(test_model_translator PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
