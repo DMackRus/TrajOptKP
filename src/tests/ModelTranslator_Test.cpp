@@ -3,6 +3,7 @@
 #include "ModelTranslator/ModelTranslator.h"
 #include "test_acrobot.h"
 #include "3D_test_class.h"
+#include "ModelTranslator/anyMal.h"
 
 std::shared_ptr<ModelTranslator> model_translator;
 
@@ -170,6 +171,18 @@ TEST(ModelTranslator, set_state_remove_names_return_state){
     for(int i = 0; i < model_translator->current_state_vector.dof*2; i++){
         EXPECT_EQ(expected_return_state_vector(i), return_state_vector(i));
     }
+}
+
+TEST(model_translator, anyMal_SetReturnState){
+
+    // Create state vector for anymal, and then set it then return it and check we get the same thing
+    std::cout << "Begin test - Compare derivatives anyMal \n";
+    std::shared_ptr<anyMal> anymal = std::make_shared<anyMal>();
+    model_translator = anymal;
+    std::cout << "Initialising system to start state \n";
+
+    model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
 }
 
 int main(int argc, char* argv[]){

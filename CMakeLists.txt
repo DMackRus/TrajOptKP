@@ -67,28 +67,45 @@ else()
     message(STATUS "could not find OSQP library")
 endif(OsqpEigen_FOUND)
 
-# Create libraries
-#add_library(MuJoCo_helper STATIC src/PhysicsSimulators/MuJoCoHelper.cpp )
+# Create core library for my project
+add_library(core_lib STATIC
+        src/Differentiator/Differentiator.cpp
+        src/ModelTranslator/ModelTranslator.cpp
+        src/PhysicsSimulators/MuJoCoHelper.cpp
+        src/KeyPointGenerator/KeyPointGenerator.cpp
+        src/StdInclude/StdInclude.cpp
+        src/FileHandler/FileHandler.cpp
+        )
+
+target_include_directories(core_lib PUBLIC
+        ${Mujoco_INCLUDE_DIRS}
+        ${YAML_INCLUDE_DIRS}
+        ${PROJECT_INCLUDE_DIR}
+        )
+
+target_link_libraries(core_lib
+        Eigen3::Eigen
+        ${LIB_MUJOCO}
+        -lglfw
+        GL
+        ${YAML_CPP_LIBRARIES}
+        )
+
+# TODO - make some other libraries to speed up overall computation (optimiser library for instance)
 
 # TrajOptKP executable
 add_executable(${PROJECT_NAME} src/main.cpp
-            src/StdInclude/StdInclude.cpp
-            src/PhysicsSimulators/MuJoCoHelper.cpp
-            src/ModelTranslator/ModelTranslator.cpp
             src/Visualiser/Visualiser.cpp
             src/ModelTranslator/Reaching.cpp
             src/ModelTranslator/TwoDPushing.cpp
-            src/Differentiator/Differentiator.cpp
             src/Optimiser/Optimiser.cpp
             src/Optimiser/iLQR.cpp
 #            src/Optimiser/PredictiveSampling.cpp
             src/ModelTranslator/Walker.cpp
-            src/FileHandler/FileHandler.cpp
 #            src/Optimiser/GradDescent.cpp
             src/ModelTranslator/BoxSweep.cpp
             src/ModelTranslator/Acrobot.cpp
             src/ModelTranslator/Humanoid.cpp
-            src/KeyPointGenerator/KeyPointGenerator.cpp
             src/ModelTranslator/ThreeDPushing.cpp
             src/ModelTranslator/PushBaseClass.cpp
             src/ModelTranslator/Pentabot.cpp
@@ -106,21 +123,15 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/Piston.cpp)
 
 add_executable(gen_testing_data src/GenTestingData.cpp
-        src/StdInclude/StdInclude.cpp
-        src/PhysicsSimulators/MuJoCoHelper.cpp
-        src/ModelTranslator/ModelTranslator.cpp
         src/Visualiser/Visualiser.cpp
         src/ModelTranslator/Reaching.cpp
         src/ModelTranslator/TwoDPushing.cpp
-        src/Differentiator/Differentiator.cpp
         src/Optimiser/Optimiser.cpp
         src/Optimiser/iLQR.cpp
         src/ModelTranslator/Walker.cpp
-        src/FileHandler/FileHandler.cpp
         src/ModelTranslator/BoxSweep.cpp
         src/ModelTranslator/Acrobot.cpp
         src/ModelTranslator/Humanoid.cpp
-        src/KeyPointGenerator/KeyPointGenerator.cpp
         src/ModelTranslator/ThreeDPushing.cpp
         src/ModelTranslator/PushBaseClass.cpp
         src/ModelTranslator/Pentabot.cpp
@@ -131,29 +142,17 @@ add_executable(gen_testing_data src/GenTestingData.cpp
 
 # Benchmark computing dynamics derivatives code
 add_executable(benchmark_derivatives src/benchmark_derivatives.cpp
-        src/StdInclude/StdInclude.cpp
-        src/PhysicsSimulators/MuJoCoHelper.cpp
-        src/ModelTranslator/ModelTranslator.cpp
         src/Visualiser/Visualiser.cpp
         src/ModelTranslator/TwoDPushing.cpp
-        src/Differentiator/Differentiator.cpp
         src/Optimiser/Optimiser.cpp
         src/Optimiser/iLQR.cpp
-        src/FileHandler/FileHandler.cpp
-        src/KeyPointGenerator/KeyPointGenerator.cpp
         src/ModelTranslator/PushBaseClass.cpp)
 
 # Toy contact problem analysis script
 add_executable(toy_contact_analysis src/toy_contact_analysis.cpp
-        src/StdInclude/StdInclude.cpp
-        src/PhysicsSimulators/MuJoCoHelper.cpp
-        src/ModelTranslator/ModelTranslator.cpp
         src/Visualiser/Visualiser.cpp
-        src/Differentiator/Differentiator.cpp
         src/Optimiser/Optimiser.cpp
         src/Optimiser/iLQR.cpp
-        src/FileHandler/FileHandler.cpp
-        src/KeyPointGenerator/KeyPointGenerator.cpp
         src/ModelTranslator/PistonBlock.cpp
         src/ModelTranslator/Acrobot.cpp
         src/ModelTranslator/ArticulatedContact.cpp
@@ -163,15 +162,9 @@ add_executable(toy_contact_analysis src/toy_contact_analysis.cpp
 ## Derivative Error Analysis Code
 add_executable(derivative_error_analysis
         src/derivative_error_analysis.cpp
-        src/StdInclude/StdInclude.cpp
-        src/PhysicsSimulators/MuJoCoHelper.cpp
-        src/ModelTranslator/ModelTranslator.cpp
         src/Visualiser/Visualiser.cpp
-        src/Differentiator/Differentiator.cpp
         src/Optimiser/Optimiser.cpp
         src/Optimiser/iLQR.cpp
-        src/FileHandler/FileHandler.cpp
-        src/KeyPointGenerator/KeyPointGenerator.cpp
         src/ModelTranslator/Acrobot.cpp
         src/ModelTranslator/ArticulatedContact.cpp
         src/ModelTranslator/BoxSweep.cpp
@@ -185,15 +178,9 @@ add_executable(derivative_error_analysis
 # Contact stiffness test code
 add_executable(contact_stiffness_test
         src/contact_stiffness_test.cpp
-        src/StdInclude/StdInclude.cpp
-        src/PhysicsSimulators/MuJoCoHelper.cpp
-        src/ModelTranslator/ModelTranslator.cpp
         src/Visualiser/Visualiser.cpp
-        src/Differentiator/Differentiator.cpp
         src/Optimiser/Optimiser.cpp
         src/Optimiser/iLQR.cpp
-        src/FileHandler/FileHandler.cpp
-        src/KeyPointGenerator/KeyPointGenerator.cpp
         src/ModelTranslator/BoxSweep.cpp
         src/ModelTranslator/TwoDPushing.cpp
         src/ModelTranslator/PushBaseClass.cpp
@@ -206,91 +193,69 @@ include_directories(
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter OsqpEigen::OsqpEigen) # or osqp::osqp or osqp::osqpstatic
+target_link_libraries(${PROJECT_NAME} core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter OsqpEigen::OsqpEigen) # or osqp::osqp or osqp::osqpstatic
 
 target_include_directories(gen_testing_data PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(gen_testing_data Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(gen_testing_data core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
 target_include_directories(benchmark_derivatives PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(benchmark_derivatives Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(benchmark_derivatives core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
 target_include_directories(toy_contact_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(toy_contact_analysis Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(toy_contact_analysis core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
 target_include_directories(derivative_error_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(derivative_error_analysis Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(derivative_error_analysis core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
 target_include_directories(contact_stiffness_test PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(contact_stiffness_test Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(contact_stiffness_test core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
-
-enable_testing()
-
-#add_subdirectory(src/tests)
 
 # ------------------------------------------   TESTS   -------------------------------------------------------------
-
+enable_testing()
 # ------- Computing derivatives test -------------
 add_executable(test_derivs src/tests/Derivs_Test.cpp
-        src/Differentiator/Differentiator.cpp
-        src/ModelTranslator/ModelTranslator.cpp
         src/tests/test_acrobot.h
         src/tests/3D_test_class.h
-        src/PhysicsSimulators/MuJoCoHelper.cpp
-        src/StdInclude/StdInclude.cpp
-        src/FileHandler/FileHandler.cpp
         src/tests/test_humanoid.h
         src/ModelTranslator/anyMal.cpp)
 
 target_include_directories(test_derivs PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
-target_link_libraries(test_derivs Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
+target_link_libraries(test_derivs core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
 
-add_test(Derivs test_derivs)
+add_test(NAME Derivs COMMAND test_derivs)
 
 # ----------- Keypoint generation tests ------------
 #add_executable(test_keypoints src/tests/Keypoints_Test.cpp
-#        src/KeyPointGenerator/KeyPointGenerator.cpp
-#        src/Differentiator/Differentiator.cpp
-#        src/ModelTranslator/ModelTranslator.cpp
 #        src/tests/test_acrobot.h
-#        src/tests/3D_test_class.h
-#        src/PhysicsSimulators/MuJoCoHelper.cpp
-#        src/StdInclude/StdInclude.cpp
-#        src/FileHandler/FileHandler.cpp)
+#        src/tests/3D_test_class.h)
 #
 #target_include_directories(test_keypoints PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 #
-#target_link_libraries(test_keypoints Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
+#target_link_libraries(test_keypoints core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
 #
-#add_test(Keypoints test_keypoints)
+#add_test(NAME Keypoints COMMAND test_keypoints)
 
 # ---------- Model translator tests ------------
 add_executable(test_model_translator src/tests/ModelTranslator_Test.cpp
-        src/ModelTranslator/ModelTranslator.cpp
         src/tests/test_acrobot.h
-        src/tests/3D_test_class.h
-        src/PhysicsSimulators/MuJoCoHelper.cpp
-        src/StdInclude/StdInclude.cpp
-        src/FileHandler/FileHandler.cpp)
+        src/tests/3D_test_class.h)
 
 target_include_directories(test_model_translator PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
-target_link_libraries(test_model_translator Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
+target_link_libraries(test_model_translator core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
 
-add_test(ModelTranslator test_model_translator)
+add_test(NAME ModelTranslatorState COMMAND test_model_translator)
 
 # ---------- Kinematic chain tests -------------
 add_executable(test_kinematic_chain src/tests/kinematic_chain_Test.cpp
-        src/ModelTranslator/ModelTranslator.cpp
         src/tests/test_humanoid.h
         src/tests/3D_test_class.h
-        src/PhysicsSimulators/MuJoCoHelper.cpp
-        src/StdInclude/StdInclude.cpp
-        src/FileHandler/FileHandler.cpp src/tests/test_walker.h)
+        src/tests/test_walker.h)
 
 target_include_directories(test_kinematic_chain PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
-target_link_libraries(test_kinematic_chain Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
+target_link_libraries(test_kinematic_chain core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} gtest)
 
-add_test(ModelTranslator test_kinematic_chain)
+add_test(NAME ModelTranslatorKin COMMAND test_kinematic_chain)

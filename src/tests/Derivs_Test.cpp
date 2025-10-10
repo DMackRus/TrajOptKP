@@ -104,8 +104,8 @@ void compare_dynamics_derivatives(){
 //    std::cout << "A diff \n";
 //    std::cout << A_diff << "\n";
 //
-//    std::cout << "B_mine \n";
-//    std::cout << B_mine[0] << "\n";
+    std::cout << "B_mine \n";
+    std::cout << B_mine[0] << "\n";
 //    std::cout << "B theirs \n";
 //    std::cout << B_theirs << "\n";
 //    std::cout << "B diff \n";
@@ -191,7 +191,6 @@ TEST(Derivatives, humanoid)
     // Append data to save systems state list
     model_translator->MuJoCo_helper->AppendSystemStateToEnd(model_translator->MuJoCo_helper->master_reset_data);
 
-
     compare_dynamics_derivatives();
 }
 
@@ -205,6 +204,29 @@ TEST(Derivatives, anyMal)
     differentiator = std::make_shared<Differentiator>(model_translator, model_translator->MuJoCo_helper);
 
     model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
+    auto* model = model_translator->MuJoCo_helper->model;
+
+    std::cout << "Number of DoFs: " << model->nq << std::endl;
+
+    for (int i = 0; i < model->njnt; i++) {
+        const char* joint_name = mj_id2name(model, mjOBJ_JOINT, i);
+        const char* body_name  = mj_id2name(model, mjOBJ_BODY, model->jnt_bodyid[i]);
+        std::cout << "Joint " << i << ": "
+                  << (joint_name ? joint_name : "(unnamed)")
+                  << " (body: " << (body_name ? body_name : "(no body name)") << ")"
+                  << std::endl;
+    }
+
+    //Print out the actuator names
+    std::cout << "Actuator names: \n";
+    for(int i = 0; i < model->nu; i++){
+        const char* actuator_name = mj_id2name(model, mjOBJ_ACTUATOR, i);
+        std::cout << "Actuator " << i << ": "
+                  << (actuator_name ? actuator_name : "(unnamed)")
+                  << std::endl;
+    }
+
 
     MatrixXd control_vector(model_translator->current_state_vector.num_ctrl, 1);
     control_vector.setZero();
