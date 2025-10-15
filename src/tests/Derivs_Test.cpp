@@ -104,10 +104,10 @@ void compare_dynamics_derivatives(){
 //    std::cout << "A diff \n";
 //    std::cout << A_diff << "\n";
 //
-    std::cout << "B_mine \n";
-    std::cout << B_mine[0] << "\n";
-//    std::cout << "B theirs \n";
-//    std::cout << B_theirs << "\n";
+//    std::cout << "B_mine \n";
+//    std::cout << B_mine[0] << "\n";
+    std::cout << "B theirs \n";
+    std::cout << B_theirs << "\n";
 //    std::cout << "B diff \n";
 //    std::cout << B_diff << "\n";
 

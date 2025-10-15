@@ -211,6 +211,51 @@ TEST(model_translator, anyMal_SetReturnState){
 
 }
 
+TEST(model_translator, anyMal_SetReturnControlVector){
+
+    // Create state vector for anymal, and then set it then return it and check we get the same thing
+    std::cout << "Begin test - Set Return control vectors \n";
+    std::shared_ptr<anyMal> anymal = std::make_shared<anyMal>();
+    model_translator = anymal;
+    std::cout << "Initialising system to start state \n";
+
+    model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper = model_translator->MuJoCo_helper;
+
+    MatrixXd test_control_vector(model_translator->current_state_vector.num_ctrl, 1);
+    test_control_vector << 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
+                            0.0, 0.1, 0.2, 0.3, 0.4, 0.5;
+
+    model_translator->SetControlVector(test_control_vector, MuJoCo_helper->master_reset_data,
+                                         model_translator->current_state_vector);
+
+    MatrixXd return_control_vector = model_translator->ReturnControlVector(MuJoCo_helper->master_reset_data,
+                                                                                  model_translator->current_state_vector);
+
+    std::cout << "Test state vector: \n" << test_control_vector.transpose() << "\n";
+    std::cout << "Return state vector: \n" << return_control_vector.transpose() << "\n";
+
+    std::vector<double> anyMal_controls;
+//    MuJoCo_helper->GetRobotJointsControls("anyMal", anyMal_controls, MuJoCo_helper->master_reset_data);
+
+//    mj_forwardSkip(MuJoCo_helper->model, MuJoCo_helper->master_reset_data, , 0);
+    mj_fwdActuation(MuJoCo_helper->model, MuJoCo_helper->master_reset_data);
+    for(int i = 0; i < MuJoCo_helper->model->nu; i++){
+        anyMal_controls.push_back(MuJoCo_helper->master_reset_data->actuator_force[i]);
+    }
+    std::cout << "Control values in mjData: \n";
+    for(const auto & control_val : anyMal_controls){
+        std::cout << control_val << " ";
+    }
+    std::cout << "\n";
+
+    for(int i = 0; i < model_translator->current_state_vector.num_ctrl; i++){
+        EXPECT_NEAR(test_control_vector(i), return_control_vector(i), 1e-9);
+    }
+
+}
+
 int main(int argc, char* argv[]){
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
