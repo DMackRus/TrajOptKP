@@ -229,12 +229,12 @@ int main(int argc, char **argv) {
     }
 
     // TODO -  TEMP CODE for anyMal
-    MatrixXd state_vector(activeModelTranslator->current_state_vector.dof_quat+activeModelTranslator->current_state_vector.dof, 1);
-    state_vector << 0, 0, 1.0, 1, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-    activeModelTranslator->SetStateVectorQuat(state_vector, activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->full_state_vector);
+//    MatrixXd state_vector(activeModelTranslator->current_state_vector.dof_quat+activeModelTranslator->current_state_vector.dof, 1);
+//    state_vector << 0, 0, 1.0, 1, 0, 0, 0,
+//                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+//                    0, 0, 0, 0, 0, 0,
+//                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+//    activeModelTranslator->SetStateVectorQuat(state_vector, activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->full_state_vector);
     // Initialise the system state from full state vector here
 //    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
@@ -675,26 +675,26 @@ void MPCUntilComplete(int OPT_HORIZON){
                                                                      activeModelTranslator->current_state_vector);
 
             // Compute the best starting state
-            double smallestError = 1000.00;
+//            double smallestError = 1000.00;
             int bestMatchingStateIndex = optTimeToTimeSteps;
 
             if(bestMatchingStateIndex >= OPT_HORIZON){
                 bestMatchingStateIndex = OPT_HORIZON - 1;
             }
-            for(int i = 0; i < OPT_HORIZON - 1; i++){
-//                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
-//                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
-                double currError = 0.0f;
-                for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
-                    // TODO - im not sure about this, should we use full state?
-                    currError += abs(activeOptimiser->X_old[i](j) - current_state(j));
-                }
-                if(currError < smallestError){
-                    smallestError = currError;
-                    bestMatchingStateIndex = i;
-                }
-            }
-            bestMatchingStateIndex = 1;
+//            for(int i = 0; i < OPT_HORIZON - 1; i++){
+////                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
+////                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
+//                double currError = 0.0f;
+//                for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
+//                    // TODO - im not sure about this, should we use full state?
+//                    currError += abs(activeOptimiser->X_old[i](j) - current_state(j));
+//                }
+//                if(currError < smallestError){
+//                    smallestError = currError;
+//                    bestMatchingStateIndex = i;
+//                }
+//            }
+//            bestMatchingStateIndex = 1;
 
             // Mutex lock
             {
