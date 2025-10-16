@@ -731,7 +731,7 @@ double iLQR_SVR::ForwardsPass(double _old_cost){
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
             // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-            SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, t);
+            SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, t, residuals[t]);
 
 //             if(t % 5 == 0){
 //                 const char* fplabel = "fp";
@@ -876,7 +876,7 @@ double iLQR_SVR::ForwardsPassParallel(int thread_id, double alpha){
         mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[thread_id]);
 
         // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-        SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t);
+        SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t, residuals);
     }
 
     // Compute expected costreduction

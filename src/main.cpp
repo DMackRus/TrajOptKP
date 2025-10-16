@@ -236,7 +236,7 @@ int main(int argc, char **argv) {
 //                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
 //    activeModelTranslator->SetStateVectorQuat(state_vector, activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->full_state_vector);
     // Initialise the system state from full state vector here
-//    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     // Methods of control / visualisation
     if(runMode == "Init_controls"){

@@ -969,7 +969,7 @@ void MuJoCoHelper::InitSimulator(double timestep, const char* file_name, bool us
 
     // defaults 100 , 1e-8
     model->opt.timestep = timestep;
-    model->opt.impratio = 100;
+//    model->opt.impratio = 100;   // Good for anyMal
 //    model->opt.iterations = 30;
 //    model->opt.tolerance = 1e-1;
 //    cout << "model iterations: " << model->opt.iterations << endl;

@@ -316,7 +316,7 @@ protected:
      */
     std::vector<double> FilterIndValLowPass(std::vector<double> unfiltered);
 
-    void SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index);
+    void SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index, MatrixXd &residuals);
     void SaveBestRollout(int thread_id);
 
 private:

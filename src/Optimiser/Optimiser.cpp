@@ -404,7 +404,7 @@ void Optimiser::setFIRFilter(std::vector<double> _FIRCoefficients){
     }
 }
 
-void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index){
+void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_index, MatrixXd &residuals){
 
     rollout_data[thread_id][data_index].time = d->time;
 
@@ -426,6 +426,9 @@ void Optimiser::SaveSystemStateToRolloutData(mjData *d, int thread_id, int data_
     for(int i = 0; i < 6*MuJoCo_helper->model->nbody; i++){
         rollout_data[thread_id][data_index].xfrc_applied[i] = d->xfrc_applied[i];
     }
+
+    // Save residuals
+    rollout_data[thread_id][data_index].residuals = residuals;
 
     // Save contacts
     rollout_data[thread_id][data_index].contacts.clear();
@@ -458,7 +461,9 @@ void Optimiser::SaveBestRollout(int thread_id){
         // Update the residuals of the nominal trajectory
         // TODO - This is bad?? I am recomputing the residuals of the nominal trajectory. I should change this so it
         // is saved during rollouts and copied here.
-        activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t], residuals[t]);
+
+//        activeModelTranslator->Residuals(MuJoCo_helper->saved_systems_state_list[t], residuals[t]);
+        residuals[t] = rollout_data[thread_id][t].residuals;
 
         // Update the contact list sequence of the trajectory
         contact_list[t] = rollout_data[thread_id][t].contacts;

@@ -588,7 +588,7 @@ double SCVX::ForwardsPass(double _old_cost){
         activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[t]);
         double state_cost = activeModelTranslator->CostFunction(residuals[t], activeModelTranslator->full_state_vector, false);
 
-        SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, t);
+        SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, t, residuals[t]);
 
         // Integrate the simulator
         mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
@@ -604,7 +604,7 @@ double SCVX::ForwardsPass(double _old_cost){
     non_linear_cost += activeModelTranslator->CostFunction(residuals[horizon_length], activeModelTranslator->full_state_vector, true);
 
     // Save the last state
-    SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, horizon_length);
+    SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, horizon_length, residuals[horizon_length]);
 
     // Return new cost which in the case of SCVX is non-linear cost
     return non_linear_cost;

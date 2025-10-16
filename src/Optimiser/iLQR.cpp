@@ -193,6 +193,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
         data_timestep.qfrc_applied.resize(MuJoCo_helper->model->nv);
         data_timestep.xfrc_applied.resize(6*MuJoCo_helper->model->nbody);
         data_timestep.ctrl.resize(MuJoCo_helper->model->nu);
+        data_timestep.residuals.resize(activeModelTranslator->residual_list.size(), 1);
 
         for(int t = 0; t < horizon_length+1; t++){
             data_horizon[t] = data_timestep;
@@ -892,7 +893,7 @@ double iLQR::ForwardsPass(double _old_cost){
             mj_step(MuJoCo_helper->model, MuJoCo_helper->main_data);
 
             // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-            SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, t);
+            SaveSystemStateToRolloutData(MuJoCo_helper->main_data, 0, t, residuals[t]);
 
 //             if(t % 5 == 0){
 //                 const char* fplabel = "fp";
@@ -973,6 +974,9 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
     MuJoCo_helper->CopySystemState(MuJoCo_helper->fd_data[thread_id], MuJoCo_helper->saved_systems_state_list[0]);
     MatrixXd control_limits = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
 
+    double new_state_cost;
+    MatrixXd residuals_t(activeModelTranslator->residual_list.size(), 1);
+
     for(int t = 0; t < horizon_length; t++) {
 
         X_new = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->fd_data[thread_id],
@@ -1018,9 +1022,7 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
         activeModelTranslator->SetControlVector(U_new, MuJoCo_helper->fd_data[thread_id],
                                                 activeModelTranslator->current_state_vector);
 
-        double new_state_cost;
-        // Terminal state
-        MatrixXd residuals_t(activeModelTranslator->residual_list.size(), 1);
+
         activeModelTranslator->Residuals(MuJoCo_helper->fd_data[thread_id], residuals_t);
         new_state_cost = activeModelTranslator->CostFunction(residuals_t,
                                                              activeModelTranslator->full_state_vector, false);
@@ -1030,14 +1032,16 @@ double iLQR::ForwardsPassParallel(int thread_id, double alpha){
         mj_step(MuJoCo_helper->model, MuJoCo_helper->fd_data[thread_id]);
 
         // Copy system state to fp_rollout_buffer to prevent a second rollout of computations using simulation integration
-        SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t);
+        SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, t, residuals_t);
     }
 
     // Terminal cost
-    MatrixXd residuals_t(activeModelTranslator->residual_list.size(), 1);
     activeModelTranslator->Residuals(MuJoCo_helper->fd_data[thread_id], residuals_t);
     _new_cost += activeModelTranslator->CostFunction(residuals_t,
                                                          activeModelTranslator->full_state_vector, true);
+
+    // TODO - shouldn't the final state also have been saved to the rollout buffer?
+    SaveSystemStateToRolloutData(MuJoCo_helper->fd_data[thread_id], thread_id, horizon_length, residuals_t);
 
 
     // Compute expected cost reduction
