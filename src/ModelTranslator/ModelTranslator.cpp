@@ -484,7 +484,7 @@ MatrixXd ModelTranslator::ReturnControlLimits(const struct stateVectorList &stat
             control_limits(current_control_index + j, 0) = robot_control_limits[j];
         }
 
-        current_control_index += static_cast<int>(robot.actuator_names.size());
+        current_control_index += 2 * static_cast<int>(robot.actuator_names.size());
     }
 
     return control_limits;

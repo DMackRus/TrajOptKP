@@ -1,0 +1,62 @@
+<mujoco model="object pushing - franka_panda">
+    <!-- =================================================
+            Copyright 2018 Vikash Kumar
+            Model   :: Franka (MuJoCoV2.0)
+            Author  :: Vikash Kumar (vikashplus@gmail.com)
+            source  :: https://github.com/vikashplus/franka_sim
+        ====================================================== -->
+
+    <include file="assets/basic_scene.xml"/>
+    <include file="assets/assets.xml"/>
+    <include file="assets/gripper_assets.xml"/>
+    <compiler meshdir=""/>
+
+    <extension>
+        <plugin plugin="mujoco.elasticity.solid"/>
+    </extension>
+
+    <default>
+        <default class="wall">
+            <geom type="plane" size=".5 .5 .05"/>
+        </default>
+    </default>
+
+    <size memory="100M"/>
+
+    <worldbody>
+        <!-- Include the franka_panda robot arm model -->
+        <include file="assets/chain0.xml"/>
+
+        <body pos="1 0 0" name="display_goal">
+            <joint type="free" />
+            <geom type = "box" pos = "0 0 0" size = ".0001 .0001 .0000001" rgba = "0 0 0 0" mass="1" margin = "0.001" contype = "4" conaffinity = "4" />
+            <site type="cylinder" pos="0 0 0.001" size="0.11 0.001" rgba="0 1 0 0.4"/>
+        </body>
+
+<!--        <flexcomp name="jelly" type="grid" count="3 4 4" spacing=".07 .07 .07" pos="0.35 0 0" dim="3" radius=".005" rgba="1 0 0 1" mass="1" >-->
+<!--            <edge damping="0.9" solimp="0.4 0.9 0.01 0.5 0.2" solref="0.1 1.1"/>-->
+<!--            <contact selfcollide="none"/>-->
+<!--            <plugin plugin="mujoco.elasticity.solid">-->
+<!--                <config key="poisson" value="0"/>-->
+<!--                &lt;!&ndash;1-Units are in Pa (SI) &ndash;&gt;-->
+<!--                <config key="young" value="2e3"/>-->
+<!--            </plugin>-->
+<!--        </flexcomp>-->
+
+        <!-- pos = 0.35 0 0 -->
+
+        <flexcomp name="jelly" type="grid" count="3 4 3" spacing=".07 .07 .07" pos="0.35 0.04 0" dim="3" radius=".005" rgba="1 0 0 1" mass="1" >
+            <edge damping="0.9" solimp="0.4 0.9 0.01 0.5 0.2" solref="0.02 1.0"/>
+            <contact selfcollide="none"/>
+            <plugin plugin="mujoco.elasticity.solid">
+                <config key="poisson" value="0"/>
+                <!--1-Units are in Pa (SI) -->
+                <config key="young" value="4e3"/>
+            </plugin>
+        </flexcomp>
+<!--        <geom name="-x" class="wall" zaxis="-1 0 0" pos=".7 0 -.25"/>-->
+
+    </worldbody>
+
+    <include file='assets/actuator0.xml'/>
+</mujoco>

@@ -4,6 +4,7 @@
 #include "test_acrobot.h"
 #include "3D_test_class.h"
 #include "ModelTranslator/anyMal.h"
+#include "test_bimanual_pickup.h"
 
 std::shared_ptr<ModelTranslator> model_translator;
 
@@ -253,7 +254,134 @@ TEST(model_translator, anyMal_SetReturnControlVector){
     for(int i = 0; i < model_translator->current_state_vector.num_ctrl; i++){
         EXPECT_NEAR(test_control_vector(i), return_control_vector(i), 1e-9);
     }
+}
 
+TEST(model_translator, bimanual_SetReturnControlVector){
+
+    // Create state vector for anymal, and then set it then return it and check we get the same thing
+    std::cout << "Begin test - Set Return control vectors (Bimanual)\n";
+    std::shared_ptr<BimanualPickup> bimanual = std::make_shared<BimanualPickup>();
+    model_translator = bimanual;
+    std::cout << "Initialising system to start state \n";
+
+    model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper = model_translator->MuJoCo_helper;
+
+    MatrixXd test_control_vector(model_translator->current_state_vector.num_ctrl, 1);
+    test_control_vector << 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6;
+
+    model_translator->SetControlVector(test_control_vector, MuJoCo_helper->master_reset_data,
+                                       model_translator->current_state_vector);
+
+    MatrixXd return_control_vector = model_translator->ReturnControlVector(MuJoCo_helper->master_reset_data,
+                                                                           model_translator->current_state_vector);
+
+    std::cout << "Test control vector: \n" << test_control_vector.transpose() << "\n";
+    std::cout << "Return control vector: \n" << return_control_vector.transpose() << "\n";
+
+//    std::vector<double> anyMal_controls;
+////    MuJoCo_helper->GetRobotJointsControls("anyMal", anyMal_controls, MuJoCo_helper->master_reset_data);
+//
+////    mj_forwardSkip(MuJoCo_helper->model, MuJoCo_helper->master_reset_data, , 0);
+//    mj_fwdActuation(MuJoCo_helper->model, MuJoCo_helper->master_reset_data);
+//    for(int i = 0; i < MuJoCo_helper->model->nu; i++){
+//        anyMal_controls.push_back(MuJoCo_helper->master_reset_data->actuator_force[i]);
+//    }
+//    std::cout << "Control values in mjData: \n";
+//    for(const auto & control_val : anyMal_controls){
+//        std::cout << control_val << " ";
+//    }
+//    std::cout << "\n";
+
+    for(int i = 0; i < model_translator->current_state_vector.num_ctrl; i++){
+        EXPECT_NEAR(test_control_vector(i), return_control_vector(i), 1e-9);
+    }
+
+}
+
+TEST(model_translator, bimanual_SetReturnStateVector){
+
+    // Create state vector for anymal, and then set it then return it and check we get the same thing
+    std::cout << "Begin test - Set Return control vectors (Bimanual)\n";
+    std::shared_ptr<BimanualPickup> bimanual = std::make_shared<BimanualPickup>();
+    model_translator = bimanual;
+    std::cout << "Initialising system to start state \n";
+
+    model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper = model_translator->MuJoCo_helper;
+
+    MatrixXd test_state_vector(model_translator->current_state_vector.dof + model_translator->current_state_vector.dof_quat, 1);
+    test_state_vector << 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
+            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
+            0.5, 0.4, 0.3, 1.0, 0.0, 0.0, 0.0,
+            0, 0, 0, 0, 0, 0, 0,
+            0 ,0 ,0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0;
+
+    model_translator->SetStateVectorQuat(test_state_vector, MuJoCo_helper->master_reset_data,
+                                       model_translator->current_state_vector);
+
+    MatrixXd return_state_vector = model_translator->ReturnStateVectorQuaternions(MuJoCo_helper->master_reset_data,
+                                                                           model_translator->current_state_vector);
+
+    std::cout << "Test state vector: \n" << test_state_vector.transpose() << "\n";
+    std::cout << "Return state vector: \n" << return_state_vector.transpose() << "\n";
+
+    for(int i = 0; i < model_translator->current_state_vector.dof + model_translator->current_state_vector.dof_quat; i++){
+        EXPECT_NEAR(test_state_vector(i), return_state_vector(i), 1e-9);
+    }
+}
+
+TEST(model_translator, bimanual_ControlLims){
+
+    // Create state vector for anymal, and then set it then return it and check we get the same thing
+    std::cout << "Begin test - Set Return control vectors (Bimanual)\n";
+    std::shared_ptr<BimanualPickup> bimanual = std::make_shared<BimanualPickup>();
+    model_translator = bimanual;
+    std::cout << "Initialising system to start state \n";
+
+    model_translator->InitialiseSystemToStartState(model_translator->MuJoCo_helper->master_reset_data);
+
+    std::shared_ptr<MuJoCoHelper> MuJoCo_helper = model_translator->MuJoCo_helper;
+
+    MatrixXd control_lims = model_translator->ReturnControlLimits(model_translator->current_state_vector);
+
+    MatrixXd control_lims_robot(14, 1);
+    control_lims_robot << -87, 87, -87, 87, -87, 87, -87, 87,
+            -12, 12, -12, 12, -12, 12;
+
+    std::cout << "control lims: \n" << control_lims << "\n";
+
+//    MatrixXd test_state_vector(model_translator->current_state_vector.dof + model_translator->current_state_vector.dof_quat, 1);
+//    test_state_vector << 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.0,
+//            0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6,
+//            0.5, 0.4, 0.3, 1.0, 0.0, 0.0, 0.0,
+//            0, 0, 0, 0, 0, 0, 0,
+//            0 ,0 ,0, 0, 0, 0, 0,
+//            0, 0, 0, 0, 0, 0;
+//
+//    model_translator->SetStateVectorQuat(test_state_vector, MuJoCo_helper->master_reset_data,
+//                                         model_translator->current_state_vector);
+//
+//    MatrixXd return_state_vector = model_translator->ReturnStateVectorQuaternions(MuJoCo_helper->master_reset_data,
+//                                                                                  model_translator->current_state_vector);
+//
+//    std::cout << "Test state vector: \n" << test_state_vector.transpose() << "\n";
+//    std::cout << "Return state vector: \n" << return_state_vector.transpose() << "\n";
+//
+
+    // Robot 1
+    for(int i = 0; i < 14; i++){
+        EXPECT_NEAR(control_lims(i), control_lims_robot(i), 1e-9);
+    }
+
+    // Robot 2
+    for(int i = 0; i < 14; i++){
+        EXPECT_NEAR(control_lims(i + 14), control_lims_robot(i), 1e-9);
+    }
 }
 
 int main(int argc, char* argv[]){

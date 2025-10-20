@@ -530,6 +530,7 @@ std::vector<MatrixXd> iLQR::Optimise(mjData *d, std::vector<MatrixXd> initial_co
 
     for(int i = 0; i < horizon_length; i++){
         optimisedControls[i] = U_old[i];
+//        std::cout << "opt control " << i << ": " << optimisedControls[i].transpose() << "\n";
     }
 
     return optimisedControls;

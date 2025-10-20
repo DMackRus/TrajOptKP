@@ -1,0 +1,71 @@
+<mujoco model="cylinder pushing into clutter - franka_panda">
+    <!-- =================================================
+            Copyright 2018 Vikash Kumar
+            Model   :: Franka (MuJoCoV2.0)
+            Author  :: Vikash Kumar (vikashplus@gmail.com)
+            source  :: https://github.com/vikashplus/franka_sim
+        ====================================================== -->
+
+    <include file="assets/basic_scene.xml"/>
+    <include file="assets/assets.xml"/>
+    <include file="assets/gripper_assets.xml"/>
+    <compiler meshdir=""/>
+
+    <worldbody>
+        <!-- Include the franka_panda robot arm model -->
+        <include file="assets/chain0.xml"/>
+
+        <body pos="0.5 0.5 0.041" name="scoop">
+            <joint type="free" />
+            <geom type = "box" pos = "0 0 0"        size = "0.02 0.2  0.07" mass="0.5" rgba = "0 1 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "1" conaffinity = "3"  margin = "0.001"/>
+            <geom type = "box" pos = "0.06 0.19 0"  size = "0.05 0.01 0.07" mass="0.5" rgba = "0 1 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "1" conaffinity = "3"  margin = "0.001"/>
+            <geom type = "box" pos = "0.06 -0.19 0" size = "0.05 0.01 0.07" mass="0.5" rgba = "0 1 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "1" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="0.5 0.6 0.041" name="obstacle_1">
+            <joint type="free" />
+            <geom type = "box" pos = "0 0 0" size = "0.04 0.04 0.02" mass="0.5" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="0.6 0.55 0.041" name="obstacle_2">
+            <joint type="free" />
+            <geom type = "cylinder" pos = "0 0 0" size = "0.04 0.03" mass="0.4" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="0.55 0.4 0.041" name="obstacle_3">
+            <joint type="free" />
+            <geom type = "cylinder" pos = "0 0 0" size = "0.04 0.03" mass="0.3" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="0.55 0.35 0.041" name="obstacle_4">
+            <joint type="free" />
+            <geom type = "box" pos = "0 0 0" size = "0.04 0.04 0.04" mass="0.5" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="0.55 0.65 0.041" name="obstacle_5">
+            <joint type="free" />
+            <geom type = "cylinder" pos = "0 0 0" size = "0.05 0.03" mass="0.2" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="0.65 0.65 0.041" name="obstacle_6">
+            <joint type="free" />
+            <geom type = "box" pos = "0 0 0" size = "0.03 0.03 0.03" mass="0.3" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="0.65 0.65 0.041" name="obstacle_7">
+            <joint type="free" />
+            <geom type = "cylinder" pos = "0 0 0" size = "0.03 0.04" mass="0.4" rgba = "1 0 0 1" solimp="0.4 0.99 0.01 0.5 2" solref = "0.1 0.8" condim="3" contype = "3" conaffinity = "3"  margin = "0.001"/>
+        </body>
+
+        <body pos="1 0 0" name="display_goal">
+            <joint type="free" />
+            <geom type = "box" pos = "0 0 0" size = ".0001 .0001 .0000001" rgba = "0 0 0 0" mass="1" margin = "0.001" contype = "4" conaffinity = "4" />
+            <site type="box" pos="0 0 0" size="0.01 0.5 0.00001" rgba="0 1 0 0.6"/>
+        </body>
+
+    </worldbody>
+
+    <size njmax="500" nconmax="500"/>
+
+    <include file='assets/actuator0.xml'/>
+</mujoco>

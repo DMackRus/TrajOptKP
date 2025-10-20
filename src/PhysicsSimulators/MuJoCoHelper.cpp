@@ -187,7 +187,13 @@ void MuJoCoHelper::GetRobotJointsAccelerations(const string& robot_name, vector<
 void MuJoCoHelper::GetRobotJointsControls(const string& robot_name, vector<double> &joint_controls, mjData *d) {
 
     // Check if the robot exists in the simulation
-    int robot_index = 0;
+    int robot_index;
+    std::string robot_base_joint_name;
+
+    if(!IsValidRobotName(robot_name, robot_index, robot_base_joint_name)){
+        std::cerr << "That robot doesnt exist in the simulation\n";
+        exit(1);
+    }
 
     joint_controls.resize(robots[robot_index].actuator_names.size());
 
@@ -243,6 +249,16 @@ void MuJoCoHelper::GetRobotControlLimits(const string& robot_name, vector<double
 
     // Get the body id of the base link of the robot
 //    int joint_id = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
+
+//    int num_actuators = 0;
+//    for(const auto& actuator_name : robots[robot_index].actuator_names){
+//        int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, actuator_name.c_str());
+//        if(actuator_id == -1){
+//            std::cerr << "Invalid actuator name for robot: " << actuator_name << "\n";
+//            exit(1);
+//        }
+//        num_actuators++;
+//    }
 
     control_limits.resize(2 * robots[robot_index].actuator_names.size());
 

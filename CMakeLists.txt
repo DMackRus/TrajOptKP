@@ -119,6 +119,7 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/ArticulatedContact.cpp
             src/ModelTranslator/anyMal.cpp
             src/ModelTranslator/ImpactLargeBox.cpp
+            src/ModelTranslator/BimanualPickup.cpp
             src/Optimiser/SCVX.cpp
             src/ModelTranslator/Piston.cpp)
 
@@ -241,7 +242,8 @@ add_test(NAME Derivs COMMAND test_derivs)
 add_executable(test_model_translator src/tests/ModelTranslator_Test.cpp
         src/tests/test_acrobot.h
         src/tests/3D_test_class.h
-        src/ModelTranslator/anyMal.cpp)
+        src/ModelTranslator/anyMal.cpp
+        src/tests/test_bimanual_pickup.h)
 
 target_include_directories(test_model_translator PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 

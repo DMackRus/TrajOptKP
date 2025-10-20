@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "anyMal"
+task: "bimanual_pickup"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -20,6 +20,8 @@ task: "anyMal"
 # "push_soft_into_rigid", "push_soft"
 #
 # "place_low_clutter", "place_heavy_clutter",
+#
+# "bimanual_pickup"
 #
 # --- Impact manipulation ---
 # "impact_large_box"

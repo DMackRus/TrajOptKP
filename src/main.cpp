@@ -26,6 +26,7 @@
 
 #include "ModelTranslator/anyMal.h"
 #include "ModelTranslator/ImpactLargeBox.h"
+#include "ModelTranslator/BimanualPickup.h"
 
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
@@ -215,6 +216,9 @@ int main(int argc, char **argv) {
 //                                      yamlReader, activeOptimiser);
 //        return myGASearch.Run();
 //    }
+
+    // Print state vector
+    activeModelTranslator->full_state_vector.PrintFormattedStateVector();
 
     if(taskInitMode == "random"){
         activeModelTranslator->GenerateRandomGoalAndStartState();
@@ -772,6 +776,10 @@ int assign_task(){
     else if(task == "place_heavy_clutter"){
         std::shared_ptr<PlaceObject> my_place_object = std::make_shared<PlaceObject>("end_effector", "goal", heavyClutter);
         activeModelTranslator = my_place_object;
+    }
+    else if(task == "bimanual_pickup"){
+        std::shared_ptr<BimanualPickup> my_bimanual_pickup = std::make_shared<BimanualPickup>();
+        activeModelTranslator = my_bimanual_pickup;
     }
     else if(task == "3D_pushing"){
         std::shared_ptr<ThreeDPushing> myThreeDPushing = std::make_shared<ThreeDPushing>();
