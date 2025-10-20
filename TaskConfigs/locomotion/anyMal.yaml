@@ -1,9 +1,9 @@
 modelFile: "/mujoco_models/anyMal/scene.xml"
 modelName: "/anyMal"
 timeStep: 0.005
-keypointMethod: "contact_change_sep"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
+keypointMethod: "set_interval"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 auto_adjust: false
-minN: 10
+minN: 5
 maxN: 20
 mpc_horizon: 80
 

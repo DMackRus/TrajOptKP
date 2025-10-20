@@ -247,34 +247,8 @@ void MuJoCoHelper::GetRobotControlLimits(const string& robot_name, vector<double
         exit(1);
     }
 
-    // Get the body id of the base link of the robot
-//    int joint_id = mj_name2id(model, mjOBJ_JOINT, robot_base_joint_name.c_str());
-
-//    int num_actuators = 0;
-//    for(const auto& actuator_name : robots[robot_index].actuator_names){
-//        int actuator_id = mj_name2id(model, mjOBJ_ACTUATOR, actuator_name.c_str());
-//        if(actuator_id == -1){
-//            std::cerr << "Invalid actuator name for robot: " << actuator_name << "\n";
-//            exit(1);
-//        }
-//        num_actuators++;
-//    }
-
     control_limits.resize(2 * robots[robot_index].actuator_names.size());
 
-//    if(joint_id == -1){
-//        std::cerr << "Base link of robot not found\n";
-//        exit(1);
-//    }
-
-//    int start_index = model->jnt_dofadr[joint_id];
-//
-//    if(start_index == -1){
-//        std::cerr << "Invalid bodyId for robot\n";
-//        exit(1);
-//    }
-
-    // TODO (dmackrus) I think this doesnt accommodate for multiple robots
     for(int i = 0; i < 2 * robots[robot_index].actuator_names.size(); i++){
         control_limits[i] = model->actuator_ctrlrange[i];
     }
