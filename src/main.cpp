@@ -233,14 +233,14 @@ int main(int argc, char **argv) {
     }
 
     // TODO -  TEMP CODE for anyMal
-//    MatrixXd state_vector(activeModelTranslator->current_state_vector.dof_quat+activeModelTranslator->current_state_vector.dof, 1);
-//    state_vector << 0, 0, 1.0, 1, 0, 0, 0,
-//                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-//                    0, 0, 0, 0, 0, 0,
-//                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
-//    activeModelTranslator->SetStateVectorQuat(state_vector, activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->full_state_vector);
+    MatrixXd state_vector(activeModelTranslator->current_state_vector.dof_quat+activeModelTranslator->current_state_vector.dof, 1);
+    state_vector << 0, 0, 1.0, 1, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+    activeModelTranslator->SetStateVectorQuat(state_vector, activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->full_state_vector);
     // Initialise the system state from full state vector here
-    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+//    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     // Methods of control / visualisation
     if(runMode == "Init_controls"){

@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "bimanual_pickup"
+task: "anyMal"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -27,7 +27,7 @@ task: "bimanual_pickup"
 # "impact_large_box"
 #
 # ---- Locomotion ----
-# "walker_walk", "walker_run", "humanoid" (not working yet), "anyMal" (not working yet)
+# "walker_walk", "walker_run", "humanoid" (not working yet), "anyMal"
 #
 # ------------------------------------------------------------------------------
 

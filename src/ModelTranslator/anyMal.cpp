@@ -20,7 +20,7 @@ void anyMal::Residuals(mjData *d, MatrixXd &residuals) {
     int resid_index = 0;
 
     mj_kinematics(MuJoCo_helper->model, d);
-    mj_fwdActuation(MuJoCo_helper->model, d);
+//    mj_fwdActuation(MuJoCo_helper->model, d);
 //    mj_forward(MuJoCo_helper->model, d);
 
     std::vector<double> anyMal_controls;
