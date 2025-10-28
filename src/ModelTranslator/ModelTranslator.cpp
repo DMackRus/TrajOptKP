@@ -92,6 +92,11 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
         std::cout << "\n";
     }
 
+    std::cout << "Robot Kin Chains \n";
+    for(int i = 0; i < full_state_vector.kin_chains_robot_indices.size(); i++){
+        std::cout << "Chain " << i << ": Robot Index " << full_state_vector.kin_chains_robot_indices[i] << "\n";
+    }
+
     // Print independant kinematic chains
     std::cout << "Kinematic chains bodies independant: \n";
     for(int i = 0; i < full_state_vector.kinematic_chain_bodies_independant.size(); i++){
@@ -109,6 +114,11 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
             std::cout << full_state_vector.kinematic_chain_state_indices_independant[i][j] << " ";
         }
         std::cout << "\n";
+    }
+
+    std::cout << "Robot Kin Chains Separate \n";
+    for(int i = 0; i < full_state_vector.kin_chains_robot_indices_independant.size(); i++){
+        std::cout << "Chain " << i << ": Robot Index " << full_state_vector.kin_chains_robot_indices_independant[i] << "\n";
     }
 
     // Clear optimiser dof and num ctrl so matrices are properly sized
@@ -1238,6 +1248,8 @@ void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
     state_vector.kinematic_chain_state_indices.clear();
     state_vector.kinematic_chain_bodies_independant.clear();
     state_vector.kinematic_chain_state_indices_independant.clear();
+    state_vector.kin_chains_robot_indices.clear();
+    state_vector.kin_chains_robot_indices_independant.clear();
 
     // Stage 1 - Create kinematic chain of body Ids
     for (int i = 1; i < MuJoCo_helper->model->nbody; i++) {  // skip world (body 0) TODO - This might be problematic for models with no plane??
@@ -1308,6 +1320,26 @@ void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
             }
         }
         state_vector.kinematic_chain_state_indices.push_back(qpos_chain);
+
+        // Check if this kinematic chain belongs to a robot
+        int robot_index = -1;
+
+        for(auto index : chain_body){
+            int body_joint_id = MuJoCo_helper->model->body_jntadr[index];
+            if(body_joint_id == -1) continue;
+            for(int i = 0; i < state_vector.robots.size(); i++){
+                for(int j = 0; j < state_vector.robots[i].joint_names.size(); j++) {
+                    int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT,
+                                              state_vector.robots[i].joint_names[j].c_str());
+                    if (joint_id == body_joint_id) {
+                        robot_index = i;
+                        break;
+                    }
+                }
+            }
+        }
+
+        state_vector.kin_chains_robot_indices.push_back(robot_index);
     }
 
     // Create separate kinematic chains, i.e. two legs part of two different kinematic chains
@@ -1371,6 +1403,47 @@ void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
             }
 
             state_vector.kinematic_chain_state_indices_independant.push_back(qpos_chain);
+
+            // Assign robot indices
+            int robot_index = -1;
+            for(auto index : chain_bodies){
+                int body_joint_id = MuJoCo_helper->model->body_jntadr[index];
+                if(body_joint_id == -1) continue;
+                for(int i = 0; i < state_vector.robots.size(); i++){
+                    for(int j = 0; j < state_vector.robots[i].joint_names.size(); j++) {
+                        int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT,
+                                                  state_vector.robots[i].joint_names[j].c_str());
+                        if (joint_id == body_joint_id) {
+                            robot_index = i;
+                            break;
+                        }
+                    }
+                }
+//                for(int i = 0; i < state_vector.robots.size(); i++){
+//
+//                    int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_vector.robots[i].root_name.c_str());
+//                    if(joint_id == body_joint_id){
+//                        robot_index = i;
+//                        break;
+//                    }
+//                }
+            }
+            state_vector.kin_chains_robot_indices_independant.push_back(robot_index);
+
+
+
+//            for(auto index : chain_bodies){
+//                std::string joint_name = mj_id2name(MuJoCo_helper->model, mjOBJ_JOINT, MuJoCo_helper->model->body_jntadr[index]);
+//                for(int i = 0; i < state_vector.robots.size(); i++){
+//                    for(int j = 0; j < state_vector.robots[i].joint_names.size(); j++){
+//                        if(joint_name == state_vector.robots[i].joint_names[j]){
+//                            robot_index = i;
+//                            break;
+//                        }
+//                    }
+//                }
+//            }
+//            state_vector.kin_chains_robot_indices_independant.push_back(robot_index);
         }
     }
 

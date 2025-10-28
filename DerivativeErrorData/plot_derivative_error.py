@@ -180,9 +180,9 @@ def plot_error_metrics(folder_path):
 # Example usage
 tasks = [
     "acrobot_1000_5",
-    # "pushing_no_clutter_2000_3",
-    # "impact_large_box_2000_8",
-    # "walker_run_200_3",
+    "pushing_no_clutter_2000_3",
+    "impact_large_box_2000_8",
+    "walker_run_200_3",
     "pushing_low_clutter_2000_3",
     "pushing_moderate_clutter_2000_3"
 ]

@@ -1,11 +1,11 @@
 modelFile: "/mujoco_models/anyMal/scene.xml"
 modelName: "/anyMal"
 timeStep: 0.005
-keypointMethod: "contact_change_sep"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
+keypointMethod: "set_interval"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 auto_adjust: false
-minN: 1000
+minN: 1
 maxN: 20
-mpc_horizon: 80
+mpc_horizon: 80 # was 80
 
 robots:
   anyMal:
@@ -29,28 +29,27 @@ residuals:
     target: [0]
     weight: 0.01 # 0.01
     weight_terminal: 10 #1
-#    weight: 0 # 0.01
-#    weight_terminal: 0 #1
   body_controls:
     target: [0]
     resid_dimension: 12
     weight: 0.04 # Position actuator
-#    weight: 0.0001 # Torque actuator
     weight_terminal: 0
-
-
 
 #residuals:
 #  body_height:
 #    target: [1.0]
-#    weight: 0.01
-#    weight_terminal: 10
+#    weight: 10 #0.005
+#    weight_terminal: 100
 #  body_upright:
 #    target: [0]
 #    weight: 0.01 # 0.01
 #    weight_terminal: 10 #1
+#  #    weight: 0 # 0.01
+#  #    weight_terminal: 0 #1
 #  body_controls:
 #    target: [0]
 #    resid_dimension: 12
-#    weight: 0.1 # Torque actuator
+#    #    weight: 0.04 # Position actuator
+#    #    weight: 0.04
+#    weight: 1 # Torque actuator
 #    weight_terminal: 0
