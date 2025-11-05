@@ -295,7 +295,316 @@ int assign_task(std::string task){
     return EXIT_SUCCESS;
 }
 
+int ApproximationAccuracyVersusOptimisationPerformance(int argc, char **argv){
+    // Arguments {task_name}, {num_data_points}, {opt_horizon}, {num_opt_iterations}
+    if(argc < 5) {
+        std::cerr << "NOT ENOUGH ARGUMENTS PROVIDED (task_name, num_data_points,  opt_horizon, num_opt_iterations) \n";
+        return EXIT_FAILURE;
+    }
+
+//    std::string config_file_name = "benchmark_derivatives";
+    yamlReader = std::make_shared<FileHandler>();
+
+    std::string task_name = argv[1];
+    int num_data_points = std::stoi(argv[2]);
+    int opt_horizon = std::stoi(argv[3]);
+    int num_opt_iterations = std::stoi(argv[4]);
+    assign_task(task_name);
+
+    // Instantiate the differentiator
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
+
+    activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    //Instantiate the visualiser
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
+
+    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
+                                           activeModelTranslator->MuJoCo_helper,
+                                           activeDifferentiator,
+                                           opt_horizon, activeVisualiser, yamlReader);
+
+    // Evaluate the parallelisation effectiveness of the dynamics derivatives computation
+    iLQROptimiser->Resize(activeModelTranslator->current_state_vector.dof,
+                          activeModelTranslator->current_state_vector.num_ctrl,
+                          opt_horizon);
+
+    std::vector<MatrixXd> A_matrices_SI1, B_matrices_SI1;
+//    std::vector<std::string> methods = {"SI2", "SI5", "SI20", "SI1000", "contact_change", "contact_change_dyn"};
+//    std::vector<std::string> keypoint_methods = {"set_interval", "set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn"};
+//    std::vector<int> min_n_values = {2, 5, 20, 1000, 1, 1};
+
+    std::vector<std::string> methods = {"SI2", "SI5", "SI10", "SI20", "SI100", "SI200", "SI500", "SI1000", "contact_change", "contact_change_dyn"};
+    std::vector<std::string> keypoint_methods = {"set_interval", "set_interval", "set_interval", "set_interval", "set_interval",
+                                                 "set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn"};
+    std::vector<int> min_n_values = {2, 5, 10, 20, 100, 200, 500, 1000, 1, 1};
+
+    // Create Vectors of MatrixXd to store A and B matrices for each method
+    std::vector<std::vector<MatrixXd>> A_matrices(methods.size()), B_matrices(methods.size());
+
+    // Size matrices appropriately
+    for(int i = 0; i < methods.size(); i++){
+        A_matrices[i].resize(opt_horizon, MatrixXd::Zero(activeModelTranslator->current_state_vector.dof, activeModelTranslator->current_state_vector.dof));
+        B_matrices[i].resize(opt_horizon, MatrixXd::Zero(activeModelTranslator->current_state_vector.dof, activeModelTranslator->current_state_vector.num_ctrl));
+    }
+
+    std::vector<std::vector<double>> mean_squared_error,
+            frobenius_errors,
+            elementnorm_mse_errors,
+            max_abs_error,
+            max_rel_error,
+            percentage_derivatives,
+            cost_reductions;
+
+    mean_squared_error.resize(methods.size());
+    frobenius_errors.resize(methods.size());
+    elementnorm_mse_errors.resize(methods.size());
+    max_abs_error.resize(methods.size());
+    max_rel_error.resize(methods.size());
+    cost_reductions.resize(methods.size());
+
+    percentage_derivatives.resize(methods.size());
+
+    // Loop over 100 tasks
+    int data_counter = 0;
+    int task_counter = 0;
+    int iteration_counter = 0;
+    const int NUM_DATA_POINTS = num_data_points;
+    const int MAX_ITERATIONS_PER_TASK = num_opt_iterations;
+
+    const double LAMBDA = 0.001;
+    bool new_base_task = true;
+    std::vector<MatrixXd> init_controls;
+    std::vector<MatrixXd> optimised_controls;
+    while(data_counter < NUM_DATA_POINTS){
+
+        std::vector<MatrixXd> init_opt_controls;
+        if(new_base_task){
+
+            std::string task_prefix = activeModelTranslator->model_name;
+            yamlReader->LoadTaskFromFile(task_prefix, task_counter, activeModelTranslator->full_state_vector,
+                                         activeModelTranslator->residual_list);
+            activeModelTranslator->full_state_vector.Update();
+            activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
+            activeModelTranslator->UpdateSceneVisualisation();
+
+            activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+            std::vector<MatrixXd> init_setup_controls = activeModelTranslator->CreateInitSetupControls(1000);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+
+            init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+            activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+            optimised_controls = init_opt_controls;
+
+            // Rollout the initial controls of the trajectory to give a sequence of states to compute dynamics derivatives from
+            iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->master_reset_data, true, init_opt_controls);
+
+            new_base_task = false;
+        }
+
+
+        // Render
+//        if(1){
+//            for(int t = 0; t < opt_horizon; t++){
+//                // Set the state
+//                activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->saved_systems_state_list[t]);
+////                activeModelTranslator->SetStateVectorQuat(iLQROptimiser->X_old[t], activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->full_state_vector);
+////                std::cout << "t = " << t << ", state = " << iLQROptimiser->X_old[t].transpose() << "\n";
+//
+//                mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+//
+//                activeVisualiser->render("Visualise");
+//            }
+//        }
+
+
+        // Perform some tests where we optimise the trajectory with SI1 and our contact method and compare opt performance
+        // As well as logging error metrics to compare against
+
+        // ----- Compute the accurate dynamics derivatives via SI1 method -----
+        keypoint_method method;
+        method = iLQROptimiser->ReturnCurrentKeypointMethod();
+        method.min_N = 1;
+        method.name = "set_interval";
+        iLQROptimiser->SetCurrentKeypointMethod(method);
+//        iLQROptimiser->GenerateDerivatives();
+
+        init_opt_controls = optimised_controls;
+//        std::cout << "init opt controls [0] = \n" << init_opt_controls[0] << "\n";
+
+
+        for(int i = 0; i < methods.size(); i++){
+            method.min_N = min_n_values[i];
+            method.name = keypoint_methods[i];
+            iLQROptimiser->SetCurrentKeypointMethod(method);
+
+            // Always Set Lambda to the same constant
+            iLQROptimiser->lambda = LAMBDA;
+            std::vector<MatrixXd> curr_opt_controls = iLQROptimiser->Optimise(activeModelTranslator->MuJoCo_helper->master_reset_data,
+                                                        init_opt_controls, 1,
+                                                        1, opt_horizon);
+
+            cost_reductions[i].push_back(iLQROptimiser->cost_reduction);
+
+            A_matrices[i] = iLQROptimiser->A;
+            B_matrices[i] = iLQROptimiser->B;
+
+            double average_percent_derivs = 0.0;
+            for(int j = 0; j < activeModelTranslator->current_state_vector.dof; j++){
+                average_percent_derivs += iLQROptimiser->keypoint_generator->last_percentages[j];
+            }
+            average_percent_derivs /= activeModelTranslator->current_state_vector.dof;
+            percentage_derivatives[i].push_back(average_percent_derivs);
+        }
+
+
+        // Always Optimise with Set Interval 1
+        method.min_N = 1;
+        method.name = "set_interval";
+        iLQROptimiser->SetCurrentKeypointMethod(method);
+        // Always Set Lambda to the same constant
+        iLQROptimiser->lambda = LAMBDA;
+        optimised_controls = iLQROptimiser->Optimise(activeModelTranslator->MuJoCo_helper->master_reset_data,
+                                                     init_opt_controls, 1,
+                                                     1, opt_horizon);
+
+        A_matrices_SI1 = iLQROptimiser->A;
+        B_matrices_SI1 = iLQROptimiser->B;
+
+        double cost_reduction_baseline = iLQROptimiser->cost_reduction;
+
+        // Compute Error metrics for all methods
+        for(int i = 0; i < methods.size(); i++){
+            double mse, frobenius_error, elementnorm_mse_error, max_abs_err, max_rel_err;
+            ApproximationError(A_matrices_SI1, B_matrices_SI1, A_matrices[i], B_matrices[i],
+                               mse, frobenius_error, elementnorm_mse_error, max_abs_err, max_rel_err);
+
+            mean_squared_error[i].push_back(mse);
+            frobenius_errors[i].push_back(frobenius_error);
+            elementnorm_mse_errors[i].push_back(elementnorm_mse_error);
+            max_abs_error[i].push_back(max_abs_err);
+            max_rel_error[i].push_back(max_rel_err);
+
+//            cost_reductions[i].back() -= cost_reduction_baseline;
+        }
+
+        // Progress the task counter and task
+        if(iteration_counter < MAX_ITERATIONS_PER_TASK){
+            iteration_counter++;
+        }
+        else{
+            iteration_counter = 0;
+            task_counter++;
+            new_base_task = true;
+        }
+
+        data_counter++;
+    }
+
+    // Compute average approximation errors and percentage derivatives for all methods
+    std::vector<double> averaged_mse_error(methods.size(), 0.0);
+    std::vector<double> averaged_frobenius_error(methods.size(), 0.0);
+    std::vector<double> averaged_elementnorm_mse_error(methods.size(), 0.0);
+    std::vector<double> average_max_abs_error(methods.size(), 0.0);
+    std::vector<double> average_max_rel_error(methods.size(), 0.0);
+    std::vector<double> average_cost_reductions(methods.size(), 0.0);
+
+    std::vector<double> average_percentage_derivatives(methods.size(), 0.0);
+
+    for(int i = 0; i < methods.size(); i++){
+        for(int j = 0; j < NUM_DATA_POINTS; j++){
+            averaged_mse_error[i] += mean_squared_error[i][j];
+            averaged_frobenius_error[i] += frobenius_errors[i][j];
+            averaged_elementnorm_mse_error[i] += elementnorm_mse_errors[i][j];
+            average_max_abs_error[i] += max_abs_error[i][j];
+            average_max_rel_error[i] += max_rel_error[i][j];
+            average_cost_reductions[i] += cost_reductions[i][j];
+
+            average_percentage_derivatives[i] += percentage_derivatives[i][j];
+        }
+        averaged_mse_error[i] /= NUM_DATA_POINTS;
+        averaged_frobenius_error[i] /= NUM_DATA_POINTS;
+        averaged_elementnorm_mse_error[i] /= NUM_DATA_POINTS;
+        average_max_abs_error[i] /= NUM_DATA_POINTS;
+        average_max_rel_error[i] /= NUM_DATA_POINTS;
+        average_cost_reductions[i] /= NUM_DATA_POINTS;
+
+        average_percentage_derivatives[i] /= NUM_DATA_POINTS;
+    }
+
+    const int w_method = 20;
+    const int w_num    = 18;
+
+    std::cout << std::left
+              << std::setw(w_method) << "Method"
+              << std::right
+              << std::setw(w_num) << "MSE"
+              << std::setw(w_num) << "Frob Err"
+              << std::setw(w_num) << "Elem Norm MSE"
+              << std::setw(w_num) << "Max Error (abs)"
+              << std::setw(w_num) << "Max Error (rel)"
+              << std::setw(w_num) << "% Cost Reduct"
+              << std::setw(w_num) << "% Derivatives"
+              << "\n";
+
+    for (int i = 0; i < methods.size(); i++) {
+        std::cout << std::left << std::setw(w_method) << methods[i]
+                  << std::right << std::setw(w_num) << std::fixed << std::setprecision(4) << averaged_mse_error[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(5) << averaged_frobenius_error[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(5) << averaged_elementnorm_mse_error[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(4) << average_max_abs_error[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(4) << average_max_rel_error[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(2) << average_cost_reductions[i]
+                  << std::setw(w_num) << std::fixed << std::setprecision(2) << average_percentage_derivatives[i]
+                  << "\n";
+    }
+
+    // --------------- Save the results to a file --------------------------
+    // directory "DerivativeErrorData / {{task_name}_{opt_horizon}_{num_iterations}} / {method_name}.csv
+
+    std::string project_parent_path = __FILE__;
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+
+    // Check folder exists, if it does not create one
+    std::string folder_name = project_parent_path + "/DerivativeErrorData/" + task_name + "_" + std::to_string(opt_horizon) + "_" + std::to_string(num_opt_iterations) + "/";
+    if(!std::filesystem::exists(folder_name)){
+        std::filesystem::create_directories(folder_name);
+    }
+
+    for(int i = 0; i < methods.size(); i++){
+        std::string file_path = folder_name + methods[i] + ".csv";
+        std::ofstream file(file_path);
+        if(file.is_open()){
+            file << "MSE,Frobenius Error,Elementnorm Error,Max Error (abs),Max Error (rel),Cost Reduction,% Derivatives\n";
+            for(int j = 0; j < NUM_DATA_POINTS; j++){
+                file << mean_squared_error[i][j] << ","
+                     << frobenius_errors[i][j] << ","
+                     << elementnorm_mse_errors[i][j] << ","
+                     << max_abs_error[i][j] << ","
+                     << max_rel_error[i][j] << ","
+                     << cost_reductions[i][j] << ","
+                     << percentage_derivatives[i][j] << "\n";
+            }
+            file.close();
+        }
+        else{
+            std::cerr << "Could not open file: " << file_path << "\n";
+        }
+    }
+
+    return EXIT_SUCCESS;
+}
+
 int main(int argc, char **argv) {
+
+    if(1){
+        ApproximationAccuracyVersusOptimisationPerformance(argc, argv);
+        return EXIT_SUCCESS;
+    }
 
 
     // Arguments {task_name}, {num_data_points}, {opt_horizon}, {num_opt_iterations}

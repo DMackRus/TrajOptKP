@@ -479,9 +479,6 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
             // Also add keypoints at t + 1
 //            next_row_keypoint = true;
 //            next_row = row;
-
-            // TODO - something more sophisticated, does this wipeout previous robot contact rules at t-1?
-//            kp_robot_contact[t-1] = robot_indices;
         }
         kp_contact.push_back(row);
     }
@@ -499,13 +496,13 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
     }
 
     // Print out the robot keypoints here
-    for(int i = 0; i < kp_robot_contact.size(); i++){
-        std::cout << "Robot " << i << " keypoints: ";
-        for(int t = 0; t < kp_robot_contact[i].size(); t++){
-            std::cout << kp_robot_contact[i][t] << " ";
-        }
-        std::cout << "\n";
-    }
+//    for(int i = 0; i < kp_robot_contact.size(); i++){
+//        std::cout << "Robot " << i << " keypoints: ";
+//        for(int t = 0; t < kp_robot_contact[i].size(); t++){
+//            std::cout << kp_robot_contact[i][t] << " ";
+//        }
+//        std::cout << "\n";
+//    }
 
     // --------------------------------------------------------------------
     //
@@ -576,6 +573,7 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
                         if(std::abs(new_robot_joint_positions[i] - last_robot_joint_positions[i]) >
                            joint_change_threshold){
                             robot_keypoint_required_flag = true;
+//                            std::cout << "Pos rule triggered \n";
                         }
 
                         if(robot_keypoint_required_flag){
@@ -586,6 +584,7 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
                         if(std::abs(new_robot_joint_velocities[i] - last_robot_joint_velocities[i]) >
                            robot.vel_change_threshold){
                             robot_keypoint_required_flag = true;
+//                            std::cout << "Vel rule triggered \n";
                         }
 
                         if(robot_keypoint_required_flag){
@@ -611,6 +610,7 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
                             if(std::abs(new_robot_joint_controls[i] - last_robot_joint_controls[i]) >
                                control_change_threshold){
                                 robot_keypoint_required_flag = true;
+//                                std::cout << "control rule triggered\n";
                                 break;
                             }
                         }
@@ -697,22 +697,22 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
     }
     else if(current_keypoint_method.name == "contact_change"){
         // Print out contact sequence
-        for(int t = 0; t < horizon; t++){
-            std::cout << "time " << t << " :";
-            for(const auto & contact : trajectory_contacts[t]){
-                std::cout << " (" << contact.first << ", " << contact.second << ") ";
-            }
-            std::cout << "\n";
-        }
+//        for(int t = 0; t < horizon; t++){
+//            std::cout << "time " << t << " :";
+//            for(const auto & contact : trajectory_contacts[t]){
+//                std::cout << " (" << contact.first << ", " << contact.second << ") ";
+//            }
+//            std::cout << "\n";
+//        }
         ContactChangeDyn(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list, false);
-        for(int t = 0; t < horizon; t++){
-            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
-            std::cout << "time " << t << " :";
-            for(int i = 0; i < keypoints[t].size(); i++){
-                std::cout << keypoints[t][i] << " ";
-            }
-            std::cout << "\n";
-        }
+//        for(int t = 0; t < horizon; t++){
+//            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
+//            std::cout << "time " << t << " :";
+//            for(int i = 0; i < keypoints[t].size(); i++){
+//                std::cout << keypoints[t][i] << " ";
+//            }
+//            std::cout << "\n";
+//        }
     }
     else if(current_keypoint_method.name == "contact_change_sep"){
         // Print out contact sequence
@@ -726,22 +726,22 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
         ContactAwareKeypointsSep(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list);
     }
     else if(current_keypoint_method.name == "contact_change_dyn"){
-        for(int t = 0; t < horizon; t++){
-            std::cout << "time " << t << " :";
-            for(const auto & contact : trajectory_contacts[t]){
-                std::cout << " (" << contact.first << ", " << contact.second << ") ";
-            }
-            std::cout << "\n";
-        }
+//        for(int t = 0; t < horizon; t++){
+//            std::cout << "time " << t << " :";
+//            for(const auto & contact : trajectory_contacts[t]){
+//                std::cout << " (" << contact.first << ", " << contact.second << ") ";
+//            }
+//            std::cout << "\n";
+//        }
         ContactChangeDyn(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list, true);
-        for(int t = 0; t < horizon; t++){
-            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
-            std::cout << "time " << t << " :";
-            for(int i = 0; i < keypoints[t].size(); i++){
-                std::cout << keypoints[t][i] << " ";
-            }
-            std::cout << "\n";
-        }
+//        for(int t = 0; t < horizon; t++){
+//            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
+//            std::cout << "time " << t << " :";
+//            for(int i = 0; i < keypoints[t].size(); i++){
+//                std::cout << keypoints[t][i] << " ";
+//            }
+//            std::cout << "\n";
+//        }
     }
     else{
         std::cerr << "ERROR: key point method not recognised \n";

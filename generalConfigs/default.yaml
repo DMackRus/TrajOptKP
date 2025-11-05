@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "bimanual_pickup"
+task: "pushing_no_clutter"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -35,7 +35,7 @@ task: "bimanual_pickup"
 optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
 
 # Run mode for the program
-runMode: "MPC_until_completion"
+runMode: "Optimise_once"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.

@@ -15,9 +15,9 @@ robots:
     torqueControl: true
     torqueLimits: [1, 1, 1, 1, 1, 1]
     startPos: [0, 0, 0, 1, -1, 0.2, 0, 0, 0]
-    position_threshold: 0.2  # Value between 0 and 1 - uses joint limits
-    velocity_threshold: 8    # Raw velocity threshold value
-    control_threshold: 0.5   # Value between 0 and 1 - uses control limits
+    position_threshold: 0.4  # Value between 0 and 1 - uses joint limits
+    velocity_threshold: 20    # Raw velocity threshold value
+    control_threshold: 0.8   # Value between 0 and 1 - uses control limits
 
 residuals:
   body_height:
