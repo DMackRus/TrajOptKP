@@ -102,6 +102,11 @@ void FileHandler::ReadModelConfigFile(const std::string& yamlFilePath, task &_ta
 //                std::string joint_name = robot_it->second["root_name"].as<std::string>() + suffixes[i];
 //                jointNames.push_back(joint_name);
 //            }
+
+            for(int i = 0; i < 3; i++){
+                tempRobot.root_start_linear_pos[i] = robot_it->second["root_start_linear_pos"][i].as<double>();
+                tempRobot.root_start_angular_pos[i] = robot_it->second["root_start_angular_pos"][i].as<double>();
+            }
         }
         else{
             root_name = "-";

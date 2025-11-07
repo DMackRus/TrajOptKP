@@ -1,7 +1,7 @@
 modelFile: "/mujoco_models/anyMal/scene.xml"
 modelName: "/anyMal"
 timeStep: 0.005
-keypointMethod: "contact_change_dyn"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
+keypointMethod: "contact_change"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 auto_adjust: false
 minN: 1
 maxN: 20
@@ -15,6 +15,8 @@ robots:
     torqueControl: true
     torqueLimits: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
     startPos: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    root_start_linear_pos: [0, 0, 0.5]
+    root_start_angular_pos: [0, 0, 0]
     position_threshold: 0.1  # Value between 0 and 1 - uses joint limits
     velocity_threshold: 0.1    # Raw velocity threshold value
     control_threshold: 0.1   # Value between 0 and 1 - uses control limits

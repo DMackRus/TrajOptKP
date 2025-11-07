@@ -1177,6 +1177,18 @@ void ModelTranslator::InitialiseSystemToStartState(mjData *d) {
 
     // Initialise robot positions to start configuration
     for(auto & robot : full_state_vector.robots){
+
+        // Check if robot has a root body
+        if(robot.root_name != "-"){
+            pose_6 root_pose;
+            for(int i = 0; i < 3; i++){
+                root_pose.position[i] = robot.root_start_linear_pos[i];
+                root_pose.orientation[i] = robot.root_start_angular_pos[i];
+            }
+            MuJoCo_helper->SetBodyPoseAngle(robot.root_name, root_pose, d);
+
+        }
+
         std::vector<double> zero_robot_velocities(robot.joint_names.size(), 0.0);
         MuJoCo_helper->SetRobotJointPositions(robot.name, robot.start_pos, d);
         MuJoCo_helper->SetRobotJointsVelocities(robot.name, zero_robot_velocities, d);
@@ -1342,110 +1354,227 @@ void ModelTranslator::CreateKinematicChain(stateVectorList &state_vector){
         state_vector.kin_chains_robot_indices.push_back(robot_index);
     }
 
-    // Create separate kinematic chains, i.e. two legs part of two different kinematic chains
-    // Stage 3 - Create separate kinematic chains (e.g. left leg, right leg), each rooted at body 1
-    int root_body = 1; // TODO - This assumes body 1 is the root (e.g. the torso). Update if needed.
 
-    for (int i = 1; i < MuJoCo_helper->model->nbody; i++) {
-        if (MuJoCo_helper->model->body_parentid[i] == root_body) {
-            // New branch (e.g. leg or arm)
-            vector<int> chain_bodies;
-            queue<int> q;
-            q.push(i);
 
-            // Add root body to start of chain
-            chain_bodies.push_back(root_body);
 
-            while (!q.empty()) {
-                int body = q.front();
-                q.pop();
-                chain_bodies.push_back(body);
 
-                for (int j = 1; j < MuJoCo_helper->model->nbody; j++) {
-                    if (MuJoCo_helper->model->body_parentid[j] == body) {
-                        q.push(j);
+    // Stage 3 - Create independent kinematic chains (per world child)
+    for (int root_body = 1; root_body < MuJoCo_helper->model->nbody; root_body++) {
+        if (MuJoCo_helper->model->body_parentid[root_body] != 0)
+            continue; // only start chains from world children
+
+        // For this root, find all direct children to create sub-branches (if any)
+        bool has_children = false;
+        for (int child = 1; child < MuJoCo_helper->model->nbody; child++) {
+            if (MuJoCo_helper->model->body_parentid[child] == root_body) {
+                has_children = true;
+
+                vector<int> chain_bodies;
+                queue<int> q;
+                q.push(child);
+
+                // Include the root of this robot/object
+                chain_bodies.push_back(root_body);
+
+                while (!q.empty()) {
+                    int body = q.front();
+                    q.pop();
+                    chain_bodies.push_back(body);
+
+                    for (int j = 1; j < MuJoCo_helper->model->nbody; j++) {
+                        if (MuJoCo_helper->model->body_parentid[j] == body) {
+                            q.push(j);
+                        }
                     }
                 }
-            }
 
+                state_vector.kinematic_chain_bodies_independant.push_back(chain_bodies);
+
+                // --- Copy your existing joint/state index logic here ---
+                vector<int> qpos_chain;
+                for (const auto &body : chain_bodies) {
+                    int joint_id = MuJoCo_helper->model->body_jntadr[body];
+                    if (joint_id == -1) continue;
+
+                    for (int j = 0; j < MuJoCo_helper->model->body_jntnum[body]; j++) {
+                        int jnt_adr = joint_id + j;
+                        if (MuJoCo_helper->model->jnt_type[jnt_adr] == mjJNT_FREE) {
+                            for (int k = 0; k < 6; k++) {
+                                int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr] + k;
+                                for (int l = 0; l < state_vector.q_pos_adr.size(); l++) {
+                                    if (qpos_adr == state_vector.q_pos_adr[l]) {
+                                        int index = QPosIndexToStateIndex(qpos_adr, state_vector);
+                                        if (index >= 0) qpos_chain.push_back(index);
+                                    }
+                                }
+                            }
+                        } else {
+                            int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr];
+                            int index = QPosIndexToStateIndex(qpos_adr, state_vector);
+                            if (index >= 0) qpos_chain.push_back(index);
+                        }
+                    }
+                }
+
+                state_vector.kinematic_chain_state_indices_independant.push_back(qpos_chain);
+
+                // --- Robot index lookup (your existing logic) ---
+                int robot_index = -1;
+                for (auto index : chain_bodies) {
+                    int body_joint_id = MuJoCo_helper->model->body_jntadr[index];
+                    if (body_joint_id == -1) continue;
+                    for (int i = 0; i < state_vector.robots.size(); i++) {
+                        for (int j = 0; j < state_vector.robots[i].joint_names.size(); j++) {
+                            int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT,
+                                                      state_vector.robots[i].joint_names[j].c_str());
+                            if (joint_id == body_joint_id) {
+                                robot_index = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                state_vector.kin_chains_robot_indices_independant.push_back(robot_index);
+            }
+        }
+
+        // Handle case where root_body itself is a free-floating body (no children)
+        if (!has_children) {
+            vector<int> chain_bodies = { root_body };
             state_vector.kinematic_chain_bodies_independant.push_back(chain_bodies);
 
-            // Now convert to state indices like before
             vector<int> qpos_chain;
-            for (const auto &body : chain_bodies) {
-                int joint_id = MuJoCo_helper->model->body_jntadr[body];
-
-                if(joint_id == -1) continue;
-
-                for(int j = 0; j < MuJoCo_helper->model->body_jntnum[body]; j++) {
+            int joint_id = MuJoCo_helper->model->body_jntadr[root_body];
+            if (joint_id != -1) {
+                for (int j = 0; j < MuJoCo_helper->model->body_jntnum[root_body]; j++) {
                     int jnt_adr = joint_id + j;
-
-                    if(MuJoCo_helper->model->jnt_type[jnt_adr] == mjJNT_FREE) {
+                    if (MuJoCo_helper->model->jnt_type[jnt_adr] == mjJNT_FREE) {
                         for (int k = 0; k < 6; k++) {
                             int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr] + k;
                             for (int l = 0; l < state_vector.q_pos_adr.size(); l++) {
                                 if (qpos_adr == state_vector.q_pos_adr[l]) {
                                     int index = QPosIndexToStateIndex(qpos_adr, state_vector);
-                                    if(index >= 0) {
-                                        qpos_chain.push_back(index);
-                                    }
+                                    if (index >= 0) qpos_chain.push_back(index);
                                 }
                             }
                         }
                     } else {
                         int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr];
                         int index = QPosIndexToStateIndex(qpos_adr, state_vector);
-                        if(index >= 0) {
-                            qpos_chain.push_back(index);
-                        }
+                        if (index >= 0) qpos_chain.push_back(index);
                     }
                 }
             }
-
             state_vector.kinematic_chain_state_indices_independant.push_back(qpos_chain);
+            state_vector.kin_chains_robot_indices_independant.push_back(-1);
+        }
+    }
 
-            // Assign robot indices
-            int robot_index = -1;
-            for(auto index : chain_bodies){
-                int body_joint_id = MuJoCo_helper->model->body_jntadr[index];
-                if(body_joint_id == -1) continue;
-                for(int i = 0; i < state_vector.robots.size(); i++){
-                    for(int j = 0; j < state_vector.robots[i].joint_names.size(); j++) {
-                        int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT,
-                                                  state_vector.robots[i].joint_names[j].c_str());
-                        if (joint_id == body_joint_id) {
-                            robot_index = i;
-                            break;
-                        }
-                    }
-                }
-//                for(int i = 0; i < state_vector.robots.size(); i++){
+    // Create separate kinematic chains, i.e. two legs part of two different kinematic chains
+    // Stage 3 - Create separate kinematic chains (e.g. left leg, right leg), each rooted at body 1
+//    int root_body = 1; // TODO - This assumes body 1 is the root (e.g. the torso). Update if needed.
 //
-//                    int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_vector.robots[i].root_name.c_str());
-//                    if(joint_id == body_joint_id){
-//                        robot_index = i;
-//                        break;
+//    for (int i = 1; i < MuJoCo_helper->model->nbody; i++) {
+//        if (MuJoCo_helper->model->body_parentid[i] == root_body) {
+//            // New branch (e.g. leg or arm)
+//            vector<int> chain_bodies;
+//            queue<int> q;
+//            q.push(i);
+//
+//            // Add root body to start of chain
+//            chain_bodies.push_back(root_body);
+//
+//            while (!q.empty()) {
+//                int body = q.front();
+//                q.pop();
+//                chain_bodies.push_back(body);
+//
+//                for (int j = 1; j < MuJoCo_helper->model->nbody; j++) {
+//                    if (MuJoCo_helper->model->body_parentid[j] == body) {
+//                        q.push(j);
 //                    }
 //                }
-            }
-            state_vector.kin_chains_robot_indices_independant.push_back(robot_index);
-
-
-
+//            }
+//
+//            state_vector.kinematic_chain_bodies_independant.push_back(chain_bodies);
+//
+//            // Now convert to state indices like before
+//            vector<int> qpos_chain;
+//            for (const auto &body : chain_bodies) {
+//                int joint_id = MuJoCo_helper->model->body_jntadr[body];
+//
+//                if(joint_id == -1) continue;
+//
+//                for(int j = 0; j < MuJoCo_helper->model->body_jntnum[body]; j++) {
+//                    int jnt_adr = joint_id + j;
+//
+//                    if(MuJoCo_helper->model->jnt_type[jnt_adr] == mjJNT_FREE) {
+//                        for (int k = 0; k < 6; k++) {
+//                            int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr] + k;
+//                            for (int l = 0; l < state_vector.q_pos_adr.size(); l++) {
+//                                if (qpos_adr == state_vector.q_pos_adr[l]) {
+//                                    int index = QPosIndexToStateIndex(qpos_adr, state_vector);
+//                                    if(index >= 0) {
+//                                        qpos_chain.push_back(index);
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    } else {
+//                        int qpos_adr = MuJoCo_helper->model->jnt_dofadr[jnt_adr];
+//                        int index = QPosIndexToStateIndex(qpos_adr, state_vector);
+//                        if(index >= 0) {
+//                            qpos_chain.push_back(index);
+//                        }
+//                    }
+//                }
+//            }
+//
+//            state_vector.kinematic_chain_state_indices_independant.push_back(qpos_chain);
+//
+//            // Assign robot indices
+//            int robot_index = -1;
 //            for(auto index : chain_bodies){
-//                std::string joint_name = mj_id2name(MuJoCo_helper->model, mjOBJ_JOINT, MuJoCo_helper->model->body_jntadr[index]);
+//                int body_joint_id = MuJoCo_helper->model->body_jntadr[index];
+//                if(body_joint_id == -1) continue;
 //                for(int i = 0; i < state_vector.robots.size(); i++){
-//                    for(int j = 0; j < state_vector.robots[i].joint_names.size(); j++){
-//                        if(joint_name == state_vector.robots[i].joint_names[j]){
+//                    for(int j = 0; j < state_vector.robots[i].joint_names.size(); j++) {
+//                        int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT,
+//                                                  state_vector.robots[i].joint_names[j].c_str());
+//                        if (joint_id == body_joint_id) {
 //                            robot_index = i;
 //                            break;
 //                        }
 //                    }
 //                }
+////                for(int i = 0; i < state_vector.robots.size(); i++){
+////
+////                    int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_vector.robots[i].root_name.c_str());
+////                    if(joint_id == body_joint_id){
+////                        robot_index = i;
+////                        break;
+////                    }
+////                }
 //            }
 //            state_vector.kin_chains_robot_indices_independant.push_back(robot_index);
-        }
-    }
+//
+//
+//
+////            for(auto index : chain_bodies){
+////                std::string joint_name = mj_id2name(MuJoCo_helper->model, mjOBJ_JOINT, MuJoCo_helper->model->body_jntadr[index]);
+////                for(int i = 0; i < state_vector.robots.size(); i++){
+////                    for(int j = 0; j < state_vector.robots[i].joint_names.size(); j++){
+////                        if(joint_name == state_vector.robots[i].joint_names[j]){
+////                            robot_index = i;
+////                            break;
+////                        }
+////                    }
+////                }
+////            }
+////            state_vector.kin_chains_robot_indices_independant.push_back(robot_index);
+//        }
+//    }
 
     // TODO - Do I need to sort the kinematic chains so they are in ascending order???
 }

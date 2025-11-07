@@ -210,23 +210,23 @@ inline std::vector<int> KeypointGenerator::AddKeypointsFromContactSeparate(const
         }
     }
 
-    // TODO - Maybe make thisoptional?
+    // TODO - Maybe make this optional?
     // Check for any other affected kinematic chains
-//    for(auto & other_contact : all_contacts) {
-//        if(other_contact == contact) continue; // Skip the current contact
-//
-//        // Check if the other contact is in the same kinematic chain
-//        for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
-//            const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
-//            for (int body : body_chain) {
-//                if (body == other_contact.first || body == other_contact.second) {
-//                    // Store the index of the chain instead of the body
-//                    relevant_kinematic_chains.push_back(static_cast<int>(i));
-//                    break; // break the inner loop
-//                }
-//            }
-//        }
-//    }
+    for(auto & other_contact : all_contacts) {
+        if(other_contact == contact) continue; // Skip the current contact
+
+        // Check if the other contact is in the same kinematic chain
+        for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
+            const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
+            for (int body : body_chain) {
+                if (body == other_contact.first || body == other_contact.second) {
+                    // Store the index of the chain instead of the body
+                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+                    break; // break the inner loop
+                }
+            }
+        }
+    }
 
     // Stage 2 - convert all bodies to state vector indices
     for( const auto &kinematic_chain : relevant_kinematic_chains){
@@ -234,19 +234,6 @@ inline std::vector<int> KeypointGenerator::AddKeypointsFromContactSeparate(const
             contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices_independant[kinematic_chain][i]);
         }
     }
-
-//    for(int i = 0; i < contact_state_indices.size(); i++){
-//        int qposindex = Model_translator->StateIndexToQposIndex(contact_state_indices[i], state_vector_list);
-//
-//
-//    }
-//
-//    // Compute any robot indices that are involved in the change in contact
-//    int joint_id = mj_name2id(MuJoCo_helper->model, mjOBJ_JOINT, state_vector_list.robots[i].joint_names[0].c_str());
-//    int qpos_index = MuJoCo_helper->model->jnt_qposadr[joint_id];
-//    int state_index = Model_translator->QPosIndexToStateIndex(qpos_index, state_vector_list);
-//    KinematicChain(state_index, state_vector_list, row);
-//    robot_indices.push_back();
 
     return contact_state_indices;
 }

@@ -133,9 +133,9 @@ int main(int argc, char **argv){
         int re_add_dofs;
         double K_threshold;
 
-        if(argc > 2){
-            task_horizon = std::atoi(argv[2]);
-        }
+//        if(argc > 2){
+//            task_horizon = std::atoi(argv[2]);
+//        }
 
         if(argc > 3){
             task_timeout = std::atoi(argv[3]);
@@ -420,7 +420,7 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     std::cout << "optimisation horizon is: " << task_horizon << " task timeout : " << task_timeout << "\n";
 
     keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
-    int num_trials = 2;
+    int num_trials = 100;
 
     // --------------------- Set interval 1 ----------------------------------
     keypoint_method.name = "set_interval";
@@ -458,8 +458,15 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
 
     TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
 
-    // --------------------- Contact_change ----------------------------------
-    keypoint_method.name = "contact_change_sep";
+    // --------------------- Contact_change sep ----------------------------------
+//    keypoint_method.name = "contact_change_sep";
+//    keypoint_method.min_N = 1;
+//    keypoint_method.max_N = 1;
+//    keypoint_method.auto_adjust = false;
+//    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    // --------------------- Contact_change Dyn ----------------------------------
+    keypoint_method.name = "contact_change_dyn";
     keypoint_method.min_N = 1;
     keypoint_method.max_N = 1;
     keypoint_method.auto_adjust = false;
@@ -849,20 +856,20 @@ void GenTestingData::AsyncronusMPCWorker(const std::string& method_directory, in
             if(bestMatchingStateIndex >= task_horizon){
                 bestMatchingStateIndex = task_horizon - 1;
             }
-            for(int i = 0; i < task_horizon - 1; i++){
-//                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
-//                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
-                double currError = 0.0f;
-                for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
-                    // TODO - im not sure about this, should we use full state?
-                    currError += abs(optimiser->X_old[i](j) - current_state(j));
-                }
-                if(currError < smallestError){
-                    smallestError = currError;
-                    bestMatchingStateIndex = i;
-                }
-            }
-            bestMatchingStateIndex = 1;
+//            for(int i = 0; i < task_horizon - 1; i++){
+////                std::cout << "i: " << i << " state: " << activeOptimiser->X_old[i].transpose() << std::endl;
+////                std::cout << "correct state: " << current_vis_state.transpose() << std::endl;
+//                double currError = 0.0f;
+//                for(int j = 0; j < activeModelTranslator->current_state_vector.dof*2; j++){
+//                    // TODO - im not sure about this, should we use full state?
+//                    currError += abs(optimiser->X_old[i](j) - current_state(j));
+//                }
+//                if(currError < smallestError){
+//                    smallestError = currError;
+//                    bestMatchingStateIndex = i;
+//                }
+//            }
+//            bestMatchingStateIndex = 1;
 
             // Mutex lock
             {

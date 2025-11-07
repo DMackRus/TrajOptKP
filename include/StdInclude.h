@@ -18,6 +18,8 @@ struct robot{
     std::vector<std::string> joint_names;
     std::vector<std::string> actuator_names;
     std::vector<double> start_pos;
+    double root_start_linear_pos[3];
+    double root_start_angular_pos[3];
     double pos_change_threshold;
     double vel_change_threshold;
     double control_change_threshold;

@@ -10,7 +10,7 @@ import yaml
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "walker_run"
+task_name = "push_mcl"
 #task_name = "walker_run"
 base_dir = ".."
 run_mode = "asynchronus"
@@ -132,7 +132,8 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
                 means[j, i] = data_frame[graph_name].mean()
                 confidence_intervals[j, i] = z * (data_frame[graph_name].std() / np.sqrt(num_data_rows))
                 
-            axes[i].bar(x, means[:,i], yerr=confidence_intervals[:,i], capsize=5, color=bar_colors)
+            # axes[i].bar(x, means[:,i], yerr=confidence_intervals[:,i], capsize=5, color=bar_colors)
+            axes[i].violinplot([data_frame[graph_name].dropna() for data_frame in dataframes_iLQR], positions=x, showmeans=True, showmedians=False)
             axes[i].set_ylabel(graph_name, fontsize = 13)
             
             
