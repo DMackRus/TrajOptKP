@@ -18,6 +18,8 @@
 #include "ModelTranslator/Humanoid.h"
 #include "ModelTranslator/PlaceObject.h"
 #include "ModelTranslator/ImpactLargeBox.h"
+#include "ModelTranslator/anyMal.h"
+#include "ModelTranslator/BimanualPickup.h"
 
 class GenTestingData{
 

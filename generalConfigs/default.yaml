@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "anyMal"
+task: "bimanual_pickup"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -45,7 +45,7 @@ runMode: "MPC_until_completion"
 # "GA_keypoint_search"      - Perform a Genetic algorithm search strategy to find optimal key-point parameters for a task.
 
 # Extra testing modes for debugging/generating testing data
-# "Generate_test_scenes"          - Generate a set of randomly generated test scenes for the task.
+# "Generate_test_scenes"          - Generate a set of randomly generated test scenes for the task. (OBSOLETE - moved to GenTestingData)
 # "Generate_openloop_data"        - Loop through all the test scenes, using current optimiser and perform open loop optimisation tests.
 # "Generate_asynchronus_mpc_data" - Loop through all the tests scenes, using current optimiser and perform asyncronus MPC optimisation.
 # "Generate_syncronus_mpc_data"   - Loop through all the tests scenes, using current optimiser and perform syncronus MPC optimisation.
@@ -56,7 +56,7 @@ runMode: "MPC_until_completion"
 # "Analyse_toy_contact"           - Analyse the derivatives in toy example with contact.
 # "Analyse_toy_contact_keypoints" - Analyse the derivatives in toy example with contact and keypoint method.
 
-taskInitMode: "fromYAML"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+taskInitMode: "random"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 0                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.

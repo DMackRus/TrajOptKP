@@ -139,7 +139,9 @@ add_executable(gen_testing_data src/GenTestingData.cpp
         src/ModelTranslator/PistonBlock.cpp
         src/ModelTranslator/PlaceObject.cpp
         src/ModelTranslator/ArticulatedContact.cpp
-        src/ModelTranslator/ImpactLargeBox.cpp)
+        src/ModelTranslator/ImpactLargeBox.cpp
+        src/ModelTranslator/anyMal.cpp
+        src/ModelTranslator/BimanualPickup.cpp)
 
 # Benchmark computing dynamics derivatives code
 add_executable(benchmark_derivatives src/benchmark_derivatives.cpp

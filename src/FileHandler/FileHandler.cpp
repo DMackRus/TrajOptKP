@@ -421,6 +421,16 @@ void FileHandler::SaveTaskToFile(std::string file_prefix, int file_num, const st
     // -------------------- Start values --------------------------------
     // Robot positions
     for(auto & robot : state_vector.robots){
+
+        // If the robot has a root body
+        if(robot.root_name != "-"){
+            fileOutput << robot.root_start_linear_pos[0] << ",";
+            fileOutput << robot.root_start_linear_pos[1] << ",";
+            fileOutput << robot.root_start_linear_pos[2] << ",";
+            fileOutput << robot.root_start_angular_pos[0] << ",";
+            fileOutput << robot.root_start_angular_pos[1] << ",";
+            fileOutput << robot.root_start_angular_pos[2] << ",";
+        }
         for(int i = 0; i < robot.joint_names.size(); i++){
             fileOutput << robot.start_pos[i] << ",";
         }
@@ -477,6 +487,11 @@ void FileHandler::LoadTaskFromFile(std::string task_prefix, int file_num, stateV
     int residuals_targets_size = 0;
     // Compute size of the full state vector
     for(auto & robot : state_vector.robots){
+
+        if(robot.root_name != "-"){
+            // x, y, z, r, p, y
+            num_dofs += 6;
+        }
         num_dofs += static_cast<int>(robot.joint_names.size());
     }
 
@@ -520,6 +535,17 @@ void FileHandler::LoadTaskFromFile(std::string task_prefix, int file_num, stateV
         // ----------------- Start values --------------------------------
         int counter = 0;
         for(auto & robot : state_vector.robots){
+            // If the robot has a root body
+            if(robot.root_name != "-"){
+                robot.root_start_linear_pos[0] = stod(row[counter]);
+                robot.root_start_linear_pos[1] = stod(row[counter + 1]);
+                robot.root_start_linear_pos[2] = stod(row[counter + 2]);
+                robot.root_start_angular_pos[0] = stod(row[counter + 3]);
+                robot.root_start_angular_pos[1] = stod(row[counter + 4]);
+                robot.root_start_angular_pos[2] = stod(row[counter + 5]);
+                counter += 6;
+            }
+
             for(int i = 0; i < robot.joint_names.size(); i++){
                 robot.start_pos[i] = stod(row[counter]);
                 counter++;

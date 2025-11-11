@@ -480,7 +480,7 @@ void AsyncMPC(){
                 // Increment the current control index
                 activeVisualiser->current_control_index++;
 
-                double controls_noise_percentage = 5;
+                double controls_noise_percentage = 1;
                 MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
                 for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
                     double control_noise = ((control_lims(i*2 + 1) - control_lims(i*2)) / 100) * controls_noise_percentage;

@@ -60,6 +60,14 @@ int assign_task(std::string task){
         std::shared_ptr<walker> myLocomotion = std::make_shared<walker>(UNEVEN, WALK);
         activeModelTranslator = myLocomotion;
     }
+    else if(task == "anyMal"){
+        std::shared_ptr<anyMal> my_anyMal = std::make_shared<anyMal>();
+        activeModelTranslator = my_anyMal;
+    }
+    else if(task == "bimanual_pickup"){
+        std::shared_ptr<BimanualPickup> my_bimanual_pickup = std::make_shared<BimanualPickup>();
+        activeModelTranslator = my_bimanual_pickup;
+    }
     else if(task == "box_sweep"){
         std::shared_ptr<BoxSweep> myBoxSweep = std::make_shared<BoxSweep>();
         activeModelTranslator = myBoxSweep;
@@ -459,11 +467,13 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
 
     // --------------------- Contact_change sep ----------------------------------
-//    keypoint_method.name = "contact_change_sep";
-//    keypoint_method.min_N = 1;
-//    keypoint_method.max_N = 1;
-//    keypoint_method.auto_adjust = false;
-//    optimiser->SetCurrentKeypointMethod(keypoint_method);
+    keypoint_method.name = "contact_change_sep";
+    keypoint_method.min_N = 1;
+    keypoint_method.max_N = 1;
+    keypoint_method.auto_adjust = false;
+    optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+    TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
 
     // --------------------- Contact_change Dyn ----------------------------------
     keypoint_method.name = "contact_change_dyn";
@@ -688,13 +698,14 @@ int GenTestingData::SingleMPCRun(bool visualise, bool asynchronus,
 
             }
 
-            MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
-            for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
-                double control_noise = ((control_lims(i*2 + 1) - control_lims(i*2)) / 100) * controls_noise;
-
-                double gauss_noise = GaussNoise(0, control_noise);
-                next_control(i, 0) += gauss_noise;
-            }
+            // Control noise code
+//            MatrixXd control_lims = activeModelTranslator->ReturnControlLimits(activeModelTranslator->current_state_vector);
+//            for(int i = 0; i < activeModelTranslator->current_state_vector.num_ctrl; i++){
+//                double control_noise = ((control_lims(i*2 + 1) - control_lims(i*2)) / 100) * controls_noise;
+//
+//                double gauss_noise = GaussNoise(0, control_noise);
+//                next_control(i, 0) += gauss_noise;
+//            }
 
             // Store latest control and state in a replay buffer
             activeVisualiser->trajectory_controls.push_back(next_control);

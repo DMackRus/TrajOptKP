@@ -147,19 +147,19 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
 }
 
 static inline void KinematicChain(int state_index, const stateVectorList &state_vector_list, vector<int>& keypoints){
-    int chain_index;
+    int chain_index = 0;
     for(const auto& chain : state_vector_list.kinematic_chain_state_indices){
         bool found = false;
-        for(int body_index : chain) {
-            if (body_index == state_index) {
+        for(int state_indices : chain) {
+            if (state_indices == state_index) {
                 found = true;
-                chain_index = body_index;
                 break; // break the inner loop
             }
         }
         if(found){
             break;
         }
+        chain_index++;
     }
 
     // If the state index is found in a kinematic chain, add all indices of that chain
@@ -627,13 +627,13 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
 
     // Print out additional key-points as determined by robot dynamics
     if(dyn_mode){
-        for(int robot_index = 0; robot_index < state_vector_list.robots.size(); robot_index++){
-            std::cout << "Robot " << state_vector_list.robots[robot_index].name << " dynamics keypoints: ";
-            for(int i = 0; i < kp_robot_dynamics[robot_index].size(); i++){
-                std::cout << kp_robot_dynamics[robot_index][i] << " ";
-            }
-            std::cout << "\n";
-        }
+//        for(int robot_index = 0; robot_index < state_vector_list.robots.size(); robot_index++){
+//            std::cout << "Robot " << state_vector_list.robots[robot_index].name << " dynamics keypoints: ";
+//            for(int i = 0; i < kp_robot_dynamics[robot_index].size(); i++){
+//                std::cout << kp_robot_dynamics[robot_index][i] << " ";
+//            }
+//            std::cout << "\n";
+//        }
     }
 
     // Now we need to process additional keypoints determined by robot dynamics and add these

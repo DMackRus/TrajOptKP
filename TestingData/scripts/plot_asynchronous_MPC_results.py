@@ -10,8 +10,8 @@ import yaml
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "push_mcl"
-#task_name = "walker_run"
+task_name = "walker_run"
+#task_name = "walker_run", "push_mcl", "anyMal", "bimanual_pickup"
 base_dir = ".."
 run_mode = "asynchronus"
 

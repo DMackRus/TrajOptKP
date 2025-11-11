@@ -99,11 +99,36 @@ void BimanualPickup::SetGoalVisuals(mjData *d){
 }
 
 void BimanualPickup::ReturnRandomStartState(){
-    std::cerr << "BimanualPickup::ReturnRandomStartState() not implemented yet.\n";
-    exit(1);
+
+    double robot_1_config[7] = {0.2, 0.53, 0, -1.5, 0, 0, 1.55};
+    double robot_2_config[7] = {-0.2, 0.53, 0, -1.5, 0, 0, -1.55};
+
+    for(int i = 0; i < 7; i++){
+        full_state_vector.robots[0].start_pos[i] = robot_1_config[i];
+        full_state_vector.robots[1].start_pos[i] = robot_2_config[i];
+    }
+
+    // Static position for the box
+    pose_7 box_pose;
+    MuJoCo_helper->GetBodyPoseQuat("goal", box_pose, MuJoCo_helper->master_reset_data);
+
+    box_pose.position(0) = 0.4;
+    box_pose.position(1) = 0.0;
+    box_pose.position(2) = 0.05;
 }
 
 void BimanualPickup::ReturnRandomGoalState(){
+
+    // Residual 0 - Box goal position
+    residual_list[0].target[0] = randFloat(0.3, 0.5);
+    residual_list[0].target[1] = 0.0;
+    residual_list[0].target[2] = randFloat(0.4, 0.8);
+
+    // Residual 1 - Robot 1 EE to Goal
+    residual_list[1].target[0] = 0.015;
+
+    // Residual 2 - Robot 2 EE to Goal
+    residual_list[2].target[0] = 0.015;
 
 }
 

@@ -6,14 +6,36 @@ anyMal::anyMal() : ModelTranslator() {
 
 void anyMal::ReturnRandomGoalState() {
 
+    // Assign residuals
+
+    //Residual 0: Body height
+    residual_list[0].target[0] = 1.0;
+
+    // Residual 1: Body upright
+    residual_list[1].target[0] = 0.0;
+
+    //Residual 2: Body velocity
+    residual_list[2].target[0] = randFloat(0.2, 1.0);
+
+    //Residual 2 onwards: Joint controls
+    for(int i = 3; i < residual_list.size(); i++){
+        residual_list[i].target[0] = 0.0;
+    }
 }
 
 void anyMal::ReturnRandomStartState() {
-    double start_config[12] = {0, 0, 0, 1, -1, 0.2, 0, 0, 0};
+    double start_config[12] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     for(int i = 0; i < 12; i++){
-        current_state_vector.robots[0].start_pos[i] = start_config[i];
+        full_state_vector.robots[0].start_pos[i] = start_config[i];
     }
+
+    full_state_vector.robots[0].root_start_linear_pos[0] = 0.0;
+    full_state_vector.robots[0].root_start_linear_pos[1] = 0.0;
+    full_state_vector.robots[0].root_start_linear_pos[2] = 0.7;
+    full_state_vector.robots[0].root_start_angular_pos[0] = 0.0;
+    full_state_vector.robots[0].root_start_angular_pos[1] = 0.0;
+    full_state_vector.robots[0].root_start_angular_pos[2] = 0.0;
 }
 
 void anyMal::Residuals(mjData *d, MatrixXd &residuals) {
@@ -62,16 +84,15 @@ void anyMal::Residuals(mjData *d, MatrixXd &residuals) {
 
     residuals(resid_index++, 0) = dot_z;
 
+    // ------------ Resisudal 2: Body velocity -----------------
+    pose_6 body_vel;
+    MuJoCo_helper->GetBodyVelocity("body", body_vel, d);
+    residuals(resid_index++, 0) = body_vel.position[0] - residual_list[2].target[0];
 
-    // --------------- Residual 1: Body x ---------------
-//    residuals(resid_index++, 0) = body_x - residual_list[1].target[0];
-//
-//    // --------------- Residual 2: Body y ---------------
-//    residuals(resid_index++, 0) = body_y - residual_list[2].target[0];
 
-    // --------------- Residual 2 onwards: Joints controls -------------
+    // --------------- Residual 3 onwards: Joints controls -------------
     for(int i = 0; i < anyMal_controls.size(); i++){
-        residuals(resid_index++, 0) = anyMal_controls[i] - residual_list[2+i].target[0];
+        residuals(resid_index++, 0) = anyMal_controls[i] - residual_list[3+i].target[0];
     }
 
     if(resid_index != residual_list.size()){
