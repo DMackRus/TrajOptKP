@@ -152,15 +152,15 @@ add_executable(benchmark_derivatives src/benchmark_derivatives.cpp
         src/ModelTranslator/PushBaseClass.cpp)
 
 # Toy contact problem analysis script
-add_executable(toy_contact_analysis src/toy_contact_analysis.cpp
-        src/Visualiser/Visualiser.cpp
-        src/Optimiser/Optimiser.cpp
-        src/Optimiser/iLQR.cpp
-        src/ModelTranslator/PistonBlock.cpp
-        src/ModelTranslator/Acrobot.cpp
-        src/ModelTranslator/ArticulatedContact.cpp
-        src/ModelTranslator/BoxSweep.cpp
-        src/ModelTranslator/PushBaseClass.cpp)
+#add_executable(toy_contact_analysis src/toy_contact_analysis.cpp
+#        src/Visualiser/Visualiser.cpp
+#        src/Optimiser/Optimiser.cpp
+#        src/Optimiser/iLQR.cpp
+#        src/ModelTranslator/PistonBlock.cpp
+#        src/ModelTranslator/Acrobot.cpp
+#        src/ModelTranslator/ArticulatedContact.cpp
+#        src/ModelTranslator/BoxSweep.cpp
+#        src/ModelTranslator/PushBaseClass.cpp)
 
 ## Derivative Error Analysis Code
 add_executable(derivative_error_analysis
@@ -204,8 +204,8 @@ target_link_libraries(gen_testing_data core_lib Eigen3::Eigen ${LIB_MUJOCO} -lgl
 target_include_directories(benchmark_derivatives PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 target_link_libraries(benchmark_derivatives core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
-target_include_directories(toy_contact_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(toy_contact_analysis core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+#target_include_directories(toy_contact_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+#target_link_libraries(toy_contact_analysis core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
 target_include_directories(derivative_error_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 target_link_libraries(derivative_error_analysis core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)

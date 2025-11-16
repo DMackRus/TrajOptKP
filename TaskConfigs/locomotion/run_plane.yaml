@@ -6,7 +6,7 @@ auto_adjust: false
 minN: 1
 maxN: 20
 mpc_horizon: 100
-openloop_horizon: 100
+openloop_horizon: 200 # Was 100
 
 robots:
   walker:
@@ -19,15 +19,35 @@ robots:
     velocity_threshold: 20    # Raw velocity threshold value
     control_threshold: 0.8   # Value between 0 and 1 - uses control limits
 
+#residuals:
+#  body_height:
+#    target: [0]
+#    weight: 1
+#    weight_terminal: 1
+#  body_orientation:
+#    target: [0]
+#    weight: 0.1
+#    weight_terminal: 0.1
+#  body_velocity:
+#    target: [0.5]
+#    weight: 0.1
+#    weight_terminal: 0.1
+#  body_controls:
+#    target: [0]
+#    resid_dimension: 6
+#    weight: 0.001
+#    weight_terminal: 0
+
+# Open loop resisuals
 residuals:
   body_height:
     target: [0]
-    weight: 1
-    weight_terminal: 1
+    weight: 0.1
+    weight_terminal: 10
   body_orientation:
     target: [0]
     weight: 0.1
-    weight_terminal: 0.1
+    weight_terminal: 10
   body_velocity:
     target: [0.5]
     weight: 0.1

@@ -6,6 +6,7 @@ auto_adjust: false
 minN: 1
 maxN: 20
 mpc_horizon: 80 # was 80
+openloop_horizon: 500
 
 robots:
   anyMal:
@@ -14,8 +15,8 @@ robots:
     actuatorNames: ["LF_HAA", "LF_HFE", "LF_KFE", "RF_HAA", "RF_HFE", "RF_KFE", "LH_HAA", "LH_HFE", "LH_KFE", "RH_HAA", "RH_HFE", "RH_KFE"]
     torqueControl: true
     torqueLimits: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    startPos: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    root_start_linear_pos: [0, 0, 0.5]
+    startPos: [0.1, 1.0, 0, 0.5, 0, 0, 0.5, 0, 1.0, 0.5, 0, 0]
+    root_start_linear_pos: [0, 0, 0.7]
     root_start_angular_pos: [0, 0, 0]
     position_threshold: 0.1  # Value between 0 and 1 - uses joint limits
     velocity_threshold: 5.0    # Raw velocity threshold value
@@ -25,16 +26,16 @@ robots:
 residuals:
   body_height:
     target: [1.0]
-    weight: 0.05 #0.005
-    weight_terminal: 1
+    weight: 0.1 #0.005
+    weight_terminal: 0 #1
   body_upright:
     target: [0]
-    weight: 0.01 # 0.01
-    weight_terminal: 10 #1
+    weight: 0.1 # 0.01
+    weight_terminal: 0 # 10
   body_velocity:
     target: [1.0]
     weight: 0.1
-    weight_terminal: 0
+    weight_terminal: 0 # 0
   body_controls:
     target: [0]
     resid_dimension: 12

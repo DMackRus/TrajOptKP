@@ -65,60 +65,183 @@ void KeypointGenerator::PrintKeypointMethod(){
 }
 
 // Static inline helper function for considering kinematic chains
+//inline std::vector<int> KeypointGenerator::AddKeypointsFromContactSeparate(const std::pair<int, int>& contact,
+//                                                       const std::vector<std::pair<int, int>>& all_contacts,
+//                                                       const stateVectorList &state_vector_list) {
+//    // Add all links in the kinematic chains for both contacts
+//    std::vector<int> relevant_kinematic_chains;
+//    std::vector<int> contact_state_indices;
+//
+//    // Contact body 1
+//    bool found = false;
+//    for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
+//        const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
+//        for (int body : body_chain) {
+//            if (body == contact.first) {
+//                // Store the index of the chain instead of the body
+//                relevant_kinematic_chains.push_back(static_cast<int>(i));
+//                found = true;
+//                break; // break the inner loop
+//            }
+//        }
+//        if (found) {
+//            break; // break the outer loop
+//        }
+//    }
+//
+//    // Contact 2
+//    found = false;
+//    for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
+//        const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
+//        for (int body : body_chain) {
+//            if (body == contact.second) {
+//                // Store the index of the chain instead of the body
+//                relevant_kinematic_chains.push_back(static_cast<int>(i));
+//                found = true;
+//                break; // break the inner loop
+//            }
+//        }
+//        if (found) {
+//            break; // break the outer loop
+//        }
+//    }
+//
+//    // TODO - Maybe make this optional?
+//    // Check for any other affected kinematic chains
+////    for(auto & other_contact : all_contacts) {
+////        if(other_contact == contact) continue; // Skip the current contact
+////
+////        // Check if the other contact is in the same kinematic chain
+////        for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
+////            const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
+////            for (int body : body_chain) {
+////                if (body == other_contact.first || body == other_contact.second) {
+////                    // Store the index of the chain instead of the body
+////                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+////                    break; // break the inner loop
+////                }
+////            }
+////        }
+////    }
+//
+//    // Stage 2 - convert all bodies to state vector indices
+//    for( const auto &kinematic_chain : relevant_kinematic_chains){
+//        for(int i = 0; i < state_vector_list.kinematic_chain_state_indices_independant[kinematic_chain].size(); i++){
+//            contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices_independant[kinematic_chain][i]);
+//        }
+//    }
+//
+//    return contact_state_indices;
+//}
+
+// Static inline helper function for considering kinematic chains
 static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>& contact,
                                            const std::vector<std::pair<int, int>>& all_contacts,
                                            const stateVectorList &state_vector_list,
-                                           std::vector<int> &robot_indices){
+                                           std::vector<int> &robot_indices,
+                                           bool sep_kin_chains){
     // Add all links in the kinematic chains for both contacts
     std::vector<int> relevant_kinematic_chains;
     std::vector<int> contact_state_indices;
 
-    // Contact body 1
-    bool found = false;
-    for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
-        const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
-        for (int body : body_chain) {
-            if (body == contact.first) {
-                // Store the index of the chain instead of the body
-                relevant_kinematic_chains.push_back(static_cast<int>(i));
 
-                // Keep track of the indices of any robots involved in the contact event
-                if((state_vector_list.kin_chains_robot_indices[i] > -1)){
-                    robot_indices.push_back(state_vector_list.kin_chains_robot_indices[i]);
+    // Treating kin chains as a whole
+    if(!sep_kin_chains){
+        // Contact body 1
+        bool found = false;
+        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
+            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
+            for (int body : body_chain) {
+                if (body == contact.first) {
+                    // Store the index of the chain instead of the body
+                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+
+                    // Keep track of the indices of any robots involved in the contact event
+                    if((state_vector_list.kin_chains_robot_indices[i] > -1)){
+                        robot_indices.push_back(state_vector_list.kin_chains_robot_indices[i]);
+                    }
+
+                    found = true;
+                    break; // break the inner loop
                 }
-
-                found = true;
-                break; // break the inner loop
+            }
+            if (found) {
+                break; // break the outer loop
             }
         }
-        if (found) {
-            break; // break the outer loop
-        }
-    }
 
-    // Contact 2
-    found = false;
-    for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
-        const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
-        for (int body : body_chain) {
-            if (body == contact.second) {
-                // Store the index of the chain instead of the body
-                relevant_kinematic_chains.push_back(static_cast<int>(i));
+        // Contact 2
+        found = false;
+        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
+            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
+            for (int body : body_chain) {
+                if (body == contact.second) {
+                    // Store the index of the chain instead of the body
+                    relevant_kinematic_chains.push_back(static_cast<int>(i));
 
-                // Keep track of the indices of any robots involved in the contact event
-                if((state_vector_list.kin_chains_robot_indices[i] > -1)){
-                    robot_indices.push_back(state_vector_list.kin_chains_robot_indices[i]);
+                    // Keep track of the indices of any robots involved in the contact event
+                    if((state_vector_list.kin_chains_robot_indices[i] > -1)){
+                        robot_indices.push_back(state_vector_list.kin_chains_robot_indices[i]);
+                    }
+
+                    found = true;
+                    break; // break the inner loop
                 }
-
-                found = true;
-                break; // break the inner loop
+            }
+            if (found) {
+                break; // break the outer loop
             }
         }
-        if (found) {
-            break; // break the outer loop
+    }
+    // Treating kinematic chains separately
+    else{
+        // Contact body 1
+        bool found = false;
+        for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
+            const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
+            for (int body : body_chain) {
+                if (body == contact.first) {
+                    // Store the index of the chain instead of the body
+                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+
+                    // Keep track of the indices of any robots involved in the contact event
+                    if((state_vector_list.kin_chains_robot_indices_independant[i] > -1)){
+                        robot_indices.push_back(state_vector_list.kin_chains_robot_indices_independant[i]);
+                    }
+
+                    found = true;
+                    break; // break the inner loop
+                }
+            }
+            if (found) {
+                break; // break the outer loop
+            }
+        }
+
+        // Contact 2
+        found = false;
+        for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
+            const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
+            for (int body : body_chain) {
+                if (body == contact.second) {
+                    // Store the index of the chain instead of the body
+                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+
+                    // Keep track of the indices of any robots involved in the contact event
+                    if((state_vector_list.kin_chains_robot_indices_independant[i] > -1)){
+                        robot_indices.push_back(state_vector_list.kin_chains_robot_indices_independant[i]);
+                    }
+
+                    found = true;
+                    break; // break the inner loop
+                }
+            }
+            if (found) {
+                break; // break the outer loop
+            }
         }
     }
-
+    // TODO - Maybe make this optional?
    // Check for any other affected kinematic chains
 //   for(auto & other_contact : all_contacts) {
 //        if(other_contact == contact) continue; // Skip the current contact
@@ -137,11 +260,21 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
 //    }
 
     // Stage 2 - convert all bodies to state vector indices
-    for( const auto &kinematic_chain : relevant_kinematic_chains){
-        for(int i = 0; i < state_vector_list.kinematic_chain_state_indices[kinematic_chain].size(); i++){
-            contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices[kinematic_chain][i]);
+    if(!sep_kin_chains){
+        for( const auto &kinematic_chain : relevant_kinematic_chains){
+            for(int i = 0; i < state_vector_list.kinematic_chain_state_indices[kinematic_chain].size(); i++){
+                contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices[kinematic_chain][i]);
+            }
         }
     }
+    else{
+        for( const auto &kinematic_chain : relevant_kinematic_chains){
+            for(int i = 0; i < state_vector_list.kinematic_chain_state_indices_independant[kinematic_chain].size(); i++){
+                contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices_independant[kinematic_chain][i]);
+            }
+        }
+    }
+
 
     return contact_state_indices;
 }
@@ -166,76 +299,6 @@ static inline void KinematicChain(int state_index, const stateVectorList &state_
     for(int body_index : state_vector_list.kinematic_chain_state_indices[chain_index]) {
         keypoints.push_back(body_index);
     }
-}
-
-// Static inline helper function for considering kinematic chains
-inline std::vector<int> KeypointGenerator::AddKeypointsFromContactSeparate(const std::pair<int, int>& contact,
-                                                       const std::vector<std::pair<int, int>>& all_contacts,
-                                                       const stateVectorList &state_vector_list) {
-    // Add all links in the kinematic chains for both contacts
-    std::vector<int> relevant_kinematic_chains;
-    std::vector<int> contact_state_indices;
-
-    // Contact body 1
-    bool found = false;
-    for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
-        const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
-        for (int body : body_chain) {
-            if (body == contact.first) {
-                // Store the index of the chain instead of the body
-                relevant_kinematic_chains.push_back(static_cast<int>(i));
-                found = true;
-                break; // break the inner loop
-            }
-        }
-        if (found) {
-            break; // break the outer loop
-        }
-    }
-
-    // Contact 2
-    found = false;
-    for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
-        const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
-        for (int body : body_chain) {
-            if (body == contact.second) {
-                // Store the index of the chain instead of the body
-                relevant_kinematic_chains.push_back(static_cast<int>(i));
-                found = true;
-                break; // break the inner loop
-            }
-        }
-        if (found) {
-            break; // break the outer loop
-        }
-    }
-
-    // TODO - Maybe make this optional?
-    // Check for any other affected kinematic chains
-    for(auto & other_contact : all_contacts) {
-        if(other_contact == contact) continue; // Skip the current contact
-
-        // Check if the other contact is in the same kinematic chain
-        for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
-            const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
-            for (int body : body_chain) {
-                if (body == other_contact.first || body == other_contact.second) {
-                    // Store the index of the chain instead of the body
-                    relevant_kinematic_chains.push_back(static_cast<int>(i));
-                    break; // break the inner loop
-                }
-            }
-        }
-    }
-
-    // Stage 2 - convert all bodies to state vector indices
-    for( const auto &kinematic_chain : relevant_kinematic_chains){
-        for(int i = 0; i < state_vector_list.kinematic_chain_state_indices_independant[kinematic_chain].size(); i++){
-            contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices_independant[kinematic_chain][i]);
-        }
-    }
-
-    return contact_state_indices;
 }
 
 static inline void AddLastRowKeypointsContact(std::vector<int>& new_last_row,
@@ -263,103 +326,101 @@ static inline void AddLastRowKeypointsContact(std::vector<int>& new_last_row,
     new_last_row = prev_row; // Update the new last row with the previous row
 }
 
-void KeypointGenerator::ContactAwareKeypointsSep(const std::vector<MatrixXd> &trajectory_states,
-                              const std::vector<MatrixXd> &trajectory_controls,
-                              const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
-                              const stateVectorList &state_vector_list){
-    // Enforce first time-step must have all keypoints
-    std::vector<int> full_row(dof, 0);
+//void KeypointGenerator::ContactAwareKeypointsSep(const std::vector<MatrixXd> &trajectory_states,
+//                              const std::vector<MatrixXd> &trajectory_controls,
+//                              const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
+//                              const stateVectorList &state_vector_list){
+//    // Enforce first time-step must have all keypoints
+//    std::vector<int> full_row(dof, 0);
+//
+//    for(int i = 0; i < dof; i++){
+//        full_row[i] = i;
+//    }
+//    keypoints.push_back(full_row);
+//
+//    std::vector<std::pair<int, int>> current_contacts = trajectory_contacts[0];
+//
+//    //Start with just considering contact considerations
+//    for(int t = 1; t < horizon - 1; t++){
+//        // Initialise empty row object to be populated
+//        std::vector<int> row;
+//
+//        // ---------------- Contact made / broken rules ----------------------
+//        std::vector<std::pair<int, int>> new_contacts = trajectory_contacts[t];
+//        bool change_in_contact = false;
+//        std::vector<int> new_last_row;
+//
+//        // Check for new contacts
+//        for(const auto & contact : new_contacts){
+//            bool found = false;
+//            for(const auto & old_contact : current_contacts){
+//                if(contact == old_contact){
+//                    found = true;
+//                    break;
+//                }
+//            }
+//            if(!found){
+//                change_in_contact = true;
+//                // Add keypoint at this time-step as well as the previous time-step
+//                // Consider both kinematic chains when adding keypoints
+//                row = AddKeypointsFromContactSeparate(contact, new_contacts, state_vector_list);
+//
+//                // Also need to add keypoints for the previous time-step...
+//                // Add keypoints for the previous time-step
+//                AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
+//            }
+//        }
+//
+//        // Check for lost contacts
+//        for(const auto & contact : current_contacts){
+//            bool found = false;
+//            for(const auto & new_contact : new_contacts){
+//                if(contact == new_contact){
+//                    found = true;
+//                    break;
+//                }
+//            }
+//            if(!found){
+//                change_in_contact = true;
+//                // Add keypoint at this time-step as well as the previous time-step
+//                // Consider both kinematic chains when adding keypoints
+//                row = AddKeypointsFromContactSeparate(contact, new_contacts, state_vector_list);
+//                // Also need to add keypoints for the previous time-step...
+//                // Add keypoints for the previous time-step
+//                AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
+//            }
+//        }
+//
+//        // Update current contact list
+//        current_contacts = new_contacts;
+//
+//        // TODO - Do we need to sort the key-points?
+//        if(change_in_contact){
+//            // Sort the row to ensure keypoints are in order
+//            std::sort(row.begin(), row.end());
+//
+//            keypoints[t - 1] = new_last_row; // Update the previous row with the new keypoints
+//        }
+//        keypoints.push_back(row);
+//    }
+//
+//    // Manually enforce last keypoint for all dofs at horizon - 1
+//    keypoints.push_back(full_row);
+//
+//    // Sort the keypoints
+//    for(int i = 0; i < horizon; i++){
+//        std::sort(keypoints[i].begin(), keypoints[i].end());
+//    }
+//
+//    // Delete any duplicates
+//    for(int i = 0; i < horizon; i++){
+//        keypoints[i].erase(std::unique(keypoints[i].begin(), keypoints[i].end()), keypoints[i].end());
+//    }
+//}
 
-    for(int i = 0; i < dof; i++){
-        full_row[i] = i;
-    }
-    keypoints.push_back(full_row);
-
-    std::vector<std::pair<int, int>> current_contacts = trajectory_contacts[0];
-
-    //Start with just considering contact considerations
-    for(int t = 1; t < horizon - 1; t++){
-        // Initialise empty row object to be populated
-        std::vector<int> row;
-
-        // ---------------- Contact made / broken rules ----------------------
-        std::vector<std::pair<int, int>> new_contacts = trajectory_contacts[t];
-        bool change_in_contact = false;
-        std::vector<int> new_last_row;
-
-        // Check for new contacts
-        for(const auto & contact : new_contacts){
-            bool found = false;
-            for(const auto & old_contact : current_contacts){
-                if(contact == old_contact){
-                    found = true;
-                    break;
-                }
-            }
-            if(!found){
-                change_in_contact = true;
-                // Add keypoint at this time-step as well as the previous time-step
-                // Consider both kinematic chains when adding keypoints
-                row = AddKeypointsFromContactSeparate(contact, new_contacts, state_vector_list);
-
-                // Also need to add keypoints for the previous time-step...
-                // Add keypoints for the previous time-step
-                AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
-            }
-        }
-
-        // Check for lost contacts
-        for(const auto & contact : current_contacts){
-            bool found = false;
-            for(const auto & new_contact : new_contacts){
-                if(contact == new_contact){
-                    found = true;
-                    break;
-                }
-            }
-            if(!found){
-                change_in_contact = true;
-                // Add keypoint at this time-step as well as the previous time-step
-                // Consider both kinematic chains when adding keypoints
-                row = AddKeypointsFromContactSeparate(contact, new_contacts, state_vector_list);
-                // Also need to add keypoints for the previous time-step...
-                // Add keypoints for the previous time-step
-                AddLastRowKeypointsContact(new_last_row, row, keypoints, t);
-            }
-        }
-
-        // Update current contact list
-        current_contacts = new_contacts;
-
-        // TODO - Do we need to sort the key-points?
-        if(change_in_contact){
-            // Sort the row to ensure keypoints are in order
-            std::sort(row.begin(), row.end());
-
-            keypoints[t - 1] = new_last_row; // Update the previous row with the new keypoints
-        }
-        keypoints.push_back(row);
-    }
-
-    // Manually enforce last keypoint for all dofs at horizon - 1
-    keypoints.push_back(full_row);
-
-    // Sort the keypoints
-    for(int i = 0; i < horizon; i++){
-        std::sort(keypoints[i].begin(), keypoints[i].end());
-    }
-
-    // Delete any duplicates
-    for(int i = 0; i < horizon; i++){
-        keypoints[i].erase(std::unique(keypoints[i].begin(), keypoints[i].end()), keypoints[i].end());
-    }
-}
-
-void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory_states,
-                      const std::vector<MatrixXd> &trajectory_controls,
-                      const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
-                      const stateVectorList &state_vector_list,
-                      bool dyn_mode){
+void KeypointGenerator::ContactChangeDyn(const std::vector<std::vector<std::pair<int, int>>> &trajectory_contacts,
+                                    const stateVectorList &state_vector_list,
+                                    bool dyn_mode, bool sep_kin_chains, bool enforce_intervals){
 
     std::vector<std::vector<int>> kp_contact;
     std::vector<std::vector<int>> kp_robot_contact;
@@ -421,7 +482,7 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
                 change_in_contact = true;
                 // Add keypoint at this time-step as well as the previous time-step
                 // Consider both kinematic chains when adding keypoints
-                row = AddKeypointsFromContact(contact, new_contacts, state_vector_list, robot_indices);
+                row = AddKeypointsFromContact(contact, new_contacts, state_vector_list, robot_indices, sep_kin_chains);
 
                 // Also need to add keypoints for the previous time-step...
                 // Add keypoints for the previous time-step
@@ -442,7 +503,7 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
                 change_in_contact = true;
                 // Add keypoint at this time-step as well as the previous time-step
                 // Consider both kinematic chains when adding keypoints
-                row = AddKeypointsFromContact(contact, new_contacts, state_vector_list, robot_indices);
+                row = AddKeypointsFromContact(contact, new_contacts, state_vector_list, robot_indices, sep_kin_chains);
                 // Also need to add keypoints for the previous time-step...
                 // Add keypoints for the previous time-step
                 AddLastRowKeypointsContact(new_last_row, row, kp_contact, t);
@@ -666,6 +727,36 @@ void KeypointGenerator::ContactChangeDyn(const std::vector<MatrixXd> &trajectory
 
     // Copy over to keypoints
     keypoints = kp_contact;
+
+
+    // Post processing step - for all dofs enforce that keypoints are not father apart than max_N
+    if(enforce_intervals){
+        std::vector<int> last_keypoint_indices(dof, 0); // Track last keypoint for each dof
+        for(int t = 0; t < horizon; t++){
+            for(int i = 0; i < dof; i++){
+                // Check if this dof is a keypoint at this time-step
+                bool is_keypoint = false;
+                for(int kp_index : keypoints[t]){
+                    if(kp_index == i){
+                        is_keypoint = true;
+                        last_keypoint_indices[i] = t; // Update last keypoint index
+                        break;
+                    }
+                }
+                // If not a keypoint, check if max_N exceeded
+                if(!is_keypoint){
+                    if(t - last_keypoint_indices[i] >= current_keypoint_method.max_N){
+                        // Add keypoint
+                        keypoints[t].push_back(i);
+                        last_keypoint_indices[i] = t; // Update last keypoint index
+                    }
+                }
+            }
+            // Sort the keypoints at this time-step
+            std::sort(keypoints[t].begin(), keypoints[t].end());
+        }
+
+    }
 }
 
 void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajectory_states,
@@ -691,7 +782,7 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //            }
 //            std::cout << "\n";
 //        }
-        ContactChangeDyn(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list, false);
+        ContactChangeDyn(trajectory_contacts, state_vector_list, false, false, false);
 //        for(int t = 0; t < horizon; t++){
 //            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
 //            std::cout << "time " << t << " :";
@@ -710,7 +801,8 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //            }
 //            std::cout << "\n";
 //        }
-        ContactAwareKeypointsSep(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list);
+        ContactChangeDyn(trajectory_contacts, state_vector_list, false, true, false);
+//        ContactAwareKeypointsSep(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list);
     }
     else if(current_keypoint_method.name == "contact_change_dyn"){
 //        for(int t = 0; t < horizon; t++){
@@ -720,7 +812,18 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
 //            }
 //            std::cout << "\n";
 //        }
-        ContactChangeDyn(trajectory_states, trajectory_controls, trajectory_contacts, state_vector_list, true);
+        ContactChangeDyn(trajectory_contacts, state_vector_list, true, false, false);
+//        for(int t = 0; t < horizon; t++){
+//            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
+//            std::cout << "time " << t << " :";
+//            for(int i = 0; i < keypoints[t].size(); i++){
+//                std::cout << keypoints[t][i] << " ";
+//            }
+//            std::cout << "\n";
+//        }
+    }
+    else if(current_keypoint_method.name == "contact_change_maxN"){
+        ContactChangeDyn(trajectory_contacts, state_vector_list, false, false, true);
 //        for(int t = 0; t < horizon; t++){
 //            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
 //            std::cout << "time " << t << " :";

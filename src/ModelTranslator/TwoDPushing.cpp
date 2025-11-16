@@ -315,8 +315,8 @@ void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
     // --------------- Residual 0: Body goal position -----------------
     double diff_x = goal_pose.position(0) - residual_list[0].target[0];
     double diff_y = goal_pose.position(1) - residual_list[0].target[1];
-    residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
-            + pow(diff_y, 2));
+    double dist = sqrt(pow(diff_x, 2) + pow(diff_y, 2));
+    residuals(resid_index++, 0) = dist;
 
     // --------------- Residual 1: Body goal velocity -----------------
     residuals(resid_index++, 0) = sqrt(pow(goal_vel.position(0), 2)
@@ -329,9 +329,12 @@ void TwoDPushing::Residuals(mjData *d, MatrixXd &residuals){
 
         diff_x = obstacle_pose.position(0) - full_state_vector.rigid_bodies[i + 1].start_linear_pos[0];
         diff_y = obstacle_pose.position(1) - full_state_vector.rigid_bodies[i + 1].start_linear_pos[1];
+        dist = sqrt(pow(diff_x, 2) + pow(diff_y, 2));
+        if(dist > 0.5){
+            dist = 0.5;
+        }
 
-        residuals(resid_index++, 0) = sqrt(pow(diff_x, 2)
-                + pow(diff_y, 2));
+        residuals(resid_index++, 0) = dist;
     }
 
     // --------------- Residual 3 + num_obstacles: Joint velocity -----------------

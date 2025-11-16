@@ -18,7 +18,7 @@ iterations = "6_6"
 base_dir = ".."
 run_mode = "openloop"
 
-show_plot = True
+show_plot = False
 paper_data_folder = False
 
 cost_reductions = []
@@ -29,8 +29,11 @@ def main():
     # global task_name
     
     tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+    # tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+    # tasks = ["walker"]
+    # tasks = ["acrobot", "push_ncl", "box_sweep", "impact", "walker"]
     # tasks = ["acrobot", "push_ncl", "push_lcl", "box_sweep", "impact", "walker"]
-    tasks = ["push_lcl", "push_mcl"]
+    # tasks = ["push_ncl", "push_lcl"]
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
@@ -53,11 +56,12 @@ def main():
         # Compute mean of cost reduction for each method (column)
         mean_cost_reduction = np.mean([cost_reductions[i][method] for i in range(len(cost_reductions))])
         mean_optimisation_time = np.mean([optimisation_times[i][method] for i in range(len(optimisation_times))])
-        mean_number_iterations = np.mean([number_iterations[i][method] for i in range(len(number_iterations))])
+        # mean_number_iterations = np.mean([number_iterations[i][method] for i in range(len(number_iterations))])
         
         print(f'& {mean_optimisation_time/1000.0:.2f}', end=' ')
         print(f'& {mean_cost_reduction:.2f}', end=' ')
-        print(f'& {mean_number_iterations:.2f}', end=' ')
+        # print(f'& {mean_number_iterations:.2f}', end=' ')
+    print('\\\\')
 
     # plot_timing_breakdown_data(names, dataframes_iLQR)
     
@@ -319,6 +323,10 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
                 
             axes[i].bar(x, means[:,i], yerr=confidence_intervals[:,i], capsize=5, color=bar_colors)
             axes[i].set_ylabel(graph_name, fontsize = 13)
+            
+            # Put raw data as points on the graph
+            for j in range(num_iLQR_methods):
+                axes[i].scatter([x[j]] * num_data_rows, dataframes_iLQR[j][graph_name], color='black', s=10, alpha=0.5)
             
     # Need to sort methods into particular order, the order should be 
     # SI1, SI5, SI1000, contact_change

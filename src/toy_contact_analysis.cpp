@@ -489,8 +489,7 @@ void BoxSweepTest(){
     }
 
     // Test keypoint generation
-    iLQROptimiser->keypoint_generator->ContactChangeDyn(iLQROptimiser->X_old,iLQROptimiser->U_old,
-                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector, false);
+    iLQROptimiser->keypoint_generator->ContactChangeDyn(iLQROptimiser->contact_list, activeModelTranslator->current_state_vector, true , false, false);
 
     //Print out the key points
     std::cout << "Keypoints: \n";

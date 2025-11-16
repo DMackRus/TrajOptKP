@@ -3,9 +3,9 @@ modelName: "/push_lcl"
 timeStep: 0.008
 openloop_horizon: 1000
 mpc_horizon: 100
-keypointMethod: "set_interval"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
-minN: 1
-maxN: 50
+keypointMethod: "contact_change_maxN"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn", "contact_change_maxN"
+minN: 1000
+maxN: 20
 
 robots:
   panda:
@@ -42,41 +42,34 @@ bodies:
 residuals:
   goal_pos:
     target: [0.7, 0.0]
-    weight: 0
+    weight: 0.1
     weight_terminal: 1000  # 1000 when long horizon
   goal_vel:
     target: [0, 0]
-    weight: 0.2
+    weight: 0.1
     weight_terminal: 10
   obstacle_1_pos:
     target: [ 0.6, 0 ]
     weight: 0
-    weight_terminal: 10  # 1000 when long horizon
-#  obstacle_1_vel:
-#    target: [ 0, 0 ]
-#    weight: 0.2
-#    weight_terminal: 0.2
+#    weight_terminal: 10
+    weight_terminal: 0
   obstacle_2_pos:
     target: [ 0.6, 0.1 ]
     weight: 0
-    weight_terminal: 10  # 1000 when long horizon
-#  obstacle_2_vel:
-#    target: [ 0, 0 ]
-#    weight: 0.2
-#    weight_terminal: 0.2
+#    weight_terminal: 10
+    weight_terminal: 0
   obstacle_3_pos:
     target: [ 0.7, 0 ]
     weight: 0
-    weight_terminal: 10  # 1000 when long horizon
-#  obstacle_3_vel:
-#    target: [ 0, 0 ]
-#    weight: 0.2
-#    weight_terminal: 0.2
+#    weight_terminal: 10
+    weight_terminal: 0
   joint_5_velocity:
     target: [ 0 ]
     weight: 0.1
     weight_terminal: 0.1
   reach:
     target: [0]
-    weight: 0.001
-    weight_terminal: 0.001
+#    weight: 0.001
+#    weight_terminal: 0.001
+    weight: 0
+    weight_terminal: 0

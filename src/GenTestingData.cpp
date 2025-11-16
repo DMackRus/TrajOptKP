@@ -234,18 +234,32 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
 
     // Keypoint methods to be tested
     std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
-                                                      "contact_change", "contact_change_sep", "contact_change_dyn"};
-    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1, 1};
-//    std::vector<std::string> keypoint_method_names = {"contact_change_dyn"};
+                                                      "contact_change", "contact_change_sep", "contact_change_dyn",
+                                                      "contact_change_maxN"};
+    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1, 1, 1};
+    std::vector<int> keypoint_method_max_N = {1, 1, 1, 1, 1, 1, 20};
+
+//    std::vector<std::string> keypoint_method_names = {"contact_change_maxN"};
 //    std::vector<int> keypoint_method_min_N = {1};
+//    std::vector<int> keypoint_method_max_N = {20};
+
+    assert(keypoint_method_names.size() == keypoint_method_min_N.size());
+    assert(keypoint_method_names.size() == keypoint_method_max_N.size());
+
     keypoint_method keypoint_method = optimiser->ReturnCurrentKeypointMethod();
 
     for(size_t i = 0; i < keypoint_method_names.size(); i++) {
         keypoint_method.name = keypoint_method_names[i];
         keypoint_method.min_N = keypoint_method_min_N[i];
+        keypoint_method.max_N = keypoint_method_max_N[i];
 
         // Set the keypoint method
         optimiser->SetCurrentKeypointMethod(keypoint_method);
+
+        // Print name of key-point method
+        std::cout << "---------------------------------------------------- \n";
+        std::cout << "Starting key-point tests for method: " << keypoint_method.name << " with min_N: " << keypoint_method.min_N << ", maxN: " << keypoint_method.max_N << "\n";
+        std::cout << "----------------------------------------------------- \n";
 
         this_test_fine = GenDataOpenloopOptimisation(task_horizon, num_trials, min_iterations, max_iterations);
         if(this_test_fine != EXIT_SUCCESS){
@@ -383,13 +397,13 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon, int num_trials
         num_iterations.push_back(optimiser->num_iterations);
         avg_num_dofs.push_back(optimiser->avg_dofs);
         avg_percent_derivs.push_back(optimiser->avg_percent_derivs);
-        total_time_keypoint_generation.push_back(std::accumulate(optimiser->time_keypoints_ms.begin(), optimiser->time_keypoints_ms.end(), 0));
-        total_time_FD.push_back(std::accumulate(optimiser->time_FD_derivs_ms.begin(), optimiser->time_FD_derivs_ms.end(), 0));
-        total_time_interpolation.push_back(std::accumulate(optimiser->time_interpolation_ms.begin(), optimiser->time_interpolation_ms.end(), 0));
-        total_time_residuals.push_back(std::accumulate(optimiser->time_cost_derivs_ms.begin(), optimiser->time_cost_derivs_ms.end(), 0));
-        total_time_derivs.push_back(std::accumulate(optimiser->time_get_derivs_ms.begin(), optimiser->time_get_derivs_ms.end(), 0));
-        total_time_bp.push_back(std::accumulate(optimiser->time_backwards_pass_ms.begin(), optimiser->time_backwards_pass_ms.end(), 0));
-        total_time_fp.push_back(std::accumulate(optimiser->time_forwardsPass_ms.begin(), optimiser->time_forwardsPass_ms.end(), 0));
+        total_time_keypoint_generation.push_back(std::accumulate(optimiser->time_keypoints_ms.begin(), optimiser->time_keypoints_ms.end(), 0.0));
+        total_time_FD.push_back(std::accumulate(optimiser->time_FD_derivs_ms.begin(), optimiser->time_FD_derivs_ms.end(), 0.0));
+        total_time_interpolation.push_back(std::accumulate(optimiser->time_interpolation_ms.begin(), optimiser->time_interpolation_ms.end(), 0.0));
+        total_time_residuals.push_back(std::accumulate(optimiser->time_cost_derivs_ms.begin(), optimiser->time_cost_derivs_ms.end(), 0.0));
+        total_time_derivs.push_back(std::accumulate(optimiser->time_get_derivs_ms.begin(), optimiser->time_get_derivs_ms.end(), 0.0));
+        total_time_bp.push_back(std::accumulate(optimiser->time_backwards_pass_ms.begin(), optimiser->time_backwards_pass_ms.end(), 0.0));
+        total_time_fp.push_back(std::accumulate(optimiser->time_forwardsPass_ms.begin(), optimiser->time_forwardsPass_ms.end(), 0.0));
     }
 
     // ----------------------- Save data to file -------------------------------------

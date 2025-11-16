@@ -4,7 +4,7 @@ modelName: "/bimanual_pickup"
 timeStep: 0.004
 openloop_horizon: 1500
 mpc_horizon: 70
-keypointMethod: "set_interval"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
+keypointMethod: "contact_change_dyn"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 minN: 5
 maxN: 100
 
@@ -15,18 +15,18 @@ robots:
     torqueControl: true
     torqueLimits: [87, 87, 87, 87, 12, 12, 12]
     startPos: [0.2, 0.53, 0, -1.5, 0, 0, 1.55]
-    position_threshold: 0.1  # Value between 0 and 1 - uses joint limits
-    velocity_threshold: 0.1    # Raw velocity threshold value
-    control_threshold: 0.1   # Value between 0 and 1 - uses control limits
+    position_threshold: 0.2  # Value between 0 and 1 - uses joint limits
+    velocity_threshold: 0.2    # Raw velocity threshold value
+    control_threshold: 0.2   # Value between 0 and 1 - uses control limits
   panda2:
     jointNames: [ "panda1_joint1", "panda1_joint2", "panda1_joint3", "panda1_joint4", "panda1_joint5", "panda1_joint6", "panda1_joint7" ]
     actuatorNames: [ "panda1_joint1", "panda1_joint2", "panda1_joint3", "panda1_joint4", "panda1_joint5", "panda1_joint6", "panda1_joint7" ]
     torqueControl: true
     torqueLimits: [ 87, 87, 87, 87, 12, 12, 12 ]
     startPos: [ -0.2, 0.53, 0, -1.5, 0, 0, -1.55 ]
-    position_threshold: 0.1  # Value between 0 and 1 - uses joint limits
-    velocity_threshold: 0.1    # Raw velocity threshold value
-    control_threshold: 0.1   # Value between 0 and 1 - uses control limits
+    position_threshold: 0.2  # Value between 0 and 1 - uses joint limits
+    velocity_threshold: 0.2    # Raw velocity threshold value
+    control_threshold: 0.2   # Value between 0 and 1 - uses control limits
 bodies:
   goal:
     activeLinearDOF: [true, true, true]
@@ -40,7 +40,7 @@ residuals:
     target: [ 0.3, 0, 0.5 ]
 #    weight: 5
 #    weight_terminal: 1000
-    weight: 5
+    weight: 10
     weight_terminal: 1000
 #  goal_pos:
 #    target: [ 0.5, 0, 0.4 ]
@@ -49,8 +49,8 @@ residuals:
   reach_1:
     target: [0.015]
     weight: 1
-    weight_terminal: 10
+    weight_terminal: 1
   reach_2:
     target: [0.015]
     weight: 1
-    weight_terminal: 10
+    weight_terminal: 1

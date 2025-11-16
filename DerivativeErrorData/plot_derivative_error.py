@@ -223,16 +223,20 @@ if __name__ == "__main__":
     # plot_error_versus_CR("pushing_low_clutter_1000_3", "Elementnorm Error")
     
     # Dictionary of folder names and task names
-    tasks_folder = {"Acrobot": "acrobot_2000_3",
-                    "Walker": "walker_run_200_3",
-                    "Box Sweep": "box_sweep_1500_3",
-                    "Impact Large Box 4": "impact_large_box_2000_4",
-                    "Impact Large Box 8": "impact_large_box_2000_8",
-                    "Pushing No Clutter 0": "pushing_no_clutter_1000_0",
-                    "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
-                    "Pushing Low Clutter 3": "pushing_low_clutter_1000_3",
-                    "Pushing Moderate Clutter 3": "pushing_moderate_clutter_1000_3",
-    }    
+    # tasks_folder = {"Acrobot": "acrobot_2000_3",
+    #                 "Walker": "walker_run_200_3",
+    #                 "Box Sweep": "box_sweep_1500_3",
+    #                 "Impact Large Box 4": "impact_large_box_2000_4",
+    #                 "Impact Large Box 8": "impact_large_box_2000_8",
+    #                 "Pushing No Clutter 0": "pushing_no_clutter_1000_0",
+    #                 "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
+    #                 "Pushing Low Clutter 3": "pushing_low_clutter_1000_3",
+    #                 "Pushing Moderate Clutter 3": "pushing_moderate_clutter_1000_3",
+    # }   
+    tasks_folder = {
+            "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
+            "Pushing Low Clutter 3": "pushing_low_clutter_1000_3",
+    }   
 
     error_metrics = ["MSE", "Max Error (abs)", "Elementnorm Error"]
     print_correlation_CR_versus_errors(tasks_folder, error_metrics)
@@ -240,5 +244,5 @@ if __name__ == "__main__":
     error_metrics = ["Max Error (abs)", "Elementnorm Error"]
     print_error_percentage_derivs(tasks_folder, error_metrics)
 
-    # for task in tasks:
-    #     plot_error_metrics(task)
+    for task in tasks_folder:
+        plot_error_metrics(tasks_folder[task])
