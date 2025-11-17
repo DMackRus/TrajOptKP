@@ -96,7 +96,11 @@ def plot_error_metrics(folder_path):
     for i, metric in enumerate(metrics):
         ax = axes[0, i]
         for _, row in summary_df.iterrows():
-            ax.scatter(row[metric], row["Cost Reduction"], label=row["method"])
+            if "contact" in row["method"]:
+                ax.scatter(row[metric], row["Cost Reduction"], label=row["method"], marker='x')
+            else:
+                ax.scatter(row[metric], row["Cost Reduction"], label=row["method"], marker='o')
+            
         ax.set_xlabel(f"{metric}")
         # ax.set_ylabel(metric)
         ax.set_title(f"Cost Reduction vs {metric}")
@@ -234,6 +238,7 @@ if __name__ == "__main__":
     #                 "Pushing Moderate Clutter 3": "pushing_moderate_clutter_1000_3",
     # }   
     tasks_folder = {
+            "Box Sweep": "box_sweep_1500_3",
             "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
             "Pushing Low Clutter 3": "pushing_low_clutter_1000_3",
     }   

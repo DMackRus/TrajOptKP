@@ -23,6 +23,102 @@ std::shared_ptr<iLQR> iLQROptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
 
+void ApproximationError(
+        const std::vector<Eigen::MatrixXd> &A_exact,
+        const std::vector<Eigen::MatrixXd> &B_exact,
+        const std::vector<Eigen::MatrixXd> &A_approx,
+        const std::vector<Eigen::MatrixXd> &B_approx,
+        double &mse,
+        double &elementnorm_mse_error,
+        double &max_abs_error)
+{
+    assert(A_exact.size() == A_approx.size());
+    assert(B_exact.size() == B_approx.size());
+    size_t T = A_exact.size();
+
+    const double eps = 1e-8;
+
+    mse = 0.0;
+    elementnorm_mse_error = 0.0;
+    max_abs_error = 0.0;
+
+    // 1. Compute global MSE and max absolute error
+    size_t total_elements = 0;
+    for (size_t t = 0; t < T; ++t) {
+        Eigen::MatrixXd diffA = A_exact[t] - A_approx[t];
+        Eigen::MatrixXd diffB = B_exact[t] - B_approx[t];
+        double step_mse = diffA.squaredNorm() + diffB.squaredNorm();
+        mse += step_mse;
+
+        if(step_mse > max_abs_error){
+            max_abs_error = step_mse;
+        }
+    }
+    // Normalise MSE by total number of elements across all timesteps
+    mse /= static_cast<double>((A_exact[0].size() + B_exact[0].size()) * T);
+    max_abs_error /= static_cast<double>(A_exact[0].size() + B_exact[0].size());
+
+    // 2. Compute elementwise norm matrices for A and B based on exact values
+    Eigen::MatrixXd minA = Eigen::MatrixXd::Zero(A_exact[0].rows(), A_exact[0].cols());
+    Eigen::MatrixXd maxA = Eigen::MatrixXd::Zero(A_exact[0].rows(), A_exact[0].cols());
+    Eigen::MatrixXd minB = Eigen::MatrixXd::Zero(B_exact[0].rows(), B_exact[0].cols());
+    Eigen::MatrixXd maxB = Eigen::MatrixXd::Zero(B_exact[0].rows(), B_exact[0].cols());
+
+    // Find the min and max values for each element across all timesteps
+    for(int t = 0; t < T; t++){
+        for(int i = 0; i < A_exact[t].rows(); i++){
+            for(int j = 0; j < A_exact[t].cols(); j++){
+                if(t == 0){
+                    minA(i, j) = A_exact[t](i, j);
+                    maxA(i, j) = A_exact[t](i, j);
+                }
+                else{
+                    if(A_exact[t](i, j) < minA(i, j)) minA(i, j) = A_exact[t](i, j);
+                    if(A_exact[t](i, j) > maxA(i, j)) maxA(i, j) = A_exact[t](i, j);
+                }
+            }
+        }
+        for(int i = 0; i < B_exact[t].rows(); i++){
+            for(int j = 0; j < B_exact[t].cols(); j++){
+                if(t == 0){
+                    minB(i, j) = B_exact[t](i, j);
+                    maxB(i, j) = B_exact[t](i, j);
+                }
+                else{
+                    if(B_exact[t](i, j) < minB(i, j)) minB(i, j) = B_exact[t](i, j);
+                    if(B_exact[t](i, j) > maxB(i, j)) maxB(i, j) = B_exact[t](i, j);
+                }
+            }
+        }
+    }
+
+    // Normalise the exact and approximate matrices using these min and max values
+    for(int t = 0; t < T; t++){
+        Eigen::MatrixXd normA_exact = Eigen::MatrixXd::Zero(A_exact[t].rows(), A_exact[t].cols());
+        Eigen::MatrixXd normA_approx = Eigen::MatrixXd::Zero(A_approx[t].rows(), A_approx[t].cols());
+        Eigen::MatrixXd normB_exact = Eigen::MatrixXd::Zero(B_exact[t].rows(), B_exact[t].cols());
+        Eigen::MatrixXd normB_approx = Eigen::MatrixXd::Zero(B_approx[t].rows(), B_approx[t].cols());
+
+        for(int i = 0; i < A_exact[t].rows(); i++){
+            for(int j = 0; j < A_exact[t].cols(); j++){
+                normA_exact(i, j) = (A_exact[t](i, j) - minA(i, j)) / (maxA(i, j) - minA(i, j) + eps);
+                normA_approx(i, j) = (A_approx[t](i, j) - minA(i, j)) / (maxA(i, j) - minA(i, j) + eps);
+            }
+        }
+        for(int i = 0; i < B_exact[t].rows(); i++){
+            for(int j = 0; j < B_exact[t].cols(); j++){
+                normB_exact(i, j) = (B_exact[t](i, j) - minB(i, j)) / (maxB(i, j) - minB(i, j) + eps);
+                normB_approx(i, j) = (B_approx[t](i, j) - minB(i, j)) / (maxB(i, j) - minB(i, j) + eps);
+            }
+        }
+
+        // Compute the MSE between the normalised exact and approximate matrices
+        double step_mse = (normA_exact - normA_approx).squaredNorm() + (normB_exact - normB_approx).squaredNorm();
+        elementnorm_mse_error += step_mse;
+    }
+    elementnorm_mse_error /= static_cast<double>((A_exact[0].size() + B_exact[0].size()) * T);
+}
+
 Eigen::MatrixXd getMassMatrix(const mjModel* m, mjData* d) {
     // Allocate a buffer to store the mass matrix
     int nv = m->nv;
@@ -364,8 +460,8 @@ void TestKeypointMethod(){
 //    iLQROptimiser->keypoint_generator->ContactChangeDyn(iLQROptimiser->X_old,iLQROptimiser->U_old,
 //                                                             iLQROptimiser->contact_list, activeModelTranslator->current_state_vector, false);
 
-    iLQROptimiser->keypoint_generator->ContactAwareKeypointsSep(iLQROptimiser->X_old,iLQROptimiser->U_old,
-                                                        iLQROptimiser->contact_list, activeModelTranslator->current_state_vector);
+//    iLQROptimiser->keypoint_generator->ContactAwareKeypointsSep(iLQROptimiser->X_old,iLQROptimiser->U_old,
+//                                                        iLQROptimiser->contact_list, activeModelTranslator->current_state_vector);
 
     //Print out the key points
     std::cout << "Keypoints: \n";
@@ -699,12 +795,264 @@ void ArticulatedContactSaveDerivs(){
     }
 }
 
+void PistonBlockTest(){
+    // This test I want to setup the piston block task - compute dynamics derivatives about the nominal trajectory
+    // for SI1 case. Save those to a file. Generate keypoints for a contact change method and save to file.
+    // As well as saving the raw values to files, I want to compute the error metrics, the same as I do in another
+    // script and save that to a yaml file as well in same directory.
+
+    std::cout << "Articulated Contact Derivative Analysis" << std::endl;
+
+    // Doesnt actually do anything for this program
+    yamlReader = std::make_shared<FileHandler>();
+
+    // Instantiate the model translator
+    std::shared_ptr<PistonBlock> piston_block = std::make_shared<PistonBlock>();
+    activeModelTranslator = piston_block;
+
+    // Instantiate the differentiator
+    activeDifferentiator = std::make_shared<Differentiator>(activeModelTranslator, activeModelTranslator->MuJoCo_helper);
+
+    activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
+    //Instantiate the visualiser
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
+
+    // Setup the initial horizon, based on open loop or mpc method
+    int opt_horizon = 2000;
+
+    iLQROptimiser = std::make_shared<iLQR>(activeModelTranslator,
+                                           activeModelTranslator->MuJoCo_helper,
+                                           activeDifferentiator,
+                                           opt_horizon, activeVisualiser, yamlReader);
+
+    iLQROptimiser->Resize(activeModelTranslator->current_state_vector.dof,
+                          activeModelTranslator->current_state_vector.num_ctrl,
+                          opt_horizon);
+
+
+
+    std::vector<MatrixXd> init_opt_controls;
+    std::vector<MatrixXd> optimised_controls;
+
+    // Load new task instance
+    std::string task_prefix = activeModelTranslator->model_name;
+    yamlReader->LoadTaskFromFile(task_prefix, 0, activeModelTranslator->full_state_vector,
+                                 activeModelTranslator->residual_list);
+    activeModelTranslator->full_state_vector.Update();
+    activeModelTranslator->current_state_vector = activeModelTranslator->full_state_vector;
+    activeModelTranslator->UpdateSceneVisualisation();
+
+    activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    std::vector<MatrixXd> init_setup_controls = activeModelTranslator->CreateInitSetupControls(1000);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data, activeModelTranslator->MuJoCo_helper->main_data);
+
+    init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(opt_horizon);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], activeModelTranslator->MuJoCo_helper->master_reset_data);
+    activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+    optimised_controls = init_opt_controls;
+
+    // Rollout the initial controls of the trajectory to give a sequence of states to compute dynamics derivatives from
+    iLQROptimiser->RolloutTrajectory(activeModelTranslator->MuJoCo_helper->master_reset_data, true, init_opt_controls);
+
+    // Visualise the controls
+//    for(int t = 0; t < opt_horizon; t++) {
+//        // Copy the system state to the visualiser
+//        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+//                                                              activeModelTranslator->MuJoCo_helper->saved_systems_state_list[t]);
+//        // Forward the model
+//        mj_forward(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->vis_data);
+//        // Render the visualiser
+//        activeVisualiser->render("Piston Block Test");
+//        std::this_thread::sleep_for(std::chrono::milliseconds(20));
+//    }
+
+
+    // Define key-point methods to test
+    std::vector<MatrixXd> A_matrices_SI1, B_matrices_SI1;
+    std::vector<std::string> methods = {"SI20", "contact_change", "contact_change_maxN"};
+    std::vector<std::string> keypoint_methods = {"set_interval", "contact_change", "contact_change_maxN"};
+    std::vector<int> min_n_values = {20, 1, 1};
+    std::vector<int> max_n_values = {1, 1, 20};
+
+    // Make sure all vectors are the same size
+    assert(methods.size() == keypoint_methods.size());
+    assert(methods.size() == min_n_values.size());
+    assert(methods.size() == max_n_values.size());
+
+    // Data storage
+    std::vector<std::vector<double>> mean_squared_error,
+            elementnorm_mse_errors,
+            max_abs_error,
+            percentage_derivatives;
+
+    mean_squared_error.resize(methods.size());
+    elementnorm_mse_errors.resize(methods.size());
+    max_abs_error.resize(methods.size());
+
+    // Create Vectors of MatrixXd to store A and B matrices for each method
+    std::vector<std::vector<MatrixXd>> A_matrices(methods.size()), B_matrices(methods.size());
+
+    // Size matrices appropriately
+    for(int i = 0; i < methods.size(); i++){
+        A_matrices[i].resize(opt_horizon, MatrixXd::Zero(activeModelTranslator->current_state_vector.dof, activeModelTranslator->current_state_vector.dof));
+        B_matrices[i].resize(opt_horizon, MatrixXd::Zero(activeModelTranslator->current_state_vector.dof, activeModelTranslator->current_state_vector.num_ctrl));
+    }
+
+    // First compute key-points for SI1
+    keypoint_method method;
+    method = iLQROptimiser->ReturnCurrentKeypointMethod();
+    method.min_N = 1;
+    method.name = "set_interval";
+    iLQROptimiser->SetCurrentKeypointMethod(method);
+    iLQROptimiser->GenerateDerivatives();
+
+    // Save the data
+    A_matrices_SI1 = iLQROptimiser->A;
+    B_matrices_SI1 = iLQROptimiser->B;
+
+    // Loop through key-point methods - compute dynamics derivatives for each method
+    for(int i = 0; i < methods.size(); i++){
+        method.min_N = min_n_values[i];
+        method.max_N = max_n_values[i];
+        method.name = keypoint_methods[i];
+        iLQROptimiser->SetCurrentKeypointMethod(method);
+
+        iLQROptimiser->GenerateDerivatives();
+
+        // Save the data
+        A_matrices[i] = iLQROptimiser->A;
+        B_matrices[i] = iLQROptimiser->B;
+    }
+
+    // Compute error metrics for all methods between approximated dynamics derivatives and accurate ones
+    for(int i = 0; i < methods.size(); i++){
+        double mse, elementnorm_mse, max_error;
+        ApproximationError(A_matrices_SI1, B_matrices_SI1, A_matrices[i], B_matrices[i],
+                           mse, elementnorm_mse, max_error);
+
+        mean_squared_error[i].push_back(mse);
+        elementnorm_mse_errors[i].push_back(elementnorm_mse);
+        max_abs_error[i].push_back(max_error);
+    }
+
+
+    // Save all data to files - each method will be a directory - with a A_matrices.csv, B_matrices.csv, error_metrics.yaml files
+    // --------------- Save the results to a file --------------------------
+    // directory "DerivativeErrorData /{task_name}/{method_name}/
+
+    std::string project_parent_path = __FILE__;
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+    project_parent_path = project_parent_path.substr(0, project_parent_path.find_last_of("/\\"));
+
+    std::string task_name = activeModelTranslator->model_name;
+
+    // Check folder exists, if it does not create one
+    std::string folder_name = project_parent_path + "/DerivativeErrorData/" + task_name + + "/";
+    if(!std::filesystem::exists(folder_name)){
+        std::filesystem::create_directories(folder_name);
+    }
+
+    // Loop through all methods and save the data
+    for(int i = 0; i < methods.size(); i++){
+        std::string method_folder_name = folder_name + methods[i] + "/";
+        if(!std::filesystem::exists(method_folder_name)){
+            std::filesystem::create_directories(method_folder_name);
+        }
+
+        // Save A matrices
+        std::string A_filename = method_folder_name + "A_matrices.csv";
+        ofstream A_file_output;
+        A_file_output.open(A_filename);
+        for(int t = 0; t < opt_horizon; t++){
+            for(int r = 0; r < A_matrices[i][t].rows(); r++){
+                for(int c = 0; c < A_matrices[i][t].cols(); c++){
+                    A_file_output << A_matrices[i][t](r,c);
+                    if(c < A_matrices[i][t].cols() - 1){
+                        A_file_output << ",";
+                    }
+                }
+                A_file_output << "\n";
+            }
+        }
+        A_file_output.close();
+
+        // Save B matrices
+        std::string B_filename = method_folder_name + "B_matrices.csv";
+        ofstream B_file_output;
+        B_file_output.open(B_filename);
+        for(int t = 0; t < opt_horizon; t++){
+            for(int r = 0; r < B_matrices[i][t].rows(); r++){
+                for(int c = 0; c < B_matrices[i][t].cols(); c++){
+                    B_file_output << B_matrices[i][t](r,c);
+                    if(c < B_matrices[i][t].cols() - 1){
+                        B_file_output << ",";
+                    }
+                }
+                B_file_output << "\n";
+            }
+        }
+        B_file_output.close();
+
+        // Save error metrics to yaml file
+        std::string error_filename = method_folder_name + "error_metrics.yaml";
+        ofstream error_file_output;
+        error_file_output.open(error_filename);
+        error_file_output << "mean_squared_error: " << mean_squared_error[i][0] << "\n";
+        error_file_output << "elementnorm_mse_error: " << elementnorm_mse_errors[i][0] << "\n";
+        error_file_output << "max_absolute_error: " << max_abs_error[i][0] << "\n";
+        error_file_output.close();
+    }
+
+    // Save the SI1 data as well - no error metrics however
+    std::string method_folder_name = folder_name + "SI1/";
+    if(!std::filesystem::exists(method_folder_name)){
+        std::filesystem::create_directories(method_folder_name);
+    }
+    // Save A matrices
+    std::string A_filename = method_folder_name + "A_matrices.csv";
+    ofstream A_file_output;
+    A_file_output.open(A_filename);
+    for(int t = 0; t < opt_horizon; t++){
+        for(int r = 0; r < A_matrices_SI1[t].rows(); r++){
+            for(int c = 0; c < A_matrices_SI1[t].cols(); c++){
+                A_file_output << A_matrices_SI1[t](r,c);
+                if(c < A_matrices_SI1[t].cols() - 1){
+                    A_file_output << ",";
+                }
+            }
+            A_file_output << "\n";
+        }
+    }
+    A_file_output.close();
+    // Save B matrices
+    std::string B_filename = method_folder_name + "B_matrices.csv";
+    ofstream B_file_output;
+    B_file_output.open(B_filename);
+    for(int t = 0; t < opt_horizon; t++){
+        for(int r = 0; r < B_matrices_SI1[t].rows(); r++){
+            for(int c = 0; c < B_matrices_SI1[t].cols(); c++){
+                B_file_output << B_matrices_SI1[t](r,c);
+                if(c < B_matrices_SI1[t].cols() - 1){
+                    B_file_output << ",";
+                }
+            }
+            B_file_output << "\n";
+        }
+    }
+
+}
+
 // Articulated Contact Script
 int main(){
 
 //    TestKeypointMethod();
 
-    BoxSweepTest();
+    PistonBlockTest();
+
+//    BoxSweepTest();
 
 //    ArticulatedContactSaveDerivs();
     return 0;

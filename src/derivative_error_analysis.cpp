@@ -329,25 +329,22 @@ int ApproximationAccuracyVersusOptimisationPerformance(int argc, char **argv){
                           opt_horizon);
 
     std::vector<MatrixXd> A_matrices_SI1, B_matrices_SI1;
-//    std::vector<std::string> methods = {"SI2", "SI5", "SI20", "SI1000", "contact_change", "contact_change_dyn"};
-//    std::vector<std::string> keypoint_methods = {"set_interval", "set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn"};
-//    std::vector<int> min_n_values = {2, 5, 20, 1000, 1, 1};
 
-    std::vector<std::string> methods = {"SI2", "SI5", "SI10", "SI20", "SI100", "SI200", "SI500", "SI1000", "contact_change", "contact_change_dyn", "contact_change_maxN"};
-    std::vector<std::string> keypoint_methods = {"set_interval", "set_interval", "set_interval", "set_interval", "set_interval",
-                                                 "set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn", "contact_change_maxN"};
-    std::vector<int> min_n_values = {2, 5, 10, 20, 100, 200, 500, 1000, 1, 1, 1};
-    std::vector<int> max_n_values = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 20};
+//    std::vector<std::string> methods = {"SI2", "SI5", "SI10", "SI20", "SI100", "SI200", "SI500", "SI1000", "contact_change", "contact_change_dyn", "contact_change_maxN"};
+//    std::vector<std::string> keypoint_methods = {"set_interval", "set_interval", "set_interval", "set_interval", "set_interval",
+//                                                 "set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn", "contact_change_maxN"};
+//    std::vector<int> min_n_values = {2, 5, 10, 20, 100, 200, 500, 1000, 1, 1, 1};
+//    std::vector<int> max_n_values = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 20};
 
     // Make sure all vectors are the same size
     assert(methods.size() == keypoint_methods.size());
     assert(methods.size() == min_n_values.size());
     assert(methods.size() == max_n_values.size());
 
-//    std::vector<std::string> methods = {"contact_change_maxN"};
-//    std::vector<std::string> keypoint_methods = {"contact_change_maxN"};
-//    std::vector<int> min_n_values = {1};
-//    std::vector<int> max_n_values = {20};
+    std::vector<std::string> methods = {"contact_change_maxN"};
+    std::vector<std::string> keypoint_methods = {"contact_change_maxN"};
+    std::vector<int> min_n_values = {1};
+    std::vector<int> max_n_values = {20};
 
     // Create Vectors of MatrixXd to store A and B matrices for each method
     std::vector<std::vector<MatrixXd>> A_matrices(methods.size()), B_matrices(methods.size());
