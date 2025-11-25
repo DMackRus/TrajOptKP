@@ -16,6 +16,7 @@
 #include "ModelTranslator/BoxSweep.h"
 #include "ModelTranslator/ImpactLargeBox.h"
 #include "ModelTranslator/Walker.h"
+#include "ModelTranslator/PistonBlock.h"
 
 #include "Optimiser/Optimiser.h"
 #include "Optimiser/iLQR.h"
@@ -289,6 +290,10 @@ int assign_task(std::string task){
         std::shared_ptr<ImpactLargeBox> my_impact_large_box = std::make_shared<ImpactLargeBox>();
         activeModelTranslator = my_impact_large_box;
     }
+    else if(task == "piston_block"){
+        std::shared_ptr<PistonBlock> my_piston_block = std::make_shared<PistonBlock>();
+        activeModelTranslator = my_piston_block;
+    }
     else{
         std::cout << "invalid scene selected, " << task << " does not exist" << std::endl;
     }
@@ -330,21 +335,21 @@ int ApproximationAccuracyVersusOptimisationPerformance(int argc, char **argv){
 
     std::vector<MatrixXd> A_matrices_SI1, B_matrices_SI1;
 
-//    std::vector<std::string> methods = {"SI2", "SI5", "SI10", "SI20", "SI100", "SI200", "SI500", "SI1000", "contact_change", "contact_change_dyn", "contact_change_maxN"};
-//    std::vector<std::string> keypoint_methods = {"set_interval", "set_interval", "set_interval", "set_interval", "set_interval",
-//                                                 "set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn", "contact_change_maxN"};
-//    std::vector<int> min_n_values = {2, 5, 10, 20, 100, 200, 500, 1000, 1, 1, 1};
-//    std::vector<int> max_n_values = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 20};
+    std::vector<std::string> methods = {"SI2", "SI5", "SI10", "SI20", "SI100", "SI200", "SI500", "SI1000", "contact_change", "contact_change_dyn", "contact_change_maxN"};
+    std::vector<std::string> keypoint_methods = {"set_interval", "set_interval", "set_interval", "set_interval", "set_interval",
+                                                 "set_interval", "set_interval", "set_interval", "contact_change", "contact_change_dyn", "contact_change_maxN"};
+    std::vector<int> min_n_values = {2, 5, 10, 20, 100, 200, 500, 1000, 1, 1, 1};
+    std::vector<int> max_n_values = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 20};
 
     // Make sure all vectors are the same size
     assert(methods.size() == keypoint_methods.size());
     assert(methods.size() == min_n_values.size());
     assert(methods.size() == max_n_values.size());
 
-    std::vector<std::string> methods = {"contact_change_maxN"};
-    std::vector<std::string> keypoint_methods = {"contact_change_maxN"};
-    std::vector<int> min_n_values = {1};
-    std::vector<int> max_n_values = {20};
+//    std::vector<std::string> methods = {"contact_change_maxN"};
+//    std::vector<std::string> keypoint_methods = {"contact_change_maxN"};
+//    std::vector<int> min_n_values = {1};
+//    std::vector<int> max_n_values = {20};
 
     // Create Vectors of MatrixXd to store A and B matrices for each method
     std::vector<std::vector<MatrixXd>> A_matrices(methods.size()), B_matrices(methods.size());

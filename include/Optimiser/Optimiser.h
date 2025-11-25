@@ -320,6 +320,6 @@ protected:
     void SaveBestRollout(int thread_id);
 
 private:
-    double epsConverge = 0.02;
+    double epsConverge = 0.01;
 
 };

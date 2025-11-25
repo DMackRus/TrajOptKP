@@ -895,6 +895,9 @@ void PistonBlockTest(){
     // Create Vectors of MatrixXd to store A and B matrices for each method
     std::vector<std::vector<MatrixXd>> A_matrices(methods.size()), B_matrices(methods.size());
 
+    // Create vectors to store the key-points per method
+    std::vector<std::vector<std::vector<int>>> keypoints_per_method(methods.size());
+
     // Size matrices appropriately
     for(int i = 0; i < methods.size(); i++){
         A_matrices[i].resize(opt_horizon, MatrixXd::Zero(activeModelTranslator->current_state_vector.dof, activeModelTranslator->current_state_vector.dof));
@@ -925,6 +928,8 @@ void PistonBlockTest(){
         // Save the data
         A_matrices[i] = iLQROptimiser->A;
         B_matrices[i] = iLQROptimiser->B;
+        std::vector<std::vector<int>> kp = iLQROptimiser->keypoint_generator->keypoints;
+        keypoints_per_method[i] = kp;
     }
 
     // Compute error metrics for all methods between approximated dynamics derivatives and accurate ones
@@ -1004,6 +1009,22 @@ void PistonBlockTest(){
         error_file_output << "elementnorm_mse_error: " << elementnorm_mse_errors[i][0] << "\n";
         error_file_output << "max_absolute_error: " << max_abs_error[i][0] << "\n";
         error_file_output.close();
+
+        // Save the keypoints to a file
+        std::string keypoints_filename = method_folder_name + "keypoints.csv";
+        ofstream keypoints_file_output;
+        keypoints_file_output.open(keypoints_filename);
+        for(int t = 0; t < opt_horizon; t++){
+            if(!keypoints_per_method[i][t].empty()){
+                for(int k = 0; k < keypoints_per_method[i][t].size(); k++){
+                    keypoints_file_output << keypoints_per_method[i][t][k];
+                    if(k < keypoints_per_method[i][t].size() - 1){
+                        keypoints_file_output << ",";
+                    }
+                }
+            }
+            keypoints_file_output << "\n";
+        }
     }
 
     // Save the SI1 data as well - no error metrics however
