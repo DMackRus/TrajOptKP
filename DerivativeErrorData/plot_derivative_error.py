@@ -230,17 +230,16 @@ if __name__ == "__main__":
     # tasks_folder = {"Acrobot": "acrobot_2000_3",
     #                 "Walker": "walker_run_200_3",
     #                 "Box Sweep": "box_sweep_1500_3",
-    #                 "Impact Large Box 4": "impact_large_box_2000_4",
     #                 "Impact Large Box 8": "impact_large_box_2000_8",
-    #                 "Pushing No Clutter 0": "pushing_no_clutter_1000_0",
     #                 "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
     #                 "Pushing Low Clutter 3": "pushing_low_clutter_1000_3",
     #                 "Pushing Moderate Clutter 3": "pushing_moderate_clutter_1000_3",
     # }   
     tasks_folder = {
             "Box Sweep": "box_sweep_1500_3",
+            "Piston Block": "piston_block_1000_3",
             "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
-            "Pushing Low Clutter 3": "pushing_low_clutter_1000_3",
+            "Impact Large Box 8": "impact_large_box_2000_8",
     }   
 
     error_metrics = ["MSE", "Max Error (abs)", "Elementnorm Error"]
