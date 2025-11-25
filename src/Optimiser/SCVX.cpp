@@ -885,7 +885,7 @@ void SCVX::SolveQP() {
     OsqpEigen::Solver solver;
 
     // settings
-    solver.settings()->setVerbosity(true);
+    solver.settings()->setVerbosity(false);
     solver.settings()->setWarmStart(true);
 //    solver.settings()->setMaxIteration(1000);
 

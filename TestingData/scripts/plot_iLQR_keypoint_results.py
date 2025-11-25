@@ -13,7 +13,9 @@ green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
 # task_name = "push_mcl"
-iterations = "6_6"
+# iterations = "6_6"
+# iterations = "3_10"
+iterations = "4_10"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
@@ -29,11 +31,7 @@ def main():
     # global task_name
     
     tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    # tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    # tasks = ["walker"]
-    # tasks = ["acrobot", "push_ncl", "box_sweep", "impact", "walker"]
-    # tasks = ["acrobot", "push_ncl", "push_lcl", "box_sweep", "impact", "walker"]
-    # tasks = ["push_ncl", "push_lcl"]
+    tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)

@@ -176,6 +176,7 @@ add_executable(derivative_error_analysis
         src/ModelTranslator/TwoDPushing.cpp
         src/ModelTranslator/Walker.cpp
         src/ModelTranslator/PlaceObject.cpp
+        src/ModelTranslator/PistonBlock.cpp
         )
 
 # Contact stiffness test code

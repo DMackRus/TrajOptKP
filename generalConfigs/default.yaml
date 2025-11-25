@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "pushing_low_clutter"
+task: "impact_large_box"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -32,7 +32,7 @@ task: "pushing_low_clutter"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
+optimiser: "SCVX"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
 
 # Run mode for the program
 runMode: "Optimise_once"

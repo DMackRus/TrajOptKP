@@ -108,7 +108,7 @@ private:
     bool cost_reduced_last_iter = false;
     double linear_cost = 0.0;
     double non_linear_cost = 0.0;
-    double trust_region_radius = 100.0;
+    double trust_region_radius = 1000.0; // Used to be 100.0
     double trust_region_max = 1.0;  //TODO - what value to use?
     double Rho = 1.0;
     double beta_upper = 1.5;
