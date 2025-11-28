@@ -618,13 +618,14 @@ void SCVX::AddL1TrustRegionWithResize(Eigen::SparseMatrix<double>& A,
                                       double rho)
 {
     int T  = horizon_length;
+    int n_k = T / controls_per_knotpoint;
     int nx = 2 * dof;
     int nu = num_ctrl;
 
     // ---------------- Decision structure ----------------
     // z = [δx0 .. δxT, δu0 .. δu_{T-1}]
-    int n_x_block = (T + 1) * nx;
-    int n_u_block = T * nu;
+    int n_x_block = (n_k + 1) * nx;
+    int n_u_block = n_k * nu;
     int n_z       = n_x_block + n_u_block;
 
     // slack variables, one per element of z
@@ -748,19 +749,98 @@ void SCVX::AddL1TrustRegionWithResize(Eigen::SparseMatrix<double>& A,
     gradient_vector.swap(q_new);
 }
 
+void SCVX::ComputeCompressedDynamics(std::vector<Eigen::MatrixXd> &Phi,
+                                     std::vector<Eigen::MatrixXd> &Gamma){
+
+//    std::vector<Eigen::MatrixXd> Phi;
+//    std::vector<Eigen::MatrixXd> Gamma;
+
+    // Resize them appropriately
+    if(horizon_length % controls_per_knotpoint != 0){
+        throw std::runtime_error("ComputeKnotDynamics: horizon_length is not divisible by controls_per_knotpoint.");
+    }
+    const int num_knot_points = horizon_length / controls_per_knotpoint;
+
+    const int K    = num_knot_points;
+    const int n_x  = A[0].rows();
+    const int n_u  = B[0].cols();
+
+    Phi.resize(K);
+    Gamma.resize(K);
+
+        for (int k = 0; k < K; ++k)
+        {
+            // ----- Compute A_k ------
+            Eigen::MatrixXd P = Eigen::MatrixXd::Identity(n_x, n_x);
+
+            int t_start = k * controls_per_knotpoint;
+            int t_end   = t_start + controls_per_knotpoint;
+
+            // Backward product: A_{t_end-1} ... A_{t_start}
+            for (int t = t_end - 1; t >= t_start; --t) {
+                P = A[t] * P;
+            }
+            Phi[k] = P;
+
+            // ----- Compute Γ_k -----
+            //
+            // Gamma = sum_{i=0}^{n_sub-1} (A_{t_end-1} ... A_{t_start+i+1}) * B_{t_start+i}
+            //
+            // We compute the products incrementally:
+            // Let Q = I initially, representing product over an empty range.
+            // At each iteration i, Q = A_{t_end-1} ... A_{t_start+i+1}.
+            //
+            // When i increments, Q is left-multiplied by A_{t_start+i+1}.
+            Eigen::MatrixXd G = Eigen::MatrixXd::Zero(n_x, n_u);
+            Eigen::MatrixXd Q = Eigen::MatrixXd::Identity(n_x, n_x);
+
+            for (int i = controls_per_knotpoint - 1; i >= 0; --i)
+            {
+                // index of low-level step inside this knot
+                int ti = t_start + i;
+
+                // Add Q * B[ti] to G
+                G += Q * B[ti];
+
+                // If not at the last iteration, update Q ← Q * A_{ti}
+                if (i > 0) {
+                    Q = A[ti] * Q;
+                }
+            }
+
+            Gamma[k] = G;
+        }
+
+//    std::cout << "Gamma[0]: \n" << Gamma[0] << "\n";
+//
+//    std::cout << "phi[0]: \n" << Phi[0] << "\n";
+
+}
+
 void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
                                   Eigen::VectorXd& lower_bound,
                                   Eigen::VectorXd& upper_bound,
                                   const Eigen::VectorXd& x0){
+
     int T   = horizon_length; // number of control steps
-    int n_x = 2 * dof;        // state dimension
+    int n_k = horizon_length / controls_per_knotpoint; // number of knot points
+
+    // Sanity check to make sure horizon_length is divisible by controls_per_knotpoint
+    if(horizon_length % controls_per_knotpoint != 0){
+        throw std::runtime_error("SetDynamicsConstraints: horizon_length is not divisible by controls_per_knotpoint.");
+    }
+    int n_x = (2 * dof);      // state dimension
     int n_u = num_ctrl;       // control dimension
 
+    // Compute compressed linear dynamics matrices
+    std::vector<MatrixXd> Phi, Gamma;
+    ComputeCompressedDynamics(Phi, Gamma);
+
     // Decision vector length z = [delta x_0, delta x_1, ..., delta x_T, delta u_0, ..., delta u_{T-1}]
-    int n_z = (n_u * T) + (n_x * (T+1));
+    int n_z = (n_u * n_k) + (n_x * (n_k+1));
 
     // Equality constraints: delta x_{t+1} = A_t delta x_t + B_t delta u_t, t=0..T-1
-    int n_eq = T * n_x;
+    int n_eq = n_k * n_x;
     linear_matrix.resize(n_eq, n_z);
 
     std::vector<Eigen::Triplet<double>> trips;
@@ -769,14 +849,14 @@ void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
     // bounds vector for Ax = b form
     Eigen::VectorXd rhs = Eigen::VectorXd::Zero(n_eq);
 
-    for (int t = 0; t < T; ++t) {
-        int row_base = t * n_x;
+    for (int k = 0; k < n_k; ++k) {
+        int row_base = k * n_x;
 
         // Offsets in z:
-        int u_offset  = (T+1) * n_x;
-        int idx_x_tp1 = (t+1) * n_x;             // x_{t+1} in z (x1 is at 0)
-        int idx_x_t   = (t) * n_x;       // x_t in z (only valid for t > 0)
-        int idx_u_t   = u_offset + (t * n_u);
+        int u_offset  = (n_k+1) * n_x;
+        int idx_x_tp1 = (k+1) * n_x;             // x_{t+1} in z (x1 is at 0)
+        int idx_x_t   = (k) * n_x;       // x_t in z (only valid for t > 0)
+        int idx_u_t   = u_offset + (k * n_u);
 
         // +1 * x_{t+1}
         for (int i = 0; i < n_x; ++i) {
@@ -785,10 +865,10 @@ void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
 
         // Handle -A_t * x_t term
         // \delta x_{t+1} - A_t * \delta x_t - B_t * \delta u_t = 0
-        if(t > 0){
+        if(k > 0){
             for (int i = 0; i < n_x; ++i) {
                 for (int j = 0; j < n_x; ++j) {
-                    double val = -A[t](i, j);
+                    double val = -Phi[k](i, j);
                     if (val != 0.0) trips.emplace_back(row_base + i, idx_x_t + j, val);
                 }
             }
@@ -797,7 +877,7 @@ void SCVX::SetDynamicsConstraints(Eigen::SparseMatrix<double>& linear_matrix,
         // Handle -B_t * u_t term
         for (int i = 0; i < n_x; ++i) {
             for (int j = 0; j < n_u; ++j) {
-                double val = -B[t](i, j);
+                double val = -Gamma[k](i, j);
                 if (val != 0.0) trips.emplace_back(row_base + i, idx_u_t + j, val);
             }
         }
@@ -815,31 +895,37 @@ void SCVX::SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix,
                            Eigen::VectorXd& gradient_vector)
 {
     int T  = horizon_length; // number of control stages
+    int n_k = horizon_length / controls_per_knotpoint; // number of knot points
+
+    // Sanity check to make sure horizon_length is divisible by controls_per_knotpoint
+    if(horizon_length % controls_per_knotpoint != 0){
+        throw std::runtime_error("SetDynamicsConstraints: horizon_length is not divisible by controls_per_knotpoint.");
+    }
     int nx = dof * 2;
     int nu = num_ctrl;
 
-    int total_vars = (nu * T) + (nx * (T+1)); // [x_0, x_1..x_T, u₀..u_{T-1}]
+    int total_vars = (nu * n_k) + (nx * (n_k+1)); // [x_0, x_1..x_T, u₀..u_{T-1}]
 
     gradient_vector = Eigen::VectorXd::Zero(total_vars);
 
-    auto idx_x = [&](int t) { return (t) * nx; };             // x_t, t >= 1
-    auto idx_u = [&](int t) { return (nx * (T+1)) + t * nu; };      // u_t, t >= 0
+    auto idx_x = [&](int t) { return (t) * nx; };                   // x_t, t >= 1
+    auto idx_u = [&](int t) { return (nx * (n_k+1)) + t * nu; };    // u_t, t >= 0
 
     // Stage costs
-    for (int t = 0; t < T; ++t) {
+    for (int k = 0; k < n_k; ++k) {
         // Controls u_t
-        int iu = idx_u(t);
-        gradient_vector.segment(iu, nu) += l_u[t];
+        int iu = idx_u(k);
+        gradient_vector.segment(iu, nu) += l_u[k*controls_per_knotpoint];
 
         // States x_{t+1}
-        if(t != 0){
-            int ix = idx_x(t);
-            gradient_vector.segment(ix, nx) += l_x[t];
+        if(k != 0){
+            int ix = idx_x(k);
+            gradient_vector.segment(ix, nx) += l_x[k*controls_per_knotpoint];
         }
     }
 
     // Terminal gradient if provided (size = T+1 in l_x)
-    int ixN = idx_x(T);
+    int ixN = idx_x(n_k);
     gradient_vector.segment(ixN, nx) += l_x[T];
 
 
@@ -847,18 +933,18 @@ void SCVX::SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix,
     std::vector<Eigen::Triplet<double>> triplets;
     triplets.reserve(static_cast<size_t>(total_vars) * 4);
 
-    for (int t = 0; t < T; ++t) {
+    for (int k = 0; k < n_k; ++k) {
         // Huu_t
-        int iu = idx_u(t);
-        const Eigen::MatrixXd &Huu = l_uu[t];
+        int iu = idx_u(k);
+        const Eigen::MatrixXd &Huu = l_uu[k*controls_per_knotpoint];
         for (int i = 0; i < nu; ++i)
             for (int j = 0; j < nu; ++j)
                 if (Huu(i,j) != 0.0)
                     triplets.emplace_back(iu + i, iu + j, Huu(i,j));
 
         // Hxx_{t}
-        int ix = idx_x(t);
-        const Eigen::MatrixXd &Hxx = l_xx[t];
+        int ix = idx_x(k);
+        const Eigen::MatrixXd &Hxx = l_xx[k*controls_per_knotpoint];
         for (int i = 0; i < nx; ++i)
             for (int j = 0; j < nx; ++j)
                 if (Hxx(i,j) != 0.0)
@@ -899,6 +985,7 @@ void SCVX::SolveQP() {
 
     //Formulate QP matrices
     auto start = std::chrono::high_resolution_clock::now();
+//    ComputeCompressedDynamics();
     SetDynamicsConstraints(linear_matrix, lower_bound, upper_bound, X_old_no_quat[0]);
     auto end = std::chrono::high_resolution_clock::now();
     std::cout << "Time to set dynamics constraints: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
@@ -917,8 +1004,8 @@ void SCVX::SolveQP() {
 
     // ----------- Set QP matrices --------------
 
-    int num_variables = static_cast<int>(hessian.cols());      // n
-    int num_constraints = static_cast<int>(linear_matrix.rows()); // m
+    int num_variables = static_cast<int>(hessian.cols());           // n
+    int num_constraints = static_cast<int>(linear_matrix.rows());   // m
 
     solver.data()->setNumberOfVariables(num_variables);
     solver.data()->setNumberOfConstraints(num_constraints);
@@ -961,19 +1048,55 @@ void SCVX::SolveQP() {
 
     // Get the controls from the solution
     auto qp_solution = solver.getSolution();
-    linear_cost = solver.getObjValue();
+    linear_cost = solver.getObjValue(); // TODO - Not used?
 
-    int control_offset = (horizon_length+1) * (2 * dof);
-    for(int t = 0; t < horizon_length; t++){
-        // Extract the control vector for this time step
-        int idx_u = t * num_ctrl; // start of u_t
+    // Compute the candidate delta x and delta u from the QP solution
+    // Then compute delta u at all time-steps using knot points
+    // Then compute states at all time-steps using linear dynamics \delta x_t+1 = A_t \delta x_t + B_t \delta u_t
+
+    //Loop over knot points
+    int n_k = horizon_length / controls_per_knotpoint;
+    for(int k = 0; k < n_k; k++){
+        // Extract the control vector for this knot point
+        int idx_u = k * num_ctrl; // start of u_k
 
         // Solution to QP is perturbation about nominal trajectory
-        qp_candidate_controls[t] = U_old[t] + qp_solution.segment(control_offset + idx_u, num_ctrl);
-        qp_candidate_states[t] = X_old_no_quat[t] + qp_solution.segment(t * (2 * dof), 2 * dof);
+        Eigen::VectorXd delta_u_k = qp_solution.segment((n_k+1) * (2 * dof) + idx_u, num_ctrl);
+        for(int c = 0; c < controls_per_knotpoint; c++){
+            int t = k * controls_per_knotpoint + c;
+            qp_candidate_controls[t] = U_old[t] + delta_u_k;
+        }
     }
 
-    qp_candidate_states[horizon_length] = X_old_no_quat[horizon_length] + qp_solution.segment((horizon_length) * (2 * dof), 2 * dof);
+    // Loop over time-steps to get states
+    for(int k = 0; k < n_k; k++){
+        // Extract the state vector for this knot point
+        int idx_x = k * (2 * dof); // start of x_k
+
+        // Solution to QP is perturbation about nominal trajectory
+        Eigen::VectorXd delta_x_k = qp_solution.segment(idx_x, 2 * dof);
+        for(int c = 0; c < controls_per_knotpoint; c++){
+            int t = k * controls_per_knotpoint + c;
+            qp_candidate_states[t] = X_old_no_quat[t] + delta_x_k;
+        }
+    }
+
+    // Final state at horizon_length
+    qp_candidate_states[horizon_length] = X_old_no_quat[horizon_length] + qp_solution.segment(n_k * (2 * dof), 2 * dof);
+
+
+
+//    int control_offset = (horizon_length+1) * (2 * dof);
+//    for(int t = 0; t < horizon_length; t++){
+//        // Extract the control vector for this time step
+//        int idx_u = t * num_ctrl; // start of u_t
+//
+//        // Solution to QP is perturbation about nominal trajectory
+//        qp_candidate_controls[t] = U_old[t] + qp_solution.segment(control_offset + idx_u, num_ctrl);
+//        qp_candidate_states[t] = X_old_no_quat[t] + qp_solution.segment(t * (2 * dof), 2 * dof);
+//    }
+//
+//    qp_candidate_states[horizon_length] = X_old_no_quat[horizon_length] + qp_solution.segment((horizon_length) * (2 * dof), 2 * dof);
 }
 
 void SCVX::UpdateNominal() {
