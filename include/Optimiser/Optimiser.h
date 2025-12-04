@@ -159,6 +159,10 @@ public:
     std::vector<void (Differentiator::*)(vector<MatrixXd> &r_x, vector<MatrixXd> &r_u,
                                             int dataIndex, int tid, bool central_diff, double eps)> tasks_residual_derivs;
 
+    virtual void ResetParams(){
+
+    }
+
     // current_iteration used for parallelisation of dynamics derivatives
     std::atomic<int> current_iteration;
     int num_threads_iterations;
@@ -258,6 +262,8 @@ public:
     double max_lambda = 10.0;
     double min_lambda = 0.0001;
     double lambda_factor = 10;
+
+    // SCVX parameters
 
     // Temporary variables / functions for testing smoothing contact against optimisation performance
     int smoothing = 0;

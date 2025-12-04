@@ -94,6 +94,11 @@ public:
      */
     bool BackwardsPassQuuRegularisation();
 
+    void ResetParams() override{
+        lambda = 0.01;
+        lambda_factor = 10.0;
+    }
+
     double avg_surprise = 0.0;
     double avg_expected = 0.0;
     double cost_reduced_last_iter = true;

@@ -369,9 +369,14 @@ std::vector<MatrixXd> SCVX::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         num_iterations++;
 
         bool converged = false;
-        Iteration(i, converged);
+        bool failed = false;
+        Iteration(i, converged, failed);
 
         if (converged && (i >= min_iterations)) {
+            break;
+        }
+
+        if(failed){
             break;
         }
     }
@@ -456,7 +461,7 @@ std::vector<MatrixXd> SCVX::Optimise(mjData *d, std::vector<MatrixXd> initial_co
     return optimisedControls;
 }
 
-void SCVX::Iteration(int iteration_num, bool &converged){
+void SCVX::Iteration(int iteration_num, bool &converged, bool &failed){
 
     // This should always remain the same in baseline SCVX
     num_dofs.push_back(activeModelTranslator->current_state_vector.dof);
@@ -486,8 +491,15 @@ void SCVX::Iteration(int iteration_num, bool &converged){
 
     // STEP 2 - Formulate and solve the QP subproblem
     timer_start = high_resolution_clock::now();
-    SolveQP();
+    bool qp_success = SolveQP();
     time_qp_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - timer_start).count() / 1000.0f);
+
+    if(!qp_success){
+        // Terminate optimization early
+        failed = true;
+        std::cout << "QP solve failed, terminating optimization early. \n";
+        return;
+    }
 
     // STEP 2a - Evaluate cost of the candidate states and controls
     EvaluateLinSolutionCost();
@@ -509,8 +521,38 @@ void SCVX::Iteration(int iteration_num, bool &converged){
     // STEP 4 - Handling deviations in non_linear_cost and linear_cost to scale trust region
     if(non_linear_cost < old_cost){
         // If cost reduced, then we can increase the trust region
-        trust_region_radius *= 1.2;
+
+        double actual_cost_improvement = old_cost - non_linear_cost;
+        double predicted_cost_improvement = old_cost - linear_cost;
+
+        double similarity_ratio = actual_cost_improvement / (predicted_cost_improvement + 0.00001);
+
+        std::cout << "Similarity ratio: " << similarity_ratio << "\n";
+
+        if(similarity_ratio < 0.2){
+            // Shrink
+            trust_region_radius *= 0.5;
+        }
+        else if(similarity_ratio >= 0.2 && similarity_ratio < 0.7){
+            // Keep the same
+            trust_region_radius *= 1.0;
+        }
+        else{
+            // Expand trust region
+            trust_region_radius *= 1.5;
+        }
+
+//        if(trust_region_validity < 0.25) {
+//            trust_region_radius *= 0.5;
+//        }
+//        else if(trust_region_validity > 0.75) {
+//            trust_region_radius *= 1.5;
+//        }
+
+        // TODO check non linear cost versus linear cost and decide whether to increase or decrease trust radius
+//        trust_region_radius *= 1.2;
         SaveBestRollout(0);
+        new_cost = non_linear_cost;
     }
     else{
         // If cost did not reduce, then we need to decrease the trust region
@@ -571,6 +613,8 @@ void SCVX::EvaluateLinSolutionCost(){
 
     activeModelTranslator->Residuals(MuJoCo_helper->main_data, residuals[horizon_length]);
     lin_cost += activeModelTranslator->CostFunction(residuals[horizon_length], activeModelTranslator->full_state_vector, true);
+
+    linear_cost = lin_cost;
 
     std::cout << "lin cost is " << lin_cost << "\n";
 }
@@ -966,13 +1010,13 @@ void SCVX::SetCostFunction(Eigen::SparseMatrix<double>& hessian_matrix,
     hessian_matrix.makeCompressed();
 }
 
-void SCVX::SolveQP() {
+bool SCVX::SolveQP() {
 
     OsqpEigen::Solver solver;
 
     // settings
     solver.settings()->setVerbosity(false);
-    solver.settings()->setWarmStart(true);
+    solver.settings()->setWarmStart(false);
 //    solver.settings()->setMaxIteration(1000);
 
     // Setup the QP problem
@@ -1020,35 +1064,42 @@ void SCVX::SolveQP() {
 
     if (!solver.data()->setHessianMatrix(hessian)) {
         std::cerr << "Failed to set Hessian matrix." << std::endl;
+        return false;
     }
     if (!solver.data()->setGradient(gradient)) {
         std::cerr << "Failed to set gradient matrix." << std::endl;
+        return false;
     }
     if (!solver.data()->setLinearConstraintsMatrix(linear_matrix)) {
         std::cerr << "Failed to set linear constraints matrix." << std::endl;
+        return false;
     }
     if (!solver.data()->setLowerBound(lower_bound)) {
         std::cerr << "Failed to set lower bound." << std::endl;
+        return false;
     }
     if (!solver.data()->setUpperBound(upper_bound)) {
         std::cerr << "Failed to set upper bound." << std::endl;
+        return false;
     }
 
     if (!solver.initSolver()) {
         std::cerr << "Failed to initialise OSQP solver." << std::endl;
+        return false;
     }
 
     // solve the QP problem
     start = std::chrono::high_resolution_clock::now();
     if (solver.solveProblem() != OsqpEigen::ErrorExitFlag::NoError) {
         std::cerr << "OSQP failed to solve the problem." << std::endl;
+        return false;
     }
     end = std::chrono::high_resolution_clock::now();
     std::cout << "Time to get QP solution: " << duration_cast<microseconds>(end - start).count() / 1000.0 << " ms \n";
 
     // Get the controls from the solution
     auto qp_solution = solver.getSolution();
-    linear_cost = solver.getObjValue(); // TODO - Not used?
+//    linear_cost = solver.getObjValue(); // TODO - Not used?
 
     // Compute the candidate delta x and delta u from the QP solution
     // Then compute delta u at all time-steps using knot points
@@ -1097,6 +1148,8 @@ void SCVX::SolveQP() {
 //    }
 //
 //    qp_candidate_states[horizon_length] = X_old_no_quat[horizon_length] + qp_solution.segment((horizon_length) * (2 * dof), 2 * dof);
+
+    return true;
 }
 
 void SCVX::UpdateNominal() {

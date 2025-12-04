@@ -4,6 +4,7 @@ std::shared_ptr<ModelTranslator> activeModelTranslator;
 std::shared_ptr<Differentiator> activeDifferentiator;
 std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<iLQR> iLQROptimiser;
+std::shared_ptr<SCVX> SCVXOptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
 
@@ -119,7 +120,19 @@ int main(int argc, char **argv){
                                            activeModelTranslator->MuJoCo_helper,
                                            activeDifferentiator,
                                            opt_horizon, activeVisualiser, yamlReader);
-    activeOptimiser = iLQROptimiser;
+    SCVXOptimiser = std::make_shared<SCVX>(activeModelTranslator,
+                                              activeModelTranslator->MuJoCo_helper,
+                                             activeDifferentiator,
+                                             opt_horizon, activeVisualiser, yamlReader);
+
+    // TODO - logic for switching between SCVX and iLQR
+    if(0){
+        activeOptimiser = iLQROptimiser;
+    }
+    else{
+        activeOptimiser = SCVXOptimiser;
+    }
+
 
 
 //    yamlReader->ReadSettingsFile("/generalConfigs/" + config_file_name + ".yaml");
@@ -229,19 +242,24 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     int this_test_fine = EXIT_SUCCESS;
 
     int num_trials = 100;
-    int min_iterations = 4;
+    int min_iterations = 6;
     int max_iterations = 10;
 
     // Keypoint methods to be tested
-    std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
-                                                      "contact_change", "contact_change_sep", "contact_change_dyn",
-                                                      "contact_change_maxN"};
-    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1, 1, 1};
-    std::vector<int> keypoint_method_max_N = {1, 1, 1, 1, 1, 1, 20};
+//    std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
+//                                                      "contact_change", "contact_change_sep", "contact_change_dyn",
+//                                                      "contact_change_maxN"};
+//    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1, 1, 1};
+//    std::vector<int> keypoint_method_max_N = {1, 1, 1, 1, 1, 1, 20};
 
-//    std::vector<std::string> keypoint_method_names = {"contact_change_maxN"};
-//    std::vector<int> keypoint_method_min_N = {1};
-//    std::vector<int> keypoint_method_max_N = {20};
+//    std::vector<std::string> keypoint_method_names = {"set_interval", "contact_change", "contact_change_sep", "contact_change_dyn",
+//                                                      "contact_change_maxN"};
+//    std::vector<int> keypoint_method_min_N = {1000, 1, 1, 1, 1};
+//    std::vector<int> keypoint_method_max_N = {1, 1, 1, 1, 20};
+
+    std::vector<std::string> keypoint_method_names = {"set_interval"};
+    std::vector<int> keypoint_method_min_N = {1000};
+    std::vector<int> keypoint_method_max_N = {20};
 
     assert(keypoint_method_names.size() == keypoint_method_min_N.size());
     assert(keypoint_method_names.size() == keypoint_method_max_N.size());
@@ -261,7 +279,16 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
         std::cout << "Starting key-point tests for method: " << keypoint_method.name << " with min_N: " << keypoint_method.min_N << ", maxN: " << keypoint_method.max_N << "\n";
         std::cout << "----------------------------------------------------- \n";
 
-        this_test_fine = GenDataOpenloopOptimisation(task_horizon, num_trials, min_iterations, max_iterations);
+        // iLQR tests
+        if(0){
+            this_test_fine = GenDataOpenloopOptimisation(task_horizon, num_trials, min_iterations, max_iterations);
+        }
+        // SCVX tests
+        else{
+            this_test_fine = GenDataOpenLoopSCVX(task_horizon, num_trials, min_iterations, max_iterations);
+        }
+
+
         if(this_test_fine != EXIT_SUCCESS){
             tests_fine = this_test_fine;
         }
@@ -275,6 +302,159 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     return tests_fine;
 }
 
+int GenTestingData::GenDataOpenLoopSCVX(int task_horizon, int num_trials, int min_iterations, int max_iterations){
+    std::cout << "Beginning testing openloop optimisation for " << activeModelTranslator->model_name << std::endl;
+
+    // ------------------ Data we want to save ----------------------
+    // Individual trajectory information, including;
+    // New cost, iteration time, dofs, % derivs, time derivs, time QP, time FP
+
+    // Summary file over all N trajectories, with:
+    // Cost reduction, optimisation time, num iterations, avg dofs, avg %derivs, avg time derivs, avg time QP, avg time FP
+
+    // Create the file directory root path dynamically
+    std::string scvx_name = "openloop_" + std::to_string(min_iterations) + "_" + std::to_string(max_iterations);
+    std::string method_directory = CreateTestName(scvx_name);
+
+    // ------------------------- data storage -------------------------------------
+    std::vector<double> cost_reductions;
+    std::vector<double> final_costs;
+    std::vector<double> optimisation_times;
+    std::vector<int>    num_iterations;
+    std::vector<double> avg_num_dofs;
+    std::vector<double> avg_percent_derivs;
+    std::vector<double> total_time_derivs;
+    std::vector<double> total_time_keypoint_generation;
+    std::vector<double> total_time_FD;
+    std::vector<double> total_time_interpolation;
+    std::vector<double> total_time_residuals;
+    std::vector<double> total_time_qp;
+    std::vector<double> total_time_fp;
+    // -----------------------------------------------------------------------------
+
+    auto startTimer = std::chrono::high_resolution_clock::now();
+    optimiser->verbose_output = true;
+
+    for (int i = 0; i < num_trials; i++) {
+        std::cout << "trial: " << i << "\n";
+
+        // Reset internal optimisation data and clear key-points cache
+        optimiser->Reset();
+        optimiser->keypoint_generator->ResetCache();
+
+        // Load the task from CSV file
+        yamlReader->LoadTaskFromFile(activeModelTranslator->model_name, i, activeModelTranslator->full_state_vector, activeModelTranslator->residual_list);
+
+        // Reset state vector (only really applicable for iLQR_SVR method)
+        activeModelTranslator->ResetSVR();
+        activeModelTranslator->InitialiseSystemToStartState(activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+        // Setup mj data objects
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data,
+                                                              activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                              activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+        mj_step(activeModelTranslator->MuJoCo_helper->model, activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+        if (!activeModelTranslator->MuJoCo_helper->CheckIfDataIndexExists(0)) {
+            activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(
+                    activeModelTranslator->MuJoCo_helper->master_reset_data);
+        }
+
+        // Perform any setup controls for this task
+        std::vector<MatrixXd> initSetupControls = activeModelTranslator->CreateInitSetupControls(1000);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->master_reset_data,
+                                                              activeModelTranslator->MuJoCo_helper->main_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data,
+                                                              activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->vis_data,
+                                                              activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+        // Create init optimisation controls
+        std::vector<MatrixXd> init_opt_controls = activeModelTranslator->CreateInitOptimisationControls(task_horizon);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(activeModelTranslator->MuJoCo_helper->main_data,
+                                                              activeModelTranslator->MuJoCo_helper->master_reset_data);
+        activeModelTranslator->MuJoCo_helper->CopySystemState(
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0],
+                activeModelTranslator->MuJoCo_helper->master_reset_data);
+
+        // Optimiser the trajectory - reset any settings specific to SCVX first
+        // TODO - reset trust region radius
+        optimiser->ResetParams();
+        std::vector<MatrixXd> optimised_controls = optimiser->Optimise(
+                activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, max_iterations, min_iterations,
+                task_horizon);
+
+        // --------- Save trial specific information to a folder labelled as trial number --------
+        std::string trial_directory = method_directory + "/" + std::to_string(i);
+        if (!std::filesystem::exists(trial_directory)) {
+            std::filesystem::create_directories(trial_directory);
+        }
+
+        std::string filename = trial_directory + "/summary.csv";
+
+        ofstream file_output;
+        file_output.open(filename);
+
+        // Make header
+        file_output << "Iteration" << "," << "Cost" << "," << "Cost reduction" << "," << "time (ms)" << std::endl;
+
+        // Loop through rows
+        for(int j = 0; j < optimiser->num_iterations; j++){
+            file_output << j << "," << optimiser->cost_after_iteration[j] << ",";
+            file_output << optimiser->cost_reduction_after_iteration[j] << "," << optimiser->time_after_iteration_ms[j] << std::endl;
+        }
+
+        file_output.close();
+
+        // ------------------------- Update the data storages -------------------------------------
+        cost_reductions.push_back(optimiser->cost_reduction);
+        final_costs.push_back(optimiser->new_cost);
+        optimisation_times.push_back(optimiser->opt_time_ms);
+        num_iterations.push_back(optimiser->num_iterations);
+        avg_num_dofs.push_back(optimiser->avg_dofs);
+        avg_percent_derivs.push_back(optimiser->avg_percent_derivs);
+        total_time_keypoint_generation.push_back(std::accumulate(optimiser->time_keypoints_ms.begin(), optimiser->time_keypoints_ms.end(), 0.0));
+        total_time_FD.push_back(std::accumulate(optimiser->time_FD_derivs_ms.begin(), optimiser->time_FD_derivs_ms.end(), 0.0));
+        total_time_interpolation.push_back(std::accumulate(optimiser->time_interpolation_ms.begin(), optimiser->time_interpolation_ms.end(), 0.0));
+        total_time_residuals.push_back(std::accumulate(optimiser->time_cost_derivs_ms.begin(), optimiser->time_cost_derivs_ms.end(), 0.0));
+        total_time_derivs.push_back(std::accumulate(optimiser->time_get_derivs_ms.begin(), optimiser->time_get_derivs_ms.end(), 0.0));
+        // TODO - create a timing variable for QP in optimizer base class?
+        total_time_qp.push_back(std::accumulate(optimiser->time_qp_ms.begin(), optimiser->time_qp_ms.end(), 0.0));
+        total_time_fp.push_back(std::accumulate(optimiser->time_forwardsPass_ms.begin(), optimiser->time_forwardsPass_ms.end(), 0.0));
+    }
+
+    // ----------------------- Save data to file -------------------------------------
+    std::string filename = method_directory + "/summary.csv";
+
+    ofstream file_output;
+    file_output.open(filename);
+
+    // Make header
+    file_output << "Cost reduction" << "," << "Final cost" << "," << "Optimisation time (ms)" << "," << "Number iterations" << ",";
+    file_output << "Average num dofs" << "," << "Average percent derivs" << "," << "Total time derivs (ms)" << ",";
+    file_output << "Total time keypoints (ms)" << "," << "Total time FD (ms)" << "," << "Total time interpolation (ms)" << ",";
+    file_output << "Total time cost derivs (ms)" << "," << "Total time QP (ms)" << "," << "Total time FP (ms)" << std::endl;
+
+    // Loop through rows
+    for(int i = 0; i < cost_reductions.size(); i++){
+        file_output << cost_reductions[i] << "," << final_costs[i] << "," << optimisation_times[i] << "," << num_iterations[i] << ",";
+        file_output << avg_num_dofs[i] << "," << avg_percent_derivs[i] << "," << total_time_derivs[i] << ",";
+        file_output << total_time_keypoint_generation[i] << "," << total_time_FD[i] << ",";
+        file_output << total_time_interpolation[i] << "," << total_time_residuals[i] << ",";
+        file_output << total_time_qp[i] << "," << total_time_fp[i] << std::endl;
+    }
+
+    file_output.close();
+
+    SaveTestSummaryData(optimiser->activeKeyPointMethod, task_horizon,
+                        controls_noise, optimiser->ReturnName(),
+                        method_directory);
+
+    return EXIT_SUCCESS;
+}
+
 int GenTestingData::GenDataOpenloopOptimisation(int task_horizon, int num_trials, int min_iterations, int max_iterations){
     std::cout << "begining testing openloop optimisation for " << activeModelTranslator->model_name << std::endl;
     std::cout << "optimisation horizon is: " << task_horizon << std::endl;
@@ -284,7 +464,7 @@ int GenTestingData::GenDataOpenloopOptimisation(int task_horizon, int num_trials
     // New cost, iteration time, dofs, % derivs, time derivs, time bp, time fp
 
     // Summary file over all N trajectories, with:
-    // Cost reduction, optimisation time, num iterations, avg dofs, avg %derivs, avg time derivs, avg time bp, avg time fp,
+    // Cost reduction, optimisation time, num iterations, avg dofs, avg %derivs, avg time derivs, avg time bp, avg time fp
 
     // Create the file directory root path dynamically
     std::string openloop_name = "openloop_" + std::to_string(min_iterations) + "_" + std::to_string(max_iterations);

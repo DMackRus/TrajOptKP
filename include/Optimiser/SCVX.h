@@ -55,6 +55,13 @@ public:
 
     void Resize(int new_num_dofs, int new_num_ctrl, int new_horizon) override;
 
+    // Acrobot - 5 controls per knot, 100 trust region
+    // Box sweep 100 controls per knot, 1000 trust region
+    void ResetParams() override{
+        trust_region_radius = 1000.0;
+        controls_per_knotpoint = 100;
+    }
+
     std::string ReturnName() override{
         return "SCVX";
     }
@@ -74,7 +81,7 @@ private:
      */
     double ForwardsPass(double _old_cost);
 
-    void SolveQP();
+    bool SolveQP();
 
     void EvaluateLinSolutionCost();
 
@@ -101,13 +108,13 @@ private:
                               double percent_derivatives, double time_derivs, double time_qp,
                               double time_fp);
 
-    void Iteration(int iteration_num, bool &converged);
+    void Iteration(int iteration_num, bool &converged, bool &failed);
 
     void UpdateNominal();
 
     // For push no clutter - controls per knot (100) and trust region (100)
 
-    int controls_per_knotpoint = 100; // 100 works well for box sweep and push no clutter
+    int controls_per_knotpoint = 100; // 100 works well for box sweep and push no clutter - 5 for acrobot
     std::vector<Eigen::MatrixXd> A_compressed;
     std::vector<Eigen::MatrixXd> B_compressed;
 
@@ -117,7 +124,7 @@ private:
     bool cost_reduced_last_iter = false;
     double linear_cost = 0.0;
     double non_linear_cost = 0.0;
-    double trust_region_radius = 100.0; // Used to be 100.0 - 1000 worked well when 1 control per knotpoint
+    double trust_region_radius = 1000.0; // Used to be 100.0 - 1000 worked well when 1 control per knotpoint
     double trust_region_max = 1.0;  //TODO - what value to use?
     double Rho = 1.0;
     double beta_upper = 1.5;

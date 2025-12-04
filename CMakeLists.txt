@@ -129,6 +129,7 @@ add_executable(gen_testing_data src/GenTestingData.cpp
         src/ModelTranslator/TwoDPushing.cpp
         src/Optimiser/Optimiser.cpp
         src/Optimiser/iLQR.cpp
+        src/Optimiser/SCVX.cpp
         src/ModelTranslator/Walker.cpp
         src/ModelTranslator/BoxSweep.cpp
         src/ModelTranslator/Acrobot.cpp
@@ -200,7 +201,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_
 target_link_libraries(${PROJECT_NAME} core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter OsqpEigen::OsqpEigen) # or osqp::osqp or osqp::osqpstatic
 
 target_include_directories(gen_testing_data PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(gen_testing_data core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(gen_testing_data core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter OsqpEigen::OsqpEigen)
 
 target_include_directories(benchmark_derivatives PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 target_link_libraries(benchmark_derivatives core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)

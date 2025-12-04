@@ -15,12 +15,12 @@ blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 # task_name = "push_mcl"
 # iterations = "6_6"
 # iterations = "3_10"
-iterations = "4_10"
+iterations = "6_10"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
 
-show_plot = False
+show_plot = True
 paper_data_folder = False
 
 cost_reductions = []
@@ -30,9 +30,7 @@ number_iterations = []
 def main():
     # global task_name
     
-    # tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    # tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    tasks = ["acrobot"]
+    tasks = ["box_sweep"]
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
@@ -45,6 +43,8 @@ def main():
         sorted_indices = sorted(range(len(names)), key=lambda i: order.index(names[i]) if names[i] in order else len(order))
         names = [names[i] for i in sorted_indices]
         dataframes_iLQR = [dataframes_iLQR[i] for i in sorted_indices]
+        
+        print(dataframes_iLQR)
         
         plot_openloop_data(names, dataframes_iLQR, task)
         
@@ -410,8 +410,7 @@ def load_raw_data(task):
     if paper_data_folder:
         current_dir = base_dir + "/../PaperData/new_paper_data/Openloop_fixed_6_iters"
     else:
-        # current_dir = base_dir + "/iLQR"
-        current_dir = base_dir + "/iLQR_4_10_results(FINAL)"
+        current_dir = base_dir + "/SCVX"
 
     entries = os.listdir(current_dir)
 
@@ -419,12 +418,16 @@ def load_raw_data(task):
     entries.sort()
 
     for folder in entries:
+        print(folder)
         # Only add the data if the task name is correct
         if task not in folder:
+            print("Skipping due to task name mismatch")
             continue
         
         if run_iterations not in folder:
+            print("Skipping due to run_iterations mismatch")
             continue
+        
         
         folder_path = os.path.join(current_dir, folder)
         file_path = folder_path + "/summary.csv"
