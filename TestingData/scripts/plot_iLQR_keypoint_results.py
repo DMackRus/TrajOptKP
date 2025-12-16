@@ -15,7 +15,7 @@ blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 # task_name = "push_mcl"
 # iterations = "6_6"
 # iterations = "3_10"
-iterations = "4_10"
+iterations = "1_1"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
@@ -30,23 +30,31 @@ number_iterations = []
 def main():
     # global task_name
     
-    # tasks = ["acrobot", "push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    # tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    tasks = ["acrobot"]
+    # tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker", "acrobot"]
+    tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+    # tasks = ["acrobot"]
+    
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
-        
-        # Implement code to sort names and dataframes_iLQR based on their names, 
-        # I want the order to be SI1, SI5, Si1000, contact_change
-        # print(names)
-        # Sort names and dataframes_iLQR based on the order of SI1, SI5, SI1000, contact_change
-        order = ["SI_1", "SI_5", "SI_1000", "contact_change"]
-        sorted_indices = sorted(range(len(names)), key=lambda i: order.index(names[i]) if names[i] in order else len(order))
+    
+        methods = ["SI_1", "SI_5", "SI_1000", "contact_change", 
+                "contact_change_dyn", "contact_change_maxN"]
+
+        # Keep only entries where the name is in `methods`
+        filtered = [(i, name) for i, name in enumerate(names) if name in methods]
+
+        # Sort them based on the method order
+        sorted_indices = sorted(filtered, key=lambda x: methods.index(x[1]))
+        sorted_indices = [i for i, _ in sorted_indices]
+
+        # Apply ordering
         names = [names[i] for i in sorted_indices]
         dataframes_iLQR = [dataframes_iLQR[i] for i in sorted_indices]
-        
+
         plot_openloop_data(names, dataframes_iLQR, task)
+        
+        plot_timing_breakdown_data(names, dataframes_iLQR)
         
     print(cost_reductions)
     
@@ -61,8 +69,6 @@ def main():
         print(f'& {mean_cost_reduction:.2f}', end=' ')
         # print(f'& {mean_number_iterations:.2f}', end=' ')
     print('\\\\')
-
-    # plot_timing_breakdown_data(names, dataframes_iLQR)
     
     # test_plot()
     
@@ -411,7 +417,8 @@ def load_raw_data(task):
         current_dir = base_dir + "/../PaperData/new_paper_data/Openloop_fixed_6_iters"
     else:
         # current_dir = base_dir + "/iLQR"
-        current_dir = base_dir + "/iLQR_4_10_results(FINAL)"
+        # current_dir = base_dir + "/iLQR_4_10_results(FINAL)"
+        current_dir = base_dir + "/iLQR_1_1_results(FINAL)"
 
     entries = os.listdir(current_dir)
 

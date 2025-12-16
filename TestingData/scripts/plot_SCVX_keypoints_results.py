@@ -12,15 +12,13 @@ import glob
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-# task_name = "push_mcl"
 # iterations = "6_6"
 # iterations = "3_10"
-iterations = "6_10"
-# task_name = "push_mcl"
+iterations = "1_1"
 base_dir = ".."
 run_mode = "openloop"
 
-show_plot = True
+show_plot = False
 paper_data_folder = False
 
 cost_reductions = []
@@ -30,22 +28,26 @@ number_iterations = []
 def main():
     # global task_name
     
-    tasks = ["box_sweep"]
+    # tasks = ["push_ncl", "box_sweep", "walker"]
+    tasks = ["acrobot", "push_ncl", "box_sweep", "walker"]
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
-        
-        # Implement code to sort names and dataframes_iLQR based on their names, 
-        # I want the order to be SI1, SI5, Si1000, contact_change
-        # print(names)
-        # Sort names and dataframes_iLQR based on the order of SI1, SI5, SI1000, contact_change
-        order = ["SI_1", "SI_5", "SI_1000", "contact_change"]
-        sorted_indices = sorted(range(len(names)), key=lambda i: order.index(names[i]) if names[i] in order else len(order))
+    
+        methods = ["SI_1", "SI_5", "SI_1000", "contact_change", 
+                "contact_change_dyn", "contact_change_maxN"]
+
+        # Keep only entries where the name is in `methods`
+        filtered = [(i, name) for i, name in enumerate(names) if name in methods]
+
+        # Sort them based on the method order
+        sorted_indices = sorted(filtered, key=lambda x: methods.index(x[1]))
+        sorted_indices = [i for i, _ in sorted_indices]
+
+        # Apply ordering
         names = [names[i] for i in sorted_indices]
         dataframes_iLQR = [dataframes_iLQR[i] for i in sorted_indices]
-        
-        print(dataframes_iLQR)
-        
+
         plot_openloop_data(names, dataframes_iLQR, task)
         
     print(cost_reductions)
@@ -418,14 +420,11 @@ def load_raw_data(task):
     entries.sort()
 
     for folder in entries:
-        print(folder)
         # Only add the data if the task name is correct
         if task not in folder:
-            print("Skipping due to task name mismatch")
             continue
         
         if run_iterations not in folder:
-            print("Skipping due to run_iterations mismatch")
             continue
         
         
