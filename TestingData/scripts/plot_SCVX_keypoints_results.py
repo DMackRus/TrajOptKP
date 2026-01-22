@@ -15,28 +15,29 @@ blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 # iterations = "6_6"
 # iterations = "3_10"
 iterations = "1_1"
+# iterations = "6_10"
 base_dir = ".."
 run_mode = "openloop"
 
 show_plot = False
 paper_data_folder = False
 
-cost_reductions = []
-optimisation_times = []
-number_iterations = []
+# tasks = ["push_ncl", "box_sweep", "walker"]
+tasks = ["acrobot", "push_ncl", "box_sweep", "walker"]
+
+methods = ["SI_1", "SI_5", "SI_1000", "contact_change", 
+                "contact_change_dyn"]
+
+cost_reductions_all = [[] for _ in range(len(methods))]
+optimisation_times_all = [[] for _ in range(len(methods))]
+number_iterations_all = [[] for _ in range(len(methods))]
 
 def main():
     # global task_name
     
-    # tasks = ["push_ncl", "box_sweep", "walker"]
-    tasks = ["acrobot", "push_ncl", "box_sweep", "walker"]
-    
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
     
-        methods = ["SI_1", "SI_5", "SI_1000", "contact_change", 
-                "contact_change_dyn", "contact_change_maxN"]
-
         # Keep only entries where the name is in `methods`
         filtered = [(i, name) for i, name in enumerate(names) if name in methods]
 
@@ -50,19 +51,38 @@ def main():
 
         plot_openloop_data(names, dataframes_iLQR, task)
         
-    print(cost_reductions)
-    
+    z = 1.96  # 95% CI
+
     print("Average ", end='')
-    for method in range(len(names)):
-        # Compute mean of cost reduction for each method (column)
-        mean_cost_reduction = np.mean([cost_reductions[i][method] for i in range(len(cost_reductions))])
-        mean_optimisation_time = np.mean([optimisation_times[i][method] for i in range(len(optimisation_times))])
-        # mean_number_iterations = np.mean([number_iterations[i][method] for i in range(len(number_iterations))])
+    for m in range(len(names)):
+        cr = np.array(cost_reductions_all[m])
+        ot = np.array(optimisation_times_all[m])
+        it = np.array(number_iterations_all[m])
+
+        mean_cr = cr.mean()
+        ci_cr = z * cr.std(ddof=1) / np.sqrt(len(cr))
+
+        mean_ot = ot.mean()
+        ci_ot = z * ot.std(ddof=1) / np.sqrt(len(ot))
+
+        mean_it = it.mean()
+        ci_it = z * it.std(ddof=1) / np.sqrt(len(it))
         
-        print(f'& {mean_optimisation_time/1000.0:.2f}', end=' ')
-        print(f'& {mean_cost_reduction:.2f}', end=' ')
-        # print(f'& {mean_number_iterations:.2f}', end=' ')
-    print('\\\\')
+        if(iterations != "1_1"):
+            print(
+                f"& {mean_ot/1000:.2f}"
+                f"& {mean_cr:.2f} $\pm$ {ci_cr:.2f} "
+                f"& {mean_it:.2f}",
+                end=" "
+            )
+        else:
+            print(
+            f"& {mean_ot/1000:.2f}"
+            f"& {mean_cr:.2f} $\pm$ {ci_cr:.2f} ",
+            end=" "
+            )
+            
+    print("\\\\")
 
     # plot_timing_breakdown_data(names, dataframes_iLQR)
     
@@ -341,8 +361,8 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
         
         #OT no CI and CR with CI
         print(f'& {means[i,0]/1000:.2f}', end=' ')
-        print(f'& {means[i,1]:.2f}$\pm${confidence_intervals[i,1]:.2f}', end=' ')
-        # print(f'& {means[i,2]:.2f}', end=' ')
+        print(f'& {means[i,1]:.2f} $\pm$ {confidence_intervals[i,1]:.2f}', end=' ')
+        # print(f'& {means[i,3]:.2f}', end=' ')
         
         # With confidence intervals
         # print(f'& {means[i,0]:.2f} $\pm$ {confidence_intervals[i,0]:.2f}', end=' ')
@@ -357,10 +377,12 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
 
     print(f'\\\\')
     
-    # Save data per task for all methods to array so we can average over all tasks 
-    cost_reductions.append(means[:,1])
-    optimisation_times.append(means[:,0])
-    number_iterations.append(means[:,3])
+    global cost_reductions_all, optimisation_times_all, number_iterations_all
+
+    for m, df in enumerate(dataframes_iLQR):
+        cost_reductions_all[m].extend(df["Cost reduction"].values)
+        optimisation_times_all[m].extend(df["Optimisation time (ms)"].values)
+        number_iterations_all[m].extend(df["Number iterations"].values)
             
             
     # Print the data in table format for easy transferance to the paper

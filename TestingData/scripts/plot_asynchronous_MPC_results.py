@@ -143,14 +143,14 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
     for i in range(len(names)):
         
         # With confidence intervals
-        # print(f'& {means[i,1]:.2f} $\pm$ {confidence_intervals[i,1]:.2f}', end=' ')
-        # print(f'& {means[i,0]:.2f} $\pm$ {confidence_intervals[i,0]:.2f}', end=' ')
+        print(f'& {means[i,1]:.1f}$\pm${confidence_intervals[i,1]:.1f}', end=' ')
+        print(f'& {means[i,0]:.2f}$\pm${confidence_intervals[i,0]:.2f}', end=' ')
         # print(f'& {means[i,2]:.2f} $\pm$ {confidence_intervals[i,2]:.2f}', end=' ')
         
         # Without confidence intervals
-        print(f'& {means[i,1]:.2f}', end=' ')
-        print(f'& {means[i,0]:.2f}', end=' ')
-        print(f'& {means[i,2]:.2f}', end=' ')
+        # print(f'& {means[i,1]:.2f}', end=' ')
+        # print(f'& {means[i,0]:.2f}', end=' ')
+        # print(f'& {means[i,2]:.2f}', end=' ')
         
 
     print('')

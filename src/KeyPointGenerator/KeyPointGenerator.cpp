@@ -65,76 +65,6 @@ void KeypointGenerator::PrintKeypointMethod(){
 }
 
 // Static inline helper function for considering kinematic chains
-//inline std::vector<int> KeypointGenerator::AddKeypointsFromContactSeparate(const std::pair<int, int>& contact,
-//                                                       const std::vector<std::pair<int, int>>& all_contacts,
-//                                                       const stateVectorList &state_vector_list) {
-//    // Add all links in the kinematic chains for both contacts
-//    std::vector<int> relevant_kinematic_chains;
-//    std::vector<int> contact_state_indices;
-//
-//    // Contact body 1
-//    bool found = false;
-//    for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
-//        const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
-//        for (int body : body_chain) {
-//            if (body == contact.first) {
-//                // Store the index of the chain instead of the body
-//                relevant_kinematic_chains.push_back(static_cast<int>(i));
-//                found = true;
-//                break; // break the inner loop
-//            }
-//        }
-//        if (found) {
-//            break; // break the outer loop
-//        }
-//    }
-//
-//    // Contact 2
-//    found = false;
-//    for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
-//        const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
-//        for (int body : body_chain) {
-//            if (body == contact.second) {
-//                // Store the index of the chain instead of the body
-//                relevant_kinematic_chains.push_back(static_cast<int>(i));
-//                found = true;
-//                break; // break the inner loop
-//            }
-//        }
-//        if (found) {
-//            break; // break the outer loop
-//        }
-//    }
-//
-//    // TODO - Maybe make this optional?
-//    // Check for any other affected kinematic chains
-////    for(auto & other_contact : all_contacts) {
-////        if(other_contact == contact) continue; // Skip the current contact
-////
-////        // Check if the other contact is in the same kinematic chain
-////        for (size_t i = 0; i < state_vector_list.kinematic_chain_bodies_independant.size(); ++i) {
-////            const auto& body_chain = state_vector_list.kinematic_chain_bodies_independant[i];
-////            for (int body : body_chain) {
-////                if (body == other_contact.first || body == other_contact.second) {
-////                    // Store the index of the chain instead of the body
-////                    relevant_kinematic_chains.push_back(static_cast<int>(i));
-////                    break; // break the inner loop
-////                }
-////            }
-////        }
-////    }
-//
-//    // Stage 2 - convert all bodies to state vector indices
-//    for( const auto &kinematic_chain : relevant_kinematic_chains){
-//        for(int i = 0; i < state_vector_list.kinematic_chain_state_indices_independant[kinematic_chain].size(); i++){
-//            contact_state_indices.push_back(state_vector_list.kinematic_chain_state_indices_independant[kinematic_chain][i]);
-//        }
-//    }
-//
-//    return contact_state_indices;
-//}
-
-// Static inline helper function for considering kinematic chains
 static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>& contact,
                                            const std::vector<std::pair<int, int>>& all_contacts,
                                            const stateVectorList &state_vector_list,
@@ -243,21 +173,21 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
     }
     // TODO - Maybe make this optional?
    // Check for any other affected kinematic chains
-//   for(auto & other_contact : all_contacts) {
-//        if(other_contact == contact) continue; // Skip the current contact
-//
-//        // Check if the other contact is in the same kinematic chain
-//        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
-//            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
-//            for (int body : body_chain) {
-//                if (body == other_contact.first || body == other_contact.second) {
-//                    // Store the index of the chain instead of the body
-//                    relevant_kinematic_chains.push_back(static_cast<int>(i));
-//                    break; // break the inner loop
-//                }
-//            }
-//        }
-//    }
+   for(auto & other_contact : all_contacts) {
+        if(other_contact == contact) continue; // Skip the current contact
+
+        // Check if the other contact is in the same kinematic chain
+        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
+            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
+            for (int body : body_chain) {
+                if (body == other_contact.first || body == other_contact.second) {
+                    // Store the index of the chain instead of the body
+                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+                    break; // break the inner loop
+                }
+            }
+        }
+    }
 
     // Stage 2 - convert all bodies to state vector indices
     if(!sep_kin_chains){

@@ -4,8 +4,8 @@ modelName: "/bimanual_pickup"
 timeStep: 0.004
 openloop_horizon: 1500
 mpc_horizon: 70
-keypointMethod: "contact_change_dyn"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
-minN: 5
+keypointMethod: "set_interval"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
+minN: 1000
 maxN: 100
 
 robots:
@@ -47,10 +47,10 @@ residuals:
 #    weight: 10
 #    weight_terminal: 1000
   reach_1:
-    target: [0.015]
+    target: [0.02]
     weight: 1
     weight_terminal: 1
   reach_2:
-    target: [0.015]
+    target: [0.02]
     weight: 1
     weight_terminal: 1

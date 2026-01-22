@@ -15,7 +15,7 @@ blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 # task_name = "push_mcl"
 # iterations = "6_6"
 # iterations = "3_10"
-iterations = "1_1"
+iterations = "4_10"
 # task_name = "push_mcl"
 base_dir = ".."
 run_mode = "openloop"
@@ -23,23 +23,27 @@ run_mode = "openloop"
 show_plot = False
 paper_data_folder = False
 
-cost_reductions = []
-optimisation_times = []
-number_iterations = []
+# tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker", "acrobot"]
+# tasks = ["push_lcl", "push_mcl"]
+tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+# tasks = ["acrobot"]
+
+methods = ["SI_1", "SI_5", "SI_1000", "contact_change", 
+                "contact_change_dyn"]
+
+cost_reductions_all = [[] for _ in range(len(methods))]
+optimisation_times_all = [[] for _ in range(len(methods))]
+number_iterations_all = [[] for _ in range(len(methods))]
 
 def main():
     # global task_name
-    
-    # tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker", "acrobot"]
-    tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-    # tasks = ["acrobot"]
-    
     
     for task in tasks:
         names, dataframes_iLQR, yamlfiles_iLQR = load_raw_data(task)
     
         methods = ["SI_1", "SI_5", "SI_1000", "contact_change", 
-                "contact_change_dyn", "contact_change_maxN"]
+                "contact_change_dyn"]
+        # methods = ["SI_1", "SI_5", "SI_1000", "contact_change_dyn"]
 
         # Keep only entries where the name is in `methods`
         filtered = [(i, name) for i, name in enumerate(names) if name in methods]
@@ -54,38 +58,83 @@ def main():
 
         plot_openloop_data(names, dataframes_iLQR, task)
         
-        plot_timing_breakdown_data(names, dataframes_iLQR)
+        # plot_CR_versus_iteration_timings(task)
         
-    print(cost_reductions)
-    
-    print("Average ", end='')
-    for method in range(len(names)):
-        # Compute mean of cost reduction for each method (column)
-        mean_cost_reduction = np.mean([cost_reductions[i][method] for i in range(len(cost_reductions))])
-        mean_optimisation_time = np.mean([optimisation_times[i][method] for i in range(len(optimisation_times))])
-        # mean_number_iterations = np.mean([number_iterations[i][method] for i in range(len(number_iterations))])
+        # plot_timing_breakdown_data(names, dataframes_iLQR)
         
-        print(f'& {mean_optimisation_time/1000.0:.2f}', end=' ')
-        print(f'& {mean_cost_reduction:.2f}', end=' ')
-        # print(f'& {mean_number_iterations:.2f}', end=' ')
-    print('\\\\')
+    print(f" cost reduction shape : {np.array(cost_reductions_all).shape}")
     
-    # test_plot()
-    
-def test_plot():
-    global base_dir, task_name, run_mode
-    current_dir = base_dir + "/iLQR"
+    z = 1.96  # 95% CI
 
-    fig, axs = plt.subplots(2, 1, figsize=(10, 6))
+    print("Average ", end='')
+    for m in range(len(names)):
+        cr = np.array(cost_reductions_all[m])
+        ot = np.array(optimisation_times_all[m])
+        it = np.array(number_iterations_all[m])
+
+        mean_cr = cr.mean()
+        ci_cr = z * cr.std(ddof=1) / np.sqrt(len(cr))
+
+        mean_ot = ot.mean()
+        ci_ot = z * ot.std(ddof=1) / np.sqrt(len(ot))
+
+        mean_it = it.mean()
+        ci_it = z * it.std(ddof=1) / np.sqrt(len(it))
+
+        if(iterations != "1_1"):
+            print(
+                f"& {mean_ot/1000:.2f}"
+                f"& {mean_cr:.2f} $\pm$ {ci_cr:.2f} "
+                f"& {mean_it:.2f}",
+                end=" "
+            )
+        else:
+            print(
+            f"& {mean_ot/1000:.2f}"
+            f"& {mean_cr:.2f} $\pm$ {ci_cr:.2f} ",
+            end=" "
+        )
+    print("\\\\")
+    
+    # print("Average ", end='')
+    # for method in range(len(names)):
+    #     # Compute mean of cost reduction for each method (column)
+    #     mean_cost_reduction = np.mean(cost_reductions_all, axis=1)
+    #     # mean_optimisation_time = np.mean([optimisation_times[i][method] for i in range(len(optimisation_times))])
+    #     # mean_number_iterations = np.mean([number_iterations[i][method] for i in range(len(number_iterations))])
+        
+    #     # print(f'& {mean_optimisation_time/1000.0:.2f}', end=' ')
+    #     print(f'& {mean_cost_reduction:.2f}', end=' ')
+    #     # print(f'& {mean_number_iterations:.2f}', end=' ')
+    #     pass
+    # print('\\\\')
+    
+def plot_CR_versus_iteration_timings(task_name):
+    global base_dir, run_mode
+    current_dir = base_dir + "/iLQR_4_10_results(FINAL)"
+
+    fig, ax = plt.subplots(figsize=(6, 6))
     
     run_mode_search = run_mode + "_" + iterations
-    
 
     for folder in os.listdir(current_dir):
         if task_name not in folder:
             continue
         
         if run_mode_search not in folder:
+            continue
+        
+        # methods = ["SI_1", "SI_5", "SI_1000", "contact_change", 
+        #    "contact_change_dyn", "contact_change_maxN"]
+        methods = ["SI_1", "SI_5", "SI_1000", "contact_change"]
+
+        file_name_yaml = current_dir + "/" + folder + "/summary.yaml"
+        with open(file_name_yaml, 'r') as file:
+            yaml_data = yaml.load(file, Loader=yaml.FullLoader)
+            method_name = yaml_data["keypoint_name"]
+
+        # ---- FILTER METHODS HERE ----
+        if method_name not in methods:
             continue
         
         file_name_yaml = current_dir + "/" + folder + "/summary.yaml"
@@ -108,10 +157,26 @@ def test_plot():
                 continue
             
             df = pd.read_csv(file)
-            if "Cost" in df.columns:
-                all_costs.append(df["Cost"])
-                all_cost_reductions.append(df["Cost reduction"])
-                all_times_per_iteration.append(df["time (ms)"])
+            # if "Cost" in df.columns:
+                
+            all_costs.append(df["Cost"])
+            all_cost_reductions.append(df["Cost reduction"])
+            all_times_per_iteration.append(df["time (ms)"])
+            
+        # --- PAD TRIALS TO SAME LENGTH ---
+        max_len = max(len(s) for s in all_costs)
+
+        def pad_series(s, max_len):
+            return (
+                s
+                .reset_index(drop=True)
+                .reindex(range(max_len))
+                .ffill()
+            )
+
+        all_costs = [pad_series(s, max_len) for s in all_costs]
+        all_cost_reductions = [pad_series(s, max_len) for s in all_cost_reductions]
+        all_times_per_iteration = [pad_series(s, max_len) for s in all_times_per_iteration]
                 
                 
         combined_cost = pd.concat(all_costs, axis=1)
@@ -123,29 +188,15 @@ def test_plot():
         combined_times = pd.concat(all_times_per_iteration, axis=1)
         mean_times = combined_times.mean(axis=1)
         
-        # axs[0].plot(mean_cost, label=method_name)
-        # axs[1].scatter(mean_times, mean_cost, label=method_name)
-        axs[0].plot(mean_CR, label=method_name)
-        axs[1].scatter(mean_times, mean_CR, label=method_name)
-                
-        
-    # Final plot adjustments
-    axs[0].set_title("Trajectory Cost vs Iteration")
-    axs[0].set_ylabel("Cost reduction")
-    axs[0].grid(True)
+        plt.plot(mean_times, mean_CR, '-o', label=method_name)
 
-    axs[1].set_title("Trajectory Cost vs Time")
-    axs[1].set_xlabel("Time per Iteration (ms)")
-    axs[1].set_ylabel("Cost reduction")
-    axs[1].grid(True)
+    plt.title(f"Trajectory CR Vs Iteration Time for {task_name}")
+    plt.xlabel("Cumulative iteration time (ms)")
+    plt.ylabel("Cost reduction")
+    plt.grid(True)
+    plt.legend()
 
-    # Set a figure-level title
-    fig.suptitle("Average Trajectory Cost for Each Method", fontsize=14)
-
-    # Put a shared legend outside the plot
-    fig.legend(loc="upper right", bbox_to_anchor=(1, 0.95))
-
-    plt.tight_layout(rect=[0, 0, 0.85, 0.95])  # Leave space for suptitle and legend
+    # plt.tight_layout(rect=[0, 0, 0.85, 0.95])  # Leave space for suptitle and legend
     plt.show()
 
     
@@ -345,26 +396,42 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
         
         #OT no CI and CR with CI
         print(f'& {means[i,0]/1000:.2f}', end=' ')
-        print(f'& {means[i,1]:.2f}$\pm${confidence_intervals[i,1]:.2f}', end=' ')
-        # print(f'& {means[i,2]:.2f}', end=' ')
         
         # With confidence intervals
-        # print(f'& {means[i,0]:.2f} $\pm$ {confidence_intervals[i,0]:.2f}', end=' ')
-        # print(f'& {means[i,1]:.2f} $\pm$ {confidence_intervals[i,1]:.2f}', end=' ')
-        # print(f'& {means[i,2]:.2f} $\pm$ {confidence_intervals[i,2]:.2f}', end=' ')
+        # print(f'& {means[i,0]/1000:.2f} $\pm$ {confidence_intervals[i,0]/1000:.2f}', end=' ')
+        print(f'& {means[i,1]:.2f} $\pm$ {confidence_intervals[i,1]:.2f}', end=' ')
+        # print(f'& {means[i,3]:.2f} $\pm$ {confidence_intervals[i,2]:.2f}', end=' ')
         
-        # Without confidence intervals
-        # print(f'& {means[i,0]/1000:.2f}', end=' ')
-        # print(f'& {means[i,1]:.2f}', end=' ')
+        # if run_mode != "1_1":
+        #     print(f'& {means[i,2]:.2f}', end=' ')
         # print(f'& {means[i,3]:.2f}', end=' ')
         
 
     print(f'\\\\')
     
+    global cost_reductions_all, optimisation_times_all, number_iterations_all
+
+    for m, df in enumerate(dataframes_iLQR):
+        cost_reductions_all[m].extend(df["Cost reduction"].values)
+        optimisation_times_all[m].extend(df["Optimisation time (ms)"].values)
+        number_iterations_all[m].extend(df["Number iterations"].values)
+
+    
+    # Save data per task per trial for all methods to array so we can average over all tasks
+    
+    # print(dataframes_iLQR[0][:]['Cost reduction'].values)
+    
+    # cost_reductions = np.append(cost_reductions, )
+    
+    # cost_reductions.append(dataframes_iLQR[:]['Cost reduction'].values)
+    # print(f' cost reduction shape inside plot function : {np.array(cost_reductions).shape}')
+    # optimisation_times.append(dataframes_iLQR[:]['Optimisation time (ms)'].values)
+    # number_iterations.append(dataframes_iLQR[:]['Number iterations'].values)
+    
     # Save data per task for all methods to array so we can average over all tasks 
-    cost_reductions.append(means[:,1])
-    optimisation_times.append(means[:,0])
-    number_iterations.append(means[:,3])
+    # cost_reductions.append(means[:,1])
+    # optimisation_times.append(means[:,0])
+    # number_iterations.append(means[:,3])
             
             
     # Print the data in table format for easy transferance to the paper
@@ -391,6 +458,7 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph,
     figure_title = task
     fig.suptitle(figure_title, fontsize = 20)
     
+    global show_plot
     if(show_plot):
         plt.show()
     
@@ -460,4 +528,11 @@ def load_raw_data(task):
     return names, dataframes_iLQR, yamlfiles_iLQR
     
 if __name__ == "__main__":
-    main()
+    
+    plot_CR_versus_iteration_timings("acrobot")
+    plot_CR_versus_iteration_timings("box_sweep")
+    # plot_CR_versus_iteration_timings("push_ncl")
+    # plot_CR_versus_iteration_timings("push_lcl")
+    # plot_CR_versus_iteration_timings("push_mcl")
+    # plot_CR_versus_iteration_timings("impact_large_box")
+    # main()

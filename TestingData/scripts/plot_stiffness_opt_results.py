@@ -6,9 +6,10 @@ import numpy as np
 # Set path to the outer directory, e.g., path/to/root/solref[0]
 # outer_path = "../stiffness_tests/pushing_no_clutter_solref[0]"
 # task = "pushing_no_clutter"
-outer_path = "../stiffness_tests/box_sweep_solref[0]"
-task = "box_sweep"
-# outer_path = "../stiffness_tests/pushing_no_clutter_solref[0]"
+# outer_path = "../stiffness_tests/box_sweep_solref[0]"
+# outer_path = "../stiffness_tests/impact_large_box_solref[0]"
+task = "push ncl"
+outer_path = "../stiffness_tests/pushing_no_clutter_solref[0]"
 # outer_path = "../stiffness_tests/solimp[0]"
 # outer_path = "../stiffness_tests_6_iters_100_tasks_box_sweep/solimp[0]"
 outer_folder = os.path.basename(outer_path)
@@ -67,7 +68,7 @@ for x_val in x_dirs:
                 print(f"Warning: Failed to read {summary_file}: {e}")
 
 # Plotting
-fig, axes = plt.subplots(2, 1, sharex=True, figsize=(8, 2*4))
+fig, axes = plt.subplots(1, 1, sharex=True, figsize=(8, 2*4))
 colors = plt.cm.get_cmap('tab10')
 
 # First plot - Cost reduction
@@ -81,27 +82,27 @@ for i, (method, results) in enumerate(cost_reduction_data.items()):
         lowers.append(lower)
         uppers.append(upper)
 
-    axes[0].plot(x_dirs, means, label=method, color=colors(i), marker='o')
-    axes[0].fill_between(x_dirs, lowers, uppers, color=colors(i), alpha=0.2)
+    axes.plot(x_dirs, means, label=method, color=colors(i), marker='o')
+    axes.fill_between(x_dirs, lowers, uppers, color=colors(i), alpha=0.2)
     
-axes[0].set_ylabel("Average Cost Reduction")
-axes[0].grid(True)
+axes.set_ylabel("Average Cost Reduction")
+axes.grid(True)
     
-for i, (method, results) in enumerate(final_cost_data.items()):
-    means = []
-    lowers = []
-    uppers = []
-    for x in x_dirs:
-        mean, lower, upper = results.get(x, (np.nan, np.nan, np.nan))
-        means.append(mean)
-        lowers.append(lower)
-        uppers.append(upper)
+# for i, (method, results) in enumerate(final_cost_data.items()):
+#     means = []
+#     lowers = []
+#     uppers = []
+#     for x in x_dirs:
+#         mean, lower, upper = results.get(x, (np.nan, np.nan, np.nan))
+#         means.append(mean)
+#         lowers.append(lower)
+#         uppers.append(upper)
 
-    axes[1].plot(x_dirs, means, label=method, color=colors(i), marker='o')
-    axes[1].fill_between(x_dirs, lowers, uppers, color=colors(i), alpha=0.2)
+#     axes[1].plot(x_dirs, means, label=method, color=colors(i), marker='o')
+#     axes[1].fill_between(x_dirs, lowers, uppers, color=colors(i), alpha=0.2)
     
-axes[1].set_ylabel("Average Final Cost")
-axes[1].grid(True)
+# axes[1].set_ylabel("Average Final Cost")
+# axes[1].grid(True)
     
 
 fig.suptitle(task, fontsize = 20)

@@ -865,12 +865,20 @@ void MuJoCoHelper::InitVisualisation() {
 //    cam.lookat[2] =  0.219;
 
     // Push heavy clutter
-    cam.distance = 1.589;
-    cam.azimuth = -82.7;
-    cam.elevation = -44.7;
-    cam.lookat[0] = 0.5353;
-    cam.lookat[1] = -0.08989;
-    cam.lookat[2] =  -0.01922;
+//    cam.distance = 1.589;
+//    cam.azimuth = -82.7;
+//    cam.elevation = -44.7;
+//    cam.lookat[0] = 0.5353;
+//    cam.lookat[1] = -0.08989;
+//    cam.lookat[2] =  -0.01922;
+
+    // Impact large box
+    cam.distance = 1.946;
+    cam.azimuth = -136.7;
+    cam.elevation = -39.3;
+    cam.lookat[0] = 0.3744;
+    cam.lookat[1] = 0.06619;
+    cam.lookat[2] = -0.1457;
 
     // Piston block 1D view
 //    cam.distance = 1.449;
@@ -901,12 +909,12 @@ void MuJoCoHelper::UpdateScene(GLFWwindow *window, const char* label){
     mjr_render(viewport, &scn, &con);
 
 //    cout << "------------------------------------------------- \n";
-//    cout << "camera dist: " << cam.distance << endl;
-//    cout << "camera azimuth: " << cam.azimuth << endl;
-//    cout << "camera elevation: " << cam.elevation << endl;
-//    cout << "camera look at: " << cam.lookat[0] << endl;
-//    cout << "camera look at: " << cam.lookat[1] << endl;
-//    cout << "camera look at: " << cam.lookat[2] << endl;
+//    cout << "cam.distance = " << cam.distance << ";" << endl;
+//    cout << "cam.azimuth = " << cam.azimuth << ";" << endl;
+//    cout << "cam.elevation = " << cam.elevation << ";" << endl;
+//    cout << "cam.lookat[0] = " << cam.lookat[0] << ";" << endl;
+//    cout << "cam.lookat[1] = " << cam.lookat[1] << ";" << endl;
+//    cout << "cam.lookat[2] = " << cam.lookat[2] << ";" << endl;
 
     mjrRect rect{0, 0, 100, 100};
     mjr_rectangle(rect, 0, 0, 0, 0);

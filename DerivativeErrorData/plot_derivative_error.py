@@ -136,29 +136,6 @@ def plot_error_metrics(folder_path):
     # corr_matrix = summary_df.corr(method='pearson')
     # print(corr_matrix)
     
-    
-def plot_error_versus_CR(task_name, error_name):
-    summary_df = collate_data(task_name)
-    
-    order = ["SI2", "SI5", "SI10", "SI20", "SI100", "SI200", "SI500", "SI1000", "contact_change", "contact_change_dyn"]
-    summary_df["sort_key"] = summary_df["method"].map(
-        lambda x: order.index(x) if x in order else len(order)
-    )
-    summary_df = summary_df.sort_values("sort_key").drop(columns="sort_key").reset_index(drop=True)
-    
-    # Plot error metric versus cost reduction
-    plt.figure(figsize=(6, 4))
-    for _, row in summary_df.iterrows():
-        plt.scatter(row[error_name], row["Cost Reduction"], label=row["method"])
-            
-    # plt.scatter(summary_df[error_name], summary_df["Cost Reduction"], label=summary_df["method"])
-    plt.xlabel(f"{error_name}")
-    plt.ylabel("Cost Reduction")
-    plt.title(f"Cost Reduction vs {error_name} for {task_name}")
-    plt.legend()
-    plt.show()
-    # ax.set_title(f"Cost Reduction vs {metric}")
-    
 def print_correlation_CR_versus_errors(tasks_folder, error_names):
     
     # Compute average correlations over all tasks
@@ -219,34 +196,70 @@ def print_error_percentage_derivs(tasks_folder, error_names):
                 print(f'& {perc_deriv:.1f} ', end=' ')
                 
         print('\\\\')
+        
+def plot_error_versus_CR(tasks, error_name):
+    summary_dfs = [collate_data(task) for task in tasks]
+    
+    order = ["SI2", "SI5", "SI10", "SI20", "SI100", "SI200", "SI500", "SI1000", "contact_change", "contact_change_dyn"]
+    
+    for i in range(len(summary_dfs)):
+        summary_dfs[i]["sort_key"] = summary_dfs[i]["method"].map(
+            lambda x: order.index(x) if x in order else len(order)
+        )
+        summary_dfs[i] = summary_dfs[i].sort_values("sort_key").drop(columns="sort_key").reset_index(drop=True)
+    
+    fig, axes = plt.subplots(1, 1, figsize=(6, 6)) # sharey = True
+    
+    for i, df in enumerate(summary_dfs):
+        for _, row in summary_dfs[i].iterrows():
+            if "contact" in row["method"]:
+                axes.scatter(row[error_name], row["Cost Reduction"], label=row["method"], marker='x')
+            else:
+                axes.scatter(row[error_name], row["Cost Reduction"], label=row["method"], marker='o')
+                
+        axes.set_xlabel(f"{error_name}")
+        axes.set_ylabel("Cost Reduction")
+        axes.legend()
+        axes.set_title(tasks[i])
+            
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
+    fig.suptitle(f"Cost Reduction vs {error_name}")
+    # plt.legend()
+    # plt.show()
+    
+    # plt.savefig(f"cost_reduction_vs_{error_name.replace(' ', '_')}.png")
+    plt.savefig(f"cost_reduction_vs_{error_name.replace(' ', '_')}.svg", format="svg")
+    # ax.set_title(f"Cost Reduction vs {metric}")
 
 
 
 if __name__ == "__main__":
     
-    # plot_error_versus_CR("pushing_low_clutter_1000_3", "Elementnorm Error")
+    # plot_error_versus_CR(["pushing_low_clutter_1000_3", "box_sweep_1500_3"], "Elementnorm Error")
+    plot_error_versus_CR(["walker_run_200_3"], "Elementnorm Error")
+    # plot_error_versus_CR("box_sweep_1500_3", "Elementnorm Error")
     
     # Dictionary of folder names and task names
-    # tasks_folder = {"Acrobot": "acrobot_2000_3",
-    #                 "Walker": "walker_run_200_3",
-    #                 "Box Sweep": "box_sweep_1500_3",
-    #                 "Impact Large Box 8": "impact_large_box_2000_8",
-    #                 "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
-    #                 "Pushing Low Clutter 3": "pushing_low_clutter_1000_3",
-    #                 "Pushing Moderate Clutter 3": "pushing_moderate_clutter_1000_3",
-    # }   
-    tasks_folder = {
-            "Box Sweep": "box_sweep_1500_3",
-            "Piston Block": "piston_block_1000_3",
-            "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
-            "Impact Large Box 8": "impact_large_box_2000_8",
+    tasks_folder = {"Acrobot": "acrobot_2000_3",
+                    "Walker": "walker_run_200_3",
+                    "Box Sweep": "box_sweep_1500_3",
+                    "Impact Large Box 8": "impact_large_box_2000_8",
+                    "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
+                    "Pushing Low Clutter 3": "pushing_low_clutter_1000_3",
+                    "Pushing Moderate Clutter 3": "pushing_moderate_clutter_1000_3",
     }   
+    # tasks_folder = {
+    #         "Box Sweep": "box_sweep_1500_3",
+    #         "Piston Block": "piston_block_1000_3",
+    #         "Pushing No Clutter 3": "pushing_no_clutter_1000_3",
+    #         "Impact Large Box 8": "impact_large_box_2000_8",
+    # }   
 
-    error_metrics = ["MSE", "Max Error (abs)", "Elementnorm Error"]
-    print_correlation_CR_versus_errors(tasks_folder, error_metrics)
+    # error_metrics = ["MSE", "Max Error (abs)", "Elementnorm Error"]
+    # print_correlation_CR_versus_errors(tasks_folder, error_metrics)
     
-    error_metrics = ["Max Error (abs)", "Elementnorm Error"]
-    print_error_percentage_derivs(tasks_folder, error_metrics)
+    # error_metrics = ["Max Error (abs)", "Elementnorm Error"]
+    # print_error_percentage_derivs(tasks_folder, error_metrics)
 
-    for task in tasks_folder:
-        plot_error_metrics(tasks_folder[task])
+    # for task in tasks_folder:
+    #     plot_error_metrics(tasks_folder[task])

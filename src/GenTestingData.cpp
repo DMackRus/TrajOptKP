@@ -126,7 +126,7 @@ int main(int argc, char **argv){
                                              opt_horizon, activeVisualiser, yamlReader);
 
     // TODO - logic for switching between SCVX and iLQR
-    if(0){
+    if(1){
         activeOptimiser = iLQROptimiser;
     }
     else{
@@ -242,24 +242,23 @@ int GenTestingData::GenDataOpenLoopMultipleMethods(int task_horizon){
     int this_test_fine = EXIT_SUCCESS;
 
     int num_trials = 100;
-    int min_iterations = 6;
+    int min_iterations = 4;
     int max_iterations = 10;
 
     // Keypoint methods to be tested
-//    std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
-//                                                      "contact_change", "contact_change_sep", "contact_change_dyn",
-//                                                      "contact_change_maxN"};
-//    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1, 1, 1};
-//    std::vector<int> keypoint_method_max_N = {1, 1, 1, 1, 1, 1, 20};
+    std::vector<std::string> keypoint_method_names = {"set_interval", "set_interval", "set_interval",
+                                                      "contact_change", "contact_change_dyn"};
+    std::vector<int> keypoint_method_min_N = {1, 5, 1000, 1, 1};
+    std::vector<int> keypoint_method_max_N = {1, 1, 1, 1, 1};
 
 //    std::vector<std::string> keypoint_method_names = {"set_interval", "contact_change", "contact_change_sep", "contact_change_dyn",
 //                                                      "contact_change_maxN"};
 //    std::vector<int> keypoint_method_min_N = {1000, 1, 1, 1, 1};
 //    std::vector<int> keypoint_method_max_N = {1, 1, 1, 1, 20};
 
-    std::vector<std::string> keypoint_method_names = {"set_interval"};
-    std::vector<int> keypoint_method_min_N = {1000};
-    std::vector<int> keypoint_method_max_N = {20};
+//    std::vector<std::string> keypoint_method_names = {"set_interval"};
+//    std::vector<int> keypoint_method_min_N = {1000};
+//    std::vector<int> keypoint_method_max_N = {20};
 
     assert(keypoint_method_names.size() == keypoint_method_min_N.size());
     assert(keypoint_method_names.size() == keypoint_method_max_N.size());
@@ -661,13 +660,13 @@ int GenTestingData::GenDataAsyncMPC(int task_horizon, int task_timeout){
     TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
 
     // --------------------- Contact_change sep ----------------------------------
-    keypoint_method.name = "contact_change_sep";
-    keypoint_method.min_N = 1;
-    keypoint_method.max_N = 1;
-    keypoint_method.auto_adjust = false;
-    optimiser->SetCurrentKeypointMethod(keypoint_method);
-
-    TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
+//    keypoint_method.name = "contact_change_sep";
+//    keypoint_method.min_N = 1;
+//    keypoint_method.max_N = 1;
+//    keypoint_method.auto_adjust = false;
+//    optimiser->SetCurrentKeypointMethod(keypoint_method);
+//
+//    TestingMPC(keypoint_method, true, num_trials, task_horizon, task_timeout);
 
     // --------------------- Contact_change Dyn ----------------------------------
     keypoint_method.name = "contact_change_dyn";

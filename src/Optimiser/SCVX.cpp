@@ -361,6 +361,7 @@ std::vector<MatrixXd> SCVX::Optimise(mjData *d, std::vector<MatrixXd> initial_co
         PrintBanner(duration.count() / 1000.0f);
     }
     initial_cost = old_cost;
+    new_cost = old_cost;
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
     // ------------------- Main optimisation iteration loop ------------------------
@@ -498,6 +499,13 @@ void SCVX::Iteration(int iteration_num, bool &converged, bool &failed){
         // Terminate optimization early
         failed = true;
         std::cout << "QP solve failed, terminating optimization early. \n";
+
+        // Clean up data storage to prevent seg faults
+        time_forwardsPass_ms.push_back(0.0f);
+        cost_after_iteration.push_back(new_cost);
+        cost_reduction_after_iteration.push_back(1 - (new_cost / initial_cost));
+        time_after_iteration_ms.push_back(duration_cast<microseconds>(high_resolution_clock::now() - start_time).count() / 1000.0f);
+
         return;
     }
 

@@ -3,8 +3,8 @@ modelName: "/push_lcl"
 timeStep: 0.008
 openloop_horizon: 1000
 mpc_horizon: 100
-keypointMethod: "set_interval"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn", "contact_change_maxN"
-minN: 1
+keypointMethod: "contact_change"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn", "contact_change_maxN"
+minN: 5
 maxN: 20
 
 robots:

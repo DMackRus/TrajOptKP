@@ -85,7 +85,7 @@ def plot_timing_breakdown_data(task_name, method_names, dataframes_iLQR, datafra
         "Total time FP (ms)": "#8c564b"             # Brown
     }
     
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(8, 6), sharey=True)
     
     # ----------------------- iLQR results on first axes ------------------------
     num_methods = len(dataframes_iLQR)
@@ -109,10 +109,12 @@ def plot_timing_breakdown_data(task_name, method_names, dataframes_iLQR, datafra
         # ax.bar(indices, values, bar_width, bottom=bottoms, label=category, color=colors[i])
         bottoms += values
 
-    axes[0].set_ylabel('Average Time per Run (ms)')
-    axes[0].set_title('Average Timing Breakdown per iLQR Method')
+    # axes[0].set_ylabel('Average Time per Run (ms)')
+    axes[0].set_title('iLQR')
     axes[0].set_xticks(indices)
-    axes[0].set_xticklabels(method_names)
+    # axes[0].xticks(rotation="45")
+    # plt.xticks(rotation=90)
+    axes[0].set_xticklabels(method_names, rotation=25, ha='right')
     # ax.legend(loc='upper right', bbox_to_anchor=(1.35, 1.0))
     axes[0].legend()
     
@@ -138,15 +140,20 @@ def plot_timing_breakdown_data(task_name, method_names, dataframes_iLQR, datafra
         # ax.bar(indices, values, bar_width, bottom=bottoms, label=category, color=colors[i])
         bottoms += values
 
-    axes[1].set_ylabel('Average Time per Run (ms)')
-    axes[1].set_title('Average Timing Breakdown per SCVX Method')
+    # axes[1].set_ylabel('Average Time per Run (ms)')
+    axes[1].set_title('SCVX')
     axes[1].set_xticks(indices)
-    axes[1].set_xticklabels(method_names)
+    axes[1].set_xticklabels(method_names, rotation=25, ha='right')
     # ax.legend(loc='upper right', bbox_to_anchor=(1.35, 1.0))
     axes[1].legend()
 
-    fig.shared_yaxes = True
-    fig.tight_layout()
+    # fig.shared_yaxes = True
+    # fig.tight_layout()
+    fig.tight_layout(rect=[0.03, 0.03, 1, 0.92])
+    fig.suptitle(f'Optimization Timing Breakdown for Task: {task_name}', fontsize=16)
+    fig.supylabel('Total Time per Run (ms)')
+    fig.supxlabel('Methods')
+    # fig.suptitle(f'Timing Breakdown for Task: {task_name}', y=1.02)
     plt.show()
     
 def make_names(iLQR_yaml_files):
