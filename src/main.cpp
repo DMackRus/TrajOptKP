@@ -28,6 +28,8 @@
 #include "ModelTranslator/ImpactLargeBox.h"
 #include "ModelTranslator/BimanualPickup.h"
 
+#include "ModelTranslator/LWR_reaching.h"
+
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
 #include "Optimiser/iLQR_SVR.h"
@@ -840,6 +842,10 @@ int assign_task(){
     else if(task == "floating_cube"){
         std::shared_ptr<FloatingCube> my_floating_cube_object = std::make_shared<FloatingCube>();
         activeModelTranslator = my_floating_cube_object;
+    }
+    else if (task == "LWR_reaching") {
+        std::shared_ptr<LWRReaching> my_LWR_reaching = std::make_shared<LWRReaching>();
+        activeModelTranslator = my_LWR_reaching;
     }
     else{
         std::cout << "invalid scene selected, " << task << " does not exist" << std::endl;

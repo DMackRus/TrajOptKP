@@ -121,7 +121,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/ImpactLargeBox.cpp
             src/ModelTranslator/BimanualPickup.cpp
             src/Optimiser/SCVX.cpp
-            src/ModelTranslator/Piston.cpp)
+            src/ModelTranslator/Piston.cpp
+            src/ModelTranslator/LWR_reaching.cpp)
 
 add_executable(gen_testing_data src/GenTestingData.cpp
         src/Visualiser/Visualiser.cpp

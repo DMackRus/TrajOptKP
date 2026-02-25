@@ -14,7 +14,7 @@ int assign_task(std::string task){
         activeModelTranslator = myAcrobot;
     }
     else if(task == "reaching"){
-        std::shared_ptr<pandaReaching> myReaching = std::make_shared<pandaReaching>();
+        std::shared_ptr<LWRReaching> myReaching = std::make_shared<LWRReaching>();
         activeModelTranslator = myReaching;
     }
     else if(task == "pushing_no_clutter"){

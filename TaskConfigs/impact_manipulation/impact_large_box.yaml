@@ -7,7 +7,6 @@ mpc_horizon: 150
 keypointMethod: "set_interval"   # Possible values: "set_interval", "contact_change", "contact_change_sep", "contact_change_dyn"
 minN: 1
 maxN: 100
-iterativeErrorThreshold: 0.00001
 robots:
   panda:
     jointNames: ["panda0_joint1", "panda0_joint2", "panda0_joint3", "panda0_joint4", "panda0_joint5", "panda0_joint6", "panda0_joint7"]

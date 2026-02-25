@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "box_sweep"
+task: "LWR_reaching"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -29,10 +29,13 @@ task: "box_sweep"
 # ---- Locomotion ----
 # "walker_walk", "walker_run", "humanoid" (not working yet), "anyMal"
 #
+# ---- LWR ----------
+# LWR_reaching
+#
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "SCVX"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
+optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
 
 # Run mode for the program
 runMode: "Optimise_once"
@@ -56,7 +59,7 @@ runMode: "Optimise_once"
 # "Analyse_toy_contact"           - Analyse the derivatives in toy example with contact.
 # "Analyse_toy_contact_keypoints" - Analyse the derivatives in toy example with contact and keypoint method.
 
-taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+taskInitMode: "random"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
 csvRow: 11                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.

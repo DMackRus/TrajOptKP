@@ -34,6 +34,7 @@ TrajOptKP
 
 /cmake-build-debug
 /cmake-build-release
+/LWR3-MuJoCo-Model
 /build
 /.vscode
 /.idea
