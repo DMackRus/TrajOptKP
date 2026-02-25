@@ -171,23 +171,24 @@ static inline std::vector<int> AddKeypointsFromContact(const std::pair<int, int>
             }
         }
     }
+
     // TODO - Maybe make this optional?
    // Check for any other affected kinematic chains
-   for(auto & other_contact : all_contacts) {
-        if(other_contact == contact) continue; // Skip the current contact
-
-        // Check if the other contact is in the same kinematic chain
-        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
-            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
-            for (int body : body_chain) {
-                if (body == other_contact.first || body == other_contact.second) {
-                    // Store the index of the chain instead of the body
-                    relevant_kinematic_chains.push_back(static_cast<int>(i));
-                    break; // break the inner loop
-                }
-            }
-        }
-    }
+//   for(auto & other_contact : all_contacts) {
+//        if(other_contact == contact) continue; // Skip the current contact
+//
+//        // Check if the other contact is in the same kinematic chain
+//        for (size_t i = 0; i < state_vector_list.kinematic_chains_bodies.size(); ++i) {
+//            const auto& body_chain = state_vector_list.kinematic_chains_bodies[i];
+//            for (int body : body_chain) {
+//                if (body == other_contact.first || body == other_contact.second) {
+//                    // Store the index of the chain instead of the body
+//                    relevant_kinematic_chains.push_back(static_cast<int>(i));
+//                    break; // break the inner loop
+//                }
+//            }
+//        }
+//    }
 
     // Stage 2 - convert all bodies to state vector indices
     if(!sep_kin_chains){
@@ -705,22 +706,22 @@ void KeypointGenerator::GenerateKeyPoints(const std::vector<MatrixXd> &trajector
     }
     else if(current_keypoint_method.name == "contact_change"){
         // Print out contact sequence
-//        for(int t = 0; t < horizon; t++){
-//            std::cout << "time " << t << " :";
-//            for(const auto & contact : trajectory_contacts[t]){
-//                std::cout << " (" << contact.first << ", " << contact.second << ") ";
-//            }
-//            std::cout << "\n";
-//        }
+        // for(int t = 0; t < horizon; t++){
+        //     std::cout << "time " << t << " :";
+        //     for(const auto & contact : trajectory_contacts[t]){
+        //         std::cout << " (" << contact.first << ", " << contact.second << ") ";
+        //     }
+        //     std::cout << "\n";
+        // }
         ContactChangeDyn(trajectory_contacts, state_vector_list, false, false, false);
-//        for(int t = 0; t < horizon; t++){
-//            if(keypoints[t].empty()) continue; // Skip empty keypoint rows
-//            std::cout << "time " << t << " :";
-//            for(int i = 0; i < keypoints[t].size(); i++){
-//                std::cout << keypoints[t][i] << " ";
-//            }
-//            std::cout << "\n";
-//        }
+        // for(int t = 0; t < horizon; t++){
+        //     if(keypoints[t].empty()) continue; // Skip empty keypoint rows
+        //     std::cout << "time " << t << " :";
+        //     for(int i = 0; i < keypoints[t].size(); i++){
+        //         std::cout << keypoints[t][i] << " ";
+        //     }
+        //     std::cout << "\n";
+        // }
     }
     else if(current_keypoint_method.name == "contact_change_sep"){
         // Print out contact sequence

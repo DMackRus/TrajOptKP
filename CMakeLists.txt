@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(TrajOptKP)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -163,7 +163,7 @@ add_executable(toy_contact_analysis src/toy_contact_analysis.cpp
         src/ModelTranslator/BoxSweep.cpp
         src/ModelTranslator/PushBaseClass.cpp)
 
-## Derivative Error Analysis Code
+# Derivative Error Analysis Code
 add_executable(derivative_error_analysis
         src/derivative_error_analysis.cpp
         src/Visualiser/Visualiser.cpp
@@ -192,6 +192,18 @@ add_executable(contact_stiffness_test
         src/ModelTranslator/ImpactLargeBox.cpp
         )
 
+# Figure 1 data generator script
+add_executable(figure1_data_generator
+        src/figure_1_data_generator.cpp
+        src/Visualiser/Visualiser.cpp
+        src/Optimiser/Optimiser.cpp
+        src/Optimiser/iLQR.cpp
+        src/ModelTranslator/Walker.cpp
+        src/ModelTranslator/BoxSweep.cpp
+        src/ModelTranslator/ImpactLargeBox.cpp
+        src/ModelTranslator/TwoDPushing.cpp
+        src/ModelTranslator/PushBaseClass.cpp)
+
 include_directories(
         include
         ${MUJOCO_DIR}/include
@@ -214,6 +226,9 @@ target_link_libraries(derivative_error_analysis core_lib Eigen3::Eigen ${LIB_MUJ
 
 target_include_directories(contact_stiffness_test PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 target_link_libraries(contact_stiffness_test core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+
+target_include_directories(figure1_data_generator PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+target_link_libraries(figure1_data_generator core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
 
 
 # ------------------------------------------   TESTS   -------------------------------------------------------------
