@@ -91,7 +91,7 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     }
 
     if(update_horizon){
-        residuals.clear();
+        // residuals.clear();
         contact_list.clear();
     }
 
@@ -103,6 +103,8 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     r_u.clear();
     // Residual derivatives with respect to state
     r_x.clear();
+    // Residual vector
+    residuals.clear();
 
     int num_dof = activeModelTranslator->current_state_vector.dof;
     int num_dof_quat = activeModelTranslator->current_state_vector.dof_quat;
@@ -224,6 +226,8 @@ void iLQR::Resize(int new_num_dofs, int new_num_ctrl, int new_horizon){
     if(verbose_output){
         std::cout << "size of r_u: " << r_u.size() << " and size of r_x: " << r_x.size() << "\n";
         std::cout << "size of r_u[0]: " << r_u[0].size() << " and size of r_x[0]: " << r_x[0].size() << "\n";
+        std::cout << "Size of residual list: " << residuals.size() << "\n";
+        std::cout << "Size of residual list[0]: " << residuals[0].size() << "\n";
         std::cout << "iLQR time to allocate memory: " << duration_cast<microseconds>(std::chrono::high_resolution_clock::now() - start).count() / 1000.0 << " ms \n";
     }
 }

@@ -873,12 +873,12 @@ void MuJoCoHelper::InitVisualisation() {
 //    cam.lookat[2] =  -0.01922;
 
     // Impact large box
-    cam.distance = 1.946;
-    cam.azimuth = -136.7;
-    cam.elevation = -39.3;
-    cam.lookat[0] = 0.3744;
-    cam.lookat[1] = 0.06619;
-    cam.lookat[2] = -0.1457;
+    // cam.distance = 1.946;
+    // cam.azimuth = -136.7;
+    // cam.elevation = -39.3;
+    // cam.lookat[0] = 0.3744;
+    // cam.lookat[1] = 0.06619;
+    // cam.lookat[2] = -0.1457;
 
     // Piston block 1D view
 //    cam.distance = 1.449;
@@ -887,6 +887,14 @@ void MuJoCoHelper::InitVisualisation() {
 //    cam.lookat[0] = 0.5177;
 //    cam.lookat[1] = 1.038;
 //    cam.lookat[2] =  0.1567;
+
+    // DLR Packing scene
+    cam.distance = 2.208;
+    cam.azimuth = -56.9;
+    cam.elevation = -42.5;
+    cam.lookat[0] = 0.3744;
+    cam.lookat[1] = 0.06619;
+    cam.lookat[2] =  -0.1457;
 
     // create scene and context
     mjv_makeScene(model, &scn, 2000);
@@ -908,13 +916,13 @@ void MuJoCoHelper::UpdateScene(GLFWwindow *window, const char* label){
 
     mjr_render(viewport, &scn, &con);
 
-//    cout << "------------------------------------------------- \n";
-//    cout << "cam.distance = " << cam.distance << ";" << endl;
-//    cout << "cam.azimuth = " << cam.azimuth << ";" << endl;
-//    cout << "cam.elevation = " << cam.elevation << ";" << endl;
-//    cout << "cam.lookat[0] = " << cam.lookat[0] << ";" << endl;
-//    cout << "cam.lookat[1] = " << cam.lookat[1] << ";" << endl;
-//    cout << "cam.lookat[2] = " << cam.lookat[2] << ";" << endl;
+    // cout << "------------------------------------------------- \n";
+    // cout << "cam.distance = " << cam.distance << ";" << endl;
+    // cout << "cam.azimuth = " << cam.azimuth << ";" << endl;
+    // cout << "cam.elevation = " << cam.elevation << ";" << endl;
+    // cout << "cam.lookat[0] = " << cam.lookat[0] << ";" << endl;
+    // cout << "cam.lookat[1] = " << cam.lookat[1] << ";" << endl;
+    // cout << "cam.lookat[2] = " << cam.lookat[2] << ";" << endl;
 
     mjrRect rect{0, 0, 100, 100};
     mjr_rectangle(rect, 0, 0, 0, 0);
