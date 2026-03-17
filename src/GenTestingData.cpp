@@ -4,7 +4,7 @@ std::shared_ptr<ModelTranslator> activeModelTranslator;
 std::shared_ptr<Differentiator> activeDifferentiator;
 std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<iLQR> iLQROptimiser;
-std::shared_ptr<SCVX> SCVXOptimiser;
+// std::shared_ptr<SCVX> SCVXOptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
 
@@ -120,17 +120,17 @@ int main(int argc, char **argv){
                                            activeModelTranslator->MuJoCo_helper,
                                            activeDifferentiator,
                                            opt_horizon, activeVisualiser, yamlReader);
-    SCVXOptimiser = std::make_shared<SCVX>(activeModelTranslator,
-                                              activeModelTranslator->MuJoCo_helper,
-                                             activeDifferentiator,
-                                             opt_horizon, activeVisualiser, yamlReader);
+    // SCVXOptimiser = std::make_shared<SCVX>(activeModelTranslator,
+    //                                           activeModelTranslator->MuJoCo_helper,
+    //                                          activeDifferentiator,
+    //                                          opt_horizon, activeVisualiser, yamlReader);
 
     // TODO - logic for switching between SCVX and iLQR
     if(1){
         activeOptimiser = iLQROptimiser;
     }
     else{
-        activeOptimiser = SCVXOptimiser;
+        // activeOptimiser = SCVXOptimiser;
     }
 
 

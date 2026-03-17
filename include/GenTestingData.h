@@ -2,7 +2,7 @@
 
 #include "StdInclude.h"
 #include "Optimiser/iLQR.h"
-#include "Optimiser/SCVX.h"
+// #include "Optimiser/SCVX.h"
 #include <thread>
 #include <mutex>
 #include <filesystem>

@@ -33,7 +33,7 @@
 // --------------------- different optimisers -----------------------
 #include "Optimiser/iLQR.h"
 #include "Optimiser/iLQR_SVR.h"
-#include "Optimiser/SCVX.h"
+// #include "Optimiser/SCVX.h"
 //#include "Optimiser/PredictiveSampling.h"
 //#include "Optimiser/GradDescent.h"
 
@@ -50,7 +50,7 @@ std::shared_ptr<Differentiator> activeDifferentiator;
 std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<iLQR> iLQROptimiser;
 std::shared_ptr<iLQR_SVR> iLQR_SVR_Optimiser;
-std::shared_ptr<SCVX> SCVX_optimiser;
+// std::shared_ptr<SCVX> SCVX_optimiser;
 //std::shared_ptr<PredictiveSampling> stompOptimiser;
 //std::shared_ptr<GradDescent> gradDescentOptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
@@ -162,7 +162,7 @@ int main(int argc, char **argv) {
     activeModelTranslator->MuJoCo_helper->AppendSystemStateToEnd(activeModelTranslator->MuJoCo_helper->master_reset_data);
 
     //Instantiate my visualiser
-    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator);
+    activeVisualiser = std::make_shared<Visualiser>(activeModelTranslator, true);
 
     // Setup the initial horizon, based on open loop or mpc method
     int opt_horizon = 0;
@@ -188,12 +188,12 @@ int main(int argc, char **argv) {
                                                         opt_horizon, activeVisualiser, yamlReader);
         activeOptimiser = iLQR_SVR_Optimiser;
     }
-    else if(optimiser == "SCVX"){
-        SCVX_optimiser = std::make_shared<SCVX>(activeModelTranslator,
-                                                              activeModelTranslator->MuJoCo_helper,
-                                                              activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
-        activeOptimiser = SCVX_optimiser;
-    }
+    // else if(optimiser == "SCVX"){
+    //     SCVX_optimiser = std::make_shared<SCVX>(activeModelTranslator,
+    //                                                           activeModelTranslator->MuJoCo_helper,
+    //                                                           activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
+    //     activeOptimiser = SCVX_optimiser;
+    // }
 //    else if(optimiser == "PredictiveSampling"){
 //        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator,
 //                                                              activeModelTranslator->MuJoCo_helper,
