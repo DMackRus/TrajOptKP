@@ -2,7 +2,7 @@
 
 #include "MuJoCoHelper.h"
 #include <GLFW/glfw3.h>
-#include <pngwriter.h>
+// #include <pngwriter.h>
 #include "StdInclude.h"
 #include "ModelTranslator/ModelTranslator.h"
 #include "Differentiator.h"

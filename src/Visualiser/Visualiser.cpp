@@ -238,33 +238,33 @@ void Visualiser::render(const char* label) {
     glfwPollEvents();
 
     // If we are recording for a video
-    if(record_render_frames){
-//        glfwGetFramebufferSize(window, &width, &height);
-
-        unsigned char* pixels = new unsigned char[3 * width * height]; // assuming RGB channels
-        auto timer_start = std::chrono::steady_clock::now();
-        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-
-        // Write pixel data to a file
-        std::string filename = video_filename + "/frame_" + std::to_string(frame_count) + ".png";
-        pngwriter png(width,height,0,filename.c_str());
-
-        int index = 0;
-        for(int i = 0; i < height; i++){
-            for(int j = 0; j < width ; j++){
-                index += 3;
-                double r = pixels[index] / 255.0;
-                double g = pixels[index + 1] / 255.0;
-                double b = pixels[index + 2] / 255.0;
-                png.plot(j,i, r, g, b);
-            }
-        }
-        png.close();
-
-        delete[] pixels;
-
-        frame_count++;
-    }
+//     if(record_render_frames){
+// //        glfwGetFramebufferSize(window, &width, &height);
+//
+//         unsigned char* pixels = new unsigned char[3 * width * height]; // assuming RGB channels
+//         auto timer_start = std::chrono::steady_clock::now();
+//         glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+//
+//         // Write pixel data to a file
+//         std::string filename = video_filename + "/frame_" + std::to_string(frame_count) + ".png";
+//         pngwriter png(width,height,0,filename.c_str());
+//
+//         int index = 0;
+//         for(int i = 0; i < height; i++){
+//             for(int j = 0; j < width ; j++){
+//                 index += 3;
+//                 double r = pixels[index] / 255.0;
+//                 double g = pixels[index + 1] / 255.0;
+//                 double b = pixels[index + 2] / 255.0;
+//                 png.plot(j,i, r, g, b);
+//             }
+//         }
+//         png.close();
+//
+//         delete[] pixels;
+//
+//         frame_count++;
+//     }
 }
 
 void Visualiser::StartRecording(std::string file_name){

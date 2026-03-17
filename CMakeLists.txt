@@ -45,28 +45,6 @@ endif (TARGET yaml-cpp::yaml-cpp)
 set(PROJECT_INCLUDE_DIR ${PARENT_DIR}/${PROJECT_NAME}/include)
 message(STATUS "project include directory: " ${PROJECT_INCLUDE_DIR})
 
-# PNG writer
-find_package(PNGwriter 0.7.0)
-
-if(PNGwriter_FOUND)
-    message(STATUS "PNG writer library found")
-endif(PNGwriter_FOUND)
-
-# OSQP
-find_package(osqp REQUIRED)
-if(osqp_FOUND)
-    message(STATUS "OSQP library found")
-else()
-    message(STATUS "could not find OSQP library")
-endif(osqp_FOUND)
-
-find_package(OsqpEigen REQUIRED)
-if(OsqpEigen_FOUND)
-    message(STATUS "OSQP Eigen library found")
-else()
-    message(STATUS "could not find OSQP library")
-endif(OsqpEigen_FOUND)
-
 # Create core library for my project
 add_library(core_lib STATIC
         src/Differentiator/Differentiator.cpp
@@ -211,25 +189,25 @@ include_directories(
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(${PROJECT_NAME} core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter OsqpEigen::OsqpEigen) # or osqp::osqp or osqp::osqpstatic
+target_link_libraries(${PROJECT_NAME} core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
 
 target_include_directories(gen_testing_data PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(gen_testing_data core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter OsqpEigen::OsqpEigen)
+target_link_libraries(gen_testing_data core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
 
 target_include_directories(benchmark_derivatives PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(benchmark_derivatives core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(benchmark_derivatives core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
 
 target_include_directories(toy_contact_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(toy_contact_analysis core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(toy_contact_analysis core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
 
 target_include_directories(derivative_error_analysis PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(derivative_error_analysis core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(derivative_error_analysis core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
 
 target_include_directories(contact_stiffness_test PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(contact_stiffness_test core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(contact_stiffness_test core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
 
 target_include_directories(figure1_data_generator PUBLIC ${Mujoco_INCLUDE_DIRS} ${YAML_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-target_link_libraries(figure1_data_generator core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES} PNGwriter::PNGwriter)
+target_link_libraries(figure1_data_generator core_lib Eigen3::Eigen ${LIB_MUJOCO} -lglfw libGL.so GL ${YAML_CPP_LIBRARIES})
 
 
 # ------------------------------------------   TESTS   -------------------------------------------------------------
