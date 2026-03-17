@@ -4,28 +4,29 @@
 
 #include "Visualiser.h"
 
-Visualiser::Visualiser(std::shared_ptr<ModelTranslator> _modelTranslator){
+Visualiser::Visualiser(std::shared_ptr<ModelTranslator> _modelTranslator, bool make_window){
 
     MuJoCo_helper = _modelTranslator->MuJoCo_helper;
     activeModelTranslator = _modelTranslator;
 
-    if (!glfwInit())
-        mju_error("Could not initialize GLFW");
-    window = glfwCreateWindow(1200, 900, "MuJoCo", NULL, NULL);
-    glfwMakeContextCurrent(window);
-    glfwSwapInterval(1);
+    if (make_window) {
+        if (!glfwInit())
+            mju_error("Could not initialize GLFW");
+        window = glfwCreateWindow(1200, 900, "MuJoCo", NULL, NULL);
+        glfwMakeContextCurrent(window);
+        glfwSwapInterval(1);
 
-    MuJoCo_helper->InitVisualisation();
+        MuJoCo_helper->InitVisualisation();
 
-    // Set window pointer to this class
-    glfwSetWindowUserPointer(window, this);
-    // install GLFW mouse and keyboard callbacks
-    glfwSetKeyCallback(window, keyboardCallbackWrapper);
-    glfwSetCursorPosCallback(window, mouseMoveCallbackWrapper);
-    glfwSetMouseButtonCallback(window, mouseButtonCallbackWrapper);
-    glfwSetScrollCallback(window, scrollCallbackWrapper);
-    glfwSetWindowCloseCallback(window, windowCloseCallbackWrapper);
-
+        // Set window pointer to this class
+        glfwSetWindowUserPointer(window, this);
+        // install GLFW mouse and keyboard callbacks
+        glfwSetKeyCallback(window, keyboardCallbackWrapper);
+        glfwSetCursorPosCallback(window, mouseMoveCallbackWrapper);
+        glfwSetMouseButtonCallback(window, mouseButtonCallbackWrapper);
+        glfwSetScrollCallback(window, scrollCallbackWrapper);
+        glfwSetWindowCloseCallback(window, windowCloseCallbackWrapper);
+    }
 }
 
 // ------------------------------- Keyboard Callback -------------------------------------------------
