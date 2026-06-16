@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "LWR_reaching"
+task: "box_sweep"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -35,7 +35,7 @@ task: "LWR_reaching"
 # ------------------------------------------------------------------------------
 
 # Optimiser
-optimiser: "iLQR"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
+optimiser: "SCVX"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "stomp" (not working), "gradDescent" (not working)
 
 # Run mode for the program
 runMode: "Optimise_once"
@@ -59,8 +59,8 @@ runMode: "Optimise_once"
 # "Analyse_toy_contact"           - Analyse the derivatives in toy example with contact.
 # "Analyse_toy_contact_keypoints" - Analyse the derivatives in toy example with contact and keypoint method.
 
-taskInitMode: "random"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
-csvRow: 11                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
+taskInitMode: "fromCSV"    # taskInitMode can be, "random", "fromCSV", "fromYAML"
+csvRow: 1                 # CSV row to load if taskInitMode is "fromCSV" (0 - 99)
 
 filtering: "none"         # FIR or low_pass or none - Filtering of derivative values over trajectory length.
 costDerivsFD: true       # True or false, for FD computation of cost derivatives (makes things slower, use analytical if available)
@@ -69,4 +69,4 @@ minIter: 6               # Minimum number of iterations to run Optimiser for
 maxIter: 20             # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
-record: false
+record: true

@@ -1,0 +1,5 @@
+optimisation horizon: 1500
+model timestep: 0.0050000000000000001
+keypoint_name: contact_change
+keypoint_min_N: 1
+keypoint_max_N: 100

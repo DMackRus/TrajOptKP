@@ -849,28 +849,28 @@ void MuJoCoHelper::InitVisualisation() {
 //    cam.lookat[2] = 0.275;
 
     // Walker
-//    cam.distance = 5.79918;
-//    cam.azimuth = -117.9;
-//    cam.elevation = -20.9;
-//    cam.lookat[0] = 1.81681;
-//    cam.lookat[1] = -0.380067;
-//    cam.lookat[2] =  0.669554;
+    // cam.distance = 10.1;
+    // cam.azimuth = -90.1;
+    // cam.elevation = -11.1;
+    // cam.lookat[0] = 4.194;
+    // cam.lookat[1] = -0.4723;
+    // cam.lookat[2] = 0.9773;
 
     // BoxSweep
-//    cam.distance = 1.16;
-//    cam.azimuth = -128.1;
-//    cam.elevation = -21.3;
-//    cam.lookat[0] = 0.601;
-//    cam.lookat[1] = 0.209;
-//    cam.lookat[2] =  0.219;
+    // cam.distance = 1.16;
+    // cam.azimuth = -128.1;
+    // cam.elevation = -21.3;
+    // cam.lookat[0] = 0.601;
+    // cam.lookat[1] = 0.209;
+    // cam.lookat[2] =  0.219;
 
     // Push heavy clutter
-//    cam.distance = 1.589;
-//    cam.azimuth = -82.7;
-//    cam.elevation = -44.7;
-//    cam.lookat[0] = 0.5353;
-//    cam.lookat[1] = -0.08989;
-//    cam.lookat[2] =  -0.01922;
+    // cam.distance = 1.589;
+    // cam.azimuth = -82.7;
+    // cam.elevation = -44.7;
+    // cam.lookat[0] = 0.5353;
+    // cam.lookat[1] = -0.08989;
+    // cam.lookat[2] =  -0.01922;
 
     // Impact large box
     cam.distance = 1.946;
@@ -880,6 +880,22 @@ void MuJoCoHelper::InitVisualisation() {
     cam.lookat[1] = 0.06619;
     cam.lookat[2] = -0.1457;
 
+    // Bimanual pickup
+    // cam.distance = 1.589;
+    // cam.azimuth = -144.9;
+    // cam.elevation = -34.3;
+    // cam.lookat[0] = 0.4519;
+    // cam.lookat[1] = -0.03753;
+    // cam.lookat[2] = 0.2717;
+
+    // anyMal
+    // cam.distance = 3.683;
+    // cam.azimuth = -56.9;
+    // cam.elevation = -32.5;
+    // cam.lookat[0] = 1.021;
+    // cam.lookat[1] = 0.6298;
+    // cam.lookat[2] = 1.266;
+
     // Piston block 1D view
 //    cam.distance = 1.449;
 //    cam.azimuth = -174.7;
@@ -887,6 +903,14 @@ void MuJoCoHelper::InitVisualisation() {
 //    cam.lookat[0] = 0.5177;
 //    cam.lookat[1] = 1.038;
 //    cam.lookat[2] =  0.1567;
+
+    // DLR Packing scene
+    // cam.distance = 2.208;
+    // cam.azimuth = -56.9;
+    // cam.elevation = -42.5;
+    // cam.lookat[0] = 0.3744;
+    // cam.lookat[1] = 0.06619;
+    // cam.lookat[2] =  -0.1457;
 
     // create scene and context
     mjv_makeScene(model, &scn, 2000);
@@ -908,13 +932,13 @@ void MuJoCoHelper::UpdateScene(GLFWwindow *window, const char* label){
 
     mjr_render(viewport, &scn, &con);
 
-//    cout << "------------------------------------------------- \n";
-//    cout << "cam.distance = " << cam.distance << ";" << endl;
-//    cout << "cam.azimuth = " << cam.azimuth << ";" << endl;
-//    cout << "cam.elevation = " << cam.elevation << ";" << endl;
-//    cout << "cam.lookat[0] = " << cam.lookat[0] << ";" << endl;
-//    cout << "cam.lookat[1] = " << cam.lookat[1] << ";" << endl;
-//    cout << "cam.lookat[2] = " << cam.lookat[2] << ";" << endl;
+    // cout << "------------------------------------------------- \n";
+    // cout << "cam.distance = " << cam.distance << ";" << endl;
+    // cout << "cam.azimuth = " << cam.azimuth << ";" << endl;
+    // cout << "cam.elevation = " << cam.elevation << ";" << endl;
+    // cout << "cam.lookat[0] = " << cam.lookat[0] << ";" << endl;
+    // cout << "cam.lookat[1] = " << cam.lookat[1] << ";" << endl;
+    // cout << "cam.lookat[2] = " << cam.lookat[2] << ";" << endl;
 
     mjrRect rect{0, 0, 100, 100};
     mjr_rectangle(rect, 0, 0, 0, 0);

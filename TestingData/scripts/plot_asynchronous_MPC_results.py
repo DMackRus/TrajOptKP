@@ -10,7 +10,7 @@ import yaml
 green_shades = ['#006400', '#2E8B57', '#90EE90']
 blue_shades = ['#00008B', '#4169E1', '#ADD8E6']
 
-task_name = "push_mcl"
+task_name = "anyMal"
 #task_name = "walker_run", "push_mcl", "anyMal", "bimanual_pickup"
 base_dir = ".."
 run_mode = "asynchronus"
@@ -137,13 +137,17 @@ def generate_plots_confidence(names, dataframes_iLQR, graphs, columns_per_graph)
             axes[i].set_ylabel(graph_name, fontsize = 13)
             
             
+    # Scale MPC costs down so max value becomes 1
+    max_cost_value = np.max(means[:,1])
+            
+            
     # Print the data in latex code format to copy and paste into paper
     # Format is final cost, then average optimisation time, then percentage derivatives
     print(f'Methods: {names}')
     for i in range(len(names)):
         
         # With confidence intervals
-        print(f'& {means[i,1]:.1f}$\pm${confidence_intervals[i,1]:.1f}', end=' ')
+        print(f'& {means[i,1]/max_cost_value:.2f}$\pm${confidence_intervals[i,1]/max_cost_value:.2f}', end=' ')
         print(f'& {means[i,0]:.2f}$\pm${confidence_intervals[i,0]:.2f}', end=' ')
         # print(f'& {means[i,2]:.2f} $\pm$ {confidence_intervals[i,2]:.2f}', end=' ')
         

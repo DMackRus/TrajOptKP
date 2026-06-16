@@ -1,0 +1,15 @@
+Acrobot
+Trust region initial 100
+Controls per knot point 5
+
+Push ncl
+Trust region initial: 1000
+Controls per knot point: 100
+
+Box sweep
+Trust region initial: 1000
+Controls per knot point: 5
+
+Walker run
+Trust region size: 1000
+Controls per knot point: 5

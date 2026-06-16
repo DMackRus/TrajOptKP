@@ -74,52 +74,52 @@ void ModelTranslator::InitModelTranslator(const std::string& yamlFilePath){
     CreateKinematicChain(full_state_vector);
 
     // Print kinematic chains
-    std::cout << "Kinematic chains bodies: \n";
-    for(int i = 0; i < full_state_vector.kinematic_chains_bodies.size(); i++){
-        std::cout << "Chain " << i << ": ";
-        for(int j = 0; j <  full_state_vector.kinematic_chains_bodies[i].size(); j++){
-            std::cout << full_state_vector.kinematic_chains_bodies[i][j] << " ";
-        }
-        std::cout << "\n";
-    }
-
-    std::cout << "Kinematic chains state indices: \n";
-    for(int i = 0; i < full_state_vector.kinematic_chain_state_indices.size(); i++){
-        std::cout << "Chain " << i << ": ";
-        for(int j = 0; j <  full_state_vector.kinematic_chain_state_indices[i].size(); j++){
-            std::cout << full_state_vector.kinematic_chain_state_indices[i][j] << " ";
-        }
-        std::cout << "\n";
-    }
-
-    std::cout << "Robot Kin Chains \n";
-    for(int i = 0; i < full_state_vector.kin_chains_robot_indices.size(); i++){
-        std::cout << "Chain " << i << ": Robot Index " << full_state_vector.kin_chains_robot_indices[i] << "\n";
-    }
-
-    // Print independant kinematic chains
-    std::cout << "Kinematic chains bodies independant: \n";
-    for(int i = 0; i < full_state_vector.kinematic_chain_bodies_independant.size(); i++){
-        std::cout << "Chain " << i << ": ";
-        for(int j = 0; j <  full_state_vector.kinematic_chain_bodies_independant[i].size(); j++){
-            std::cout << full_state_vector.kinematic_chain_bodies_independant[i][j] << " ";
-        }
-        std::cout << "\n";
-    }
-
-    std::cout << "Kinematic chains, state indices independant: \n";
-    for(int i = 0; i < full_state_vector.kinematic_chain_state_indices_independant.size(); i++){
-        std::cout << "Chain " << i << ": ";
-        for(int j = 0; j <  full_state_vector.kinematic_chain_state_indices_independant[i].size(); j++){
-            std::cout << full_state_vector.kinematic_chain_state_indices_independant[i][j] << " ";
-        }
-        std::cout << "\n";
-    }
-
-    std::cout << "Robot Kin Chains Separate \n";
-    for(int i = 0; i < full_state_vector.kin_chains_robot_indices_independant.size(); i++){
-        std::cout << "Chain " << i << ": Robot Index " << full_state_vector.kin_chains_robot_indices_independant[i] << "\n";
-    }
+    // std::cout << "Kinematic chains bodies: \n";
+    // for(int i = 0; i < full_state_vector.kinematic_chains_bodies.size(); i++){
+    //     std::cout << "Chain " << i << ": ";
+    //     for(int j = 0; j <  full_state_vector.kinematic_chains_bodies[i].size(); j++){
+    //         std::cout << full_state_vector.kinematic_chains_bodies[i][j] << " ";
+    //     }
+    //     std::cout << "\n";
+    // }
+    //
+    // std::cout << "Kinematic chains state indices: \n";
+    // for(int i = 0; i < full_state_vector.kinematic_chain_state_indices.size(); i++){
+    //     std::cout << "Chain " << i << ": ";
+    //     for(int j = 0; j <  full_state_vector.kinematic_chain_state_indices[i].size(); j++){
+    //         std::cout << full_state_vector.kinematic_chain_state_indices[i][j] << " ";
+    //     }
+    //     std::cout << "\n";
+    // }
+    //
+    // std::cout << "Robot Kin Chains \n";
+    // for(int i = 0; i < full_state_vector.kin_chains_robot_indices.size(); i++){
+    //     std::cout << "Chain " << i << ": Robot Index " << full_state_vector.kin_chains_robot_indices[i] << "\n";
+    // }
+    //
+    // // Print independant kinematic chains
+    // std::cout << "Kinematic chains bodies independant: \n";
+    // for(int i = 0; i < full_state_vector.kinematic_chain_bodies_independant.size(); i++){
+    //     std::cout << "Chain " << i << ": ";
+    //     for(int j = 0; j <  full_state_vector.kinematic_chain_bodies_independant[i].size(); j++){
+    //         std::cout << full_state_vector.kinematic_chain_bodies_independant[i][j] << " ";
+    //     }
+    //     std::cout << "\n";
+    // }
+    //
+    // std::cout << "Kinematic chains, state indices independant: \n";
+    // for(int i = 0; i < full_state_vector.kinematic_chain_state_indices_independant.size(); i++){
+    //     std::cout << "Chain " << i << ": ";
+    //     for(int j = 0; j <  full_state_vector.kinematic_chain_state_indices_independant[i].size(); j++){
+    //         std::cout << full_state_vector.kinematic_chain_state_indices_independant[i][j] << " ";
+    //     }
+    //     std::cout << "\n";
+    // }
+    //
+    // std::cout << "Robot Kin Chains Separate \n";
+    // for(int i = 0; i < full_state_vector.kin_chains_robot_indices_independant.size(); i++){
+    //     std::cout << "Chain " << i << ": Robot Index " << full_state_vector.kin_chains_robot_indices_independant[i] << "\n";
+    // }
 
     // Clear optimiser dof and num ctrl so matrices are properly sized
     // Sets current state vector to full state vector

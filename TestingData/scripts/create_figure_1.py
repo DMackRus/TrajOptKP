@@ -18,12 +18,13 @@ TIME_COLS = [
     "Total time FP (ms)",
 ]
 
-SNAPSHOT_FRAMES = [1, 100, 199]   # <-- change these easily
+# SNAPSHOT_FRAMES = [1, 136, 199]   # <-- change these easily
+SNAPSHOT_FRAMES = [40, 115, 136, 192]   # <-- change these easily
 SNAPSHOT_CROP = dict(
-    left=0.35,
-    right=0.35,
-    top=0.2,
-    bottom=0.2,
+    left=0.3,
+    right=0.4,
+    top=0.25,
+    bottom=0.35,
 )
 
 
@@ -211,13 +212,6 @@ def plot_figure(
     snapshot_method="contact_change",
     snapshot_frames=None,
 ):
-    # --- Layout: left stacked bar, right column = 2 line plots
-    # fig = plt.figure(figsize=(11.5, 4.2), constrained_layout=True)
-    # gs = fig.add_gridspec(nrows=2, ncols=2, width_ratios=[1.1, 1.4])
-
-    # ax_bar = fig.add_subplot(gs[:, 0])      # left spans both rows
-    # ax_top = fig.add_subplot(gs[0, 1])      # top-right
-    # ax_bot = fig.add_subplot(gs[1, 1])      # bottom-right
     
     fig = plt.figure(figsize=(15.5, 4.6), constrained_layout=True)
     gs = fig.add_gridspec(
@@ -225,36 +219,58 @@ def plot_figure(
         width_ratios=[1.05, 1.45, 1.25]
     )
 
-    ax_bar = fig.add_subplot(gs[:, 0])   # left spans both rows
+    ax_bar = fig.add_subplot(gs[:, 2])   # left spans both rows
     ax_top = fig.add_subplot(gs[0, 1])   # middle-top
     ax_bot = fig.add_subplot(gs[1, 1])   # middle-bottom
-    
-    # Right column: snapshots per row
-    snap_gs_top = gs[0, 2].subgridspec(1, 3, wspace=0.05)
-    snap_gs_bot = gs[1, 2].subgridspec(1, 3, wspace=0.05)
-
-    # ax_snap_top = [fig.add_subplot(snap_gs_top[0, i]) for i in range(3)]
-    # ax_snap_bot = [fig.add_subplot(snap_gs_bot[0, i]) for i in range(3)]
 
     # # Right column: 3 snapshot axes spanning both rows
-    snap_gs = gs[:, 2].subgridspec(1, 3, wspace=0.05)
+    snap_gs = gs[:, 0].subgridspec(2, 2, wspace=0.01)
     ax_snap1 = fig.add_subplot(snap_gs[0, 0])
     ax_snap2 = fig.add_subplot(snap_gs[0, 1])
-    ax_snap3 = fig.add_subplot(snap_gs[0, 2])
-    snap_axes = [ax_snap1, ax_snap2, ax_snap3]
+    ax_snap3 = fig.add_subplot(snap_gs[1, 0])
+    ax_snap4 = fig.add_subplot(snap_gs[1, 1])
+    snap_axes = [ax_snap1, ax_snap2, ax_snap3, ax_snap4]
 
     # # --- Stacked bar chart
     method_labels = METHODS
     x = np.arange(len(method_labels))
 
-    # # Build stacks in consistent order
-    stacks = [TIME_COLS[0], TIME_COLS[1], TIME_COLS[2]]
+
+    # ------------------------------------------------------------------
+    
     bottoms = np.zeros(len(method_labels))
 
-    for col in stacks:
-        vals = [timing_by_method[m][col] for m in method_labels]
-        ax_bar.bar(x, vals, bottom=bottoms, label=col)
-        bottoms += np.array(vals)
+    # --- Derivatives ---
+    deriv_vals = [
+        timing_by_method[m]["Total time derivs (ms)"]
+        for m in method_labels
+    ]
+    ax_bar.bar(x, deriv_vals, bottom=bottoms, label="Derivatives")
+    bottoms += np.array(deriv_vals)
+
+    # --- Other (BP + FP) ---
+    other_vals = [
+        timing_by_method[m]["Total time BP (ms)"] +
+        timing_by_method[m]["Total time FP (ms)"]
+        for m in method_labels
+    ]
+    ax_bar.bar(x, other_vals, bottom=bottoms, label="Other")
+    
+    
+    
+    
+    
+    
+    
+    # ----------------------------------------------------------------------
+    # Build stacks in consistent order
+    # stacks = [TIME_COLS[0], TIME_COLS[1], TIME_COLS[2]]
+    # bottoms = np.zeros(len(method_labels))
+
+    # for col in stacks:
+    #     vals = [timing_by_method[m][col] for m in method_labels]
+    #     ax_bar.bar(x, vals, bottom=bottoms, label=col)
+    #     bottoms += np.array(vals)
 
     ax_bar.set_xticks(x)
     ax_bar.set_xticklabels(method_labels)
@@ -267,84 +283,11 @@ def plot_figure(
     ax_bar.spines["right"].set_visible(False)
 
 
-    # --- Line plots for A element
-    i, j = element_ij
-
-    # def plot_A_element(ax, A3d, contacts_made, contacts_broken, keypoints, title):
-    #     T, n_x, _ = A3d.shape
-    #     i, j = element_ij
-
-    #     if not (0 <= i < n_x and 0 <= j < n_x):
-    #         raise IndexError(f"A[{i},{j}] invalid for n_x={n_x}")
-
-    #     y = A3d[:, i, j]
-    #     ax.plot(np.arange(T), y, linewidth=1.8)
-
-    #      # ---- Contact events ----
-    #     # for t in contacts_made:
-    #     #     if 0 <= t < T:
-    #     #         ax.axvline(
-    #     #             t,
-    #     #             color="red",
-    #     #             linestyle="-",
-    #     #             linewidth=1.2,
-    #     #             alpha=0.6
-    #     #         )
-
-    #     # for t in contacts_broken:
-    #     #     if 0 <= t < T:
-    #     #         ax.axvline(
-    #     #             t,
-    #     #             color="red",
-    #     #             linestyle="--",
-    #     #             linewidth=1.2,
-    #     #             alpha=0.6
-    #     #         )
-        
-    #     t = 0
-    #     for row in keypoints:
-    #         t = t+1
-    #         for dof in row:
-    #             if dof == j:
-    #                 ax.axvline(
-    #                         t,
-    #                         color="green",
-    #                         linestyle="--",
-    #                         linewidth=1.2,
-    #                         alpha=0.6
-    #                     )
-                
-    #         # if len(row) > j:
-    #         #     t = row[j]
-    #         #     if 0 <= t < T:
-    #         #         ax.axvline(
-    #         #             t,
-    #         #             color="green",
-    #         #             linestyle="--",
-    #         #             linewidth=1.2,
-    #         #             alpha=0.6
-    #         #         )
-
-    #      # ------------------------
-
-    #     ax.set_xlim(0, T - 1)
-    #     ax.set_ylabel(f"A[{i},{j}]")
-    #     ax.set_title(title)
-    #     ax.grid(True, alpha=0.3)
-
-    #     ax.spines["top"].set_visible(False)
-    #     ax.spines["right"].set_visible(False)
-
-
-    # plot_A_element(ax_top, A_si1, contacts_made, contacts_broken, keypoints, title="SI1: A element over horizon")
-    # plot_A_element(ax_bot, A_cc, contacts_made, contacts_broken, keypoints, title="Contact-change: A element over horizon")
-
-    # ax_bot.set_xlabel("Horizon index (t)")
-    
-    def plot_A_element(ax, A3d, contacts_made, contacts_broken, keypoints, title):
+    #     return y  # <-- return the plotted data so we can sync y-lims
+    def plot_A_element(ax, A3d, keypoints, show_kp_vs_interp, title):
         T, n_x, _ = A3d.shape
         i, j = element_ij
-        print(f"Plotting A[{i},{j}] with n_x={n_x}, T={T}")
+        print(f"Plotting A[{i},{j}] with n_x={n_x}, T={T*5}")
         
         print(f"dof is {j}")
 
@@ -353,42 +296,41 @@ def plot_figure(
 
         y = A3d[:, i, j]
         ax.plot(np.arange(T), y, linewidth=1.8)
-        
-        #  ---- Contact events ----
-        # for t in contacts_made:
-        #     if 0 <= t < T:
-        #         ax.axvline(
-        #             t,
-        #             color="red",
-        #             linestyle="-",
-        #             linewidth=1.2,
-        #             alpha=0.6
-        #         )
-
-        # for t in contacts_broken:
-        #     if 0 <= t < T:
-        #         ax.axvline(
-        #             t,
-        #             color="red",
-        #             linestyle="--",
-        #             linewidth=1.2,
-        #             alpha=0.6
-                # )
 
         # ---- Keypoints ----
         t = 0
+        kp_times = []
+        non_kp_times = []
+        
+        # ----- Add green vertical lines for snapshots -----
+        if show_kp_vs_interp:
+            for snap_t in snapshot_frames:
+                ax.axvline(
+                    snap_t * 5,
+                    color="green",
+                    linestyle="--",
+                    linewidth=1.2,
+                    alpha=0.6,
+                    label="snapshot" if snap_t == snapshot_frames[0] else None  # only label first line
+            )
+
         for row in keypoints:
-            t = t + 1
-            # print(row)
             for dof in row:
-                if j == dof or j == (dof + (n_x/2)):  # account for position/velocity indexing
-                    ax.axvline(
-                        t,
-                        color="green",
-                        linestyle="--",
-                        linewidth=1.2,
-                        alpha=0.6
-                    )
+                if j == dof or j == (dof + (n_x // 2)):  # use integer division!
+                    kp_times.append(t)
+                else:
+                    non_kp_times.append(t)
+                    
+            t += 1
+
+        # Remove duplicates (optional but cleaner)
+        kp_times = list(set(kp_times))
+        non_kp_times = list(set(non_kp_times) - set(kp_times))
+        print(kp_times)
+
+        # Plot keypoints (RED)
+        if show_kp_vs_interp:
+            ax.scatter(kp_times, y[kp_times], color="red", s=20, zorder=3, label="keypoints")
 
         ax.set_xlim(0, T - 1)
         ax.set_ylabel(f"A[{i},{j}]")
@@ -402,9 +344,9 @@ def plot_figure(
 
 
     # ---- Plot both, capture y values ----
-    y_top = plot_A_element(ax_top, A_si1, contacts_made, contacts_broken, keypoints,
+    y_top = plot_A_element(ax_top, A_si1, keypoints, False,
                         title="SI1: A element over horizon")
-    y_bot = plot_A_element(ax_bot, A_cc, contacts_made, contacts_broken, keypoints,
+    y_bot = plot_A_element(ax_bot, A_cc, keypoints, True,
                         title="Contact-change: A element over horizon")
 
     # ---- Force same y-axis range ----
@@ -442,7 +384,7 @@ def plot_figure(
             img, img_path = load_snapshot_image(Path(media_root), task_name, snapshot_method, t)
             img = crop_image(img, SNAPSHOT_CROP)
             ax.imshow(img)
-            ax.set_title(f"t={t}", fontsize=9)
+            ax.set_title(f"t={t*5}", fontsize=9)
             ax.axis("off")
     else:
         # If no media provided, just hide axes cleanly
