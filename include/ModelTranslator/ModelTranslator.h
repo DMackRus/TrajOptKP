@@ -1,7 +1,7 @@
 /*
 ================================================================================
     File: ModelTranslator.h
-    Author: David Russell
+    Author: Anon
     Date: January 16, 2024
     Description:
         Model translator is an abstract class that is used to provide high level

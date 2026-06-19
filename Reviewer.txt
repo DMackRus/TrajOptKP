@@ -1,0 +1,23 @@
+Dear reviewer,
+
+Thank you for looking at our code and data.
+
+THis repository is very complex due to the different abstractions used throughout. I will try and explain as best I can where relevant files are should you wish to look at them.
+
+src/optimisers/iLQR contains the iLQR optimiser code.
+src/optimisers/SCVX contains the SCVX optimiser code.
+Both of these inherit from a base optimiser class.
+
+Finite differencing is performed in the differentiator.cpp
+
+KeypointGenerator.cpp shows the code for generating key-points over a nominal trajectory. It is invoked by the opimiser class.
+
+Data is stored inside the "PaperData" folder. There are some python scripts for plotting relevant figures used inside the paper. some editing is done after these python figures to make them look prettier.
+
+the generalConfigs folder contains yaml files that are relevant to high level running of this code. Containing arguments to change the task, run time method (MPC, single optimisaiton etc.)
+
+There are also task level config files for many tasks, inside the TaskConfigs folder. Here is where certain hyper parameters for the task are set and the cost function weights etc. The cost function weights used in the paper are shown in the paper in Table 1.
+
+Various dependancies are needed to run this code and can be seen inside the CMAKELists. If you look in the readme file, you shoudl be able to see commands to install some packages.
+
+

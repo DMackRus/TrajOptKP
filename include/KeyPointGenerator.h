@@ -1,7 +1,7 @@
 /*
 ================================================================================
     File: KeyPointGenerator.h
-    Author: David Russell
+    Author: Anon
     Date: January 18, 2024
     Description:
         KeypointGenerator is a class that is used to generate key-points over a

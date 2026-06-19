@@ -1,7 +1,7 @@
 /*
 ================================================================================
     File: Optimiser.h
-    Author: David Russell
+    Author: Anon
     Date: January 16, 2024
     Description:
         Optimiser is a default class for optimisation algorithms to inherit from.

@@ -1,7 +1,7 @@
 /*
 ================================================================================
     File: iLQR.h
-    Author: David Russell
+    Author: Anon
     Date: January 23, 2024
     Description:
         My implementation of the iLQR algorithm. Heavily inspired by the paper
