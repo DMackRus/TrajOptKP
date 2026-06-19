@@ -42,12 +42,12 @@ bodies:
 residuals:
   goal_pos:
     target: [0.7, 0.0]
-    weight: 0.1
+    weight: 0.01
     weight_terminal: 1000  # 1000 when long horizon
   goal_vel:
     target: [0, 0]
-    weight: 0.1
-    weight_terminal: 10
+    weight: 0.01
+    weight_terminal: 5
   obstacle_1_pos:
     target: [ 0.6, 0 ]
     weight: 0

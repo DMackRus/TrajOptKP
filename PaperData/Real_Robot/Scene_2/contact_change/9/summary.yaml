@@ -1,0 +1,16 @@
+Task success: false
+Execution time (s): 6.640000000000001
+Container base contact time (s): 6.640000000000001
+Goal distance error (m): 0.05906741421393734
+Object difference world sim (m): 72.56115123712863
+Quat difference packed object: 1029.522493886906
+Task cost: 2583.138223001336
+Num physics estimates: 0
+Force failure: true
+Manual intervention: false
+Object detached: false
+Average optimisation time (ms): 46.10549457176872
+Average time get derivs (ms): 35.14928807382999
+Average time backwards pass (ms): 4.808081499908281
+Average time forwards pass (ms): 6.148124998030455
+Task timeout: false

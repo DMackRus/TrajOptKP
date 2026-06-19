@@ -865,20 +865,20 @@ void MuJoCoHelper::InitVisualisation() {
     // cam.lookat[2] =  0.219;
 
     // Push heavy clutter
-    // cam.distance = 1.589;
-    // cam.azimuth = -82.7;
-    // cam.elevation = -44.7;
-    // cam.lookat[0] = 0.5353;
-    // cam.lookat[1] = -0.08989;
-    // cam.lookat[2] =  -0.01922;
+    cam.distance = 1.589;
+    cam.azimuth = -82.7;
+    cam.elevation = -44.7;
+    cam.lookat[0] = 0.5353;
+    cam.lookat[1] = -0.08989;
+    cam.lookat[2] =  -0.01922;
 
     // Impact large box
-    cam.distance = 1.946;
-    cam.azimuth = -136.7;
-    cam.elevation = -39.3;
-    cam.lookat[0] = 0.3744;
-    cam.lookat[1] = 0.06619;
-    cam.lookat[2] = -0.1457;
+    // cam.distance = 1.946;
+    // cam.azimuth = -136.7;
+    // cam.elevation = -39.3;
+    // cam.lookat[0] = 0.3744;
+    // cam.lookat[1] = 0.06619;
+    // cam.lookat[2] = -0.1457;
 
     // Bimanual pickup
     // cam.distance = 1.589;

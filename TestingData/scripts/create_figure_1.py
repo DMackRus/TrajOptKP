@@ -19,7 +19,7 @@ TIME_COLS = [
 ]
 
 # SNAPSHOT_FRAMES = [1, 136, 199]   # <-- change these easily
-SNAPSHOT_FRAMES = [40, 115, 136, 192]   # <-- change these easily
+SNAPSHOT_FRAMES = [40, 160, 187, 199]   # <-- change these easily
 SNAPSHOT_CROP = dict(
     left=0.3,
     right=0.4,

@@ -25,8 +25,8 @@ paper_data_folder = False
 
 # tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker", "acrobot"]
 # tasks = ["push_lcl", "push_mcl"]
-tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
-# tasks = ["acrobot"]
+# tasks = ["push_ncl", "push_lcl", "push_mcl", "box_sweep", "impact", "walker"]
+tasks = ["box_sweep"]
 
 methods = ["SI_1", "SI_5", "SI_1000", "contact_change", 
                 "contact_change_dyn"]
@@ -58,7 +58,7 @@ def main():
 
         plot_openloop_data(names, dataframes_iLQR, task)
         
-        # plot_CR_versus_iteration_timings(task)
+        plot_CR_versus_iteration_timings(task)
         
         # plot_timing_breakdown_data(names, dataframes_iLQR)
         
@@ -126,7 +126,7 @@ def plot_CR_versus_iteration_timings(task_name):
         
         # methods = ["SI_1", "SI_5", "SI_1000", "contact_change", 
         #    "contact_change_dyn", "contact_change_maxN"]
-        methods = ["SI_1", "SI_5", "SI_1000", "contact_change"]
+        methods = ["SI_1", "SI_5", "SI_1000", "contact_change", "contact_change_dyn"]
 
         file_name_yaml = current_dir + "/" + folder + "/summary.yaml"
         with open(file_name_yaml, 'r') as file:
@@ -529,7 +529,7 @@ def load_raw_data(task):
     
 if __name__ == "__main__":
     
-    plot_CR_versus_iteration_timings("acrobot")
+    # plot_CR_versus_iteration_timings("acrobot")
     plot_CR_versus_iteration_timings("box_sweep")
     # plot_CR_versus_iteration_timings("push_ncl")
     # plot_CR_versus_iteration_timings("push_lcl")

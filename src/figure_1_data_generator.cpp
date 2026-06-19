@@ -182,7 +182,7 @@ void OpenLoopOptimisationTest(int task_horizon, int task_number,
     // Do the optimisation!
     iLQROptimiser->lambda = 0.01;
     std::vector<MatrixXd> optimised_controls = iLQROptimiser->Optimise(
-            activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 6, 6,
+            activeModelTranslator->MuJoCo_helper->saved_systems_state_list[0], init_opt_controls, 10, 10,
             task_horizon);
 
     // --------- Save trial specific information to a folder labelled as trial number --------
@@ -333,7 +333,7 @@ void OpenLoopOptimisationTest(int task_horizon, int task_number,
     }
 
     // --------------------- Record Trajectory ------------------------------
-    activeVisualiser->StartRecording(task_name + "_" + keypoint_name);
+    // activeVisualiser->StartRecording(task_name + "_" + keypoint_name);
 
     int visual_counter = 0;
     const char* label = "";
@@ -367,7 +367,7 @@ void OpenLoopOptimisationTest(int task_horizon, int task_number,
             std::this_thread::sleep_for(std::chrono::milliseconds(delay));
         }
     }
-    activeVisualiser->StopRecording();
+    // activeVisualiser->StopRecording();
 
 
     // ----------------------- Save data to file -------------------------------------
@@ -452,7 +452,7 @@ int main(int argc, char **argv) {
                           activeModelTranslator->current_state_vector.num_ctrl,
                           opt_horizon);
 
-    int task_number = 1;
+    int task_number = 7;
     // Keypoint method (contact_change)
     keypoint_method kp_method;
     iLQROptimiser->keypoint_generator->ReturnCurrentKeypointMethod();
