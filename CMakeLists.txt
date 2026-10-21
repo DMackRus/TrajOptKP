@@ -100,7 +100,7 @@ add_executable(${PROJECT_NAME} src/main.cpp
             src/ModelTranslator/TwoDPushing.cpp
             src/Optimiser/Optimiser.cpp
             src/Optimiser/iLQR.cpp
-#            src/Optimiser/PredictiveSampling.cpp
+            src/Optimiser/PredictiveSampling.cpp
             src/ModelTranslator/Walker.cpp
 #            src/Optimiser/GradDescent.cpp
             src/ModelTranslator/BoxSweep.cpp

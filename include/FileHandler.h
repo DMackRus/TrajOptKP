@@ -48,6 +48,12 @@ public:
     int minIter;
     int maxIter;
 
+    // Predictive sampling settings (optional in the settings file)
+    int ps_num_rollouts = 10;
+    int ps_knot_spacing = 0;                // <= 0 uses the optimiser's default spacing
+    std::string ps_spline_type = "cubic";   // "zero_order", "linear" or "cubic"
+    double ps_noise_scale = 0.1;
+
 private:
     std::string projectParentPath;
 

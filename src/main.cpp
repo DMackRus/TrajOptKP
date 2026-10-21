@@ -34,7 +34,7 @@
 #include "Optimiser/iLQR.h"
 #include "Optimiser/iLQR_SVR.h"
 #include "Optimiser/SCVX.h"
-//#include "Optimiser/PredictiveSampling.h"
+#include "Optimiser/PredictiveSampling.h"
 //#include "Optimiser/GradDescent.h"
 
 //----------------------- Testing methods ---------------------------
@@ -51,7 +51,7 @@ std::shared_ptr<Optimiser> activeOptimiser;
 std::shared_ptr<iLQR> iLQROptimiser;
 std::shared_ptr<iLQR_SVR> iLQR_SVR_Optimiser;
 std::shared_ptr<SCVX> SCVX_optimiser;
-//std::shared_ptr<PredictiveSampling> stompOptimiser;
+std::shared_ptr<PredictiveSampling> predictive_sampling_optimiser;
 //std::shared_ptr<GradDescent> gradDescentOptimiser;
 std::shared_ptr<Visualiser> activeVisualiser;
 std::shared_ptr<FileHandler> yamlReader;
@@ -194,13 +194,17 @@ int main(int argc, char **argv) {
                                                               activeDifferentiator, opt_horizon, activeVisualiser, yamlReader);
         activeOptimiser = SCVX_optimiser;
     }
-//    else if(optimiser == "PredictiveSampling"){
-//        stompOptimiser = std::make_shared<PredictiveSampling>(activeModelTranslator,
-//                                                              activeModelTranslator->MuJoCo_helper,
-//                                                              yamlReader, activeDifferentiator,
-//                                                              opt_horizon, 8);
-//        activeOptimiser = stompOptimiser;
-//    }
+    else if(optimiser == "PredictiveSampling"){
+        predictive_sampling_optimiser = std::make_shared<PredictiveSampling>(activeModelTranslator,
+                                                                             activeModelTranslator->MuJoCo_helper,
+                                                                             yamlReader, activeDifferentiator,
+                                                                             opt_horizon,
+                                                                             yamlReader->ps_num_rollouts,
+                                                                             yamlReader->ps_knot_spacing,
+                                                                             PredictiveSampling::SplineTypeFromString(yamlReader->ps_spline_type),
+                                                                             yamlReader->ps_noise_scale);
+        activeOptimiser = predictive_sampling_optimiser;
+    }
 //    else if(optimiser == "GradDescent"){
 //        gradDescentOptimiser = std::make_shared<GradDescent>(activeModelTranslator,
 //                                                             activeModelTranslator->MuJoCo_helper,

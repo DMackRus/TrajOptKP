@@ -294,6 +294,19 @@ void FileHandler::ReadSettingsFile(const std::string& settingsFilePath){
 
     async_mpc = node["async_mpc"].as<bool>();
     record_trajectory = node["record"].as<bool>();
+
+    if(node["PS_num_rollouts"]){
+        ps_num_rollouts = node["PS_num_rollouts"].as<int>();
+    }
+    if(node["PS_knot_spacing"]){
+        ps_knot_spacing = node["PS_knot_spacing"].as<int>();
+    }
+    if(node["PS_spline_type"]){
+        ps_spline_type = node["PS_spline_type"].as<std::string>();
+    }
+    if(node["PS_noise_scale"]){
+        ps_noise_scale = node["PS_noise_scale"].as<double>();
+    }
 }
 
 void FileHandler::SaveTrajecInformation(std::vector<MatrixXd> A_matrices, std::vector<MatrixXd> B_matrices,
