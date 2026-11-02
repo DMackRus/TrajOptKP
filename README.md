@@ -200,25 +200,17 @@ This iterative process is repeated until all segments satisfy the error requirem
 interval is reached.
 
 ## To-Do
-- [ ] Bug test dimensionality reduction stateIndex to qpos index code?? This is possibly the bug from iLQR-SVR work.
+- [ ] Improve README readability.
+- [ ] Show how to create a new task and implement needed files
 - [ ] Add kinematic tree info to state vector struct
 - [ ] Add logic for contact changes to key-point methods
 - [ ] Write unit tests for new keypoint methods using contact and kinematic chains
 - [ ] Write unit tests for kinematic chain creation
 - [ ] Check contact list generation is good during parallel rollouts.
-- [ ] Update derivative computation to split submatrices into three sets of key-points
-- [ ] Make keypoints selective to the three submatrices of dynamics derivatives?
-- [ ] Figure out why compute contacts takes so long and increases rollout time by 30x.
-- [ ] 
-- [ ] Make a sharp bitys section to ReadMe, talk about issues in this project. One issue is certain joint types might not be supported (ball joints).
+- [ ] Make a sharp bits section to ReadMe, talk about issues in this project. One issue is certain joint types might not be supported (ball joints).
 - [ ] change GIFS to show baseline vs key-point trajectories and show optimisation time.
-- [ ] Improve README readability.
-- [ ] Add more examples
+- [ ] Bug test dimensionality reduction stateIndex to qpos index code?? This is possibly the bug from iLQR-SVR work.
 - [ ] starting camera variables in model file
-- [ ] improved parallelisation on iterative error method
-- [ ] Create keypoint method to detect contact changes and use this logic to determine key-points
-- [ ] Add key-point logic for kinematic chain analysis, change in certain values in a kinematic chain may affect others.
-- [ ] Split up derivative computation over the three subblocks of dynamics derivatives
 
 ## Citing
 When the work is published, I will add the citation here!

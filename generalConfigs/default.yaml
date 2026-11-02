@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "acrobot"
+task: "walker_run"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -38,13 +38,13 @@ task: "acrobot"
 optimiser: "PredictiveSampling"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "PredictiveSampling", "gradDescent" (not working)
 
 # Predictive sampling settings (optional, defaults shown)
-PS_num_rollouts: 10       # Noisy trajectories sampled per iteration
+PS_num_rollouts: 30       # Noisy trajectories sampled per iteration
 PS_knot_spacing: 5       # Time-steps between knot points (perturbed variables)
 PS_spline_type: "cubic"   # "zero_order", "linear" or "cubic" interpolation between knots
-PS_noise_scale: 0.05       # Noise std as a fraction of half each actuator's control range
+PS_noise_scale: 0.2       # Noise std as a fraction of half each actuator's control range
 
 # Run mode for the program
-runMode: "Optimise_once"
+runMode: "MPC_until_completion"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
