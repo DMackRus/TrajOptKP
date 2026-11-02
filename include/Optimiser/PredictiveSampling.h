@@ -1,7 +1,7 @@
 /*
 ================================================================================
     File: PredictiveSampling.h
-    Author: Anon
+    Author: David Russell
     Date: October 21, 2026
     Description:
         Predictive sampling optimiser, based on the algorithm described in
@@ -15,13 +15,12 @@
         (zero order hold, linear or cubic).
 
         The algorithm is as follows:
-            1. Rollout the initial control trajectory and calculate its cost.
-            2. Sample N noisy knot point sequences around the nominal knot points.
-            3. Interpolate each knot sequence into a dense control trajectory and
+            1. Sample N noisy knot point sequences around the nominal knot points.
+            2. Interpolate each knot sequence into a dense control trajectory and
                 roll them all out in parallel.
-            4. If the best sampled trajectory has a lower cost than the nominal,
-                it becomes the new nominal.
-            5. Repeat steps 2-4 until convergence or max iterations.
+            3. Roll out the candidate trajectories.
+            4. Repeat until convergence or until max iterations has been reached.
+                Return the candidate trajectory with the lowest cost.
 ================================================================================
 */
 #pragma once
@@ -147,7 +146,7 @@ private:
 
     void ClampControl(MatrixXd &control) const;
 
-    void PrintBanner(double time_rollout);
+    void PrintBanner();
 
     void PrintBannerIteration(int iteration, double best_cost, double best_sample_cost, double time_iteration);
 };

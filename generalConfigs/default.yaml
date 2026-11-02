@@ -3,7 +3,7 @@
 # -------------------------------------------------------------------------------------------------
 
 # Task to be performed
-task: "bimanual_pickup"
+task: "acrobot"
 
 # -----------------------------  Task list ------------------------------------
 #
@@ -38,13 +38,13 @@ task: "bimanual_pickup"
 optimiser: "PredictiveSampling"  # Possible optimisers: "iLQR", "iLQR_SVR", "SCVX", "PredictiveSampling", "gradDescent" (not working)
 
 # Predictive sampling settings (optional, defaults shown)
-# PS_num_rollouts: 10       # Noisy trajectories sampled per iteration
-# PS_knot_spacing: 10       # Time-steps between knot points (perturbed variables)
-# PS_spline_type: "cubic"   # "zero_order", "linear" or "cubic" interpolation between knots
-# PS_noise_scale: 0.1       # Noise std as a fraction of half each actuator's control range
+PS_num_rollouts: 10       # Noisy trajectories sampled per iteration
+PS_knot_spacing: 5       # Time-steps between knot points (perturbed variables)
+PS_spline_type: "cubic"   # "zero_order", "linear" or "cubic" interpolation between knots
+PS_noise_scale: 0.05       # Noise std as a fraction of half each actuator's control range
 
 # Run mode for the program
-runMode: "MPC_until_completion"
+runMode: "Optimise_once"
 
 # Valid runModes are:
 # "Init_controls"           - Displays the initial controls on repeat.
@@ -75,4 +75,4 @@ minIter: 6               # Minimum number of iterations to run Optimiser for
 maxIter: 20             # Maximum number of iterations to run Optimiser for
 
 async_mpc: true
-record: true
+record: false

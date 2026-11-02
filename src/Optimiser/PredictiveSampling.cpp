@@ -143,6 +143,7 @@ void PredictiveSampling::InterpolateControls(const std::vector<MatrixXd> &knots,
                       (knots[k] - knots[k - 1]) / (knot_times[k] - knot_times[k - 1]));
     };
 
+    // Loop over all the knot points and interpolate the controls between them
     for(int k = 0; k < num_knots - 1; k++){
         int t0 = knot_times[k];
         int t1 = knot_times[k + 1];
@@ -154,6 +155,7 @@ void PredictiveSampling::InterpolateControls(const std::vector<MatrixXd> &knots,
             m1 = tangent(k + 1) * h;
         }
 
+        // Loop over time-steps between knot points
         for(int t = t0; t < t1; t++){
             double s = (t - t0) / h;
 
@@ -202,6 +204,14 @@ void PredictiveSampling::ClampControl(MatrixXd &control) const{
 void PredictiveSampling::SampleKnots(int rollout_index){
     std::normal_distribution<double> dist(0.0, 1.0);
     std::mt19937 &generator = generators[rollout_index];
+
+    // The first rollout is always the nominal trajectory, so no noise is added
+    if(rollout_index == 0){
+        for(int k = 0; k < static_cast<int>(knot_times.size()); k++){
+            sampled_knots[rollout_index][k] = nominal_knots[k];
+        }
+        return;
+    }
 
     for(int k = 0; k < static_cast<int>(knot_times.size()); k++){
         MatrixXd &knot = sampled_knots[rollout_index][k];
@@ -340,16 +350,8 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
     time_after_iteration_ms.clear();
     // ------------------------------------------------------------------------
 
-    // Initial rollout of the warm start controls, this is the nominal trajectory to beat
     auto time_start = high_resolution_clock::now();
-    old_cost = RolloutTrajectory(d, true, initial_controls);
-    new_cost = old_cost;
-    initial_cost = old_cost;
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
-
-    if(verbose_output){
-        PrintBanner(duration_cast<microseconds>(high_resolution_clock::now() - time_start).count() / 1000.0);
-    }
 
     std::vector<MatrixXd> best_controls(initial_controls.begin(), initial_controls.begin() + horizon_length);
     for(int k = 0; k < static_cast<int>(knot_times.size()); k++){
@@ -374,11 +376,22 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
         }
 
         int best_index = static_cast<int>(std::min_element(sampled_costs.begin(), sampled_costs.end()) - sampled_costs.begin());
-        double best_sample_cost = sampled_costs[best_index];
+        int best_sample_index = static_cast<int>(std::min_element(sampled_costs.begin() + 1, sampled_costs.end()) - sampled_costs.begin());
+        double best_cost = sampled_costs[best_index];
+        double best_sample_cost = sampled_costs[best_sample_index];
+        if(i == 0){
+            initial_cost = sampled_costs[0];    // Index 0 is always unperturbed nominal rollout
+            old_cost = initial_cost;
+            new_cost = initial_cost;
+            if(verbose_output){
+                PrintBanner();
+            }
+        }
+
 
         // Only update the nominal if a sample improved on it
-        if(best_sample_cost < old_cost){
-            new_cost = best_sample_cost;
+        if(best_cost < new_cost){
+            new_cost = best_cost;
             nominal_knots = sampled_knots[best_index];
             best_controls = sampled_controls[best_index];
 
@@ -389,9 +402,9 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
                 U_old[t] = best_controls[t];
             }
         }
-        else{
-            new_cost = old_cost;
-        }
+//        else{
+//            new_cost = old_cost;
+//        }
 
         double time_iteration = duration_cast<microseconds>(high_resolution_clock::now() - iteration_start).count() / 1000.0;
         time_forwardsPass_ms.push_back(time_iteration);
@@ -434,12 +447,12 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
     return best_controls;
 }
 
-void PredictiveSampling::PrintBanner(double time_rollout){
+void PredictiveSampling::PrintBanner(){
     std::string spline_name = (spline_type == SplineType::ZERO_ORDER) ? "zero order" :
                               (spline_type == SplineType::LINEAR) ? "linear" : "cubic";
 
     std::cout << "------------------------------------------------------------------------------------" << std::endl;
-    std::cout << "| Predictive sampling begins, initial rollout took: " << std::setprecision(4) << time_rollout << " ms" << std::endl;
+    std::cout << "| Predictive sampling begins, initial rollout cost: " << std::setprecision(4) << initial_cost << " " << std::endl;
     std::cout << "| rollouts: " << num_rollouts << ", knots: " << knot_times.size() << " (spacing " << knot_spacing
               << "), spline: " << spline_name << ", noise scale: " << noise_scale << std::endl;
 
