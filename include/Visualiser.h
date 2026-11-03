@@ -10,7 +10,7 @@
 
 class Visualiser {
 public:
-    Visualiser(std::shared_ptr<ModelTranslator> _modelTranslator);
+    Visualiser(std::shared_ptr<ModelTranslator> _modelTranslator, bool make_window);
     void update();
 
     // ------------------------------- Variables -----------------------------------------
