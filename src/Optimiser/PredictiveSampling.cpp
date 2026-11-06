@@ -82,8 +82,12 @@ void PredictiveSampling::Resize(int new_num_dofs, int new_num_ctrl, int new_hori
         sampled_controls.assign(num_rollouts, std::vector<MatrixXd>(horizon_length, MatrixXd(num_ctrl, 1)));
     }
 
+    // Residuals are resized on every call (as in iLQR), as the residual list can change between optimisations
+    // (e.g. task stage changes) without the horizon changing.
+    int num_residuals = static_cast<int>(activeModelTranslator->residual_list.size());
+    residuals.assign(horizon_length + 1, MatrixXd(num_residuals, 1));
+
     if(update_horizon){
-        residuals.assign(horizon_length + 1, MatrixXd(activeModelTranslator->residual_list.size(), 1));
         contact_list.assign(horizon_length + 1, std::vector<std::pair<int, int>>());
 
         mujoco_data_min data_timestep;
@@ -95,11 +99,19 @@ void PredictiveSampling::Resize(int new_num_dofs, int new_num_ctrl, int new_hori
         data_timestep.qfrc_applied.resize(MuJoCo_helper->model->nv);
         data_timestep.xfrc_applied.resize(6*MuJoCo_helper->model->nbody);
         data_timestep.ctrl.resize(MuJoCo_helper->model->nu);
-        data_timestep.residuals.resize(activeModelTranslator->residual_list.size(), 1);
+        data_timestep.residuals.resize(num_residuals, 1);
 
         // One rollout buffer per sample, so the best sample can be copied without re-simulating
         num_parallel_rollouts = num_rollouts;
         rollout_data.assign(num_rollouts, std::vector<mujoco_data_min>(horizon_length + 1, data_timestep));
+    }
+    else{
+        // Keep the saved rollout residuals in sync with the current residual list (no-op if the size is unchanged)
+        for(auto &rollout : rollout_data){
+            for(auto &data_timestep : rollout){
+                data_timestep.residuals.resize(num_residuals, 1);
+            }
+        }
     }
 
     if(update_rollouts){
@@ -351,6 +363,12 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
     // ------------------------------------------------------------------------
 
     auto time_start = high_resolution_clock::now();
+
+    // Optimise from the provided start state d. All sampled rollouts start from saved_systems_state_list[0],
+    // so it must be set to d here (otherwise it holds the start state of the previous optimisation).
+    if(d != MuJoCo_helper->saved_systems_state_list[0]){
+        MuJoCo_helper->CopySystemState(MuJoCo_helper->saved_systems_state_list[0], d);
+    }
     MuJoCo_helper->CopySystemState(MuJoCo_helper->main_data, MuJoCo_helper->saved_systems_state_list[0]);
 
     std::vector<MatrixXd> best_controls(initial_controls.begin(), initial_controls.begin() + horizon_length);
@@ -389,17 +407,21 @@ std::vector<MatrixXd> PredictiveSampling::Optimise(mjData *d, std::vector<Matrix
         }
 
 
-        // Only update the nominal if a sample improved on it
-        if(best_cost < new_cost){
+        // Only update the nominal if a sample improved on it. On the first iteration we always save the best
+        // rollout (which may be index 0, the unperturbed nominal), so X_old / U_old / saved states always
+        // describe this optimisation's trajectory rather than being left over from a previous call.
+        if(best_cost < new_cost || i == 0){
             new_cost = best_cost;
             nominal_knots = sampled_knots[best_index];
             best_controls = sampled_controls[best_index];
 
             SaveBestRollout(best_index);
             for(int t = 0; t < horizon_length; t++){
-                X_old[t + 1] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->saved_systems_state_list[t + 1],
-                                                                                   activeModelTranslator->current_state_vector);
                 U_old[t] = best_controls[t];
+            }
+            for(int t = 0; t <= horizon_length; t++){
+                X_old[t] = activeModelTranslator->ReturnStateVectorQuaternions(MuJoCo_helper->saved_systems_state_list[t],
+                                                                               activeModelTranslator->current_state_vector);
             }
         }
 //        else{
