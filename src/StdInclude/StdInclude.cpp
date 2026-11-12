@@ -130,10 +130,32 @@ m_quat axis2Quat(m_point axisAngles){
                         axisAngles(1) * axisAngles(1) +
                         axisAngles(2) * axisAngles(2));
 
-    // Make it unit axis angle?
-//    axisAngles /= angle;
-
-//    std::cout << "angle: " << angle << std::endl;
+    // =====================================================================================
+    // !!! CLAUDE CHANGED THIS (2026-11-12) - CHECK HERE IF ORIENTATIONS START MISBEHAVING !!!
+    //
+    // Previously the line "axisAngles /= angle;" was commented out, so the axis was NOT
+    // normalised. The output quaternion was then (cos(a/2), v * sin(a/2)) with |v| = a,
+    // which is not unit length unless a == 1 rad. MuJoCo renormalises it, giving a
+    // different rotation from the one requested, e.g. yaw 22.5deg -> 8.9deg,
+    // 67.5deg -> 76.4deg, 90deg -> 115deg.
+    //
+    // This made SetBodyPoseAngle place bodies at the wrong orientation, and it was
+    // inconsistent with quat2Axis (which correctly returns axis * angle).
+    //
+    // Fix: normalise the axis, and return the identity quaternion for a (near) zero rotation
+    // to avoid dividing by zero.
+    // This affects EVERY caller of axis2Quat / SetBodyPoseAngle in TrajOptKP, including
+    // the optimiser, so anything tuned around the old behaviour may need re-checking.
+    // To revert: delete the block below and restore the commented-out line.
+    // =====================================================================================
+    if(angle < 1e-9){
+        quat(0) = 1.0;
+        quat(1) = 0.0;
+        quat(2) = 0.0;
+        quat(3) = 0.0;
+        return quat;
+    }
+    axisAngles /= angle;
 
     double halfAngle = angle / 2.0;
 
